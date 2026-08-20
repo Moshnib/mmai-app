@@ -3,7 +3,7 @@
 import { PILLAR_NAMES, bandFor, type PillarKey } from "@/lib/scoring";
 import { scoreMarket, type MarketData } from "@/lib/markets";
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "MM", "EC"];
+const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
 
 export default function Heatmap({ markets }: { markets: MarketData[] }) {
   return (

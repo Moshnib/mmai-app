@@ -1,11 +1,19 @@
 // ============================================================
-// MMAI SCORING ENGINE
+// MMAI SCORING ENGINE — v2.0 (five-pillar specification)
+// Market Momentum was removed as a structural pillar on 2026-08-19:
+// no licensed equity data source exists, and none is planned near-term.
+// Its 20% weight was redistributed proportionally across the remaining
+// five pillars (new_weight = old_weight / 0.80), which is mathematically
+// identical to the reweighting v1.0 already performed at runtime for any
+// market missing that pillar — so every historical score computed under
+// v1.0 is numerically unchanged under this specification.
 // Direct implementation of Equations 1-7 from
 // "MMAI — Methodology, Statistical Properties, and Empirical Validation"
-// Every function here has a matching proof in that document.
+// (v1.0 document; Equations 1-5 and 7 unchanged, Equation 6's six-term
+// sum is now a five-term sum with the weights below).
 // ============================================================
 
-export type PillarKey = "PS" | "GM" | "LM" | "MC" | "MM" | "EC";
+export type PillarKey = "PS" | "GM" | "LM" | "MC" | "EC";
 
 export interface RawIndicators {
   inflation?: number | null; // % YoY
@@ -20,17 +28,17 @@ export interface PillarScores {
   GM: number | null;
   LM: number | null;
   MC: number | null;
-  MM: number | null; // structurally null until a licensed equity source exists
   EC: number | null;
 }
 
+export const TOTAL_PILLARS = 5;
+
 export const PILLAR_WEIGHTS: Record<PillarKey, number> = {
-  PS: 0.20,
-  GM: 0.20,
-  LM: 0.15,
-  MC: 0.15,
-  MM: 0.20,
-  EC: 0.10,
+  PS: 0.25,
+  GM: 0.25,
+  LM: 0.1875,
+  MC: 0.1875,
+  EC: 0.125,
 };
 
 export const PILLAR_NAMES: Record<PillarKey, string> = {
@@ -38,7 +46,6 @@ export const PILLAR_NAMES: Record<PillarKey, string> = {
   GM: "Growth Momentum",
   LM: "Labour Market",
   MC: "Monetary Conditions",
-  MM: "Market Momentum",
   EC: "External & Commodities",
 };
 
@@ -71,23 +78,21 @@ export function externalCommoditiesScore(brentYoY: number): number {
   return clip(100 - 1.2 * Math.abs(brentYoY));
 }
 
-/** Runs all five populated transformations. Market Momentum is always null
- *  until a licensed equity data source exists (see methodology paper, Sec 4.3). */
+/** Runs all five pillar transformations. */
 export function computePillarScores(raw: RawIndicators): PillarScores {
   return {
     PS: raw.inflation != null ? priceStabilityScore(raw.inflation) : null,
     GM: raw.gdpGrowth != null ? growthMomentumScore(raw.gdpGrowth) : null,
     LM: raw.unemployment != null ? labourMarketScore(raw.unemployment) : null,
     MC: raw.policyRate != null ? monetaryConditionsScore(raw.policyRate) : null,
-    MM: null,
     EC: raw.brentYoY != null ? externalCommoditiesScore(raw.brentYoY) : null,
   };
 }
 
 export interface CompositeResult {
   composite: number | null;
-  coverage: number; // 0..1, fraction of 6 conceptual pillars populated
-  coveragePillars: number; // count out of 6
+  coverage: number; // 0..1, fraction of 5 pillars populated
+  coveragePillars: number; // count out of 5
   publishable: boolean;
 }
 
@@ -107,7 +112,7 @@ export function computeComposite(pillars: PillarScores): CompositeResult {
     }
   });
 
-  const coverage = coveragePillars / 6;
+  const coverage = coveragePillars / TOTAL_PILLARS;
   const publishable = coverage >= 0.70;
   const composite = publishable && activeWeight > 0 ? sum / activeWeight : null;
 

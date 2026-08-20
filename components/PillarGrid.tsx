@@ -1,10 +1,11 @@
 "use client";
 
 import { PILLAR_NAMES, PILLAR_WEIGHTS, bandFor, type PillarKey, type PillarScores } from "@/lib/scoring";
+import Link from "next/link";
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "MM", "EC"];
+const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
 
-export default function PillarGrid({ pillars }: { pillars: PillarScores }) {
+export default function PillarGrid({ pillars, market }: { pillars: PillarScores; market: string }) {
   return (
     <div className="pillar-grid">
       {ORDER.map((key) => {
@@ -15,7 +16,12 @@ export default function PillarGrid({ pillars }: { pillars: PillarScores }) {
         const pct = excluded ? 0 : val / 100;
 
         return (
-          <div key={key} className="pillar-card">
+          <Link
+            key={key}
+            href={excluded ? "#" : `/trends?market=${market}&pillar=${key}`}
+            className="pillar-card"
+            style={{ textDecoration: "none", color: "inherit", display: "block", cursor: excluded ? "default" : "pointer" }}
+          >
             <div style={{ width: 56, height: 56, margin: "0 auto", position: "relative" }}>
               <svg viewBox="0 0 56 56" width={56} height={56} style={{ transform: "rotate(-90deg)" }}>
                 <circle cx={28} cy={28} r={23} fill="none" stroke="#E7E9EF" strokeWidth={5} />
@@ -33,7 +39,12 @@ export default function PillarGrid({ pillars }: { pillars: PillarScores }) {
             </div>
             <div className="pillar-name">{PILLAR_NAMES[key]}</div>
             <div className="pillar-weight">{(PILLAR_WEIGHTS[key] * 100).toFixed(0)}% weight</div>
-          </div>
+            {!excluded && (
+              <div style={{ marginTop: 6, fontSize: 10, fontFamily: "monospace", color: "var(--gold-deep)" }}>
+                View trend →
+              </div>
+            )}
+          </Link>
         );
       })}
     </div>

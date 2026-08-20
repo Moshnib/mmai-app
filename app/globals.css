@@ -85,7 +85,7 @@ h1.headline {
 .section-head h2 { font-family: Georgia, serif; font-size: 26px; font-weight: 600; margin: 0 0 8px; }
 .section-head p { color: var(--slate); font-size: 14px; margin: 0; max-width: 64ch; }
 
-.pillar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 24px; }
+.pillar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
 @media (max-width: 980px) { .pillar-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 560px) { .pillar-grid { grid-template-columns: repeat(2, 1fr); } }
 .pillar-card { background: var(--white); border: 1px solid var(--hair); border-radius: 14px; padding: 16px 14px; text-align: center; }
@@ -104,7 +104,7 @@ h1.headline {
 .compare-score { font-family: monospace; font-weight: 700; font-size: 19px; }
 .compare-band { font-size: 10.5px; color: var(--slate); font-weight: 600; }
 
-.heatmap-grid { display: grid; grid-template-columns: 140px repeat(6, 1fr); gap: 6px; margin-top: 20px; overflow-x: auto; }
+.heatmap-grid { display: grid; grid-template-columns: 140px repeat(5, 1fr); gap: 6px; margin-top: 20px; overflow-x: auto; }
 .hm-colhead { font-size: 11px; font-weight: 700; color: var(--slate); text-align: center; padding: 8px 4px; }
 .hm-rowhead { font-size: 12.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; padding: 0 8px; }
 .hm-cell { border-radius: 8px; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; }

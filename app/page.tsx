@@ -6,15 +6,22 @@ import Gauge from "@/components/Gauge";
 import PillarGrid from "@/components/PillarGrid";
 import CompareGrid from "@/components/CompareGrid";
 import Heatmap from "@/components/Heatmap";
-import { narrativeDrivers, PILLAR_NAMES } from "@/lib/scoring";
+import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
+import { sourcesForMarket } from "@/lib/sources";
+
+function latestVerifiedDate(marketName: string): string {
+  const entries = sourcesForMarket(marketName);
+  if (entries.length === 0) return "—";
+  return entries.reduce((latest, e) => (e.lastVerified > latest ? e.lastVerified : latest), entries[0].lastVerified);
+}
 
 function narrativeFor(market: MarketData): string {
   const { pillars, coveragePillars, coverage } = scoreMarket(market);
   const drivers = narrativeDrivers(pillars);
   if (coverage < 0.7 || !drivers) {
-    return `${market.name} currently has only ${coveragePillars} of 6 structural pillars populated (${(coverage * 100).toFixed(1)}% coverage), below the 70% publication threshold. Rather than compute a score from incomplete data, MMAI shows N/A.`;
+    return `${market.name} currently has only ${coveragePillars} of ${TOTAL_PILLARS} structural pillars populated (${(coverage * 100).toFixed(1)}% coverage), below the 70% publication threshold. Rather than compute a score from incomplete data, MMAI shows N/A.`;
   }
   const bestVal = pillars[drivers.best]!;
   const worstVal = pillars[drivers.worst]!;
@@ -75,7 +82,9 @@ export default function OverviewPage() {
           <Link href="/" className="brand"><span className="dot" />MMAI</Link>
           <div className="navlinks">
             <button className="navlink active">Overview</button>
+            <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
             <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn</Link>
+            <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
           </div>
         </div>
       </nav>
@@ -106,8 +115,9 @@ export default function OverviewPage() {
               <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
               <div className="meta-row">
-                <span>Coverage: <b>{((coveragePillars / 6) * 100).toFixed(1)}%</b></span>
-                <span>Pillars active: <b>{coveragePillars} of 6</b></span>
+                <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
+                <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
+                <span>Sources verified: <b>{latestVerifiedDate(market.name)}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
               </div>
             </div>
           </div>
@@ -121,7 +131,7 @@ export default function OverviewPage() {
             <h2>Six pillars, weighted and shown in full</h2>
             <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it — visit the Learn page for what each one means.</p>
           </div>
-          <PillarGrid pillars={pillars} />
+          <PillarGrid pillars={pillars} market={current} />
         </div>
       </div>
 

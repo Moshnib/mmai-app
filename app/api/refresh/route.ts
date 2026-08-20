@@ -18,10 +18,14 @@ const BRENT_YOY_PLACEHOLDER = -5;
  *   EA: Eurostat (HICP, GDP) + ECB (policy rate)      — Guide Steps 5-6
  *   CA: Statistics Canada (CPI) + Bank of Canada       — Guide Steps 7-8
  *   UK: ONS (CPI, GDP, unemployment) + Bank of England — Guide Steps 9-10
- *   AE: World Bank (CPI, GDP, unemployment)            — Guide Step 11
  *
  * Until each is added, those markets fall back to the last verified
  * manual figures — never silently zero, per the coverage rule.
+ *
+ * UAE was removed 2026-08-19 (no verified policy-rate source, never
+ * cleared the 70% coverage threshold). Market Momentum was removed the
+ * same day (no licensed equity source) — its weight was redistributed
+ * into the remaining five pillars in lib/scoring.ts.
  */
 async function fetchRawIndicators(market: string): Promise<RawIndicators> {
   if (market === "US") {
@@ -46,12 +50,11 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
     EA: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: BRENT_YOY_PLACEHOLDER },
     CA: { inflation: 2.8, gdpGrowth: 3.4, unemployment: 6.4, policyRate: 2.25, brentYoY: BRENT_YOY_PLACEHOLDER },
     UK: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: BRENT_YOY_PLACEHOLDER },
-    AE: { inflation: 1.25, gdpGrowth: 4.0, unemployment: 2.17, policyRate: null, brentYoY: BRENT_YOY_PLACEHOLDER },
   };
   return fallback[market] ?? {};
 }
 
-const MARKETS = ["US", "EA", "CA", "UK", "AE"];
+const MARKETS = ["US", "EA", "CA", "UK"];
 
 export async function GET(request: Request) {
   // Protect this endpoint so only Vercel Cron (or you, manually, with the
@@ -92,7 +95,6 @@ export async function GET(request: Request) {
         pillar_gm: pillars.GM,
         pillar_lm: pillars.LM,
         pillar_mc: pillars.MC,
-        pillar_mm: pillars.MM,
         pillar_ec: pillars.EC,
         composite,
         coverage,

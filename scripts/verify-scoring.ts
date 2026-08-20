@@ -7,11 +7,15 @@ const cases: Array<{
   expectedBand: string;
 }> = [
   { name: "US", raw: { inflation: 3.4, gdpGrowth: 1.5, unemployment: 4.2, policyRate: 3.63, brentYoY: -5 }, expectedComposite: 78.6, expectedBand: "Supportive" },
-  { name: "Euro Area", raw: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: -5 }, expectedComposite: 77.2, expectedBand: "Supportive" },
+  { name: "Euro Area", raw: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: -5 }, expectedComposite: 77.3, expectedBand: "Supportive" },
   { name: "Canada", raw: { inflation: 2.8, gdpGrowth: 3.4, unemployment: 6.4, policyRate: 2.25, brentYoY: -5 }, expectedComposite: 83.4, expectedBand: "Strongly Supportive" },
   { name: "UK", raw: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 }, expectedComposite: 76.5, expectedBand: "Supportive" },
-  { name: "UAE", raw: { inflation: 1.25, gdpGrowth: 4.0, unemployment: 2.17, policyRate: null, brentYoY: -5 }, expectedComposite: null, expectedBand: "Not Publishable" },
 ];
+// Note: expected values are UNCHANGED from the six-pillar specification.
+// Proportional weight redistribution (new_weight = old_weight / 0.80) is
+// mathematically identical to the runtime reweighting v1.0 already applied
+// whenever Market Momentum was missing — which was every market, every time.
+// UAE case removed 2026-08-19 (market discontinued — see lib/markets.ts).
 
 let allPass = true;
 

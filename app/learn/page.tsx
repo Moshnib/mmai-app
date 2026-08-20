@@ -53,7 +53,9 @@ export default function LearnPage() {
           <Link href="/" className="brand"><span className="dot" />MMAI</Link>
           <div className="navlinks">
             <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
+            <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
             <button className="navlink active">Learn</button>
+            <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
           </div>
         </div>
       </nav>
