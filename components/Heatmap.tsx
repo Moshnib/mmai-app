@@ -26,7 +26,7 @@ export default function Heatmap({ markets }: { markets: MarketData[] }) {
                 <div
                   key={key}
                   className={`hm-cell${excluded ? " excluded" : ""}`}
-                  style={!excluded ? { background: band!.color } : undefined}
+                  style={!excluded ? { background: band!.color, boxShadow: `0 0 14px -2px ${band!.color}80` } : undefined}
                   title={excluded ? `${m.name} — ${PILLAR_NAMES[key]}: excluded` : `${m.name} — ${PILLAR_NAMES[key]}: ${val!.toFixed(1)}`}
                 >
                   <div className="hm-val">{excluded ? "—" : val!.toFixed(0)}</div>

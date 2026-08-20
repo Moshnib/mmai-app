@@ -6,6 +6,8 @@ import Gauge from "@/components/Gauge";
 import PillarGrid from "@/components/PillarGrid";
 import CompareGrid from "@/components/CompareGrid";
 import Heatmap from "@/components/Heatmap";
+import Sparkline from "@/components/Sparkline";
+import WorldMap from "@/components/WorldMap";
 import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
@@ -114,11 +116,23 @@ export default function OverviewPage() {
             <div className="score-right">
               <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
-              <div className="meta-row">
+              <div className="meta-row" style={{ marginBottom: 16 }}>
                 <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
                 <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
                 <span>Sources verified: <b>{latestVerifiedDate(market.name)}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
               </div>
+              <Sparkline marketCode={current} currentScore={composite} />
+              <Link
+                href="/learn#topic-mmai"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6, marginTop: 16,
+                  fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
+                  color: "var(--gold)", textDecoration: "none", padding: "7px 14px",
+                  border: "1px solid rgba(34,211,238,0.35)", borderRadius: 999, background: "rgba(34,211,238,0.08)",
+                }}
+              >
+                Σ How is this score calculated? →
+              </Link>
             </div>
           </div>
         </div>
@@ -150,6 +164,10 @@ export default function OverviewPage() {
           <div className="section-head">
             <p className="eyebrow">EVERY MARKET, EVERY PILLAR, AT A GLANCE</p>
             <h2>The MMAI Heat Map</h2>
+            <p>Click a country on the map or a row below to jump straight to that market.</p>
+          </div>
+          <div style={{ marginTop: 24, marginBottom: 24 }}>
+            <WorldMap markets={markets} current={current} onSelect={setCurrent} />
           </div>
           <Heatmap markets={markets} />
         </div>

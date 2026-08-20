@@ -22,18 +22,22 @@ export default function PillarGrid({ pillars, market }: { pillars: PillarScores;
             className="pillar-card"
             style={{ textDecoration: "none", color: "inherit", display: "block", cursor: excluded ? "default" : "pointer" }}
           >
-            <div style={{ width: 56, height: 56, margin: "0 auto", position: "relative" }}>
-              <svg viewBox="0 0 56 56" width={56} height={56} style={{ transform: "rotate(-90deg)" }}>
-                <circle cx={28} cy={28} r={23} fill="none" stroke="#E7E9EF" strokeWidth={5} />
+            <div style={{ width: 60, height: 60, margin: "0 auto", position: "relative" }}>
+              <svg viewBox="0 0 56 56" width={60} height={60} style={{ transform: "rotate(-90deg)", overflow: "visible" }}>
+                <circle cx={28} cy={28} r={23} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
                 <circle
                   cx={28} cy={28} r={23} fill="none"
-                  stroke={excluded ? "#C7CCD6" : band.color}
+                  stroke={excluded ? "#3A3D4A" : band.color}
                   strokeWidth={5}
                   strokeLinecap="round"
                   strokeDasharray={`${circumference * pct} ${circumference}`}
+                  style={{
+                    transition: "stroke-dasharray 0.8s ease, filter 0.4s ease",
+                    filter: excluded ? undefined : `drop-shadow(0 0 5px ${band.color}90)`,
+                  }}
                 />
               </svg>
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "monospace", fontWeight: 700, fontSize: 13, color: excluded ? "#8A93A6" : band.color }}>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 13, color: excluded ? "var(--slate)" : band.color, textShadow: excluded ? undefined : `0 0 10px ${band.color}50` }}>
                 {excluded ? "—" : val!.toFixed(0)}
               </div>
             </div>

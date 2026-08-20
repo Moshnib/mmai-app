@@ -21,20 +21,30 @@ export default function Gauge({ score }: { score: number | null }) {
   return (
     <div style={{ position: "relative", width: 260, height: 170 }}>
       <svg viewBox="0 0 260 170" width={260} height={170} style={{ overflow: "visible" }}>
-        <path d="M 30 150 A 100 100 0 0 1 230 150" fill="none" stroke="#E7E9EF" strokeWidth={20} strokeLinecap="round" />
+        <path d="M 30 150 A 100 100 0 0 1 230 150" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={20} strokeLinecap="round" />
         <path
           d={describeArc(130, 150, 100, 0, angle)}
           fill="none"
           stroke={band.color}
           strokeWidth={20}
           strokeLinecap="round"
-          style={{ transition: "d 0.5s ease, stroke 0.4s ease" }}
+          style={{
+            transition: "d 0.5s ease, stroke 0.4s ease, filter 0.4s ease",
+            filter: `drop-shadow(0 0 10px ${band.color}90)`,
+          }}
         />
       </svg>
       <div style={{ position: "absolute", top: "62%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-        <div className="gauge-num" style={{ color: band.color }}>{score === null ? "N/A" : score.toFixed(1)}</div>
+        <div
+          className="gauge-num"
+          style={{ color: band.color, textShadow: `0 0 22px ${band.color}55`, transition: "color 0.4s ease, text-shadow 0.4s ease" }}
+        >
+          {score === null ? "N/A" : score.toFixed(1)}
+        </div>
         <div className="gauge-label">MMAI Score</div>
-        <div className="band-pill" style={{ background: band.bg, color: band.color }}>{band.label}</div>
+        <div className="band-pill" style={{ background: `${band.color}22`, color: band.color, border: `1px solid ${band.color}55` }}>
+          {band.label}
+        </div>
       </div>
     </div>
   );
