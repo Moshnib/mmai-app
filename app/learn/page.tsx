@@ -77,12 +77,13 @@ export default function LearnPage() {
               key={t.id}
               id={`topic-${t.id}`}
               style={{
-                background: "#fff",
+                background: "rgba(255,255,255,0.035)",
                 border: "1px solid var(--hair)",
                 borderRadius: 18,
                 padding: "28px 32px",
                 marginBottom: 18,
                 scrollMarginTop: 90,
+                backdropFilter: "blur(14px)",
               }}
             >
               <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>{t.title}</h3>
