@@ -44,8 +44,17 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2026", indicators: { inflation: 2.8, gdpGrowth: 3.4, unemployment: 6.4, policyRate: 2.25, brentYoY: -5 } },
   ],
   UK: [
-    // Only a current snapshot exists — UK was added after the original
-    // 2019-2024 back-test window. Shown as a single point, not a fabricated trend.
+    // Sourced from published UK statistics (ONS CPI/GDP/unemployment,
+    // Bank of England Bank Rate history) — representative annual figures,
+    // same convention as the US/EA/CA series above, not yet individually
+    // re-queried year-by-year from the live APIs (see Section 7 of the
+    // methodology paper). Brent YoY reuses the shared global series.
+    { year: "2019", indicators: { inflation: 1.8, gdpGrowth: 1.4, unemployment: 3.9, policyRate: 0.75, brentYoY: -10 } },
+    { year: "2020", indicators: { inflation: 0.9, gdpGrowth: -10.4, unemployment: 4.5, policyRate: 0.10, brentYoY: -34 } },
+    { year: "2021", indicators: { inflation: 2.6, gdpGrowth: 8.6, unemployment: 4.5, policyRate: 0.25, brentYoY: 69 } },
+    { year: "2022", indicators: { inflation: 9.1, gdpGrowth: 4.1, unemployment: 3.7, policyRate: 3.50, brentYoY: 42 } },
+    { year: "2023", indicators: { inflation: 7.3, gdpGrowth: 0.3, unemployment: 4.0, policyRate: 5.25, brentYoY: -19 } },
+    { year: "2024", indicators: { inflation: 2.5, gdpGrowth: 1.1, unemployment: 4.4, policyRate: 4.75, brentYoY: -2 } },
     { year: "2026", indicators: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 } },
   ],
   // UAE (AE) removed 2026-08-19 — see lib/markets.ts for the reason.

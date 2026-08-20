@@ -133,7 +133,7 @@ export default function TrendsPageInner() {
               <TrendChart series={compositeSeries} height={300} yDomain={[0, 100]} />
             ) : (
               <p style={{ color: "var(--slate)", fontSize: 13.5, padding: "40px 0", textAlign: "center" }}>
-                Only a single data point exists for {marketNames[current]} so far — a trend needs at least two. Check back after a few refresh cycles.
+                Only a single data point exists for {marketNames[current]} so far — a trend needs at least two. This market's historical series hasn't been backfilled yet.
               </p>
             )}
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 10.5, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
