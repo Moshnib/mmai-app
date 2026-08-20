@@ -140,12 +140,12 @@ export default function TrendsPageInner() {
             <p className="eyebrow">FIVE PILLARS, INDIVIDUALLY</p>
             <h2>Click any pillar to see its raw indicator below</h2>
           </div>
-          <div className="pillar-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
+          <div className="pillar-grid">
             {ORDER.map((key) => (
               <div
                 key={key}
                 className="pillar-card"
-                style={{ textAlign: "left", cursor: "pointer", border: focusPillar === key ? "1.5px solid var(--ink)" : undefined }}
+                style={{ textAlign: "left", cursor: "pointer", border: focusPillar === key ? "1.5px solid var(--gold)" : undefined, boxShadow: focusPillar === key ? "0 0 20px -6px var(--gold)" : undefined }}
                 onClick={() => setFocusPillar(key)}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
@@ -153,10 +153,13 @@ export default function TrendsPageInner() {
                   <span className="pillar-weight">{(PILLAR_WEIGHTS[key] * 100).toFixed(1)}%</span>
                 </div>
                 {history.length > 1 ? (
-                  <TrendChart series={pillarMiniSeries[key]} height={130} yDomain={[0, 100]} showLegend={false} />
+                  <TrendChart series={pillarMiniSeries[key]} height={150} yDomain={[0, 100]} showLegend={false} />
                 ) : (
                   <div style={{ padding: "30px 0", textAlign: "center", color: "#8A93A6", fontSize: 12 }}>Not enough history yet</div>
                 )}
+                <div style={{ marginTop: 8, fontSize: 10, fontFamily: "IBM Plex Mono, monospace", color: "var(--gold)", textAlign: "right" }}>
+                  ⤢ tap to expand
+                </div>
               </div>
             ))}
           </div>

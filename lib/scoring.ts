@@ -125,11 +125,15 @@ export interface Band {
   bg: string;
 }
 
-// "Ember to Ice" continuous gradient: Red -> Orange -> Gold -> Cyan -> Violet.
+// "Ember to Ice" continuous gradient: Red -> Orange -> Violet -> Cyan.
 // Interpolated smoothly across the full 0-100 range, weather-map style —
 // two scores 0.1 apart always produce two colors 0.1 apart, unlike a
 // discrete band system where a score can jump color entirely at a threshold.
-const COLOR_STOPS = ["#E14B4B", "#F0975B", "#E8B84B", "#22D3EE", "#8B5CF6"];
+// NOTE: Gold was deliberately removed from this gradient — a direct
+// gold-to-cyan interpolation in RGB space passes through green as a
+// mathematical side effect (verified: scores 60-65 rendered visibly green
+// before this fix), which defeats the whole point of avoiding green.
+const COLOR_STOPS = ["#E14B4B", "#F0975B", "#8B5CF6", "#22D3EE"];
 const NA_COLOR = "#6B7086";
 
 function hexToRgb(hex: string): [number, number, number] {

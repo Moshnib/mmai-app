@@ -15,6 +15,22 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   EA: ["250", "276", "380", "724", "528", "056", "040", "620", "372", "246", "300"],
 };
 
+// Approximate [longitude, latitude] label anchor per market — not a precise
+// geographic centroid, just a readable point roughly inside each market's
+// landmass, nudged apart where markets sit close together (UK/Euro Area).
+const MARKET_LABEL_LONLAT: Record<string, [number, number]> = {
+  US: [-98, 39],
+  CA: [-100, 58],
+  UK: [-3.5, 55.5],
+  EA: [14, 47],
+};
+
+function project(lon: number, lat: number, width: number, height: number): [number, number] {
+  const x = ((lon + 180) / 360) * width;
+  const y = ((90 - lat) / 180) * height;
+  return [x, y];
+}
+
 export default function WorldMap({ markets, current, onSelect }: { markets: MarketData[]; current: string; onSelect: (code: string) => void }) {
   const countryToMarket: Record<string, string> = {};
   Object.entries(MARKET_COUNTRY_IDS).forEach(([market, ids]) => {
@@ -37,7 +53,6 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
 
           const { composite } = scoreMarket(market);
           const band = bandFor(composite);
-
           const tooltipText = `${market.name}: ${composite === null ? "N/A" : composite.toFixed(1)} — ${band.label}`;
 
           return (
@@ -57,6 +72,51 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
             >
               <title>{tooltipText}</title>
             </path>
+          );
+        })}
+
+        {/* Score labels, drawn on top of the country shapes so the number
+            is always visible without needing to hover. */}
+        {markets.map((m) => {
+          const pos = MARKET_LABEL_LONLAT[m.code];
+          if (!pos) return null;
+          const [x, y] = project(pos[0], pos[1], worldPaths.width, worldPaths.height);
+          const { composite } = scoreMarket(m);
+          const band = bandFor(composite);
+          const label = composite === null ? "N/A" : composite.toFixed(1);
+          const isSelected = m.code === current;
+          const pillW = label.length > 3 ? 40 : 34;
+
+          return (
+            <g
+              key={m.code}
+              style={{ cursor: "pointer", pointerEvents: "auto" }}
+              onClick={() => onSelect(m.code)}
+            >
+              <rect
+                x={x - pillW / 2}
+                y={y - 11}
+                width={pillW}
+                height={22}
+                rx={11}
+                fill="rgba(8,8,13,0.82)"
+                stroke={band.color}
+                strokeWidth={isSelected ? 1.4 : 0.8}
+                style={{ filter: isSelected ? `drop-shadow(0 0 6px ${band.color})` : undefined }}
+              />
+              <text
+                x={x}
+                y={y + 4}
+                textAnchor="middle"
+                fontFamily="'Space Grotesk', sans-serif"
+                fontWeight={700}
+                fontSize={10.5}
+                fill={band.color}
+                style={{ pointerEvents: "none" }}
+              >
+                {label}
+              </text>
+            </g>
           );
         })}
       </svg>
