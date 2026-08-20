@@ -128,7 +128,7 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">THE COMPOSITE, OPENED UP</p>
-            <h2>Six pillars, weighted and shown in full</h2>
+            <h2>Five pillars, weighted and shown in full</h2>
             <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it — visit the Learn page for what each one means.</p>
           </div>
           <PillarGrid pillars={pillars} market={current} />
