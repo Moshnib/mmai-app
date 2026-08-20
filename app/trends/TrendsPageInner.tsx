@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
@@ -26,6 +26,16 @@ export default function TrendsPageInner() {
 
   const [current, setCurrent] = useState(initialMarket);
   const [focusPillar, setFocusPillar] = useState<PillarKey | null>(initialPillar);
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  // Scroll the expanded detail panel into view the moment a pillar is
+  // clicked -- without this, the panel appears correctly but silently
+  // further down the page, which reads as "the click did nothing."
+  useEffect(() => {
+    if (focusPillar && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [focusPillar]);
 
   const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
   const history = HISTORY[current] ?? [];
@@ -167,7 +177,7 @@ export default function TrendsPageInner() {
       </div>
 
       {focusPillar && rawDetailSeries && (
-        <div className="section" style={{ paddingTop: 0 }}>
+        <div className="section" style={{ paddingTop: 0 }} ref={detailRef}>
           <div className="wrap">
             <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "26px 30px", color: "#fff", backdropFilter: "blur(14px)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
