@@ -8,6 +8,7 @@ import CompareGrid from "@/components/CompareGrid";
 import Heatmap from "@/components/Heatmap";
 import Sparkline from "@/components/Sparkline";
 import WorldMap from "@/components/WorldMap";
+import SubscribeForm from "@/components/SubscribeForm";
 import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
@@ -170,6 +171,12 @@ export default function OverviewPage() {
             <WorldMap markets={markets} current={current} onSelect={setCurrent} />
           </div>
           <Heatmap markets={markets} />
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap" style={{ maxWidth: 560 }}>
+          <SubscribeForm />
         </div>
       </div>
 

@@ -58,3 +58,22 @@ alter table mmai_scores enable row level security;
 
 create policy "Public read access" on raw_indicators for select using (true);
 create policy "Public read access" on mmai_scores for select using (true);
+
+-- ============================================================
+-- NOTIFICATIONS: email subscribers, added later.
+-- No login/password — a subscriber is just an email + which
+-- markets they want alerts for. Unsubscribe uses a random token
+-- in the link, not a login, so it works with zero friction.
+-- ============================================================
+create table if not exists subscribers (
+  id bigint generated always as identity primary key,
+  email text not null unique,
+  markets text[] not null,              -- e.g. {'US','UK'}
+  unsubscribe_token text not null unique,
+  created_at timestamptz not null default now()
+);
+
+-- No public read policy on purpose: the subscriber list should never be
+-- queryable from the browser. All reads/writes happen server-side only,
+-- using the service role key (which bypasses RLS entirely).
+alter table subscribers enable row level security;

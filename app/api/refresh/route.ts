@@ -3,6 +3,10 @@ import { getServiceSupabaseClient } from "@/lib/supabase";
 import { computePillarScores, computeComposite, bandFor, type RawIndicators } from "@/lib/scoring";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/fred";
+import { sendBandCrossingEmail } from "@/lib/notify";
+import { FALLBACK_MARKETS } from "@/lib/markets";
+
+const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
 // A shared, roughly-current Brent YoY figure until a dedicated EIA fetcher
 // is added (see lib/fetchers/eia.ts — TODO, same pattern as bls.ts/fred.ts).
@@ -76,6 +80,17 @@ export async function GET(request: Request) {
       const band = bandFor(composite);
       const observationDate = new Date().toISOString().slice(0, 10);
 
+      // Look up the previous score BEFORE writing the new one — this is
+      // the only way to know whether the band actually changed.
+      const { data: previousRows } = await supabase
+        .from("mmai_scores")
+        .select("band")
+        .eq("market", market)
+        .order("observation_date", { ascending: false })
+        .order("computed_at", { ascending: false })
+        .limit(1);
+      const previousBand = previousRows?.[0]?.band as string | undefined;
+
       await supabase.from("raw_indicators").insert({
         market,
         inflation: raw.inflation,
@@ -100,6 +115,29 @@ export async function GET(request: Request) {
         coverage,
         band: band.label,
       });
+
+      // Band actually changed (and there WAS a previous band to compare
+      // against, i.e. this isn't the market's very first-ever row) --
+      // notify every subscriber watching this market.
+      if (previousBand && previousBand !== band.label && composite !== null) {
+        const { data: subscribers } = await supabase
+          .from("subscribers")
+          .select("email, unsubscribe_token, markets");
+        const watchers = (subscribers ?? []).filter((s) => (s.markets as string[]).includes(market));
+
+        for (const sub of watchers) {
+          try {
+            await sendBandCrossingEmail(
+              sub.email as string,
+              { marketCode: market, marketName: MARKET_NAMES[market] ?? market, oldBand: previousBand, newBand: band.label, score: composite },
+              sub.unsubscribe_token as string
+            );
+          } catch (emailErr) {
+            // One subscriber's bad/bounced address shouldn't block the rest.
+            console.error(`Notification failed for ${sub.email}:`, emailErr);
+          }
+        }
+      }
 
       results.push({ market, status: "ok", composite });
     } catch (err) {
