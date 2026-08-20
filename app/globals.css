@@ -6,8 +6,8 @@
   --gold: #22D3EE;          /* primary accent: cyan */
   --gold-deep: #B98CFF;     /* secondary accent: violet */
   --gold-bg: rgba(139, 92, 246, 0.14);
-  --teal: #00E0A4;          /* "good" status green */
-  --teal-bg: rgba(0, 224, 164, 0.12);
+  --teal: #22D3EE;          /* "good"/live status — cyan, matches the gradient's positive end */
+  --teal-bg: rgba(34, 211, 238, 0.12);
   --slate: #8A8EA3;         /* muted/meta text */
   --hair: rgba(255, 255, 255, 0.1); /* borders */
   --glass: rgba(255, 255, 255, 0.035);

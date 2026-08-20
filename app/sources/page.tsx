@@ -38,8 +38,8 @@ export default function SourcesPage() {
               <h2 style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)" }}>
                 {group.name}
               </h2>
-              <div style={{ background: "#fff", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.6fr 2.2fr 0.9fr 1fr", background: "var(--ink)", padding: "10px 18px", fontSize: 10.5, fontFamily: "monospace", fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>
+              <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden", backdropFilter: "blur(14px)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.6fr 2.2fr 0.9fr 1fr", background: "rgba(139,92,246,0.18)", padding: "10px 18px", fontSize: 10.5, fontFamily: "monospace", fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>
                   <span>INDICATOR</span>
                   <span>INSTITUTION</span>
                   <span>LICENCE</span>
@@ -91,7 +91,7 @@ export default function SourcesPage() {
 
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div style={{ background: "var(--ink)", borderRadius: 18, padding: "28px 32px", color: "#fff" }}>
+          <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "28px 32px", color: "#fff", backdropFilter: "blur(14px)" }}>
             <div style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: "var(--gold)", letterSpacing: 1, marginBottom: 10 }}>
               DISCLAIMER
             </div>

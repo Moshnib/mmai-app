@@ -5,19 +5,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import { HISTORY } from "@/lib/history";
-import { PILLAR_NAMES, PILLAR_WEIGHTS, computePillarScores, computeComposite, type PillarKey } from "@/lib/scoring";
+import { PILLAR_NAMES, PILLAR_WEIGHTS, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourcesForMarket, sourceForPillar } from "@/lib/sources";
 
 const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
-
-const PILLAR_COLORS: Record<PillarKey, string> = {
-  PS: "#2F6F62",
-  GM: "#C6A15B",
-  LM: "#8C3B2E",
-  MC: "#4C6FA8",
-  EC: "#9C7B3D",
-};
 
 const RAW_FIELD: Record<PillarKey, { key: "inflation" | "gdpGrowth" | "unemployment" | "policyRate" | "brentYoY"; label: string; unit: string }> = {
   PS: { key: "inflation", label: "Inflation (YoY)", unit: "%" },
@@ -26,8 +18,6 @@ const RAW_FIELD: Record<PillarKey, { key: "inflation" | "gdpGrowth" | "unemploym
   MC: { key: "policyRate", label: "Policy Interest Rate", unit: "%" },
   EC: { key: "brentYoY", label: "Brent Crude, Year-over-Year Change", unit: "%" },
 };
-
-const MARKET_COLORS: Record<string, string> = { US: "#0E1A30", EA: "#2F6F62", CA: "#C6A15B", UK: "#8C3B2E" };
 
 export default function TrendsPageInner() {
   const params = useSearchParams();
@@ -39,17 +29,32 @@ export default function TrendsPageInner() {
 
   const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
   const history = HISTORY[current] ?? [];
+  const latestPoint = history[history.length - 1];
+
+  // Every color below is computed from the CURRENT score of what it
+  // represents — no fixed per-pillar or per-market identity colors.
+  // Two pillars/markets scoring the same land on the same color.
+  const compositeCurrentScore = useMemo(() => {
+    if (!latestPoint) return null;
+    const { composite } = computeComposite(computePillarScores(latestPoint.indicators));
+    return composite;
+  }, [latestPoint]);
+
+  const pillarCurrentScores: Record<PillarKey, number | null> = useMemo(() => {
+    if (!latestPoint) return { PS: null, GM: null, LM: null, MC: null, EC: null };
+    return computePillarScores(latestPoint.indicators);
+  }, [latestPoint]);
 
   const compositeSeries: Series[] = useMemo(() => [{
     key: "composite",
     name: marketNames[current],
-    color: MARKET_COLORS[current] ?? "#0E1A30",
+    color: bandFor(compositeCurrentScore).color,
     data: history.map((h) => {
       const pillars = computePillarScores(h.indicators);
       const { composite } = computeComposite(pillars);
       return { year: h.year, value: composite };
     }),
-  }], [current, history, marketNames]);
+  }], [current, history, marketNames, compositeCurrentScore]);
 
   const pillarMiniSeries: Record<PillarKey, Series[]> = useMemo(() => {
     const out = {} as Record<PillarKey, Series[]>;
@@ -57,7 +62,7 @@ export default function TrendsPageInner() {
       out[key] = [{
         key,
         name: PILLAR_NAMES[key],
-        color: PILLAR_COLORS[key],
+        color: bandFor(pillarCurrentScores[key]).color,
         data: history.map((h) => {
           const pillars = computePillarScores(h.indicators);
           return { year: h.year, value: pillars[key] };
@@ -65,7 +70,7 @@ export default function TrendsPageInner() {
       }];
     });
     return out;
-  }, [history]);
+  }, [history, pillarCurrentScores]);
 
   const rawDetailSeries: Series[] | null = useMemo(() => {
     if (!focusPillar) return null;
@@ -73,10 +78,10 @@ export default function TrendsPageInner() {
     return [{
       key: field.key,
       name: `${field.label} (${marketNames[current]})`,
-      color: PILLAR_COLORS[focusPillar],
+      color: bandFor(pillarCurrentScores[focusPillar]).color,
       data: history.map((h) => ({ year: h.year, value: h.indicators[field.key] as number | null })),
     }];
-  }, [focusPillar, history, current, marketNames]);
+  }, [focusPillar, history, current, marketNames, pillarCurrentScores]);
 
   return (
     <>
@@ -110,7 +115,7 @@ export default function TrendsPageInner() {
             ))}
           </div>
 
-          <div style={{ background: "#fff", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", marginBottom: 8 }}>
+          <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", marginBottom: 8, backdropFilter: "blur(14px)" }}>
             <div style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: "var(--gold-deep)", letterSpacing: 1, marginBottom: 6 }}>
               COMPOSITE MMAI SCORE
             </div>
@@ -161,7 +166,7 @@ export default function TrendsPageInner() {
       {focusPillar && rawDetailSeries && (
         <div className="section" style={{ paddingTop: 0 }}>
           <div className="wrap">
-            <div style={{ background: "var(--ink)", borderRadius: 18, padding: "26px 30px", color: "#fff" }}>
+            <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "26px 30px", color: "#fff", backdropFilter: "blur(14px)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                 <div style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: "var(--gold)", letterSpacing: 1 }}>
                   RAW INDICATOR DETAIL
@@ -177,7 +182,7 @@ export default function TrendsPageInner() {
                 {RAW_FIELD[focusPillar].label} — {marketNames[current]}
               </h3>
               {history.length > 1 ? (
-                <div style={{ background: "#fff", borderRadius: 12, padding: "12px 16px" }}>
+                <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: "12px 16px" }}>
                   <TrendChart series={rawDetailSeries} height={260} showLegend={false} yLabel={RAW_FIELD[focusPillar].unit} />
                 </div>
               ) : (

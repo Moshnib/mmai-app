@@ -120,25 +120,59 @@ export function computeComposite(pillars: PillarScores): CompositeResult {
 }
 
 export interface Band {
-  min: number;
   label: string;
   color: string;
   bg: string;
 }
 
-export const BANDS: Band[] = [
-  { min: 80, label: "Strongly Supportive", color: "#2F6F62", bg: "#E4EFEC" },
-  { min: 65, label: "Supportive", color: "#4C8A6E", bg: "#E9F1E7" },
-  { min: 45, label: "Balanced", color: "#B8862B", bg: "#F6EEDC" },
-  { min: 30, label: "Challenging", color: "#C07A3E", bg: "#F5E9DC" },
-  { min: 0, label: "Highly Challenging", color: "#8C3B2E", bg: "#F3E4E1" },
+// "Ember to Ice" continuous gradient: Red -> Orange -> Gold -> Cyan -> Violet.
+// Interpolated smoothly across the full 0-100 range, weather-map style —
+// two scores 0.1 apart always produce two colors 0.1 apart, unlike a
+// discrete band system where a score can jump color entirely at a threshold.
+const COLOR_STOPS = ["#E14B4B", "#F0975B", "#E8B84B", "#22D3EE", "#8B5CF6"];
+const NA_COLOR = "#6B7086";
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  return "#" + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("");
+}
+
+/** Continuous color for any 0-100 score. Used everywhere a score needs a
+ *  color: the gauge, pillar rings, heatmap cells, the world map, sparklines,
+ *  and the Trends page charts — one function, one gradient, no fixed
+ *  per-pillar or per-market identity colors anywhere in the app. */
+export function colorForScore(score: number | null): string {
+  if (score === null) return NA_COLOR;
+  const t = Math.max(0, Math.min(100, score)) / 100;
+  const n = COLOR_STOPS.length - 1;
+  const pos = t * n;
+  const i = Math.min(n - 1, Math.floor(pos));
+  const localT = pos - i;
+  const [r1, g1, b1] = hexToRgb(COLOR_STOPS[i]);
+  const [r2, g2, b2] = hexToRgb(COLOR_STOPS[i + 1]);
+  return rgbToHex(r1 + (r2 - r1) * localT, g1 + (g2 - g1) * localT, b1 + (b2 - b1) * localT);
+}
+
+const BAND_LABELS = [
+  { min: 80, label: "Strongly Supportive" },
+  { min: 65, label: "Supportive" },
+  { min: 45, label: "Balanced" },
+  { min: 30, label: "Challenging" },
+  { min: 0, label: "Highly Challenging" },
 ];
 
+/** The text label is still categorical (five discrete bands, matching the
+ *  methodology paper) — only the color is now continuous. */
 export function bandFor(score: number | null): Band {
+  const color = colorForScore(score);
   if (score === null) {
-    return { min: -1, label: "Not Publishable", color: "#8A93A6", bg: "#E7E9EF" };
+    return { label: "Not Publishable", color, bg: `${color}22` };
   }
-  return BANDS.find((b) => score >= b.min) ?? BANDS[BANDS.length - 1];
+  const label = (BAND_LABELS.find((b) => score >= b.min) ?? BAND_LABELS[BAND_LABELS.length - 1]).label;
+  return { label, color, bg: `${color}22` };
 }
 
 /** Identifies the strongest and weakest populated pillars — used for the
