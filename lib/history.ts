@@ -70,6 +70,20 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2024", indicators: { inflation: 2.74, gdpGrowth: 0.2, unemployment: 2.5, policyRate: 0.25, brentYoY: -2 } },
     { year: "2026", indicators: { inflation: 2.8, gdpGrowth: 0.7, unemployment: 2.3, policyRate: 1.0, brentYoY: -5 } },
   ],
+  // Australia (AU): policy rate is REAL data, not estimated -- taken directly
+  // from the RBA's own published F1.1 table (year-end values), which was
+  // fetched and confirmed live during this build. Inflation/unemployment from
+  // macrotrends (cross-checked against ABS/RBA commentary), GDP growth from
+  // FocusEconomics and IMF/ABS figures for the COVID and rebound years.
+  AU: [
+    { year: "2019", indicators: { inflation: 1.6, gdpGrowth: 1.9, unemployment: 5.2, policyRate: 0.75, brentYoY: -10 } },
+    { year: "2020", indicators: { inflation: 0.9, gdpGrowth: -2.4, unemployment: 6.5, policyRate: 0.10, brentYoY: -34 } },
+    { year: "2021", indicators: { inflation: 2.9, gdpGrowth: 4.6, unemployment: 5.1, policyRate: 0.10, brentYoY: 69 } },
+    { year: "2022", indicators: { inflation: 6.59, gdpGrowth: 3.8, unemployment: 3.73, policyRate: 3.05, brentYoY: 42 } },
+    { year: "2023", indicators: { inflation: 5.60, gdpGrowth: 2.06, unemployment: 3.67, policyRate: 4.35, brentYoY: -19 } },
+    { year: "2024", indicators: { inflation: 3.17, gdpGrowth: 1.04, unemployment: 4.07, policyRate: 4.35, brentYoY: -2 } },
+    { year: "2026", indicators: { inflation: 3.7, gdpGrowth: 1.8, unemployment: 4.5, policyRate: 4.35, brentYoY: -5 } },
+  ],
   // UAE (AE) removed 2026-08-19 — see lib/markets.ts for the reason.
   // Its historical series is preserved in git history if ever needed again.
 };

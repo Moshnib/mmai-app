@@ -13,6 +13,7 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   CA: ["124"],
   UK: ["826"],
   JP: ["392"],
+  AU: ["036"],
   EA: ["250", "276", "380", "724", "528", "056", "040", "620", "372", "246", "300"],
 };
 
@@ -24,6 +25,7 @@ const MARKET_LABEL_LONLAT: Record<string, [number, number]> = {
   CA: [-100, 58],
   UK: [-3.5, 55.5],
   JP: [138, 37],
+  AU: [134, -25],
   EA: [14, 47],
 };
 

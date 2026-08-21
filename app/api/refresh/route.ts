@@ -4,7 +4,9 @@ import { computePillarScores, computeComposite, bandFor, type RawIndicators } fr
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate, fetchJapanInflation, fetchJapanUnemployment } from "@/lib/fetchers/fred";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
-import { fetchGdpGrowth } from "@/lib/fetchers/worldbank";
+import { fetchGdpGrowth, fetchUnemployment } from "@/lib/fetchers/worldbank";
+import { fetchAustraliaInflation } from "@/lib/fetchers/abs";
+import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
@@ -70,6 +72,26 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
     };
   }
 
+  if (market === "AU") {
+    // CPI via ABS Data API (CC BY 4.0, confirmed live via direct browser
+    // test 2026-08-21). Unemployment/GDP via World Bank. Policy rate via
+    // RBA's own F1.1 table -- cross-verified: the last published row
+    // matched an independent news report of the same rate on the same date.
+    const [infl, unemp, gdp, rate] = await Promise.all([
+      fetchAustraliaInflation(),
+      fetchUnemployment("AUS"),
+      fetchGdpGrowth("AUS"),
+      fetchAustraliaPolicyRate(),
+    ]);
+    return {
+      inflation: infl.inflation,
+      gdpGrowth: gdp.gdpGrowth,
+      unemployment: unemp.unemployment,
+      policyRate: rate.policyRate,
+      brentYoY: BRENT_YOY_PLACEHOLDER,
+    };
+  }
+
   // Placeholder values for markets not yet wired — matches the last
   // manually-verified figures used throughout the project's other
   // deliverables, so nothing regresses while fetchers are added one by one.
@@ -81,7 +103,7 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
   return fallback[market] ?? {};
 }
 
-const MARKETS = ["US", "EA", "CA", "UK", "JP"];
+const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
 
 export async function GET(request: Request) {
   // Protect this endpoint so only Vercel Cron (or you, manually, with the
@@ -122,7 +144,7 @@ export async function GET(request: Request) {
         policy_rate: raw.policyRate,
         brent_yoy: raw.brentYoY,
         observation_date: observationDate,
-        source_note: market === "US" ? "BLS + FRED (live)" : market === "JP" ? "FRED (OECD) + World Bank + BOJ (live)" : "manual fallback — fetcher not yet wired",
+        source_note: market === "US" ? "BLS + FRED (live)" : market === "JP" ? "FRED (OECD) + World Bank + BOJ (live)" : market === "AU" ? "ABS + World Bank + RBA (live)" : "manual fallback — fetcher not yet wired",
         status: "current",
       });
 

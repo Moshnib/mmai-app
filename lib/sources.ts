@@ -50,6 +50,12 @@ export const SOURCES: SourceEntry[] = [
   { market: "Japan", indicator: "Unemployment (OECD series via FRED)", pillar: "LM", institution: "OECD (distributed via FRED)", license: "CC BY 4.0 — commercial use explicit, attribution required", status: "live", lastVerified: "2026-08-21" },
   { market: "Japan", indicator: "Policy Rate (Uncollateralized Overnight Call Rate)", pillar: "MC", institution: "Bank of Japan", license: "Publicly available statistical data — BOJ is a special corporation, not a government agency, but data is free for public use", status: "live", lastVerified: "2026-08-21" },
 
+  // ---------- Australia ----------
+  { market: "Australia", indicator: "Inflation (CPI)", pillar: "PS", institution: "Australian Bureau of Statistics", license: "CC BY 4.0 — confirmed directly on ABS's own copyright page", status: "live", lastVerified: "2026-08-21" },
+  { market: "Australia", indicator: "GDP Growth", pillar: "GM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21" },
+  { market: "Australia", indicator: "Unemployment", pillar: "LM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21" },
+  { market: "Australia", indicator: "Cash Rate Target", pillar: "MC", institution: "Reserve Bank of Australia", license: "CC BY 4.0 — confirmed directly on RBA's own copyright page", status: "live", lastVerified: "2026-08-21" },
+
   // ---------- Shared across all markets ----------
   { market: "All markets", indicator: "Brent Crude (External & Commodities pillar)", pillar: "EC", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — same pattern as bls.ts/fred.ts" },
 ];
