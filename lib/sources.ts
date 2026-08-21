@@ -27,22 +27,22 @@ export const SOURCES: SourceEntry[] = [
   { market: "United States", indicator: "GDP Growth", pillar: "GM", institution: "U.S. Bureau of Economic Analysis", license: "Public domain — U.S. federal government work", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — Power BI Connection Guide, Step 3" },
 
   // ---------- Euro Area ----------
-  { market: "Euro Area", indicator: "Inflation (HICP)", pillar: "PS", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — Guide, Step 5" },
-  { market: "Euro Area", indicator: "GDP Growth", pillar: "GM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — Guide, Step 5" },
-  { market: "Euro Area", indicator: "Unemployment", pillar: "LM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "manual", lastVerified: "2026-08-14", note: "Endpoint returns empty for current query — needs a parameter fix before wiring" },
-  { market: "Euro Area", indicator: "Policy Rate (Deposit Facility)", pillar: "MC", institution: "European Central Bank", license: "Free access and reuse policy for published statistics", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — Guide, Step 6" },
+  { market: "Euro Area", indicator: "Inflation (HICP)", pillar: "PS", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21" },
+  { market: "Euro Area", indicator: "GDP Growth", pillar: "GM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21", note: "Annual figure, updates once a year" },
+  { market: "Euro Area", indicator: "Unemployment", pillar: "LM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21", note: "Fixed two issues: the dataset's Euro Area geo code changed from EA20 to EA21 in 2026 (a 21st country joined), and separately the aggregate can lag its own dimension listing by a month (fetcher now looks back 3 periods and uses the newest one that actually has a value)" },
+  { market: "Euro Area", indicator: "Policy Rate (Deposit Facility)", pillar: "MC", institution: "European Central Bank", license: "Free access and reuse policy for published statistics", status: "live", lastVerified: "2026-08-21" },
 
   // ---------- Canada ----------
-  { market: "Canada", indicator: "Inflation (CPI)", pillar: "PS", institution: "Statistics Canada", license: "Open Licence — explicit right to publish, distribute, sell", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — Guide, Step 7" },
-  { market: "Canada", indicator: "GDP Growth", pillar: "GM", institution: "Statistics Canada / World Bank", license: "Open Licence / CC BY 4.0", status: "manual", lastVerified: "2026-08-14" },
-  { market: "Canada", indicator: "Unemployment", pillar: "LM", institution: "Statistics Canada / World Bank", license: "Open Licence / CC BY 4.0", status: "manual", lastVerified: "2026-08-14" },
-  { market: "Canada", indicator: "Policy Rate (Overnight Target)", pillar: "MC", institution: "Bank of Canada", license: "No key required — standard terms of use", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — Guide, Step 8" },
+  { market: "Canada", indicator: "Inflation (CPI)", pillar: "PS", institution: "Statistics Canada", license: "Open Licence — explicit right to publish, distribute, sell", status: "live", lastVerified: "2026-08-21" },
+  { market: "Canada", indicator: "GDP Growth", pillar: "GM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "Annual figure, updates once a year" },
+  { market: "Canada", indicator: "Unemployment", pillar: "LM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "ILO modelled annual estimate, not Statistics Canada's own monthly rate — updates once a year" },
+  { market: "Canada", indicator: "Policy Rate (Overnight Target)", pillar: "MC", institution: "Bank of Canada", license: "No key required — standard terms of use", status: "live", lastVerified: "2026-08-21" },
 
   // ---------- United Kingdom ----------
-  { market: "United Kingdom", indicator: "Inflation (CPI)", pillar: "PS", institution: "UK Office for National Statistics", license: "Open Government Licence v3.0 — no permission required, commercial use explicit", status: "manual", lastVerified: "2026-08-18", note: "Fetcher not yet wired — Guide, Step 9" },
-  { market: "United Kingdom", indicator: "GDP Growth", pillar: "GM", institution: "UK Office for National Statistics", license: "Open Government Licence v3.0", status: "manual", lastVerified: "2026-08-18" },
-  { market: "United Kingdom", indicator: "Unemployment", pillar: "LM", institution: "UK Office for National Statistics", license: "Open Government Licence v3.0", status: "manual", lastVerified: "2026-08-18" },
-  { market: "United Kingdom", indicator: "Policy Rate (Bank Rate)", pillar: "MC", institution: "Bank of England", license: "Open Government Licence v3.0", status: "manual", lastVerified: "2026-08-18", note: "Fetcher not yet wired — Guide, Step 10" },
+  { market: "United Kingdom", indicator: "Inflation (CPI)", pillar: "PS", institution: "UK Office for National Statistics", license: "Open Government Licence v3.0 — no permission required, commercial use explicit", status: "live", lastVerified: "2026-08-21" },
+  { market: "United Kingdom", indicator: "GDP Growth", pillar: "GM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "Annual figure, updates once a year" },
+  { market: "United Kingdom", indicator: "Unemployment", pillar: "LM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "ILO modelled annual estimate, not ONS's own headline rate — updates once a year" },
+  { market: "United Kingdom", indicator: "Policy Rate (Bank Rate)", pillar: "MC", institution: "Bank of England", license: "Open Government Licence v3.0", status: "live", lastVerified: "2026-08-21" },
 
   // ---------- Japan ----------
   { market: "Japan", indicator: "Inflation (CPI, OECD series via FRED)", pillar: "PS", institution: "OECD (distributed via FRED)", license: "CC BY 4.0 — commercial use explicit, attribution required", status: "live", lastVerified: "2026-08-21" },

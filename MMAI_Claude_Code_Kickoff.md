@@ -33,11 +33,15 @@
 | 🇺🇸 US | **Yes** | BLS (live) | Fallback (TODO: BEA) | BLS (live) | FRED (live) |
 | 🇯🇵 Japan | **Yes** | FRED/OECD (live) | World Bank (live) | FRED/OECD (live) | Bank of Japan (live) |
 | 🇦🇺 Australia | **Yes** | ABS Data API (live) | World Bank (live) | World Bank (live) | RBA (live) |
-| 🇪🇺 Euro Area | No | Fallback | Fallback | Fallback | Fallback |
-| 🇨🇦 Canada | No | Fallback | Fallback | Fallback | Fallback |
-| 🇬🇧 UK | No | Fallback | Fallback | Fallback | Fallback |
+| 🇪🇺 Euro Area | **Yes** (2026-08-21) | Eurostat (live) | Eurostat (live) | Eurostat (live) | ECB (live) |
+| 🇨🇦 Canada | **Yes** (2026-08-21) | Statistics Canada (live) | World Bank (live) | World Bank (live) | Bank of Canada (live) |
+| 🇬🇧 UK | **Yes** (2026-08-21) | ONS (live) | World Bank (live) | World Bank (live) | Bank of England (live) |
 
-**"Fallback" means:** the exact same hardcoded number gets written every single time `/api/refresh` runs. These three markets have real historical data (2019–2024, hand-sourced and verified) but no live current-day fetcher yet. **This is the single highest-value next step** — see §9.
+All 6 markets are now live — see `lib/fetchers/eurostat.ts`, `ecb.ts`, `statcan.ts`, `boc.ts`, `ons.ts`, `boe.ts`. Two things worth knowing:
+- The old `api.ons.gov.uk` domain referenced when this project was first scoped is fully decommissioned (retired 25/11/2024) — UK CPI now goes through `www.ons.gov.uk/.../timeseries/{id}/{dataset}/data` instead.
+- Canada/UK GDP growth and unemployment reuse the same World Bank source already used for Japan/Australia (an ILO-modelled annual estimate, not each country's own monthly agency figure) — same tradeoff already accepted for JP/AU, just now applied consistently.
+
+Only Brent Crude (External & Commodities, shared across every market) is still a placeholder — see §9.
 
 **UAE was removed** (2026-08-19) — no verified public policy-rate source was ever found for it, and it permanently failed the 70% coverage threshold. Its historical data is preserved in git history if ever needed again. Don't re-add it without solving the policy-rate-source problem first.
 
@@ -159,12 +163,11 @@ This went through real, hard-won iteration. The rules:
 
 ## 9. Highest-value next steps, roughly in priority order
 
-1. **Wire EA/CA/UK to live sources.** All the exact URLs were audited and documented (Eurostat HICP/GDP, ECB rate, Statistics Canada CPI, Bank of Canada rate/FX, ONS UK CPI/GDP/unemployment, Bank of England Bank Rate). None of these have been *built* as fetchers yet — they were only license-and-URL-verified. Follow the exact pattern of `abs.ts`/`rba.ts`: fetch, parse, verify live with a real test before wiring into `refresh/route.ts`.
+1. ~~Wire EA/CA/UK to live sources.~~ **Done 2026-08-21.** All 6 markets are now live — see §3 and `lib/fetchers/eurostat.ts`, `ecb.ts`, `statcan.ts`, `boc.ts`, `ons.ts`, `boe.ts`. The old `api.ons.gov.uk` domain referenced when this was originally scoped is decommissioned; UK CPI now uses `www.ons.gov.uk/.../timeseries/`. The Eurostat unemployment fetch needed two separate fixes: a geo-code change (`EA20` → `EA21`, Eurostat adds a new fixed-composition code for each euro accession — worth knowing before the next country joins), and a real publication-lag bug found during live testing (the EA21 aggregate can be a month behind its own dimension listing, so the fetcher now looks back 3 periods and uses the newest one with an actual value, not just the newest listed period).
 2. **Get the Resend key live** and do one real end-to-end test send.
-3. **Verify the daily cron actually fires unattended** — it's configured (`vercel.json`, 06:00 UTC) but has only ever been triggered manually via curl. Check Supabase tomorrow for a row that appeared without you triggering it.
+3. **Verify the daily cron actually fires unattended** — it's configured (`vercel.json`, 06:00 UTC) but has only ever been triggered manually via curl. Check Supabase tomorrow for a row that appeared without you triggering it. Now more important than before, since a real live-source outage for EA/CA/UK could otherwise go unnoticed.
 4. **US GDP growth** is still a hardcoded fallback (1.5) even though US is otherwise fully live — needs BEA API wired in (`bea.gov`, free key).
-5. **Fix Euro Area unemployment source** — flagged during the original audit that Eurostat's `une_rt_m` with `geo=EA20` returns empty; needs parameter investigation before it can be wired.
-6. Possible future markets: e-Stat Dashboard's exact indicator codes for CPI/unemployment were never successfully found (tried hard, hit a wall — Bank of Japan's own API was used instead, which worked). If ever revisiting non-FRED Japan sources, that's still an open problem, not a solved one.
+5. Possible future markets: e-Stat Dashboard's exact indicator codes for CPI/unemployment were never successfully found (tried hard, hit a wall — Bank of Japan's own API was used instead, which worked). If ever revisiting non-FRED Japan sources, that's still an open problem, not a solved one.
 
 ---
 

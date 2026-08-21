@@ -7,6 +7,12 @@ import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
 import { fetchGdpGrowth, fetchUnemployment } from "@/lib/fetchers/worldbank";
 import { fetchAustraliaInflation } from "@/lib/fetchers/abs";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
+import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowth, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
+import { fetchEuroAreaPolicyRate } from "@/lib/fetchers/ecb";
+import { fetchCanadaInflation } from "@/lib/fetchers/statcan";
+import { fetchCanadaPolicyRate } from "@/lib/fetchers/boc";
+import { fetchUkInflation } from "@/lib/fetchers/ons";
+import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
@@ -19,55 +25,63 @@ const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS
 const BRENT_YOY_PLACEHOLDER = -5;
 
 /**
- * TODO — extend this map as each remaining source from the Power BI
- * Connection Guide gets its own fetcher, following the exact pattern
- * of lib/fetchers/bls.ts and lib/fetchers/fred.ts:
+ * All 6 markets are now wired to live sources for inflation, GDP growth,
+ * unemployment, and policy rate. Only Brent Crude (External & Commodities,
+ * shared across every market) is still a placeholder — see
+ * BRENT_YOY_PLACEHOLDER above; lib/fetchers/eia.ts is the still-TODO fetcher.
  *
- *   EA: Eurostat (HICP, GDP) + ECB (policy rate)      — Guide Steps 5-6
- *   CA: Statistics Canada (CPI) + Bank of Canada       — Guide Steps 7-8
- *   UK: ONS (CPI, GDP, unemployment) + Bank of England — Guide Steps 9-10
- *
- * Until each is added, those markets fall back to the last verified
- * manual figures — never silently zero, per the coverage rule.
+ * Each per-indicator fetch is wrapped in settle() so one source having a
+ * bad day (rate-limited, temporarily down, schema change) doesn't blank
+ * out the whole market — computeComposite() already reweights around
+ * missing pillars and only withholds a score below 70% coverage, so a
+ * single null indicator here still produces a valid, published score.
  *
  * UAE was removed 2026-08-19 (no verified policy-rate source, never
  * cleared the 70% coverage threshold). Market Momentum was removed the
  * same day (no licensed equity source) — its weight was redistributed
  * into the remaining five pillars in lib/scoring.ts.
  */
+async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> {
+  try {
+    return await promise;
+  } catch (err) {
+    console.error(`Fetch failed [${label}]:`, (err as Error).message);
+    return null;
+  }
+}
+
 async function fetchRawIndicators(market: string): Promise<RawIndicators> {
   if (market === "US") {
     const [infl, unemp, rate] = await Promise.all([
-      fetchUsInflation(),
-      fetchUsUnemployment(),
-      fetchUsPolicyRate(),
+      settle("US inflation", fetchUsInflation()),
+      settle("US unemployment", fetchUsUnemployment()),
+      settle("US policy rate", fetchUsPolicyRate()),
     ]);
     return {
-      inflation: infl.inflation,
-      gdpGrowth: 1.5, // TODO: wire lib/fetchers/bea.ts (Guide Step 3)
-      unemployment: unemp.unemployment,
-      policyRate: rate.policyRate,
+      inflation: infl?.inflation ?? null,
+      gdpGrowth: 1.5, // TODO: wire lib/fetchers/bea.ts
+      unemployment: unemp?.unemployment ?? null,
+      policyRate: rate?.policyRate ?? null,
       brentYoY: BRENT_YOY_PLACEHOLDER,
     };
   }
 
   if (market === "JP") {
     // CPI/unemployment via FRED's redistribution of OECD data (CC BY 4.0,
-    // verified 2026-08-21). GDP via World Bank (same source already used
-    // for the historical UAE dataset). Policy rate via BOJ's official API
-    // (DB=FM01, series STRDCLUCON — confirmed live in-browser 2026-08-21,
-    // after this server's own fetch was blocked; see README for that note).
+    // verified 2026-08-21). GDP via World Bank. Policy rate via BOJ's
+    // official API (DB=FM01, series STRDCLUCON — confirmed live
+    // in-browser 2026-08-21, after this server's own fetch was blocked).
     const [infl, unemp, gdp, rate] = await Promise.all([
-      fetchJapanInflation(),
-      fetchJapanUnemployment(),
-      fetchGdpGrowth("JPN"),
-      fetchJapanPolicyRate(),
+      settle("JP inflation", fetchJapanInflation()),
+      settle("JP unemployment", fetchJapanUnemployment()),
+      settle("JP GDP growth", fetchGdpGrowth("JPN")),
+      settle("JP policy rate", fetchJapanPolicyRate()),
     ]);
     return {
-      inflation: infl.inflation,
-      gdpGrowth: gdp.gdpGrowth,
-      unemployment: unemp.unemployment,
-      policyRate: rate.policyRate,
+      inflation: infl?.inflation ?? null,
+      gdpGrowth: gdp?.gdpGrowth ?? null,
+      unemployment: unemp?.unemployment ?? null,
+      policyRate: rate?.policyRate ?? null,
       brentYoY: BRENT_YOY_PLACEHOLDER,
     };
   }
@@ -78,32 +92,95 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
     // RBA's own F1.1 table -- cross-verified: the last published row
     // matched an independent news report of the same rate on the same date.
     const [infl, unemp, gdp, rate] = await Promise.all([
-      fetchAustraliaInflation(),
-      fetchUnemployment("AUS"),
-      fetchGdpGrowth("AUS"),
-      fetchAustraliaPolicyRate(),
+      settle("AU inflation", fetchAustraliaInflation()),
+      settle("AU unemployment", fetchUnemployment("AUS")),
+      settle("AU GDP growth", fetchGdpGrowth("AUS")),
+      settle("AU policy rate", fetchAustraliaPolicyRate()),
     ]);
     return {
-      inflation: infl.inflation,
-      gdpGrowth: gdp.gdpGrowth,
-      unemployment: unemp.unemployment,
-      policyRate: rate.policyRate,
+      inflation: infl?.inflation ?? null,
+      gdpGrowth: gdp?.gdpGrowth ?? null,
+      unemployment: unemp?.unemployment ?? null,
+      policyRate: rate?.policyRate ?? null,
       brentYoY: BRENT_YOY_PLACEHOLDER,
     };
   }
 
-  // Placeholder values for markets not yet wired — matches the last
-  // manually-verified figures used throughout the project's other
-  // deliverables, so nothing regresses while fetchers are added one by one.
-  const fallback: Record<string, RawIndicators> = {
-    EA: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: BRENT_YOY_PLACEHOLDER },
-    CA: { inflation: 2.8, gdpGrowth: 3.4, unemployment: 6.4, policyRate: 2.25, brentYoY: BRENT_YOY_PLACEHOLDER },
-    UK: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: BRENT_YOY_PLACEHOLDER },
-  };
-  return fallback[market] ?? {};
+  if (market === "EA") {
+    // Inflation/GDP/unemployment via Eurostat, policy rate (deposit
+    // facility) via the ECB's own Data Portal — both confirmed live
+    // 2026-08-21. See lib/fetchers/eurostat.ts for the EA20→EA21 geo
+    // code note (that's the fix for the unemployment fetch that was
+    // previously flagged as broken).
+    const [infl, gdp, unemp, rate] = await Promise.all([
+      settle("EA inflation", fetchEuroAreaInflation()),
+      settle("EA GDP growth", fetchEuroAreaGdpGrowth()),
+      settle("EA unemployment", fetchEuroAreaUnemployment()),
+      settle("EA policy rate", fetchEuroAreaPolicyRate()),
+    ]);
+    return {
+      inflation: infl?.inflation ?? null,
+      gdpGrowth: gdp?.gdpGrowth ?? null,
+      unemployment: unemp?.unemployment ?? null,
+      policyRate: rate?.policyRate ?? null,
+      brentYoY: BRENT_YOY_PLACEHOLDER,
+    };
+  }
+
+  if (market === "CA") {
+    // CPI via Statistics Canada's WDS API (YoY computed from the raw
+    // index). GDP/unemployment via World Bank, same pattern as JP/AU.
+    // Policy rate via the Bank of Canada's own Valet API. All confirmed
+    // live 2026-08-21.
+    const [infl, unemp, gdp, rate] = await Promise.all([
+      settle("CA inflation", fetchCanadaInflation()),
+      settle("CA unemployment", fetchUnemployment("CAN")),
+      settle("CA GDP growth", fetchGdpGrowth("CAN")),
+      settle("CA policy rate", fetchCanadaPolicyRate()),
+    ]);
+    return {
+      inflation: infl?.inflation ?? null,
+      gdpGrowth: gdp?.gdpGrowth ?? null,
+      unemployment: unemp?.unemployment ?? null,
+      policyRate: rate?.policyRate ?? null,
+      brentYoY: BRENT_YOY_PLACEHOLDER,
+    };
+  }
+
+  if (market === "UK") {
+    // CPI via ONS (the old api.ons.gov.uk domain is decommissioned; this
+    // uses the still-live www.ons.gov.uk timeseries data endpoint — see
+    // lib/fetchers/ons.ts). GDP/unemployment via World Bank, same
+    // pattern as JP/AU. Policy rate via the Bank of England's IADB.
+    // All confirmed live 2026-08-21.
+    const [infl, unemp, gdp, rate] = await Promise.all([
+      settle("UK inflation", fetchUkInflation()),
+      settle("UK unemployment", fetchUnemployment("GBR")),
+      settle("UK GDP growth", fetchGdpGrowth("GBR")),
+      settle("UK policy rate", fetchUkPolicyRate()),
+    ]);
+    return {
+      inflation: infl?.inflation ?? null,
+      gdpGrowth: gdp?.gdpGrowth ?? null,
+      unemployment: unemp?.unemployment ?? null,
+      policyRate: rate?.policyRate ?? null,
+      brentYoY: BRENT_YOY_PLACEHOLDER,
+    };
+  }
+
+  throw new Error(`fetchRawIndicators: unknown market "${market}"`);
 }
 
 const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
+
+const SOURCE_NOTES: Record<string, string> = {
+  US: "BLS + FRED (live)",
+  JP: "FRED (OECD) + World Bank + BOJ (live)",
+  AU: "ABS + World Bank + RBA (live)",
+  EA: "Eurostat + ECB (live)",
+  CA: "Statistics Canada + World Bank + Bank of Canada (live)",
+  UK: "ONS + World Bank + Bank of England (live)",
+};
 
 export async function GET(request: Request) {
   // Protect this endpoint so only Vercel Cron (or you, manually, with the
@@ -136,6 +213,14 @@ export async function GET(request: Request) {
         .limit(1);
       const previousBand = previousRows?.[0]?.band as string | undefined;
 
+      // SOURCE_NOTES describes what a fully-successful run looks like --
+      // if any live indicator actually came back null this run (a source
+      // was temporarily down/rate-limited/changed shape), say so instead
+      // of claiming "(live)" for data that didn't actually arrive.
+      const partial = [raw.inflation, raw.gdpGrowth, raw.unemployment, raw.policyRate].some((v) => v == null);
+      const baseNote = SOURCE_NOTES[market] ?? "manual fallback — fetcher not yet wired";
+      const sourceNote = partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote;
+
       await supabase.from("raw_indicators").insert({
         market,
         inflation: raw.inflation,
@@ -144,7 +229,7 @@ export async function GET(request: Request) {
         policy_rate: raw.policyRate,
         brent_yoy: raw.brentYoY,
         observation_date: observationDate,
-        source_note: market === "US" ? "BLS + FRED (live)" : market === "JP" ? "FRED (OECD) + World Bank + BOJ (live)" : market === "AU" ? "ABS + World Bank + RBA (live)" : "manual fallback — fetcher not yet wired",
+        source_note: sourceNote,
         status: "current",
       });
 
