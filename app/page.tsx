@@ -9,6 +9,7 @@ import Heatmap from "@/components/Heatmap";
 import Sparkline from "@/components/Sparkline";
 import WorldMap from "@/components/WorldMap";
 import SubscribeForm from "@/components/SubscribeForm";
+import Flag from "@/components/Flag";
 import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
@@ -107,8 +108,9 @@ export default function OverviewPage() {
                 key={m.code}
                 className={`tab${m.code === current ? " active" : ""}`}
                 onClick={() => setCurrent(m.code)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
-                {m.name}
+                <Flag code={m.code} size={18} /> {m.name}
               </button>
             ))}
           </div>

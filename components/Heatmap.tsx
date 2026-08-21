@@ -2,6 +2,7 @@
 
 import { PILLAR_NAMES, bandFor, type PillarKey } from "@/lib/scoring";
 import { scoreMarket, type MarketData } from "@/lib/markets";
+import Flag from "@/components/Flag";
 
 const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
 
@@ -17,7 +18,9 @@ export default function Heatmap({ markets }: { markets: MarketData[] }) {
         const { pillars } = scoreMarket(m);
         return (
           <div key={m.code} style={{ display: "contents" }}>
-            <div className="hm-rowhead">{m.name}</div>
+            <div className="hm-rowhead" style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <Flag code={m.code} size={16} /> {m.name}
+            </div>
             {ORDER.map((key) => {
               const val = pillars[key];
               const excluded = val == null;

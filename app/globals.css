@@ -21,7 +21,17 @@ body {
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
   position: relative;
+  scrollbar-width: thin;             /* Firefox */
+  scrollbar-color: rgba(139,92,246,0.5) transparent;
 }
+
+/* Thin, dark-themed scrollbars everywhere (Chrome/Edge/Safari) -- the
+   browser default is light and thick, which looks jarring against a dark
+   page. Applies globally, including the Heatmap's horizontal scroll. */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.4); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.65); }
 
 /* Ambient glow, fixed behind everything */
 body::before {
@@ -127,7 +137,7 @@ h1.headline {
 .compare-bar { height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 10px; overflow: hidden; }
 .compare-bar-fill { height: 100%; border-radius: 3px; }
 
-.heatmap-grid { display: grid; grid-template-columns: 140px repeat(5, 1fr); gap: 6px; margin-top: 20px; overflow-x: auto; }
+.heatmap-grid { display: grid; grid-template-columns: 160px repeat(5, 1fr); gap: 6px; margin-top: 20px; overflow-x: auto; }
 .hm-colhead { font-size: 11px; font-weight: 700; color: var(--slate); text-align: center; padding: 8px 4px; }
 .hm-rowhead { font-size: 12.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; padding: 0 8px; }
 .hm-cell { border-radius: 10px; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform .15s ease, filter .15s ease; }

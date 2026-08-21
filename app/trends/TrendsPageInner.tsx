@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
+import Flag from "@/components/Flag";
 import { HISTORY } from "@/lib/history";
 import { PILLAR_NAMES, PILLAR_WEIGHTS, RAW_FIELD, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -112,8 +113,9 @@ export default function TrendsPageInner() {
                 key={m.code}
                 className={`tab${m.code === current ? " active" : ""}`}
                 onClick={() => setCurrent(m.code)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
-                {m.name}
+                <Flag code={m.code} size={18} /> {m.name}
               </button>
             ))}
           </div>

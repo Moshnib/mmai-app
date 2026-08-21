@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import Flag from "@/components/Flag";
 
 export default function SubscribeForm() {
   const [email, setEmail] = useState("");
@@ -63,12 +64,14 @@ export default function SubscribeForm() {
             key={m.code}
             onClick={() => toggleMarket(m.code)}
             style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
               padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer",
               border: selected.includes(m.code) ? "1px solid var(--gold)" : "1px solid var(--hair)",
               background: selected.includes(m.code) ? "rgba(139,92,246,0.18)" : "transparent",
               color: selected.includes(m.code) ? "#fff" : "var(--slate)",
             }}
           >
+            <Flag code={m.code} size={14} />
             {m.name}
           </button>
         ))}

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
+import Flag from "@/components/Flag";
 import { HISTORY } from "@/lib/history";
 import { PILLAR_NAMES, RAW_FIELD, computePillarScores, computeComposite, type PillarKey, type PillarScores, type RawIndicators } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -147,6 +148,7 @@ export default function ComparePageInner() {
                     }}
                   >
                     <i style={{ width: 8, height: 8, borderRadius: "50%", background: active ? color : "var(--hair)" }} />
+                    <Flag code={code} size={16} />
                     {marketNames[code]}
                   </button>
                 );

@@ -3,6 +3,7 @@
 import worldPaths from "@/lib/mapdata/world-paths.json";
 import { bandFor } from "@/lib/scoring";
 import { scoreMarket, type MarketData } from "@/lib/markets";
+import Flag from "@/components/Flag";
 
 // ISO 3166-1 numeric country IDs (topojson world-atlas) grouped by market.
 // Euro Area is represented by its largest constituent economies by land
@@ -135,6 +136,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
               style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", color: m.code === current ? "#fff" : "#9296AB" }}
             >
               <i style={{ width: 8, height: 8, borderRadius: "50%", background: band.color, boxShadow: `0 0 6px ${band.color}` }} />
+              <Flag code={m.code} size={16} />
               {m.name}
             </span>
           );

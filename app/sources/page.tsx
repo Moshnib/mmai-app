@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { SOURCES } from "@/lib/sources";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import Flag from "@/components/Flag";
 
 const marketOrder = ["All markets", ...FALLBACK_MARKETS.map((m) => m.name)];
+const codeForName = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.name, m.code]));
 
 export default function SourcesPage() {
   const grouped = marketOrder
@@ -36,7 +38,8 @@ export default function SourcesPage() {
         <div className="wrap">
           {grouped.map((group) => (
             <div key={group.name} style={{ marginBottom: 28 }}>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)" }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
+                {codeForName[group.name] && <Flag code={codeForName[group.name]} size={22} />}
                 {group.name}
               </h2>
               <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden", backdropFilter: "blur(14px)" }}>
