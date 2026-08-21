@@ -31,8 +31,10 @@ const FLAGS: Record<string, React.ReactNode> = {
       <rect width="28" height="20" fill="#003399" />
       {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
-        const cx = 14 + 6.2 * Math.cos(angle);
-        const cy = 10 + 6.2 * Math.sin(angle);
+        // Rounded to avoid SSR/client hydration mismatches from 1-ULP
+        // differences in Math.cos/Math.sin between server and browser.
+        const cx = Math.round((14 + 6.2 * Math.cos(angle)) * 1000) / 1000;
+        const cy = Math.round((10 + 6.2 * Math.sin(angle)) * 1000) / 1000;
         return <circle key={i} cx={cx} cy={cy} r="0.9" fill="#FFCC00" />;
       })}
     </>

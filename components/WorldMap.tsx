@@ -47,13 +47,14 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
   return (
     <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "22px 26px", backdropFilter: "blur(14px)" }}>
       <svg viewBox={`0 0 ${worldPaths.width} ${worldPaths.height}`} width="100%" style={{ display: "block" }}>
-        {worldPaths.countries.map((c) => {
+        {worldPaths.countries.map((c, i) => {
+          const key = c.id ?? `country-${i}`;
           const marketCode = countryToMarket[String(c.id)];
           const market = marketCode ? marketByCode[marketCode] : undefined;
           const isSelected = !!marketCode && marketCode === current;
 
           if (!market) {
-            return <path key={c.id} d={c.d} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.4} />;
+            return <path key={key} d={c.d} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.4} />;
           }
 
           const { composite } = scoreMarket(market);
@@ -62,7 +63,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
 
           return (
             <path
-              key={c.id}
+              key={key}
               d={c.d}
               fill={band.color}
               fillOpacity={isSelected ? 0.95 : 0.72}
