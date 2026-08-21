@@ -24,16 +24,30 @@ const MARKET_COLORS: Record<string, string> = {
 
 export default function ComparePageInner() {
   const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
-  const marketCodes = FALLBACK_MARKETS.map((m) => m.code);
+  const allMarketCodes = FALLBACK_MARKETS.map((m) => m.code);
 
-  // Union of every year that appears across all markets' history, sorted.
-  // Not assumed to be a continuous range -- the real dataset jumps from
-  // 2024 straight to 2026 (this year's live snapshot), no fabricated 2025.
+  const [selectedMarkets, setSelectedMarkets] = useState<string[]>(allMarketCodes);
+
+  function toggleMarket(code: string) {
+    setSelectedMarkets((prev) => {
+      if (prev.includes(code)) {
+        // Keep at least one market selected -- an empty chart isn't useful
+        // and there's no clear "nothing selected" state designed for these charts.
+        if (prev.length === 1) return prev;
+        return prev.filter((c) => c !== code);
+      }
+      return [...prev, code];
+    });
+  }
+
+  // Union of every year that appears across ALL markets' history (not just
+  // selected ones), so the year range doesn't shrink or jump around as you
+  // toggle markets on and off.
   const allYears = useMemo(() => {
     const set = new Set<string>();
-    marketCodes.forEach((code) => (HISTORY[code] ?? []).forEach((h) => set.add(h.year)));
+    allMarketCodes.forEach((code) => (HISTORY[code] ?? []).forEach((h) => set.add(h.year)));
     return Array.from(set).sort();
-  }, [marketCodes]);
+  }, [allMarketCodes]);
 
   const [fromYear, setFromYear] = useState(allYears[0]);
   const [toYear, setToYear] = useState(allYears[allYears.length - 1]);
@@ -46,7 +60,7 @@ export default function ComparePageInner() {
   }, [allYears, fromYear, toYear]);
 
   function buildSeries(valueFn: (pillars: PillarScores, raw: RawIndicators) => number | null): Series[] {
-    return marketCodes.map((code) => {
+    return selectedMarkets.map((code) => {
       const history = (HISTORY[code] ?? []).filter((h) => yearsInRange.includes(h.year));
       return {
         key: code,
@@ -62,17 +76,17 @@ export default function ComparePageInner() {
 
   const compositeSeries = useMemo(
     () => buildSeries((pillars) => computeComposite(pillars).composite),
-    [yearsInRange]
+    [yearsInRange, selectedMarkets]
   );
 
   const pillarScoreSeries = useMemo(
     () => buildSeries((pillars) => pillars[selectedPillar]),
-    [yearsInRange, selectedPillar]
+    [yearsInRange, selectedPillar, selectedMarkets]
   );
 
   const rawIndicatorSeries = useMemo(
     () => buildSeries((_pillars, raw) => raw[RAW_FIELD[selectedPillar].key] ?? null),
-    [yearsInRange, selectedPillar]
+    [yearsInRange, selectedPillar, selectedMarkets]
   );
 
   return (
@@ -109,6 +123,35 @@ export default function ComparePageInner() {
             <select value={toYear} onChange={(e) => setToYear(e.target.value)} style={selectStyle}>
               {allYears.map((y) => <option key={y} value={y} style={optionStyle}>{y}</option>)}
             </select>
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)", marginBottom: 10 }}>
+              MARKETS ({selectedMarkets.length} of {allMarketCodes.length} shown)
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {allMarketCodes.map((code) => {
+                const active = selectedMarkets.includes(code);
+                const color = MARKET_COLORS[code] ?? "#9296AB";
+                return (
+                  <button
+                    key={code}
+                    onClick={() => toggleMarket(code)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 7,
+                      padding: "7px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      border: active ? `1px solid ${color}` : "1px solid var(--hair)",
+                      background: active ? `${color}22` : "transparent",
+                      color: active ? "#fff" : "var(--slate)",
+                      boxShadow: active ? `0 0 12px -4px ${color}` : "none",
+                    }}
+                  >
+                    <i style={{ width: 8, height: 8, borderRadius: "50%", background: active ? color : "var(--hair)" }} />
+                    {marketNames[code]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", marginBottom: 8, backdropFilter: "blur(14px)" }}>
