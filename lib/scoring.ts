@@ -49,6 +49,17 @@ export const PILLAR_NAMES: Record<PillarKey, string> = {
   EC: "External & Commodities",
 };
 
+/** Which raw indicator each pillar is derived from, plus display info.
+ *  Shared by the Trends page (single-market detail view) and the Compare
+ *  page (cross-market view), so both stay in sync automatically. */
+export const RAW_FIELD: Record<PillarKey, { key: keyof RawIndicators; label: string; unit: string }> = {
+  PS: { key: "inflation", label: "Inflation (YoY)", unit: "%" },
+  GM: { key: "gdpGrowth", label: "GDP Growth", unit: "%" },
+  LM: { key: "unemployment", label: "Unemployment Rate", unit: "%" },
+  MC: { key: "policyRate", label: "Policy Interest Rate", unit: "%" },
+  EC: { key: "brentYoY", label: "Brent Crude, Year-over-Year Change", unit: "%" },
+};
+
 function clip(x: number, lo = 0, hi = 100): number {
   return Math.max(lo, Math.min(hi, x));
 }

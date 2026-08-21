@@ -5,19 +5,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import { HISTORY } from "@/lib/history";
-import { PILLAR_NAMES, PILLAR_WEIGHTS, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
+import { PILLAR_NAMES, PILLAR_WEIGHTS, RAW_FIELD, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourcesForMarket, sourceForPillar } from "@/lib/sources";
 
 const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
-
-const RAW_FIELD: Record<PillarKey, { key: "inflation" | "gdpGrowth" | "unemployment" | "policyRate" | "brentYoY"; label: string; unit: string }> = {
-  PS: { key: "inflation", label: "Inflation (YoY)", unit: "%" },
-  GM: { key: "gdpGrowth", label: "GDP Growth", unit: "%" },
-  LM: { key: "unemployment", label: "Unemployment Rate", unit: "%" },
-  MC: { key: "policyRate", label: "Policy Interest Rate", unit: "%" },
-  EC: { key: "brentYoY", label: "Brent Crude, Year-over-Year Change", unit: "%" },
-};
 
 export default function TrendsPageInner() {
   const params = useSearchParams();
@@ -101,6 +93,7 @@ export default function TrendsPageInner() {
           <div className="navlinks">
             <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
             <button className="navlink active">Data Over Time</button>
+            <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
             <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn</Link>
             <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
           </div>

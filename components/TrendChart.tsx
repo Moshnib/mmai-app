@@ -36,20 +36,21 @@ export default function TrendChart({
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={merged} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#DDE1E8" vertical={false} />
-        <XAxis dataKey="year" tick={{ fontSize: 11.5, fill: "#5B6472" }} axisLine={{ stroke: "#DDE1E8" }} tickLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+        <XAxis dataKey="year" tick={{ fontSize: 11.5, fill: "#9296AB" }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
         <YAxis
           domain={yDomain ?? ["auto", "auto"]}
-          tick={{ fontSize: 11, fill: "#5B6472" }}
+          tick={{ fontSize: 11, fill: "#9296AB" }}
           axisLine={false}
           tickLine={false}
-          label={yLabel ? { value: yLabel, angle: -90, position: "insideLeft", fontSize: 11, fill: "#5B6472" } : undefined}
+          label={yLabel ? { value: yLabel, angle: -90, position: "insideLeft", fontSize: 11, fill: "#9296AB" } : undefined}
         />
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: "1px solid #DDE1E8", fontSize: 12.5, fontFamily: "monospace" }}
-          labelStyle={{ fontWeight: 700, color: "#0E1A30" }}
+          contentStyle={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "#12121A", fontSize: 12.5, fontFamily: "monospace" }}
+          labelStyle={{ fontWeight: 700, color: "#F5F6FA" }}
+          itemStyle={{ color: "#C7C9D9" }}
         />
-        {showLegend && <Legend wrapperStyle={{ fontSize: 12 }} />}
+        {showLegend && <Legend wrapperStyle={{ fontSize: 12, color: "#C7C9D9" }} />}
         {series.map((s) => (
           <Line
             key={s.key}
