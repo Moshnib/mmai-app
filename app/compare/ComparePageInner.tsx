@@ -101,13 +101,13 @@ export default function ComparePageInner() {
           </div>
 
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", margin: "20px 0 28px" }}>
-            <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>YEAR RANGE:</span>
+            <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>From</span>
             <select value={fromYear} onChange={(e) => setFromYear(e.target.value)} style={selectStyle}>
-              {allYears.map((y) => <option key={y} value={y}>{y}</option>)}
+              {allYears.map((y) => <option key={y} value={y} style={optionStyle}>{y}</option>)}
             </select>
-            <span style={{ color: "var(--slate)" }}>→</span>
+            <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>to</span>
             <select value={toYear} onChange={(e) => setToYear(e.target.value)} style={selectStyle}>
-              {allYears.map((y) => <option key={y} value={y}>{y}</option>)}
+              {allYears.map((y) => <option key={y} value={y} style={optionStyle}>{y}</option>)}
             </select>
           </div>
 
@@ -115,7 +115,7 @@ export default function ComparePageInner() {
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700, color: "var(--gold-deep)", letterSpacing: 1, marginBottom: 10 }}>
               COMPOSITE MMAI SCORE
             </div>
-            <TrendChart series={compositeSeries} height={320} yDomain={[0, 100]} />
+            <TrendChart series={compositeSeries} height={340} yDomain={[0, 100]} showDots={false} />
           </div>
         </div>
       </div>
@@ -148,14 +148,14 @@ export default function ComparePageInner() {
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700, color: "var(--gold-deep)", letterSpacing: 1, marginBottom: 10 }}>
               {PILLAR_NAMES[selectedPillar].toUpperCase()} — PILLAR SCORE (0–100)
             </div>
-            <TrendChart series={pillarScoreSeries} height={300} yDomain={[0, 100]} />
+            <TrendChart series={pillarScoreSeries} height={320} yDomain={[0, 100]} showDots={false} />
           </div>
 
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", backdropFilter: "blur(14px)" }}>
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700, color: "var(--gold-deep)", letterSpacing: 1, marginBottom: 10 }}>
               {RAW_FIELD[selectedPillar].label.toUpperCase()} — RAW RATE
             </div>
-            <TrendChart series={rawIndicatorSeries} height={300} yLabel={RAW_FIELD[selectedPillar].unit} />
+            <TrendChart series={rawIndicatorSeries} height={320} yLabel={RAW_FIELD[selectedPillar].unit} showDots={false} />
           </div>
         </div>
       </div>
@@ -170,6 +170,20 @@ export default function ComparePageInner() {
 }
 
 const selectStyle: React.CSSProperties = {
-  padding: "6px 12px", borderRadius: 8, border: "1px solid var(--hair)",
-  background: "rgba(255,255,255,0.04)", color: "var(--ink)", fontSize: 13, fontFamily: "IBM Plex Mono, monospace",
+  padding: "7px 14px",
+  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,0.2)",
+  background: "#12121A", // solid, not translucent -- native <option> lists often
+                          // ignore rgba/transparent backgrounds on the parent
+                          // <select> and fall back to a jarring default, which
+                          // is what caused the reported color problem.
+  color: "#F5F6FA",
+  fontSize: 13,
+  fontFamily: "IBM Plex Mono, monospace",
+  cursor: "pointer",
+};
+
+const optionStyle: React.CSSProperties = {
+  background: "#12121A",
+  color: "#F5F6FA",
 };
