@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
-import { HISTORY } from "@/lib/history";
+import { useLiveHistory } from "@/lib/useLiveHistory";
 import { PILLAR_NAMES, PILLAR_WEIGHTS, RAW_FIELD, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourcesForMarket, sourceForPillar } from "@/lib/sources";
@@ -31,7 +31,8 @@ export default function TrendsPageInner() {
   }, [focusPillar]);
 
   const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
-  const history = HISTORY[current] ?? [];
+  const { history: liveHistory } = useLiveHistory();
+  const history = liveHistory[current] ?? [];
   const latestPoint = history[history.length - 1];
 
   // Every color below is computed from the CURRENT score of what it

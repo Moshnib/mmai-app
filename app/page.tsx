@@ -13,6 +13,7 @@ import Flag from "@/components/Flag";
 import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
+import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
 
 function latestVerifiedDate(marketName: string): string {
@@ -44,12 +45,14 @@ export default function OverviewPage() {
         const supabase = getPublicSupabaseClient();
         const { data, error } = await supabase
           .from("raw_indicators")
-          .select("*")
-          .order("observation_date", { ascending: false });
+          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date")
+          .order("observation_date", { ascending: false })
+          .order("fetched_at", { ascending: false }) // tiebreak same-day reruns -- deterministic "latest", not arbitrary
+          .limit(200); // 6 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
         if (error || !data || data.length === 0) return;
 
-        const latestByMarket = new Map<string, any>();
-        for (const row of data) {
+        const latestByMarket = new Map<string, RawIndicatorRow>();
+        for (const row of data as RawIndicatorRow[]) {
           if (!latestByMarket.has(row.market)) latestByMarket.set(row.market, row);
         }
 

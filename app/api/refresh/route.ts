@@ -221,30 +221,41 @@ export async function GET(request: Request) {
       const baseNote = SOURCE_NOTES[market] ?? "manual fallback — fetcher not yet wired";
       const sourceNote = partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote;
 
-      await supabase.from("raw_indicators").insert({
-        market,
-        inflation: raw.inflation,
-        gdp_growth: raw.gdpGrowth,
-        unemployment: raw.unemployment,
-        policy_rate: raw.policyRate,
-        brent_yoy: raw.brentYoY,
-        observation_date: observationDate,
-        source_note: sourceNote,
-        status: "current",
-      });
+      // Supabase's client doesn't throw on a failed write -- it returns
+      // {error}. Run both inserts, then check both errors together (not
+      // one at a time) so a real failure never gets masked by the other
+      // insert also failing, and so a bad write is never silently
+      // reported as "status: ok" with nothing actually saved.
+      const [rawInsert, scoreInsert] = await Promise.all([
+        supabase.from("raw_indicators").insert({
+          market,
+          inflation: raw.inflation,
+          gdp_growth: raw.gdpGrowth,
+          unemployment: raw.unemployment,
+          policy_rate: raw.policyRate,
+          brent_yoy: raw.brentYoY,
+          observation_date: observationDate,
+          source_note: sourceNote,
+          status: "current",
+        }),
+        supabase.from("mmai_scores").insert({
+          market,
+          observation_date: observationDate,
+          pillar_ps: pillars.PS,
+          pillar_gm: pillars.GM,
+          pillar_lm: pillars.LM,
+          pillar_mc: pillars.MC,
+          pillar_ec: pillars.EC,
+          composite,
+          coverage,
+          band: band.label,
+        }),
+      ]);
 
-      await supabase.from("mmai_scores").insert({
-        market,
-        observation_date: observationDate,
-        pillar_ps: pillars.PS,
-        pillar_gm: pillars.GM,
-        pillar_lm: pillars.LM,
-        pillar_mc: pillars.MC,
-        pillar_ec: pillars.EC,
-        composite,
-        coverage,
-        band: band.label,
-      });
+      const insertErrors = [rawInsert.error, scoreInsert.error].filter((e): e is NonNullable<typeof e> => e != null);
+      if (insertErrors.length > 0) {
+        throw new Error(`Supabase write failed for ${market}: ${insertErrors.map((e) => e.message).join("; ")}`);
+      }
 
       // Band actually changed (and there WAS a previous band to compare
       // against, i.e. this isn't the market's very first-ever row) --

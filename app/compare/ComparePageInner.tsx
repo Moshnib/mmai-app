@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
-import { HISTORY } from "@/lib/history";
+import { useLiveHistory } from "@/lib/useLiveHistory";
 import { PILLAR_NAMES, RAW_FIELD, computePillarScores, computeComposite, type PillarKey, type PillarScores, type RawIndicators } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
@@ -24,6 +24,7 @@ const MARKET_COLORS: Record<string, string> = {
 };
 
 export default function ComparePageInner() {
+  const { history: liveHistory } = useLiveHistory();
   const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
   const allMarketCodes = FALLBACK_MARKETS.map((m) => m.code);
 
@@ -46,23 +47,36 @@ export default function ComparePageInner() {
   // toggle markets on and off.
   const allYears = useMemo(() => {
     const set = new Set<string>();
-    allMarketCodes.forEach((code) => (HISTORY[code] ?? []).forEach((h) => set.add(h.year)));
+    allMarketCodes.forEach((code) => (liveHistory[code] ?? []).forEach((h) => set.add(h.year)));
     return Array.from(set).sort();
-  }, [allMarketCodes]);
+  }, [allMarketCodes, liveHistory]);
 
-  const [fromYear, setFromYear] = useState(allYears[0]);
-  const [toYear, setToYear] = useState(allYears[allYears.length - 1]);
+  // null = "track the live range automatically" (the common case -- most
+  // visitors never touch these dropdowns). Once live data lands, allYears
+  // can gain a new latest year (e.g. once "2026" rolls into "2027"); with a
+  // fixed default captured once at mount, that new year would silently
+  // never appear in the chart. Deriving the default from allYears on every
+  // render keeps it current, while still honoring an explicit user pick.
+  const [fromYear, setFromYear] = useState<string | null>(null);
+  const [toYear, setToYear] = useState<string | null>(null);
+  // An explicit pick only counts if it's still a real year -- the live
+  // merge REPLACES each market's last point rather than appending, so a
+  // year like "2026" can vanish from allYears the moment live data lands;
+  // without this guard a stale pick would resolve to index -1 and collapse
+  // the range to a single year instead of falling back to the new default.
+  const effectiveFromYear = fromYear && allYears.includes(fromYear) ? fromYear : allYears[0];
+  const effectiveToYear = toYear && allYears.includes(toYear) ? toYear : allYears[allYears.length - 1];
   const [selectedPillar, setSelectedPillar] = useState<PillarKey>("PS");
 
   const yearsInRange = useMemo(() => {
-    const fromIdx = allYears.indexOf(fromYear);
-    const toIdx = allYears.indexOf(toYear);
+    const fromIdx = allYears.indexOf(effectiveFromYear);
+    const toIdx = allYears.indexOf(effectiveToYear);
     return allYears.slice(Math.min(fromIdx, toIdx), Math.max(fromIdx, toIdx) + 1);
-  }, [allYears, fromYear, toYear]);
+  }, [allYears, effectiveFromYear, effectiveToYear]);
 
   function buildSeries(valueFn: (pillars: PillarScores, raw: RawIndicators) => number | null): Series[] {
     return selectedMarkets.map((code) => {
-      const history = (HISTORY[code] ?? []).filter((h) => yearsInRange.includes(h.year));
+      const history = (liveHistory[code] ?? []).filter((h) => yearsInRange.includes(h.year));
       return {
         key: code,
         name: marketNames[code],
@@ -117,11 +131,11 @@ export default function ComparePageInner() {
 
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", margin: "20px 0 28px" }}>
             <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>From</span>
-            <select value={fromYear} onChange={(e) => setFromYear(e.target.value)} style={selectStyle}>
+            <select value={effectiveFromYear} onChange={(e) => setFromYear(e.target.value)} style={selectStyle}>
               {allYears.map((y) => <option key={y} value={y} style={optionStyle}>{y}</option>)}
             </select>
             <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>to</span>
-            <select value={toYear} onChange={(e) => setToYear(e.target.value)} style={selectStyle}>
+            <select value={effectiveToYear} onChange={(e) => setToYear(e.target.value)} style={selectStyle}>
               {allYears.map((y) => <option key={y} value={y} style={optionStyle}>{y}</option>)}
             </select>
           </div>
