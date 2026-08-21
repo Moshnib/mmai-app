@@ -57,6 +57,19 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2024", indicators: { inflation: 2.5, gdpGrowth: 1.1, unemployment: 4.4, policyRate: 4.75, brentYoY: -2 } },
     { year: "2026", indicators: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 } },
   ],
+  // Japan (JP): sourced from published statistics (macrotrends CPI/unemployment,
+  // European Commission spring forecast for 2023 GDP, IMF/BOJ for the negative-rate
+  // period 2019-2023 and the March/July 2024 policy shift to 0.25%). Representative
+  // annual figures, same convention as the other historical series above.
+  JP: [
+    { year: "2019", indicators: { inflation: 0.5, gdpGrowth: -0.4, unemployment: 2.4, policyRate: -0.1, brentYoY: -10 } },
+    { year: "2020", indicators: { inflation: 0.0, gdpGrowth: -4.1, unemployment: 2.8, policyRate: -0.1, brentYoY: -34 } },
+    { year: "2021", indicators: { inflation: -0.2, gdpGrowth: 2.6, unemployment: 2.8, policyRate: -0.1, brentYoY: 69 } },
+    { year: "2022", indicators: { inflation: 2.5, gdpGrowth: 0.9, unemployment: 2.6, policyRate: -0.1, brentYoY: 42 } },
+    { year: "2023", indicators: { inflation: 3.27, gdpGrowth: 1.9, unemployment: 2.6, policyRate: -0.1, brentYoY: -19 } },
+    { year: "2024", indicators: { inflation: 2.74, gdpGrowth: 0.2, unemployment: 2.5, policyRate: 0.25, brentYoY: -2 } },
+    { year: "2026", indicators: { inflation: 2.8, gdpGrowth: 0.7, unemployment: 2.3, policyRate: 1.0, brentYoY: -5 } },
+  ],
   // UAE (AE) removed 2026-08-19 — see lib/markets.ts for the reason.
   // Its historical series is preserved in git history if ever needed again.
 };
