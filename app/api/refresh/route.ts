@@ -15,22 +15,20 @@ import { fetchUkInflation } from "@/lib/fetchers/ons";
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
+import { fetchUsGdpGrowth } from "@/lib/fetchers/bea";
+import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
 const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
-// A shared, roughly-current Brent YoY figure until a dedicated EIA fetcher
-// is added (see lib/fetchers/eia.ts — TODO, same pattern as bls.ts/fred.ts).
-// Keeping this as one constant, not a per-market guess, mirrors Equation 5's
-// design: External & Commodities is a single global input shared by every market.
-const BRENT_YOY_PLACEHOLDER = -5;
-
 /**
- * All 7 markets are now wired to live sources for inflation, GDP growth,
- * unemployment, and policy rate. Only Brent Crude (External & Commodities,
- * shared across every market) is still a placeholder — see
- * BRENT_YOY_PLACEHOLDER above; lib/fetchers/eia.ts is the still-TODO fetcher.
+ * All 7 markets are now wired to live sources for every indicator,
+ * including GDP growth (US) and Brent Crude (shared across every market).
+ *
+ * Brent is a single global input, not a per-market figure (Equation 5's
+ * design), so it's fetched ONCE per refresh cycle in GET() below -- not
+ * once per market -- and passed into fetchRawIndicators() as an argument.
  *
  * Each per-indicator fetch is wrapped in settle() so one source having a
  * bad day (rate-limited, temporarily down, schema change) doesn't blank
@@ -52,19 +50,20 @@ async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> 
   }
 }
 
-async function fetchRawIndicators(market: string): Promise<RawIndicators> {
+async function fetchRawIndicators(market: string, brentYoY: number | null): Promise<RawIndicators> {
   if (market === "US") {
-    const [infl, unemp, rate] = await Promise.all([
+    const [infl, unemp, rate, gdp] = await Promise.all([
       settle("US inflation", fetchUsInflation()),
       settle("US unemployment", fetchUsUnemployment()),
       settle("US policy rate", fetchUsPolicyRate()),
+      settle("US GDP growth", fetchUsGdpGrowth()),
     ]);
     return {
       inflation: infl?.inflation ?? null,
-      gdpGrowth: 1.5, // TODO: wire lib/fetchers/bea.ts
+      gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
-      brentYoY: BRENT_YOY_PLACEHOLDER,
+      brentYoY,
     };
   }
 
@@ -84,7 +83,7 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
       gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
-      brentYoY: BRENT_YOY_PLACEHOLDER,
+      brentYoY,
     };
   }
 
@@ -104,7 +103,7 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
       gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
-      brentYoY: BRENT_YOY_PLACEHOLDER,
+      brentYoY,
     };
   }
 
@@ -125,7 +124,7 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
       gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
-      brentYoY: BRENT_YOY_PLACEHOLDER,
+      brentYoY,
     };
   }
 
@@ -145,7 +144,7 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
       gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
-      brentYoY: BRENT_YOY_PLACEHOLDER,
+      brentYoY,
     };
   }
 
@@ -166,7 +165,7 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
       gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
-      brentYoY: BRENT_YOY_PLACEHOLDER,
+      brentYoY,
     };
   }
 
@@ -186,7 +185,7 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
       gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
-      brentYoY: BRENT_YOY_PLACEHOLDER,
+      brentYoY,
     };
   }
 
@@ -196,13 +195,13 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
 const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "NO"];
 
 const SOURCE_NOTES: Record<string, string> = {
-  US: "BLS + FRED (live)",
-  JP: "FRED (OECD) + World Bank + BOJ (live)",
-  AU: "ABS + World Bank + RBA (live)",
-  EA: "Eurostat + ECB (live)",
-  CA: "Statistics Canada + World Bank + Bank of Canada (live)",
-  UK: "ONS + World Bank + Bank of England (live)",
-  NO: "Statistics Norway + World Bank + Norges Bank (live)",
+  US: "BLS + BEA + FRED + EIA (live)",
+  JP: "FRED (OECD) + World Bank + BOJ + EIA (live)",
+  AU: "ABS + World Bank + RBA + EIA (live)",
+  EA: "Eurostat + ECB + EIA (live)",
+  CA: "Statistics Canada + World Bank + Bank of Canada + EIA (live)",
+  UK: "ONS + World Bank + Bank of England + EIA (live)",
+  NO: "Statistics Norway + World Bank + Norges Bank + EIA (live)",
 };
 
 export async function GET(request: Request) {
@@ -217,9 +216,15 @@ export async function GET(request: Request) {
   const supabase = getServiceSupabaseClient();
   const results: Array<{ market: string; status: string; composite: number | null }> = [];
 
+  // Fetched once, shared by every market -- see the comment above
+  // fetchRawIndicators(). Outside the per-market try/catch below so one
+  // market's Supabase error can't re-trigger a redundant EIA call.
+  const brentResult = await settle("Brent Crude YoY", fetchBrentYoY());
+  const brentYoY = brentResult?.brentYoY ?? null;
+
   for (const market of MARKETS) {
     try {
-      const raw = await fetchRawIndicators(market);
+      const raw = await fetchRawIndicators(market, brentYoY);
       const pillars = computePillarScores(raw);
       const { composite, coverage } = computeComposite(pillars);
       const band = bandFor(composite);
@@ -240,7 +245,7 @@ export async function GET(request: Request) {
       // if any live indicator actually came back null this run (a source
       // was temporarily down/rate-limited/changed shape), say so instead
       // of claiming "(live)" for data that didn't actually arrive.
-      const partial = [raw.inflation, raw.gdpGrowth, raw.unemployment, raw.policyRate].some((v) => v == null);
+      const partial = [raw.inflation, raw.gdpGrowth, raw.unemployment, raw.policyRate, raw.brentYoY].some((v) => v == null);
       const baseNote = SOURCE_NOTES[market] ?? "manual fallback — fetcher not yet wired";
       const sourceNote = partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote;
 

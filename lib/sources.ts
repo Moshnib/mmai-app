@@ -24,7 +24,7 @@ export const SOURCES: SourceEntry[] = [
   { market: "United States", indicator: "Inflation (CPI)", pillar: "PS", institution: "U.S. Bureau of Labor Statistics", license: "Public domain — U.S. federal government work", status: "live", lastVerified: "2026-08-19" },
   { market: "United States", indicator: "Unemployment", pillar: "LM", institution: "U.S. Bureau of Labor Statistics", license: "Public domain — U.S. federal government work", status: "live", lastVerified: "2026-08-19" },
   { market: "United States", indicator: "Policy Rate (Fed Funds)", pillar: "MC", institution: "Federal Reserve (via FRED)", license: "Public domain — the Federal Reserve is the data owner", status: "live", lastVerified: "2026-08-19" },
-  { market: "United States", indicator: "GDP Growth", pillar: "GM", institution: "U.S. Bureau of Economic Analysis", license: "Public domain — U.S. federal government work", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — Power BI Connection Guide, Step 3" },
+  { market: "United States", indicator: "GDP Growth", pillar: "GM", institution: "U.S. Bureau of Economic Analysis", license: "Public domain — U.S. federal government work", status: "live", lastVerified: "2026-08-22" },
 
   // ---------- Euro Area ----------
   { market: "Euro Area", indicator: "Inflation (HICP)", pillar: "PS", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21" },
@@ -63,7 +63,7 @@ export const SOURCES: SourceEntry[] = [
   { market: "Norway", indicator: "Policy Rate (Key Policy Rate)", pillar: "MC", institution: "Norges Bank", license: "Governed by Norway's national open-government-data framework (NLOD)", status: "live", lastVerified: "2026-08-21", note: "Unlike SSB, Norges Bank's own pages don't state the license as explicitly — noted here honestly rather than assumed" },
 
   // ---------- Shared across all markets ----------
-  { market: "All markets", indicator: "Brent Crude (External & Commodities pillar)", pillar: "EC", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — same pattern as bls.ts/fred.ts" },
+  { market: "All markets", indicator: "Brent Crude (External & Commodities pillar)", pillar: "EC", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "Fetched once per refresh and shared across every market, not fetched per-market — see app/api/refresh/route.ts" },
 ];
 
 export function sourcesForMarket(marketName: string): SourceEntry[] {
