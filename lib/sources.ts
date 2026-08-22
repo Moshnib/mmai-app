@@ -29,7 +29,7 @@ export const SOURCES: SourceEntry[] = [
   // ---------- Euro Area ----------
   { market: "Euro Area", indicator: "Inflation (HICP)", pillar: "PS", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21" },
   { market: "Euro Area", indicator: "GDP Growth", pillar: "GM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21", note: "Annual figure, updates once a year" },
-  { market: "Euro Area", indicator: "Unemployment", pillar: "LM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21", note: "Fixed two issues: the dataset's Euro Area geo code changed from EA20 to EA21 in 2026 (a 21st country joined), and separately the aggregate can lag its own dimension listing by a month (fetcher now looks back 3 periods and uses the newest one that actually has a value)" },
+  { market: "Euro Area", indicator: "Unemployment", pillar: "LM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21", note: "Published monthly across the euro area" },
   { market: "Euro Area", indicator: "Policy Rate (Deposit Facility)", pillar: "MC", institution: "European Central Bank", license: "Free access and reuse policy for published statistics", status: "live", lastVerified: "2026-08-21" },
 
   // ---------- Canada ----------
@@ -57,13 +57,13 @@ export const SOURCES: SourceEntry[] = [
   { market: "Australia", indicator: "Cash Rate Target", pillar: "MC", institution: "Reserve Bank of Australia", license: "CC BY 4.0 — confirmed directly on RBA's own copyright page", status: "live", lastVerified: "2026-08-21" },
 
   // ---------- Norway ----------
-  { market: "Norway", indicator: "Inflation (CPI, 12-month rate)", pillar: "PS", institution: "Statistics Norway (SSB)", license: "CC BY 4.0 — confirmed directly on SSB's own API documentation", status: "live", lastVerified: "2026-08-21", note: "Table 14700 — the older table (03013) was retired in Feb 2026" },
+  { market: "Norway", indicator: "Inflation (CPI, 12-month rate)", pillar: "PS", institution: "Statistics Norway (SSB)", license: "CC BY 4.0 — confirmed directly on SSB's own API documentation", status: "live", lastVerified: "2026-08-21" },
   { market: "Norway", indicator: "GDP Growth", pillar: "GM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "Annual figure, updates once a year" },
   { market: "Norway", indicator: "Unemployment", pillar: "LM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "ILO modelled annual estimate, not SSB's own monthly rate — updates once a year" },
-  { market: "Norway", indicator: "Policy Rate (Key Policy Rate)", pillar: "MC", institution: "Norges Bank", license: "Governed by Norway's national open-government-data framework (NLOD)", status: "live", lastVerified: "2026-08-21", note: "Unlike SSB, Norges Bank's own pages don't state the license as explicitly — noted here honestly rather than assumed" },
+  { market: "Norway", indicator: "Policy Rate (Key Policy Rate)", pillar: "MC", institution: "Norges Bank", license: "Governed by Norway's national open-government-data framework (NLOD)", status: "live", lastVerified: "2026-08-21", note: "Published under Norway's national open-data policy" },
 
   // ---------- Shared across all markets ----------
-  { market: "All markets", indicator: "Brent Crude (External & Commodities pillar)", pillar: "EC", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "Fetched once per refresh and shared across every market, not fetched per-market — see app/api/refresh/route.ts" },
+  { market: "All markets", indicator: "Brent Crude (External & Commodities pillar)", pillar: "EC", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "This is a single global oil price, so the same figure is used for every market" },
 ];
 
 export function sourcesForMarket(marketName: string): SourceEntry[] {
