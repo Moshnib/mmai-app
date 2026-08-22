@@ -12,7 +12,7 @@ automatically switches to live Supabase data the moment you connect a database.
 ## What's already done for you
 - `/` — Overview page: gauge, pillar grid, market comparison, heat map (all ported from the tested HTML site)
 - `/learn` — Learn page: all 6 educational topics
-- `/api/refresh` — a real serverless function that fetches **live** BLS (US CPI, unemployment) and FRED (US Fed Funds Rate) data, computes scores, and writes to Supabase
+- `/api/refresh` — a real serverless function that fetches **live** BLS (US CPI, unemployment) and New York Fed (US Fed Funds Rate) data, computes scores, and writes to Supabase
 - `lib/scoring.ts` — the exact 7 equations from the methodology paper, unit-tested
 - `supabase/schema.sql` — the database structure, ready to run
 
@@ -49,7 +49,7 @@ Once deployed, visit `https://your-app.vercel.app/api/refresh` once manually
 covers which market — Eurostat/ECB for Euro Area, Statistics Canada/Bank of
 Canada for Canada, ONS/Bank of England for UK, World Bank for UAE. Each one
 follows the same two-file pattern as `lib/fetchers/bls.ts` and
-`lib/fetchers/fred.ts`: one function that fetches, one that returns clean
+`lib/fetchers/nyfed.ts`: one function that fetches, one that returns clean
 numbers. This maps directly onto Steps 5–11 of the Power BI Connection Guide
 — same sources, same URLs, just called from code instead of Power Query.
 

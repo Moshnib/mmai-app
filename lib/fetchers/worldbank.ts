@@ -18,6 +18,19 @@ export async function fetchGdpGrowth(countryIso3: string): Promise<{ gdpGrowth: 
   return { gdpGrowth: latest.value as number, observationDate: `${latest.date}-01-01` };
 }
 
+export async function fetchInflation(countryIso3: string): Promise<{ inflation: number; observationDate: string }> {
+  const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/FP.CPI.TOTL.ZG?format=json&per_page=20`;
+  const res = await fetch(url, { next: { revalidate: 0 } });
+  if (!res.ok) throw new Error(`World Bank request failed: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  const rows: Array<{ date: string; value: number | null }> = json[1] ?? [];
+  const latest = rows.find((r) => r.value !== null);
+  if (!latest) throw new Error(`World Bank inflation for ${countryIso3}: no non-null values found`);
+
+  return { inflation: latest.value as number, observationDate: `${latest.date}-01-01` };
+}
+
 export async function fetchUnemployment(countryIso3: string): Promise<{ unemployment: number; observationDate: string }> {
   const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/SL.UEM.TOTL.ZS?format=json&per_page=20`;
   const res = await fetch(url, { next: { revalidate: 0 } });

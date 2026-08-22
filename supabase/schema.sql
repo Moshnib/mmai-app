@@ -15,7 +15,7 @@ create table if not exists raw_indicators (
   policy_rate numeric,                 -- % (null when no public source exists)
   brent_yoy numeric,                   -- % YoY, shared across all markets
   observation_date date not null,      -- period the values represent
-  source_note text,                    -- e.g. "BLS CUUR0000SA0; FRED FEDFUNDS"
+  source_note text,                    -- e.g. "BLS CUUR0000SA0; NY Fed EFFR"
   fetched_at timestamptz not null default now(),
   status text not null default 'current' check (status in ('current', 'stale', 'missing'))
 );

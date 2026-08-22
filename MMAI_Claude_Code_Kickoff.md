@@ -30,8 +30,8 @@
 
 | Market | Live? | CPI/Inflation | GDP Growth | Unemployment | Policy Rate |
 |---|---|---|---|---|---|
-| 🇺🇸 US | **Yes** | BLS (live) | Fallback (TODO: BEA) | BLS (live) | FRED (live) |
-| 🇯🇵 Japan | **Yes** | FRED/OECD (live) | World Bank (live) | FRED/OECD (live) | Bank of Japan (live) |
+| 🇺🇸 US | **Yes** | BLS (live) | BEA (live) | BLS (live) | New York Fed (live) |
+| 🇯🇵 Japan | **Yes** | World Bank (live) | World Bank (live) | World Bank (live) | Bank of Japan (live) |
 | 🇦🇺 Australia | **Yes** | ABS Data API (live) | World Bank (live) | World Bank (live) | RBA (live) |
 | 🇪🇺 Euro Area | **Yes** (2026-08-21) | Eurostat (live) | Eurostat (live) | Eurostat (live) | ECB (live) |
 | 🇨🇦 Canada | **Yes** (2026-08-21) | Statistics Canada (live) | World Bank (live) | World Bank (live) | Bank of Canada (live) |
@@ -68,8 +68,9 @@ lib/
   fetchers/
     bls.ts              -- US CPI + unemployment (BLS API, no key needed
                          for basic use, optional key raises rate limit)
-    fred.ts             -- US Fed Funds rate + Japan CPI/unemployment
-                         (FRED redistributing OECD data)
+    nyfed.ts             -- US Fed Funds rate (New York Fed's own EFFR API;
+                         replaced FRED 2026-08-22 — FRED's terms banned
+                         storing data in a database, which this app does)
     boj.ts               -- Japan policy rate (Bank of Japan's own API)
     abs.ts                -- Australia CPI (ABS Data API)
     rba.ts                 -- Australia policy rate (RBA's own CSV tables)
@@ -170,7 +171,7 @@ This went through real, hard-won iteration. The rules:
 3. **Verify the daily cron actually fires unattended** — it's configured (`vercel.json`, 06:00 UTC) but has only ever been triggered manually via curl. Check Supabase tomorrow for a row that appeared without you triggering it. Now more important than before, since a real live-source outage for EA/CA/UK could otherwise go unnoticed.
 4. **US GDP growth** is still a hardcoded fallback (1.5) even though US is otherwise fully live — needs BEA API wired in (`bea.gov`, free key).
 5. ~~Add a 7th market (Norway).~~ **Done 2026-08-21.** See §3 and `lib/fetchers/ssb.ts`, `norgesbank.ts`. Researched alongside Brazil, New Zealand, and South Korea as candidates — Brazil is the next-strongest ("likely yes, worth one more explicit license confirmation before building" was the note at the time); New Zealand's central bank blocks requests without a browser-like User-Agent header (fixable, not a dead end); South Korea needs a registered API key and its commercial-reuse terms were never explicitly confirmed.
-6. Possible future markets beyond that shortlist: e-Stat Dashboard's exact indicator codes for CPI/unemployment were never successfully found (tried hard, hit a wall — Bank of Japan's own API was used instead, which worked). If ever revisiting non-FRED Japan sources, that's still an open problem, not a solved one.
+6. Possible future markets beyond that shortlist: e-Stat Dashboard's exact indicator codes for CPI/unemployment were never successfully found (tried hard, hit a wall). Update 2026-08-22: Japan's CPI and unemployment no longer go through FRED at all — both were switched to the World Bank (same source already used for Canada/UK/Norway's GDP/unemployment) as part of a licensing fix, since FRED's terms prohibit storing data in a database. e-Stat would still be worth revisiting for monthly-granularity Japan data specifically, but it's no longer a compliance blocker.
 
 ---
 

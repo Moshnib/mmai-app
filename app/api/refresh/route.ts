@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { computePillarScores, computeComposite, bandFor, type RawIndicators } from "@/lib/scoring";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
-import { fetchUsPolicyRate, fetchJapanInflation, fetchJapanUnemployment } from "@/lib/fetchers/fred";
+import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
-import { fetchGdpGrowth, fetchUnemployment } from "@/lib/fetchers/worldbank";
+import { fetchGdpGrowth, fetchUnemployment, fetchInflation } from "@/lib/fetchers/worldbank";
 import { fetchAustraliaInflation } from "@/lib/fetchers/abs";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
 import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowth, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
@@ -68,13 +68,16 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
   }
 
   if (market === "JP") {
-    // CPI/unemployment via FRED's redistribution of OECD data (CC BY 4.0,
-    // verified 2026-08-21). GDP via World Bank. Policy rate via BOJ's
-    // official API (DB=FM01, series STRDCLUCON — confirmed live
+    // CPI/unemployment/GDP all via World Bank (CC BY 4.0, no storage
+    // restriction — confirmed 2026-08-22, switched from FRED's
+    // redistribution of OECD data because FRED's Terms of Service
+    // prohibit storing/caching FRED Content in a database, which this
+    // app's refresh pipeline does for every indicator). Policy rate via
+    // BOJ's official API (DB=FM01, series STRDCLUCON — confirmed live
     // in-browser 2026-08-21, after this server's own fetch was blocked).
     const [infl, unemp, gdp, rate] = await Promise.all([
-      settle("JP inflation", fetchJapanInflation()),
-      settle("JP unemployment", fetchJapanUnemployment()),
+      settle("JP inflation", fetchInflation("JPN")),
+      settle("JP unemployment", fetchUnemployment("JPN")),
       settle("JP GDP growth", fetchGdpGrowth("JPN")),
       settle("JP policy rate", fetchJapanPolicyRate()),
     ]);
@@ -195,8 +198,8 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
 const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "NO"];
 
 const SOURCE_NOTES: Record<string, string> = {
-  US: "BLS + BEA + FRED + EIA (live)",
-  JP: "FRED (OECD) + World Bank + BOJ + EIA (live)",
+  US: "BLS + BEA + New York Fed + EIA (live)",
+  JP: "World Bank + BOJ + EIA (live)",
   AU: "ABS + World Bank + RBA + EIA (live)",
   EA: "Eurostat + ECB + EIA (live)",
   CA: "Statistics Canada + World Bank + Bank of Canada + EIA (live)",
@@ -207,7 +210,7 @@ const SOURCE_NOTES: Record<string, string> = {
 export async function GET(request: Request) {
   // Protect this endpoint so only Vercel Cron (or you, manually, with the
   // secret) can trigger a refresh — prevents random internet traffic from
-  // spamming BLS/FRED on your behalf.
+  // spamming your data sources on your behalf.
   const authHeader = request.headers.get("authorization");
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
