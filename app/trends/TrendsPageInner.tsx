@@ -76,6 +76,16 @@ export default function TrendsPageInner() {
     return out;
   }, [history, pillarCurrentScores]);
 
+  // Fixed colors here, not score-based — these are raw rates, not 0-100
+  // scores, so there's no "band" to color by. Picked from the same
+  // Ember-to-Ice palette used everywhere else in the app (lib/scoring.ts),
+  // so nothing new is introduced and green is still never used.
+  const rateComparisonSeries: Series[] = useMemo(() => [
+    { key: "inflation", name: RAW_FIELD.PS.label, color: "#E14B4B", data: history.map((h) => ({ year: h.year, value: h.indicators.inflation ?? null })) },
+    { key: "policyRate", name: RAW_FIELD.MC.label, color: "#8B5CF6", data: history.map((h) => ({ year: h.year, value: h.indicators.policyRate ?? null })) },
+    { key: "unemployment", name: RAW_FIELD.LM.label, color: "#22D3EE", data: history.map((h) => ({ year: h.year, value: h.indicators.unemployment ?? null })) },
+  ], [history]);
+
   const rawDetailSeries: Series[] | null = useMemo(() => {
     if (!focusPillar) return null;
     const field = RAW_FIELD[focusPillar];
@@ -169,6 +179,27 @@ export default function TrendsPageInner() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">HOW THEY MOVE TOGETHER</p>
+            <h2>Policy rate, inflation, and unemployment — one decision, three angles</h2>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", backdropFilter: "blur(14px)" }}>
+            <p style={{ fontSize: 13.5, color: "var(--slate)", margin: "0 0 18px", maxWidth: "70ch" }}>
+              A central bank raises its policy rate specifically to cool inflation — and that same rate hike typically slows hiring, nudging unemployment up. This is where that relationship shows up in {marketNames[current]}&apos;s own numbers — though each rate also moves for reasons of its own, so don&apos;t expect every wiggle to line up.
+            </p>
+            {history.length > 1 ? (
+              <TrendChart series={rateComparisonSeries} height={320} yLabel="%" showDots={false} />
+            ) : (
+              <p style={{ color: "var(--slate)", fontSize: 13.5, padding: "40px 0", textAlign: "center" }}>
+                Only a single data point exists for {marketNames[current]} so far — a trend needs at least two.
+              </p>
+            )}
           </div>
         </div>
       </div>
