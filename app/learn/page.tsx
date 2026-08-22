@@ -41,7 +41,7 @@ const TOPICS = [
     title: "How MMAI Combines All of This Into One Score",
     def: "Each indicator becomes a 0–100 pillar score. MMAI combines them using fixed weights — the same formula for every market, every time.",
     formula: "MMAI = (Σ weight × pillar score) ÷ (Σ active weights)",
-    impact: "You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments.",
+    impact: "You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. \"Supportive\" and \"Challenging\" describe conditions for an average household and business in that economy — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government's policy performance. MMAI is not investment advice.",
   },
 ];
 

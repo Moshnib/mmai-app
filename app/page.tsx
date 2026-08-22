@@ -121,7 +121,12 @@ export default function OverviewPage() {
           </div>
 
           <div className="score-panel">
-            <Gauge score={composite} />
+            <div>
+              <Gauge score={composite} />
+              <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--slate)", textAlign: "center", maxWidth: 220 }}>
+                For the average household and business — not investment returns.
+              </p>
+            </div>
             <div className="score-right">
               <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
