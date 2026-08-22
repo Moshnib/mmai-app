@@ -77,3 +77,20 @@ create table if not exists subscribers (
 -- queryable from the browser. All reads/writes happen server-side only,
 -- using the service role key (which bypasses RLS entirely).
 alter table subscribers enable row level security;
+
+-- ============================================================
+-- CONTACT / FEEDBACK: submissions from the /contact page.
+-- ============================================================
+create table if not exists feedback_submissions (
+  id bigint generated always as identity primary key,
+  sender_type text not null check (sender_type in ('investor', 'company', 'individual', 'student', 'other', 'prefer_not_to_say')),
+  topic text not null check (topic in ('feedback', 'partnership', 'advertising', 'other')),
+  name text,
+  email text,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+-- No public read policy on purpose, same reasoning as subscribers:
+-- submissions should never be queryable from the browser.
+alter table feedback_submissions enable row level security;

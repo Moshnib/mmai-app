@@ -22,6 +22,7 @@ export default function SourcesPage() {
             <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
             <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn</Link>
             <button className="navlink active">Sources</button>
+            <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
           </div>
         </div>
       </nav>

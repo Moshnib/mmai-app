@@ -116,6 +116,7 @@ export default function ComparePageInner() {
             <button className="navlink active">Compare Markets</button>
             <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn</Link>
             <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
+            <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
           </div>
         </div>
       </nav>
