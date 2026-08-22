@@ -22,7 +22,7 @@ export default function ContactPage() {
         <div className="wrap">
           <p className="eyebrow">CONTACT</p>
           <h1 className="headline" style={{ maxWidth: "20ch" }}>Get in touch</h1>
-          <p className="sub">Found something wrong with the data? Have a question, a partnership idea, or something else? Tell us below.</p>
+          <p className="sub">MMAI is built for the people who rely on it, and every voice shapes where it goes next. Requests, partnership inquiries, or simply a thought worth sharing — every message is read personally, not filtered through a queue.</p>
         </div>
       </div>
 
