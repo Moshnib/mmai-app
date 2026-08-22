@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Gauge from "@/components/Gauge";
+import KeyRatesRow from "@/components/KeyRatesRow";
 import PillarGrid from "@/components/PillarGrid";
 import CompareGrid from "@/components/CompareGrid";
 import Heatmap from "@/components/Heatmap";
@@ -143,6 +144,8 @@ export default function OverviewPage() {
               </Link>
             </div>
           </div>
+
+          <KeyRatesRow raw={market.raw} />
         </div>
       </div>
 
