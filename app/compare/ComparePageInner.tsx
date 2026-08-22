@@ -21,6 +21,7 @@ const MARKET_COLORS: Record<string, string> = {
   CA: "#3B82F6",
   JP: "#8B5CF6",
   AU: "#F0609D",
+  NO: "#F4C430",
 };
 
 export default function ComparePageInner() {
@@ -107,10 +108,8 @@ export default function ComparePageInner() {
   return (
     <>
       <nav>
-        <div className="wrap navbar">
-          <Link href="/" className="brand" style={{ textDecoration: "none" }}>
-            <span className="dot" /> MMAI
-          </Link>
+        <div className="navrow">
+          <Link href="/" className="brand"><span className="dot" />MMAI</Link>
           <div className="navlinks">
             <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
             <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
@@ -126,7 +125,7 @@ export default function ComparePageInner() {
           <div className="section-head">
             <p className="eyebrow">ALL MARKETS, SIDE BY SIDE</p>
             <h2>Compare Markets Over Time</h2>
-            <p>See how every market's score, pillar, and underlying rate moved against each other — pick a year range, then a pillar.</p>
+            <p>See how every market&apos;s score, pillar, and underlying rate moved against each other — pick a year range, then a pillar.</p>
           </div>
 
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", margin: "20px 0 28px" }}>

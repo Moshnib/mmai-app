@@ -16,6 +16,7 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   JP: ["392"],
   AU: ["036"],
   EA: ["250", "276", "380", "724", "528", "056", "040", "620", "372", "246", "300"],
+  NO: ["578"],
 };
 
 // Approximate [longitude, latitude] label anchor per market — not a precise
@@ -28,6 +29,7 @@ const MARKET_LABEL_LONLAT: Record<string, [number, number]> = {
   JP: [138, 37],
   AU: [134, -25],
   EA: [14, 47],
+  NO: [15, 64],
 };
 
 function project(lon: number, lat: number, width: number, height: number): [number, number] {

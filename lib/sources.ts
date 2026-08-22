@@ -56,6 +56,12 @@ export const SOURCES: SourceEntry[] = [
   { market: "Australia", indicator: "Unemployment", pillar: "LM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21" },
   { market: "Australia", indicator: "Cash Rate Target", pillar: "MC", institution: "Reserve Bank of Australia", license: "CC BY 4.0 — confirmed directly on RBA's own copyright page", status: "live", lastVerified: "2026-08-21" },
 
+  // ---------- Norway ----------
+  { market: "Norway", indicator: "Inflation (CPI, 12-month rate)", pillar: "PS", institution: "Statistics Norway (SSB)", license: "CC BY 4.0 — confirmed directly on SSB's own API documentation", status: "live", lastVerified: "2026-08-21", note: "Table 14700 — the older table (03013) was retired in Feb 2026" },
+  { market: "Norway", indicator: "GDP Growth", pillar: "GM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "Annual figure, updates once a year" },
+  { market: "Norway", indicator: "Unemployment", pillar: "LM", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-21", note: "ILO modelled annual estimate, not SSB's own monthly rate — updates once a year" },
+  { market: "Norway", indicator: "Policy Rate (Key Policy Rate)", pillar: "MC", institution: "Norges Bank", license: "Governed by Norway's national open-government-data framework (NLOD)", status: "live", lastVerified: "2026-08-21", note: "Unlike SSB, Norges Bank's own pages don't state the license as explicitly — noted here honestly rather than assumed" },
+
   // ---------- Shared across all markets ----------
   { market: "All markets", indicator: "Brent Crude (External & Commodities pillar)", pillar: "EC", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "manual", lastVerified: "2026-08-14", note: "Fetcher not yet wired — same pattern as bls.ts/fred.ts" },
 ];

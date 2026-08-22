@@ -48,7 +48,7 @@ export default function OverviewPage() {
           .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date")
           .order("observation_date", { ascending: false })
           .order("fetched_at", { ascending: false }) // tiebreak same-day reruns -- deterministic "latest", not arbitrary
-          .limit(200); // 6 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
+          .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
         if (error || !data || data.length === 0) return;
 
         const latestByMarket = new Map<string, RawIndicatorRow>();
@@ -160,7 +160,7 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">CROSS-MARKET VIEW</p>
-            <h2>How the five markets compare today</h2>
+            <h2>How the {markets.length} markets compare today</h2>
           </div>
           <CompareGrid markets={markets} current={current} onSelect={setCurrent} />
         </div>

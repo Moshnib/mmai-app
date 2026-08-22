@@ -40,7 +40,7 @@ export function useLiveHistory(): { history: Record<string, HistoryPoint[]>; dat
           .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date")
           .order("observation_date", { ascending: false })
           .order("fetched_at", { ascending: false }) // tiebreak same-day reruns
-          // 6 markets x daily refreshes -- 200 rows covers roughly a
+          // 7 markets x daily refreshes -- 200 rows covers roughly a
           // month even with a couple of same-day reruns, so one market
           // stalling silently while the others keep refreshing doesn't
           // push its (still-recent) row past the cutoff.

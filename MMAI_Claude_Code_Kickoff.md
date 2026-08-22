@@ -6,7 +6,7 @@
 
 ## 1. What this is
 
-**Market Pulse / MMAI (Moshnib Market Analysis Index)** — a Next.js macro-economic dashboard for Mohammad Elmoshnib / FINTECH.TV. It tracks 6 countries across 5 weighted "pillars" (Price Stability, Growth Momentum, Labour Market, Monetary Conditions, External & Commodities) and combines them into a single 0–100 composite score with a plain-language interpretation band (e.g. "Supportive," "Balanced").
+**Market Pulse / MMAI (Moshnib Market Analysis Index)** — a Next.js macro-economic dashboard for Mohammad Elmoshnib / FINTECH.TV. It tracks 7 countries across 5 weighted "pillars" (Price Stability, Growth Momentum, Labour Market, Monetary Conditions, External & Commodities) and combines them into a single 0–100 composite score with a plain-language interpretation band (e.g. "Supportive," "Balanced").
 
 **Explicitly not** an investment/trading signal — it's an analytical communication tool. This disclaimer appears throughout the site and should stay.
 
@@ -26,7 +26,7 @@
 
 ---
 
-## 3. The 6 markets — current status
+## 3. The 7 markets — current status
 
 | Market | Live? | CPI/Inflation | GDP Growth | Unemployment | Policy Rate |
 |---|---|---|---|---|---|
@@ -36,10 +36,12 @@
 | 🇪🇺 Euro Area | **Yes** (2026-08-21) | Eurostat (live) | Eurostat (live) | Eurostat (live) | ECB (live) |
 | 🇨🇦 Canada | **Yes** (2026-08-21) | Statistics Canada (live) | World Bank (live) | World Bank (live) | Bank of Canada (live) |
 | 🇬🇧 UK | **Yes** (2026-08-21) | ONS (live) | World Bank (live) | World Bank (live) | Bank of England (live) |
+| 🇳🇴 Norway | **Yes** (2026-08-21) | Statistics Norway (live) | World Bank (live) | World Bank (live) | Norges Bank (live) |
 
-All 6 markets are now live — see `lib/fetchers/eurostat.ts`, `ecb.ts`, `statcan.ts`, `boc.ts`, `ons.ts`, `boe.ts`. Two things worth knowing:
+All 7 markets are now live — see `lib/fetchers/eurostat.ts`, `ecb.ts`, `statcan.ts`, `boc.ts`, `ons.ts`, `boe.ts`, `ssb.ts`, `norgesbank.ts`. Things worth knowing:
 - The old `api.ons.gov.uk` domain referenced when this project was first scoped is fully decommissioned (retired 25/11/2024) — UK CPI now goes through `www.ons.gov.uk/.../timeseries/{id}/{dataset}/data` instead.
-- Canada/UK GDP growth and unemployment reuse the same World Bank source already used for Japan/Australia (an ILO-modelled annual estimate, not each country's own monthly agency figure) — same tradeoff already accepted for JP/AU, just now applied consistently.
+- Canada/UK/Norway GDP growth and unemployment reuse the same World Bank source already used for Japan/Australia (an ILO-modelled annual estimate, not each country's own monthly agency figure) — same tradeoff already accepted for JP/AU, just now applied consistently.
+- Norway was added after a research pass comparing several countries (Brazil, New Zealand, South Korea were the other candidates) for data accessibility and licensing. Its policy-rate source (Norges Bank) is governed by Norway's national open-data framework, but unlike Statistics Norway's API (explicit CC BY 4.0), Norges Bank's own pages don't spell out the license in so many words — noted honestly on the Sources page rather than assumed. Also: SSB's old monthly CPI table (03013) was retired in Feb 2026 in favor of table 14700 — worth knowing if that table ever needs revisiting.
 
 Only Brent Crude (External & Commodities, shared across every market) is still a placeholder — see §9.
 
@@ -84,7 +86,7 @@ app/
   trends/                 -- "Data Over Time" -- single market, all 5
                          pillars + composite, click a pillar to see its
                          raw indicator detail
-  compare/                -- "Compare Markets" -- NEW, all 6 markets
+  compare/                -- "Compare Markets" -- NEW, all 7 markets
                          plotted together, year-range picker, pillar
                          selector, shows both pillar-score and raw-rate
                          comparison
@@ -92,7 +94,7 @@ app/
   sources/                 -- Full source/license audit table, LIVE/
                          MANUAL badges
   api/
-    refresh/route.ts        -- The core cron job. Fetches all 6 markets
+    refresh/route.ts        -- The core cron job. Fetches all 7 markets
                          (live where wired, fallback otherwise), writes to
                          Supabase, detects band-crossings, triggers emails
     subscribe/route.ts       -- Email signup (no login system -- just
@@ -167,7 +169,8 @@ This went through real, hard-won iteration. The rules:
 2. **Get the Resend key live** and do one real end-to-end test send.
 3. **Verify the daily cron actually fires unattended** — it's configured (`vercel.json`, 06:00 UTC) but has only ever been triggered manually via curl. Check Supabase tomorrow for a row that appeared without you triggering it. Now more important than before, since a real live-source outage for EA/CA/UK could otherwise go unnoticed.
 4. **US GDP growth** is still a hardcoded fallback (1.5) even though US is otherwise fully live — needs BEA API wired in (`bea.gov`, free key).
-5. Possible future markets: e-Stat Dashboard's exact indicator codes for CPI/unemployment were never successfully found (tried hard, hit a wall — Bank of Japan's own API was used instead, which worked). If ever revisiting non-FRED Japan sources, that's still an open problem, not a solved one.
+5. ~~Add a 7th market (Norway).~~ **Done 2026-08-21.** See §3 and `lib/fetchers/ssb.ts`, `norgesbank.ts`. Researched alongside Brazil, New Zealand, and South Korea as candidates — Brazil is the next-strongest ("likely yes, worth one more explicit license confirmation before building" was the note at the time); New Zealand's central bank blocks requests without a browser-like User-Agent header (fixable, not a dead end); South Korea needs a registered API key and its commercial-reuse terms were never explicitly confirmed.
+6. Possible future markets beyond that shortlist: e-Stat Dashboard's exact indicator codes for CPI/unemployment were never successfully found (tried hard, hit a wall — Bank of Japan's own API was used instead, which worked). If ever revisiting non-FRED Japan sources, that's still an open problem, not a solved one.
 
 ---
 
@@ -184,6 +187,6 @@ This went through real, hard-won iteration. The rules:
 
 ## 11. Suggested first message to send in Claude Code
 
-> I'm continuing the MMAI project (Next.js macro-dashboard, 6 markets, Supabase + Vercel). Read `/MMAI_Claude_Code_Kickoff.md` in the repo root for full context on architecture, conventions, and current status before making any changes. [Then describe whatever you actually want done next.]
+> I'm continuing the MMAI project (Next.js macro-dashboard, 7 markets, Supabase + Vercel). Read `/MMAI_Claude_Code_Kickoff.md` in the repo root for full context on architecture, conventions, and current status before making any changes. [Then describe whatever you actually want done next.]
 
 *(Consider committing this file into the repo root so it travels with the project and survives future context resets.)*

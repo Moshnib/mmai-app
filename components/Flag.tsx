@@ -88,6 +88,15 @@ const FLAGS: Record<string, React.ReactNode> = {
       <circle cx="19" cy="17" r="0.4" fill="#fff" />
     </>
   ),
+  NO: (
+    <>
+      <rect width="28" height="20" fill="#EF2B2D" />
+      <rect x="7" y="0" width="6" height="20" fill="#fff" />
+      <rect x="0" y="7" width="28" height="6" fill="#fff" />
+      <rect x="8.8" y="0" width="2.4" height="20" fill="#002868" />
+      <rect x="0" y="8.8" width="28" height="2.4" fill="#002868" />
+    </>
+  ),
 };
 
 export default function Flag({ code, size = 20 }: { code: string; size?: number }) {

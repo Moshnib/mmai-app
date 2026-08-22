@@ -23,6 +23,7 @@ export const FALLBACK_MARKETS: MarketData[] = [
   { code: "UK", name: "United Kingdom", raw: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 } },
   { code: "JP", name: "Japan", raw: { inflation: 2.8, gdpGrowth: 0.7, unemployment: 2.3, policyRate: 1.0, brentYoY: -5 } },
   { code: "AU", name: "Australia", raw: { inflation: 3.7, gdpGrowth: 1.8, unemployment: 4.5, policyRate: 4.35, brentYoY: -5 } },
+  { code: "NO", name: "Norway", raw: { inflation: 3.0, gdpGrowth: 1.09, unemployment: 4.64, policyRate: 4.25, brentYoY: -5 } },
 ];
 
 export function scoreMarket(market: MarketData): { pillars: PillarScores; composite: number | null; coverage: number; coveragePillars: number } {

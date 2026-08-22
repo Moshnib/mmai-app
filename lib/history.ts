@@ -92,6 +92,26 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2025", indicators: { inflation: 3.6, gdpGrowth: 2.0, unemployment: 4.5, policyRate: 3.6, brentYoY: -8 } },
     { year: "2026", indicators: { inflation: 3.7, gdpGrowth: 1.8, unemployment: 4.5, policyRate: 4.35, brentYoY: -5 } },
   ],
+  // Norway (NO): added 2026-08-21 after a research pass comparing several
+  // countries' data accessibility/licensing. Inflation from Statistics
+  // Norway's own historical "yearly changes" series (table 03014).
+  // GDP growth/unemployment from World Bank. Policy rate (year-end
+  // values) read directly off Norges Bank's own official history of
+  // policy rate changes. The 2025->2026 policy rate move (4.00 -> 4.25)
+  // is a real hike, not a typo -- confirmed via the actual daily API
+  // data, which shows the change happened in mid-May 2026, after a
+  // cutting cycle through 2025 -- consistent with inflation staying
+  // stubbornly close to 3% into mid-2026.
+  NO: [
+    { year: "2019", indicators: { inflation: 2.2, gdpGrowth: 1.47, unemployment: 3.68, policyRate: 1.50, brentYoY: -10 } },
+    { year: "2020", indicators: { inflation: 1.3, gdpGrowth: -1.36, unemployment: 4.42, policyRate: 0.00, brentYoY: -34 } },
+    { year: "2021", indicators: { inflation: 3.5, gdpGrowth: 4.14, unemployment: 4.36, policyRate: 0.50, brentYoY: 69 } },
+    { year: "2022", indicators: { inflation: 5.8, gdpGrowth: 4.08, unemployment: 3.23, policyRate: 2.75, brentYoY: 42 } },
+    { year: "2023", indicators: { inflation: 5.5, gdpGrowth: 0.35, unemployment: 3.57, policyRate: 4.50, brentYoY: -19 } },
+    { year: "2024", indicators: { inflation: 3.1, gdpGrowth: 1.42, unemployment: 4.00, policyRate: 4.50, brentYoY: -2 } },
+    { year: "2025", indicators: { inflation: 3.1, gdpGrowth: 1.09, unemployment: 4.64, policyRate: 4.00, brentYoY: -8 } },
+    { year: "2026", indicators: { inflation: 3.0, gdpGrowth: 1.09, unemployment: 4.64, policyRate: 4.25, brentYoY: -5 } },
+  ],
   // UAE (AE) removed 2026-08-19 — see lib/markets.ts for the reason.
   // Its historical series is preserved in git history if ever needed again.
 };

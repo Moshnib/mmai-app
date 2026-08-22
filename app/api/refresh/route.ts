@@ -13,6 +13,8 @@ import { fetchCanadaInflation } from "@/lib/fetchers/statcan";
 import { fetchCanadaPolicyRate } from "@/lib/fetchers/boc";
 import { fetchUkInflation } from "@/lib/fetchers/ons";
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
+import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
+import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
@@ -25,7 +27,7 @@ const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS
 const BRENT_YOY_PLACEHOLDER = -5;
 
 /**
- * All 6 markets are now wired to live sources for inflation, GDP growth,
+ * All 7 markets are now wired to live sources for inflation, GDP growth,
  * unemployment, and policy rate. Only Brent Crude (External & Commodities,
  * shared across every market) is still a placeholder — see
  * BRENT_YOY_PLACEHOLDER above; lib/fetchers/eia.ts is the still-TODO fetcher.
@@ -168,10 +170,30 @@ async function fetchRawIndicators(market: string): Promise<RawIndicators> {
     };
   }
 
+  if (market === "NO") {
+    // CPI (already a 12-month rate, no YoY math needed) via Statistics
+    // Norway's PxWebApi. GDP/unemployment via World Bank, same pattern
+    // as JP/AU/CA/UK. Policy rate via Norges Bank's own Data Portal.
+    // All confirmed live 2026-08-21.
+    const [infl, unemp, gdp, rate] = await Promise.all([
+      settle("NO inflation", fetchNorwayInflation()),
+      settle("NO unemployment", fetchUnemployment("NOR")),
+      settle("NO GDP growth", fetchGdpGrowth("NOR")),
+      settle("NO policy rate", fetchNorwayPolicyRate()),
+    ]);
+    return {
+      inflation: infl?.inflation ?? null,
+      gdpGrowth: gdp?.gdpGrowth ?? null,
+      unemployment: unemp?.unemployment ?? null,
+      policyRate: rate?.policyRate ?? null,
+      brentYoY: BRENT_YOY_PLACEHOLDER,
+    };
+  }
+
   throw new Error(`fetchRawIndicators: unknown market "${market}"`);
 }
 
-const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
+const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "NO"];
 
 const SOURCE_NOTES: Record<string, string> = {
   US: "BLS + FRED (live)",
@@ -180,6 +202,7 @@ const SOURCE_NOTES: Record<string, string> = {
   EA: "Eurostat + ECB (live)",
   CA: "Statistics Canada + World Bank + Bank of Canada (live)",
   UK: "ONS + World Bank + Bank of England (live)",
+  NO: "Statistics Norway + World Bank + Norges Bank (live)",
 };
 
 export async function GET(request: Request) {
