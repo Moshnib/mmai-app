@@ -21,7 +21,7 @@ const STATS: Array<{ pillar: PillarKey; color: string; decimals: number }> = [
 
 export default function KeyRatesRow({ raw }: { raw: RawIndicators }) {
   return (
-    <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, margin: "20px 0" }}>
+    <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, margin: "20px 0 10px" }}>
       {STATS.map(({ pillar, color, decimals }) => {
         const { key, label, unit } = RAW_FIELD[pillar];
         const value = raw[key];

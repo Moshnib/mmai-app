@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Gauge from "@/components/Gauge";
 import KeyRatesRow from "@/components/KeyRatesRow";
@@ -11,11 +11,17 @@ import Sparkline from "@/components/Sparkline";
 import WorldMap from "@/components/WorldMap";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
-import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS } from "@/lib/scoring";
+import { narrativeDrivers, computePillarScores, computeComposite, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
-import type { RawIndicatorRow } from "@/lib/useLiveHistory";
+import { useLiveHistory, type RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
+
+function formatUpdatedAt(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
+  });
+}
 
 function latestVerifiedDate(marketName: string): string {
   const entries = sourcesForMarket(marketName);
@@ -34,10 +40,89 @@ function narrativeFor(market: MarketData): string {
   return `${market.name}'s strongest pillar right now is ${PILLAR_NAMES[drivers.best]} (${bestVal.toFixed(1)}), while ${PILLAR_NAMES[drivers.worst]} (${worstVal.toFixed(1)}) is doing the most to hold the composite back.`;
 }
 
+// Rule-based, not AI-generated -- every sentence below is a direct,
+// deterministic read of the same three numbers shown in KeyRatesRow, so
+// it updates the moment live data changes, with nothing to hallucinate.
+// The 2% and 2.5% thresholds match the exact baselines lib/scoring.ts's
+// own formulas already use (priceStabilityScore, monetaryConditionsScore)
+// -- but real central banks don't all target a flat 2% (the RBA's own
+// site states its target as 2-3%, for example), so the copy below
+// explicitly attributes "2%" to MMAI's own formula, never to "central
+// banks" generally, to stay accurate for every market.
+//
+// Only inflation and the policy rate BOTH sitting at least INTERPRETIVE_GAP
+// points past target/neutral, in the same direction, gets an interpretive
+// sentence -- and even then, it describes the general textbook mechanism
+// rather than asserting this specific market's rate was set because of
+// today's inflation reading (the function only ever sees a snapshot, never
+// whether a rate is rising or falling, so it can't actually know that).
+// Every other combination -- near target, a small deviation, or the two
+// numbers moving in opposite directions (as with Japan's above-target
+// inflation alongside a still near-zero policy rate) -- falls back to a
+// plain, neutral statement of the three numbers with no interpretive claim.
+function rateNarrativeFor(raw: RawIndicators): string | null {
+  const { inflation, policyRate, unemployment } = raw;
+  if (inflation == null || policyRate == null || unemployment == null) return null;
+
+  const INFLATION_TARGET = 2;
+  const RATE_NEUTRAL = 2.5;
+  const INTERPRETIVE_GAP = 0.8;
+
+  const inflGap = inflation - INFLATION_TARGET;
+  const rateGap = policyRate - RATE_NEUTRAL;
+
+  const bothAbove = inflGap > INTERPRETIVE_GAP && rateGap > INTERPRETIVE_GAP;
+  const bothBelow = inflGap < -INTERPRETIVE_GAP && rateGap < -INTERPRETIVE_GAP;
+
+  const inflStr = inflation.toFixed(1);
+  const rateStr = policyRate.toFixed(2);
+  const unempStr = unemployment.toFixed(1);
+
+  if (bothAbove) {
+    return `Inflation is at ${inflStr}%, above the 2% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally raise rates to cool inflation, and that same move tends to slow hiring — though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
+  }
+  if (bothBelow) {
+    return `Inflation is at ${inflStr}%, below the 2% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally cut rates to support hiring and growth, though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
+  }
+  return `Inflation is at ${inflStr}%, the policy rate is at ${rateStr}%, and unemployment is at ${unempStr}%. These are the same three numbers central banks generally weigh when setting policy — trying to keep prices near target without pushing unemployment too high.`;
+}
+
+// Pure lookup, not interpretation -- min/max composite over the market's
+// own stored history, same formulas already used everywhere else on this
+// page. Needs at least 2 years of history with a computable composite to
+// say anything (a market with only its current-year point, or one that's
+// never cleared the 70% coverage threshold, returns null and renders nothing).
+//
+// The current year's composite is computed from the UNFILTERED last point
+// and checked first, before touching the rest of the history -- if today's
+// coverage is too low to publish a score (the gauge shows N/A), this must
+// stay silent too, rather than saying "highest score" about a stale year
+// while the gauge right above it says N/A.
+function extremesNarrativeFor(marketName: string, history: Array<{ year: string; indicators: RawIndicators }>): string | null {
+  const latestPoint = history[history.length - 1];
+  const latestComposite = latestPoint ? computeComposite(computePillarScores(latestPoint.indicators)).composite : null;
+  if (latestComposite === null) return null;
+
+  const scored = history
+    .map((h) => ({ year: h.year, composite: computeComposite(computePillarScores(h.indicators)).composite }))
+    .filter((s): s is { year: string; composite: number } => s.composite !== null);
+  if (scored.length < 2) return null;
+
+  const max = scored.reduce((a, b) => (b.composite >= a.composite ? b : a));
+  const min = scored.reduce((a, b) => (b.composite <= a.composite ? b : a));
+  const firstYear = scored[0].year;
+  if (max.composite === min.composite) return null; // flat history -- nothing to highlight
+
+  if (latestPoint.year === max.year) return `This is ${marketName}'s highest score in MMAI's record, which starts in ${firstYear}.`;
+  if (latestPoint.year === min.year) return `This is ${marketName}'s lowest score in MMAI's record, which starts in ${firstYear}.`;
+  return `${marketName}'s score has ranged from ${min.composite.toFixed(1)} (${min.year}) to ${max.composite.toFixed(1)} (${max.year}) since ${firstYear}.`;
+}
+
 export default function OverviewPage() {
   const [markets, setMarkets] = useState<MarketData[]>(FALLBACK_MARKETS);
   const [current, setCurrent] = useState("US");
   const [dataSource, setDataSource] = useState<"live" | "fallback">("fallback");
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadLiveData() {
@@ -46,16 +131,24 @@ export default function OverviewPage() {
         const supabase = getPublicSupabaseClient();
         const { data, error } = await supabase
           .from("raw_indicators")
-          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date")
+          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date, fetched_at")
           .order("observation_date", { ascending: false })
           .order("fetched_at", { ascending: false }) // tiebreak same-day reruns -- deterministic "latest", not arbitrary
           .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
         if (error || !data || data.length === 0) return;
 
-        const latestByMarket = new Map<string, RawIndicatorRow>();
-        for (const row of data as RawIndicatorRow[]) {
+        const latestByMarket = new Map<string, RawIndicatorRow & { fetched_at: string }>();
+        for (const row of data as Array<RawIndicatorRow & { fetched_at: string }>) {
           if (!latestByMarket.has(row.market)) latestByMarket.set(row.market, row);
         }
+        // Oldest of the seven markets' latest fetches, not the newest -- if
+        // one market's refresh stalled, "last updated" should say so rather
+        // than claim everything is as fresh as the one lucky market that ran.
+        const oldestOfLatestFetches = Array.from(latestByMarket.values())
+          .map((r) => r.fetched_at)
+          .sort()
+          .at(0);
+        if (oldestOfLatestFetches) setLastUpdated(oldestOfLatestFetches);
 
         const live: MarketData[] = FALLBACK_MARKETS.map((m) => {
           const row = latestByMarket.get(m.code);
@@ -82,6 +175,12 @@ export default function OverviewPage() {
 
   const market = markets.find((m) => m.code === current)!;
   const { pillars, composite, coveragePillars } = scoreMarket(market);
+  const rateNarrative = rateNarrativeFor(market.raw);
+  const { history: liveHistory } = useLiveHistory();
+  const extremesNarrative = useMemo(
+    () => extremesNarrativeFor(market.name, liveHistory[current] ?? []),
+    [market.name, liveHistory, current]
+  );
 
   return (
     <>
@@ -104,6 +203,11 @@ export default function OverviewPage() {
           <p className="eyebrow">
             MOSHNIB MARKET ANALYSIS INDEX · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
           </p>
+          {dataSource === "live" && lastUpdated && (
+            <p style={{ fontSize: 11.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>
+              Last updated {formatUpdatedAt(lastUpdated)} (oldest of the 7 markets) · scheduled to refresh daily at 06:00 UTC
+            </p>
+          )}
           <h1 className="headline">Is today&apos;s macro environment supportive, or working against you?</h1>
           <p className="sub">One transparent number, built entirely from licensed public data — with every formula, weight, and source open for anyone to check.</p>
 
@@ -125,6 +229,7 @@ export default function OverviewPage() {
             <div className="score-right">
               <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
+              {extremesNarrative && <p className="score-narrative">{extremesNarrative}</p>}
               <div className="meta-row" style={{ marginBottom: 16 }}>
                 <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
                 <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
@@ -146,6 +251,7 @@ export default function OverviewPage() {
           </div>
 
           <KeyRatesRow raw={market.raw} />
+          {rateNarrative && <p className="score-narrative" style={{ maxWidth: "68ch" }}>{rateNarrative}</p>}
         </div>
       </div>
 

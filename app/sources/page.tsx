@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SOURCES } from "@/lib/sources";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import Flag from "@/components/Flag";
+import ExportDataButtons from "@/components/ExportDataButtons";
 
 const marketOrder = ["All markets", ...FALLBACK_MARKETS.map((m) => m.name)];
 const codeForName = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.name, m.code]));
@@ -91,6 +92,12 @@ export default function SourcesPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <ExportDataButtons />
         </div>
       </div>
 
