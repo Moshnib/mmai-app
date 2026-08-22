@@ -195,7 +195,10 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
   throw new Error(`fetchRawIndicators: unknown market "${market}"`);
 }
 
-const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "NO"];
+// Norway paused 2026-08-22 pending Norges Bank license confirmation — see
+// the matching comment in lib/markets.ts. fetchRawIndicators()'s "NO"
+// branch below is left in place, ready to reactivate with a one-line change.
+const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
 
 const SOURCE_NOTES: Record<string, string> = {
   US: "BLS + BEA + New York Fed + EIA (live)",

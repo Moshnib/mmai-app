@@ -16,6 +16,12 @@ export interface MarketData {
 // no realistic path to one, it never cleared the coverage threshold — every
 // visit produced N/A. Its historical data remains in lib/history.ts, unused,
 // in case a source is found later.
+//
+// Norway was removed from display 2026-08-22, pending written confirmation
+// from Norges Bank on whether commercial reuse of their Key Policy Rate data
+// is actually permitted (their own site's terms don't say, see lib/sources.ts).
+// All of Norway's code, fetchers, and historical data are untouched — this is
+// a one-line re-add once that's resolved, not a rebuild.
 export const FALLBACK_MARKETS: MarketData[] = [
   { code: "US", name: "United States", raw: { inflation: 3.4, gdpGrowth: 1.5, unemployment: 4.2, policyRate: 3.63, brentYoY: -5 } },
   { code: "EA", name: "Euro Area", raw: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: -5 } },
@@ -23,7 +29,6 @@ export const FALLBACK_MARKETS: MarketData[] = [
   { code: "UK", name: "United Kingdom", raw: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 } },
   { code: "JP", name: "Japan", raw: { inflation: 2.8, gdpGrowth: 0.7, unemployment: 2.3, policyRate: 1.0, brentYoY: -5 } },
   { code: "AU", name: "Australia", raw: { inflation: 3.7, gdpGrowth: 1.8, unemployment: 4.5, policyRate: 4.35, brentYoY: -5 } },
-  { code: "NO", name: "Norway", raw: { inflation: 3.0, gdpGrowth: 1.09, unemployment: 4.64, policyRate: 4.25, brentYoY: -5 } },
 ];
 
 export function scoreMarket(market: MarketData): { pillars: PillarScores; composite: number | null; coverage: number; coveragePillars: number } {
