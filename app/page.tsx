@@ -205,7 +205,7 @@ export default function OverviewPage() {
           </p>
           {dataSource === "live" && lastUpdated && (
             <p style={{ fontSize: 11.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>
-              Last updated {formatUpdatedAt(lastUpdated)} (oldest of the 7 markets) · scheduled to refresh daily at 06:00 UTC
+              Last updated {formatUpdatedAt(lastUpdated)} (oldest of the {markets.length} markets) · scheduled to refresh daily at 06:00 UTC
             </p>
           )}
           <h1 className="headline">Is today&apos;s macro environment supportive, or working against you?</h1>

@@ -1,10 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { computePillarScores, computeComposite, bandFor } from "@/lib/scoring";
-import { HISTORY } from "@/lib/history";
+import { useLiveHistory } from "@/lib/useLiveHistory";
 
 export default function Sparkline({ marketCode, currentScore }: { marketCode: string; currentScore: number | null }) {
-  const history = HISTORY[marketCode] ?? [];
+  // Reads through useLiveHistory() like every other chart on the site, not
+  // the static HISTORY file directly -- otherwise this sparkline's final
+  // point keeps showing the hardcoded snapshot while the gauge directly
+  // above it shows the live score, and the two visibly disagree.
+  const { history: liveHistory } = useLiveHistory();
+  const history = liveHistory[marketCode] ?? [];
   const points = history
     .map((h) => {
       const pillars = computePillarScores(h.indicators);
@@ -44,9 +50,9 @@ export default function Sparkline({ marketCode, currentScore }: { marketCode: st
         <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--slate)", letterSpacing: 1 }}>
           TREND, {points[0].year}–{points[points.length - 1].year}
         </span>
-        <a href={`/trends?market=${marketCode}`} style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: band.color, textDecoration: "none" }}>
+        <Link href={`/trends?market=${marketCode}`} style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: band.color, textDecoration: "none" }}>
           full chart →
-        </a>
+        </Link>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={70} preserveAspectRatio="none" style={{ display: "block" }}>
         <defs>

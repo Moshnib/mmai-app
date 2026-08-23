@@ -1,5 +1,12 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import ComparePageInner from "./ComparePageInner";
+
+export const metadata: Metadata = {
+  title: "Compare Markets",
+  description:
+    "Every tracked market side by side over any year range — composite scores, individual pillar scores, and the raw underlying rates, on one chart.",
+};
 
 export default function ComparePage() {
   return (

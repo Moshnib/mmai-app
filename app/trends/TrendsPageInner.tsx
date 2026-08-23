@@ -1,22 +1,29 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
 import { useLiveHistory } from "@/lib/useLiveHistory";
-import { PILLAR_NAMES, PILLAR_WEIGHTS, RAW_FIELD, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
+import { PILLAR_NAMES, formatWeightPct, RAW_FIELD, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourcesForMarket, sourceForPillar } from "@/lib/sources";
 
 const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
 
-export default function TrendsPageInner() {
-  const params = useSearchParams();
-  const initialMarket = params.get("market") ?? "US";
-  const initialPillar = params.get("pillar") as PillarKey | null;
-
+// The market/pillar from the URL arrive as props read on the SERVER (see
+// app/trends/page.tsx). Previously this component called useSearchParams(),
+// which forces Next to skip prerendering the enclosing Suspense boundary --
+// and since that boundary wrapped the whole page, the server sent nothing but
+// "Loading…". Every crawler that doesn't run JavaScript (LinkedIn, Slack,
+// WhatsApp, X, Bing) saw an empty page.
+export default function TrendsPageInner({
+  initialMarket = "US",
+  initialPillar = null,
+}: {
+  initialMarket?: string;
+  initialPillar?: PillarKey | null;
+}) {
   const [current, setCurrent] = useState(initialMarket);
   const [focusPillar, setFocusPillar] = useState<PillarKey | null>(initialPillar);
   const detailRef = useRef<HTMLDivElement>(null);
@@ -140,7 +147,7 @@ export default function TrendsPageInner() {
               <TrendChart series={compositeSeries} height={300} yDomain={[0, 100]} />
             ) : (
               <p style={{ color: "var(--slate)", fontSize: 13.5, padding: "40px 0", textAlign: "center" }}>
-                Only a single data point exists for {marketNames[current]} so far — a trend needs at least two. This market's historical series hasn't been backfilled yet.
+                Only a single data point exists for {marketNames[current]} so far — a trend needs at least two. This market&apos;s historical series hasn&apos;t been backfilled yet.
               </p>
             )}
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 10.5, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
@@ -167,7 +174,7 @@ export default function TrendsPageInner() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
                   <span className="pillar-name" style={{ margin: 0 }}>{PILLAR_NAMES[key]}</span>
-                  <span className="pillar-weight">{(PILLAR_WEIGHTS[key] * 100).toFixed(1)}%</span>
+                  <span className="pillar-weight">{formatWeightPct(key)}</span>
                 </div>
                 {history.length > 1 ? (
                   <TrendChart series={pillarMiniSeries[key]} height={150} yDomain={[0, 100]} showLegend={false} />
@@ -236,7 +243,12 @@ export default function TrendsPageInner() {
                   <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #2B3B5C", fontSize: 11, color: "#AEB8CC", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
                     <span>Source: <b style={{ color: "#fff" }}>{src.institution}</b></span>
                     <span style={{ fontFamily: "monospace" }}>
-                      <span style={{ padding: "2px 8px", borderRadius: 999, background: src.status === "live" ? "rgba(47,111,98,0.35)" : "rgba(198,161,91,0.25)", color: src.status === "live" ? "#8FD9C4" : "#E6CE96", marginRight: 8 }}>
+                      {/* Design tokens, not hardcoded colors -- the previous
+                          literals here (rgba(47,111,98) / #8FD9C4) were a
+                          leftover green from the old palette, the one place
+                          green survived in the UI. The Sources page badge
+                          already used these tokens correctly. */}
+                      <span style={{ padding: "2px 8px", borderRadius: 999, background: src.status === "live" ? "var(--teal-bg)" : "var(--gold-bg)", color: src.status === "live" ? "var(--teal)" : "var(--gold-deep)", marginRight: 8 }}>
                         {src.status === "live" ? "LIVE" : "MANUAL"}
                       </span>
                       Verified {src.lastVerified}

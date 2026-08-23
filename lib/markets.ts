@@ -22,13 +22,18 @@ export interface MarketData {
 // is actually permitted (their own site's terms don't say, see lib/sources.ts).
 // All of Norway's code, fetchers, and historical data are untouched — this is
 // a one-line re-add once that's resolved, not a rebuild.
+// Synced to the live database on 2026-08-24 (observation date 2026-08-23).
+// These had drifted badly: Canada carried a 3.4% GDP growth figure against a
+// real World Bank value of 1.74%, which alone was enough to rank Canada first
+// in demo mode, and every market still carried the retired brentYoY: -5
+// placeholder from before the EIA feed was wired up.
 export const FALLBACK_MARKETS: MarketData[] = [
-  { code: "US", name: "United States", raw: { inflation: 3.4, gdpGrowth: 1.5, unemployment: 4.2, policyRate: 3.63, brentYoY: -5 } },
-  { code: "EA", name: "Euro Area", raw: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: -5 } },
-  { code: "CA", name: "Canada", raw: { inflation: 2.8, gdpGrowth: 3.4, unemployment: 6.4, policyRate: 2.25, brentYoY: -5 } },
-  { code: "UK", name: "United Kingdom", raw: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 } },
-  { code: "JP", name: "Japan", raw: { inflation: 2.8, gdpGrowth: 0.7, unemployment: 2.3, policyRate: 1.0, brentYoY: -5 } },
-  { code: "AU", name: "Australia", raw: { inflation: 3.7, gdpGrowth: 1.8, unemployment: 4.5, policyRate: 4.35, brentYoY: -5 } },
+  { code: "US", name: "United States", raw: { inflation: 3.36, gdpGrowth: 2.1, unemployment: 4.1, policyRate: 3.63, brentYoY: 17.91 } },
+  { code: "EA", name: "Euro Area", raw: { inflation: 2.0, gdpGrowth: 1.2, unemployment: 6.3, policyRate: 2.25, brentYoY: 17.91 } },
+  { code: "CA", name: "Canada", raw: { inflation: 3.03, gdpGrowth: 1.74, unemployment: 6.91, policyRate: 2.25, brentYoY: 17.91 } },
+  { code: "UK", name: "United Kingdom", raw: { inflation: 2.9, gdpGrowth: 1.39, unemployment: 4.75, policyRate: 3.75, brentYoY: 17.91 } },
+  { code: "JP", name: "Japan", raw: { inflation: 3.17, gdpGrowth: 1.19, unemployment: 2.45, policyRate: 0.98, brentYoY: 17.91 } },
+  { code: "AU", name: "Australia", raw: { inflation: 3.75, gdpGrowth: 1.35, unemployment: 4.09, policyRate: 4.35, brentYoY: 17.91 } },
 ];
 
 export function scoreMarket(market: MarketData): { pillars: PillarScores; composite: number | null; coverage: number; coveragePillars: number } {

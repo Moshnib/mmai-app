@@ -1,8 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SOURCES } from "@/lib/sources";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import Flag from "@/components/Flag";
 import ExportDataButtons from "@/components/ExportDataButtons";
+
+export const metadata: Metadata = {
+  title: "Data Sources & Licences",
+  description:
+    "Every institution, licence, and verification date behind every number on MMAI — plus a full CSV export of the underlying data.",
+};
 
 const marketOrder = ["All markets", ...FALLBACK_MARKETS.map((m) => m.name)];
 const codeForName = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.name, m.code]));
@@ -66,7 +73,20 @@ export default function SourcesPage() {
                     }}
                   >
                     <span style={{ fontWeight: 700, color: "var(--ink)" }}>{e.indicator}</span>
-                    <span style={{ color: "var(--ink-soft)" }}>{e.institution}</span>
+                    <span style={{ color: "var(--ink-soft)" }}>
+                      {e.url ? (
+                        <a
+                          href={e.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "var(--ink-soft)", textDecoration: "underline", textDecorationColor: "var(--hair)", textUnderlineOffset: 3 }}
+                        >
+                          {e.institution} <span style={{ color: "var(--slate)", fontSize: 10 }}>↗</span>
+                        </a>
+                      ) : (
+                        e.institution
+                      )}
+                    </span>
                     <span style={{ color: "var(--slate)" }}>
                       {e.license}
                       {e.note && <div style={{ fontSize: 10.5, fontStyle: "italic", color: "var(--gold-deep)", marginTop: 2 }}>{e.note}</div>}
@@ -114,9 +134,9 @@ export default function SourcesPage() {
               financial advice.
             </p>
             <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: "0 0 12px" }}>
-              Entries marked <b>LIVE</b> are fetched directly from the source institution's public API at refresh time.
+              Entries marked <b>LIVE</b> are fetched directly from the source institution&apos;s public API at refresh time.
               Entries marked <b>MANUAL</b> use the most recent figure verified by hand and have not yet been connected to
-              a live feed — the exact gap is stated in each row's note, and none are silently treated as current or
+              a live feed — the exact gap is stated in each row&apos;s note, and none are silently treated as current or
               extrapolated forward.
             </p>
             <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: 0 }}>

@@ -1,46 +1,59 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { PILLAR_NAMES, formatWeightPct, type PillarKey } from "@/lib/scoring";
+
+export const metadata: Metadata = {
+  title: "Learn the Indicators",
+  description:
+    "Inflation, GDP growth, unemployment, policy rates, and oil — what each one actually means for you, in plain language, with the exact formula MMAI uses to score it.",
+};
+
+const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
 
 const TOPICS = [
   {
     id: "cpi",
     title: "Inflation & CPI — the price of everything you buy",
     def: "The Consumer Price Index (CPI) tracks the price of a representative basket of everyday goods and services. Inflation is how fast that basket's total cost is rising year over year.",
-    formula: "Price Stability Score = 100 − 15 × |inflation − 2%|",
+    formula: "Price Stability Score = clamp(100 − 15 × |inflation − 2%|, 0, 100)",
     impact: "When CPI rises faster than your income, your money buys less. This is why inflation directly shapes wage negotiations and why central banks raise interest rates specifically to slow it down.",
   },
   {
     id: "gdp",
     title: "GDP Growth — is the economy actually expanding?",
     def: "Gross Domestic Product (GDP) is the total value of everything a country produces. GDP growth measures whether that total is expanding or shrinking.",
-    formula: "Growth Momentum Score = 50 + 10 × (GDP growth %)",
+    formula: "Growth Momentum Score = clamp(50 + 10 × (GDP growth %), 0, 100)",
     impact: "When growth is strong, businesses hire more and wages tend to rise. When it shrinks for two consecutive quarters, that's a recession.",
   },
   {
     id: "unemployment",
     title: "Unemployment Rate — how easy is it to find or keep work?",
     def: "The share of people actively looking for work who can't find it, as a percentage of the labour force.",
-    formula: "Labour Market Score = 100 − 10 × (unemployment% − 2%)",
+    formula: "Labour Market Score = clamp(100 − 10 × (unemployment% − 2%), 0, 100)",
     impact: "Low unemployment means workers have leverage — more job offers, easier to negotiate a raise. High unemployment flips that.",
   },
   {
     id: "rate",
     title: "Policy Interest Rate — the cost of borrowing money",
     def: "The benchmark rate set by a central bank. It ripples out to set the tone for every other interest rate in the economy.",
-    formula: "Monetary Conditions Score = 100 − 12 × |policy rate − 2.5%|",
+    formula: "Monetary Conditions Score = clamp(100 − 12 × |policy rate − 2.5%|, 0, 100)",
     impact: "This number sets the floor for mortgage rates, car loans, and credit card APRs — when it rises, borrowing gets more expensive.",
   },
   {
     id: "oil",
     title: "Brent Crude Oil — the hidden cost inside everything",
     def: "The global benchmark oil price. Even if you never buy gasoline directly, oil is embedded in shipping, manufacturing, and heating costs.",
-    formula: "External & Commodities Score = 100 − 1.2 × |Brent YoY % change|",
+    formula: "External & Commodities Score = clamp(100 − 1.2 × |Brent YoY % change|, 0, 100)",
     impact: "Oil spikes show up weeks later as higher prices at the pump, higher heating bills, and higher shipping costs baked into everything you buy.",
   },
   {
     id: "mmai",
     title: "How MMAI Combines All of This Into One Score",
-    def: "Each indicator becomes a 0–100 pillar score. MMAI combines them using fixed weights — the same formula for every market, every time.",
+    def: "Each indicator becomes a 0–100 pillar score, capped to that range. MMAI combines them using fixed weights — the same formula for every market, every time. If a market is missing an indicator, that pillar drops out and the remaining weights are rescaled to still total 100% (that's the \"÷ Σ active weights\" part). Below 70% coverage — fewer than 4 of the 5 pillars — no score is published at all.",
     formula: "MMAI = (Σ weight × pillar score) ÷ (Σ active weights)",
+    // Weights are read from PILLAR_WEIGHTS rather than typed as a string, so
+    // the published numbers can never drift out of sync with the engine.
+    weights: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatWeightPct(k)}`).join("  ·  "),
     impact: "You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. \"Supportive\" and \"Challenging\" describe conditions for an average household and business in that economy — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government's policy performance. MMAI is not investment advice.",
   },
 ];
@@ -103,6 +116,23 @@ export default function LearnPage() {
               >
                 {t.formula}
               </div>
+              {"weights" in t && t.weights && (
+                <div
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: 12.5,
+                    background: "var(--paper)",
+                    border: "1px solid var(--hair)",
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                    marginBottom: 14,
+                    color: "var(--ink-soft)",
+                    lineHeight: 1.8,
+                  }}
+                >
+                  <span style={{ color: "var(--slate)" }}>where weight =</span> {t.weights}
+                </div>
+              )}
               <div
                 style={{
                   padding: "14px 16px",

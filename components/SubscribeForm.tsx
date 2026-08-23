@@ -40,9 +40,9 @@ export default function SubscribeForm() {
   if (status === "done") {
     return (
       <div style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 16, padding: "20px 24px", textAlign: "center" }}>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--gold-deep)" }}>You're subscribed ✓</div>
+        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--gold-deep)" }}>You&apos;re subscribed ✓</div>
         <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "6px 0 0" }}>
-          We'll only email you when a watched market's band actually changes — not every day.
+          We&apos;ll only email you when a watched market&apos;s band actually changes — not every day.
         </p>
       </div>
     );
@@ -54,7 +54,7 @@ export default function SubscribeForm() {
         GET NOTIFIED
       </div>
       <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "0 0 14px" }}>
-        Alert me only when a market's status actually changes (e.g. Balanced → Supportive) — not a daily digest.
+        Alert me only when a market&apos;s status actually changes (e.g. Balanced → Supportive) — not a daily digest.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>

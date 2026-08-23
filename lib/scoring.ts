@@ -49,6 +49,18 @@ export const PILLAR_NAMES: Record<PillarKey, string> = {
   EC: "External & Commodities",
 };
 
+/** The one way pillar weights are ever rendered as text, used by the Overview
+ *  rings, the Trends cards, and the Learn page's published formula.
+ *
+ *  Exact, not rounded: 18.75% and 12.5% are the real weights, and rounding
+ *  them for display (to "19%" or even "18.8%") makes the five visibly sum to
+ *  101% or 100.1% and stops a reader reproducing the composite by hand --
+ *  which the Learn page explicitly invites them to do. Trailing zeros are
+ *  trimmed so 25.00 reads as "25". */
+export function formatWeightPct(key: PillarKey): string {
+  return `${(PILLAR_WEIGHTS[key] * 100).toFixed(2).replace(/\.?0+$/, "")}%`;
+}
+
 /** Which raw indicator each pillar is derived from, plus display info.
  *  Shared by the Trends page (single-market detail view) and the Compare
  *  page (cross-market view), so both stay in sync automatically. */

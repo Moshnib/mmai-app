@@ -113,7 +113,7 @@ export default function ComparePageInner() {
           <div className="navlinks">
             <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
             <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
-            <button className="navlink active">Compare Markets</button>
+            <button className="navlink active">Compare</button>
             <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn</Link>
             <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
             <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
@@ -125,7 +125,10 @@ export default function ComparePageInner() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">ALL MARKETS, SIDE BY SIDE</p>
-            <h2>Compare Markets Over Time</h2>
+            {/* h1, not h2 -- this is the page's top-level subject. Every other
+                page has one; without it this page reads to a search engine and
+                a screen reader as sections with no subject. */}
+            <h1>Compare Markets Over Time</h1>
             <p>See how every market&apos;s score, pillar, and underlying rate moved against each other — pick a year range, then a pillar.</p>
           </div>
 

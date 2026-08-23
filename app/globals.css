@@ -111,6 +111,7 @@ h1.headline {
 .meta-row b { color: var(--ink); }
 
 .section { padding: 44px 0; position: relative; z-index: 1; }
+.section-head h1,
 .section-head h2 { font-family: "Space Grotesk", sans-serif; font-size: 26px; font-weight: 600; margin: 0 0 8px; }
 .section-head p { color: var(--slate); font-size: 14px; margin: 0; max-width: 64ch; }
 

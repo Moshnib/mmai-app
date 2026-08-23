@@ -1,10 +1,31 @@
-import { Suspense } from "react";
+import type { Metadata } from "next";
 import TrendsPageInner from "./TrendsPageInner";
+import { FALLBACK_MARKETS } from "@/lib/markets";
+import type { PillarKey } from "@/lib/scoring";
 
-export default function TrendsPage() {
-  return (
-    <Suspense fallback={<div style={{ padding: 60, textAlign: "center", color: "#5B6472" }}>Loading…</div>}>
-      <TrendsPageInner />
-    </Suspense>
-  );
+export const metadata: Metadata = {
+  title: "Data Over Time",
+  description:
+    "How each market's MMAI score and its five underlying pillars have moved since 2019 — with the raw inflation, growth, unemployment, and policy-rate figures behind them.",
+};
+
+const VALID_PILLARS: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
+
+// searchParams is read here on the server and passed down as props, rather
+// than via useSearchParams() inside the client component. That keeps the page
+// fully server-rendered, so crawlers and link-preview bots receive real HTML
+// instead of an empty Suspense fallback.
+export default async function TrendsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ market?: string; pillar?: string }>;
+}) {
+  const { market, pillar } = await searchParams;
+
+  // Validate against the real market/pillar lists -- these come straight from
+  // the URL, so a junk value shouldn't reach the chart logic.
+  const validMarket = FALLBACK_MARKETS.some((m) => m.code === market) ? market! : "US";
+  const validPillar = VALID_PILLARS.includes(pillar as PillarKey) ? (pillar as PillarKey) : null;
+
+  return <TrendsPageInner initialMarket={validMarket} initialPillar={validPillar} />;
 }
