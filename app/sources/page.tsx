@@ -4,6 +4,7 @@ import { SOURCES } from "@/lib/sources";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import Flag from "@/components/Flag";
 import ExportDataButtons from "@/components/ExportDataButtons";
+import DataFreshness from "@/components/DataFreshness";
 
 export const metadata: Metadata = {
   title: "Data Sources & Licences",
@@ -39,12 +40,13 @@ export default function SourcesPage() {
         <div className="wrap">
           <p className="eyebrow">SOURCES &amp; FRESHNESS</p>
           <h1 className="headline" style={{ maxWidth: "22ch" }}>Every number, traced back to where it actually came from</h1>
-          <p className="sub">Institution, licence, live-or-manual status, and the date each source was last verified — for every chart and widget in MMAI, not just the ones that make the index look good.</p>
+          <p className="sub">Institution, licence, and live-or-manual status for every chart and widget in MMAI — not just the ones that make the index look good. Data refresh times are below; the table&apos;s dates are when each licence was last read by hand.</p>
         </div>
       </div>
 
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
+          <DataFreshness />
           {grouped.map((group) => (
             <div key={group.name} style={{ marginBottom: 28 }}>
               <h2 style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
@@ -57,7 +59,7 @@ export default function SourcesPage() {
                   <span>INSTITUTION</span>
                   <span>LICENCE</span>
                   <span>STATUS</span>
-                  <span>LAST VERIFIED</span>
+                  <span>LICENCE CHECKED</span>
                 </div>
                 {group.entries.map((e, i) => (
                   <div
@@ -147,12 +149,6 @@ export default function SourcesPage() {
           </div>
         </div>
       </div>
-
-      <footer>
-        <div className="wrap">
-          © 2026 MMAI — Moshnib Market Analysis Index. An analytical communication tool, not investment advice.
-        </div>
-      </footer>
     </>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SiteFooter from "@/components/SiteFooter";
 
 const SITE_URL = "https://mmai-app.vercel.app";
 const DESCRIPTION =
@@ -42,7 +43,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* One footer for every page, rendered here rather than copy-pasted
+            into each one -- it carries a live "last updated" stamp, so it has
+            to be a single component that can re-check on its own. */}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

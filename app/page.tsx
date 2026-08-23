@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Gauge from "@/components/Gauge";
 import KeyRatesRow from "@/components/KeyRatesRow";
@@ -11,10 +11,10 @@ import Sparkline from "@/components/Sparkline";
 import WorldMap from "@/components/WorldMap";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
-import { narrativeDrivers, computePillarScores, computeComposite, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators } from "@/lib/scoring";
+import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
-import { useLiveHistory, type RawIndicatorRow } from "@/lib/useLiveHistory";
+import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
 
 function formatUpdatedAt(iso: string): string {
@@ -87,37 +87,6 @@ function rateNarrativeFor(raw: RawIndicators): string | null {
   return `Inflation is at ${inflStr}%, the policy rate is at ${rateStr}%, and unemployment is at ${unempStr}%. These are the same three numbers central banks generally weigh when setting policy — trying to keep prices near target without pushing unemployment too high.`;
 }
 
-// Pure lookup, not interpretation -- min/max composite over the market's
-// own stored history, same formulas already used everywhere else on this
-// page. Needs at least 2 years of history with a computable composite to
-// say anything (a market with only its current-year point, or one that's
-// never cleared the 70% coverage threshold, returns null and renders nothing).
-//
-// The current year's composite is computed from the UNFILTERED last point
-// and checked first, before touching the rest of the history -- if today's
-// coverage is too low to publish a score (the gauge shows N/A), this must
-// stay silent too, rather than saying "highest score" about a stale year
-// while the gauge right above it says N/A.
-function extremesNarrativeFor(marketName: string, history: Array<{ year: string; indicators: RawIndicators }>): string | null {
-  const latestPoint = history[history.length - 1];
-  const latestComposite = latestPoint ? computeComposite(computePillarScores(latestPoint.indicators)).composite : null;
-  if (latestComposite === null) return null;
-
-  const scored = history
-    .map((h) => ({ year: h.year, composite: computeComposite(computePillarScores(h.indicators)).composite }))
-    .filter((s): s is { year: string; composite: number } => s.composite !== null);
-  if (scored.length < 2) return null;
-
-  const max = scored.reduce((a, b) => (b.composite >= a.composite ? b : a));
-  const min = scored.reduce((a, b) => (b.composite <= a.composite ? b : a));
-  const firstYear = scored[0].year;
-  if (max.composite === min.composite) return null; // flat history -- nothing to highlight
-
-  if (latestPoint.year === max.year) return `This is ${marketName}'s highest score in MMAI's record, which starts in ${firstYear}.`;
-  if (latestPoint.year === min.year) return `This is ${marketName}'s lowest score in MMAI's record, which starts in ${firstYear}.`;
-  return `${marketName}'s score has ranged from ${min.composite.toFixed(1)} (${min.year}) to ${max.composite.toFixed(1)} (${max.year}) since ${firstYear}.`;
-}
-
 export default function OverviewPage() {
   const [markets, setMarkets] = useState<MarketData[]>(FALLBACK_MARKETS);
   const [current, setCurrent] = useState("US");
@@ -141,10 +110,18 @@ export default function OverviewPage() {
         for (const row of data as Array<RawIndicatorRow & { fetched_at: string }>) {
           if (!latestByMarket.has(row.market)) latestByMarket.set(row.market, row);
         }
-        // Oldest of the seven markets' latest fetches, not the newest -- if
-        // one market's refresh stalled, "last updated" should say so rather
-        // than claim everything is as fresh as the one lucky market that ran.
+        // Oldest of the *displayed* markets' latest fetches, not the newest --
+        // if one market's refresh stalled, "last updated" should say so rather
+        // than claim everything is as fresh as the one market that ran.
+        //
+        // Scoped to FALLBACK_MARKETS on purpose: raw_indicators still holds
+        // rows for retired markets (UAE, removed) and paused ones (Norway),
+        // which by definition stop refreshing. Including them made this show
+        // the date a removed market last ran, not the real freshness of what's
+        // actually on the page.
+        const shownCodes = new Set(FALLBACK_MARKETS.map((m) => m.code));
         const oldestOfLatestFetches = Array.from(latestByMarket.values())
+          .filter((r) => shownCodes.has(r.market))
           .map((r) => r.fetched_at)
           .sort()
           .at(0);
@@ -176,11 +153,6 @@ export default function OverviewPage() {
   const market = markets.find((m) => m.code === current)!;
   const { pillars, composite, coveragePillars } = scoreMarket(market);
   const rateNarrative = rateNarrativeFor(market.raw);
-  const { history: liveHistory } = useLiveHistory();
-  const extremesNarrative = useMemo(
-    () => extremesNarrativeFor(market.name, liveHistory[current] ?? []),
-    [market.name, liveHistory, current]
-  );
 
   return (
     <>
@@ -229,11 +201,13 @@ export default function OverviewPage() {
             <div className="score-right">
               <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
-              {extremesNarrative && <p className="score-narrative">{extremesNarrative}</p>}
               <div className="meta-row" style={{ marginBottom: 16 }}>
                 <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
                 <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
-                <span>Sources verified: <b>{latestVerifiedDate(market.name)}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
+                {/* "Licence checked", not "verified" -- this is the hand-maintained
+                    date someone last read the institution's terms, NOT when the data
+                    refreshed. The refresh time is the separate line above the headline. */}
+                <span>Licences checked: <b>{latestVerifiedDate(market.name)}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
               </div>
               <Sparkline marketCode={current} currentScore={composite} />
               <Link
@@ -295,12 +269,6 @@ export default function OverviewPage() {
           <SubscribeForm />
         </div>
       </div>
-
-      <footer>
-        <div className="wrap">
-          © 2026 MMAI — Moshnib Market Analysis Index. An analytical communication tool, not investment advice.
-        </div>
-      </footer>
     </>
   );
 }

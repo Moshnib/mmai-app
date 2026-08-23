@@ -221,12 +221,6 @@ export default function ComparePageInner() {
           </div>
         </div>
       </div>
-
-      <footer>
-        <div className="wrap">
-          © 2026 MMAI — Moshnib Market Analysis Index. An analytical communication tool, not investment advice.
-        </div>
-      </footer>
     </>
   );
 }
