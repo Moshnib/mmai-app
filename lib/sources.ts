@@ -15,7 +15,13 @@ export interface SourceEntry {
   institution: string;
   license: string;
   status: FetchStatus;
-  lastVerified: string; // date the URL/license was last actually checked, not just written
+  /** INTERNAL / maintenance only -- deliberately not shown on the public
+   *  Sources page. This is the date a human last re-read the institution's
+   *  licence terms, so it only moves when someone actually does that. On a
+   *  public page it reads as staleness ("why does this say August?") when it
+   *  is really a record of legal review. Visitors see the live data-refresh
+   *  time instead; see components/SourcesTable.tsx. */
+  lastVerified: string;
   note?: string;
   /** The institution's own public page for this series. The whole premise of
    *  this page is "check our work" -- without a link, a reader who wants to

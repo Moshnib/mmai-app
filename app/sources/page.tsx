@@ -2,9 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SOURCES } from "@/lib/sources";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import Flag from "@/components/Flag";
 import ExportDataButtons from "@/components/ExportDataButtons";
-import DataFreshness from "@/components/DataFreshness";
+import SourcesTable from "@/components/SourcesTable";
 
 export const metadata: Metadata = {
   title: "Data Sources & Licences",
@@ -40,80 +39,13 @@ export default function SourcesPage() {
         <div className="wrap">
           <p className="eyebrow">SOURCES &amp; FRESHNESS</p>
           <h1 className="headline" style={{ maxWidth: "22ch" }}>Every number, traced back to where it actually came from</h1>
-          <p className="sub">Institution, licence, and live-or-manual status for every chart and widget in MMAI — not just the ones that make the index look good. Data refresh times are below; the table&apos;s dates are when each licence was last read by hand.</p>
+          <p className="sub">Institution, licence, live-or-manual status, and when the data last came in — for every chart and widget in MMAI, not just the ones that make the index look good.</p>
         </div>
       </div>
 
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <DataFreshness />
-          {grouped.map((group) => (
-            <div key={group.name} style={{ marginBottom: 28 }}>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
-                {codeForName[group.name] && <Flag code={codeForName[group.name]} size={22} />}
-                {group.name}
-              </h2>
-              <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden", backdropFilter: "blur(14px)" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.6fr 2.2fr 0.9fr 1fr", background: "rgba(139,92,246,0.18)", padding: "10px 18px", fontSize: 10.5, fontFamily: "monospace", fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>
-                  <span>INDICATOR</span>
-                  <span>INSTITUTION</span>
-                  <span>LICENCE</span>
-                  <span>STATUS</span>
-                  <span>LICENCE CHECKED</span>
-                </div>
-                {group.entries.map((e, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1.4fr 1.6fr 2.2fr 0.9fr 1fr",
-                      padding: "12px 18px",
-                      fontSize: 12.5,
-                      borderTop: i > 0 ? "1px solid var(--hair)" : undefined,
-                      alignItems: "start",
-                      gap: 6,
-                    }}
-                  >
-                    <span style={{ fontWeight: 700, color: "var(--ink)" }}>{e.indicator}</span>
-                    <span style={{ color: "var(--ink-soft)" }}>
-                      {e.url ? (
-                        <a
-                          href={e.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: "var(--ink-soft)", textDecoration: "underline", textDecorationColor: "var(--hair)", textUnderlineOffset: 3 }}
-                        >
-                          {e.institution} <span style={{ color: "var(--slate)", fontSize: 10 }}>↗</span>
-                        </a>
-                      ) : (
-                        e.institution
-                      )}
-                    </span>
-                    <span style={{ color: "var(--slate)" }}>
-                      {e.license}
-                      {e.note && <div style={{ fontSize: 10.5, fontStyle: "italic", color: "var(--gold-deep)", marginTop: 2 }}>{e.note}</div>}
-                    </span>
-                    <span>
-                      <span
-                        style={{
-                          fontFamily: "monospace",
-                          fontSize: 10.5,
-                          fontWeight: 700,
-                          padding: "3px 9px",
-                          borderRadius: 999,
-                          background: e.status === "live" ? "var(--teal-bg)" : "var(--gold-bg)",
-                          color: e.status === "live" ? "var(--teal)" : "var(--gold-deep)",
-                        }}
-                      >
-                        {e.status === "live" ? "LIVE" : "MANUAL"}
-                      </span>
-                    </span>
-                    <span style={{ fontFamily: "monospace", fontSize: 11.5, color: "var(--slate)" }}>{e.lastVerified}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+          <SourcesTable groups={grouped} codeForName={codeForName} />
         </div>
       </div>
 

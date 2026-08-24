@@ -23,12 +23,6 @@ function formatUpdatedAt(iso: string): string {
   });
 }
 
-function latestVerifiedDate(marketName: string): string {
-  const entries = sourcesForMarket(marketName);
-  if (entries.length === 0) return "—";
-  return entries.reduce((latest, e) => (e.lastVerified > latest ? e.lastVerified : latest), entries[0].lastVerified);
-}
-
 function narrativeFor(market: MarketData): string {
   const { pillars, coveragePillars, coverage } = scoreMarket(market);
   const drivers = narrativeDrivers(pillars);
@@ -204,10 +198,11 @@ export default function OverviewPage() {
               <div className="meta-row" style={{ marginBottom: 16 }}>
                 <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
                 <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
-                {/* "Licence checked", not "verified" -- this is the hand-maintained
-                    date someone last read the institution's terms, NOT when the data
-                    refreshed. The refresh time is the separate line above the headline. */}
-                <span>Licences checked: <b>{latestVerifiedDate(market.name)}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
+                {/* Source COUNT, not the licence-review date -- that date is
+                    maintenance metadata (see lib/sources.ts) and reads as
+                    staleness here. Data freshness is the line above the
+                    headline and in the footer. */}
+                <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
               </div>
               <Sparkline marketCode={current} currentScore={composite} />
               <Link
