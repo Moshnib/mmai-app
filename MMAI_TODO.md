@@ -1,5 +1,31 @@
 # MMAI — To-Do List
-*Last updated: 2026-08-24*
+*Last updated: 2026-08-25*
+
+## 🚧 In progress — "Gulf Watch" feature (started 2026-08-25)
+
+A new section for the site, separate from the main 6-market score. Full plan
+and reasoning are in `MMAI_MASTER_HANDOVER.md` §11 — read that before
+continuing this. Short version:
+
+- **Oman** was going to become a real 7th scored market (it has clean data
+  for all 4 indicators) — **paused for now on your call**, so it joins the
+  panel below instead rather than being fully built out.
+- **Gulf Watch panel** (no official score, just honest live numbers): UAE,
+  Bahrain, Qatar, Kuwait, Oman, Saudi Arabia. Shows cost-of-living
+  (inflation), investment confidence (real estate activity where available),
+  and currency stability (FX reserves/current account) for each.
+- **Saudi Arabia's central bank was tested directly from the live site and
+  confirmed unreachable** — settled, not still an open question. It joins
+  the panel like everyone else, using Saudi's statistics office (GASTAT)
+  and a free re-publisher (KAPSARC) instead.
+- A full build plan exists (reviewed by Opus, since Fable was out of
+  credits) covering: a new database table, ~8 new data-fetcher files, a new
+  page, and a handful of real bugs the review caught that need fixing along
+  the way (a timeout risk in the daily refresh job, and a dormant bug where
+  a market with no data could silently show old fallback numbers under a
+  "LIVE" banner). **None of that has been built yet** — only the research
+  and planning stage is done.
+- Next session should pick up at "Phase 2" of the plan in the handover doc.
 
 ## ✅ Just finished — full site audit (2026-08-24)
 - [x] **Confirmed the daily auto-refresh runs on its own.** On 2026-08-23 all
@@ -81,6 +107,9 @@
       snags.
 
 ## 📌 Standing reminders
+- Gulf Watch's full step-by-step build plan lives in `MMAI_MASTER_HANDOVER.md`
+  §11 — it's written into the repo, not just a local plan file, specifically
+  so it survives a new chat or a new machine.
 - Always get Fable's (or Opus, when Fable's out of credits) review before
   writing code, and again before merging.
 - Never commit or push without saying "GO" first.

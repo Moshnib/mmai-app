@@ -1,8 +1,10 @@
 # MMAI — MASTER HANDOVER DOCUMENT
 
-**Last updated:** 2026-08-24
-**Reflects commit:** `4b1c33b` ("Show live data-refresh times on the Sources page instead of licence dates")
+**Last updated:** 2026-08-25
+**Reflects commit:** `9f5e448` ("Remove the temporary Saudi connectivity diagnostic route")
 **Purpose:** Paste or upload this entire document into a new chat with Claude Code to continue the MMAI project with zero loss of context.
+
+> **New since 2026-08-24:** a "Gulf Watch" feature is in progress — research and planning are done, the two open unknowns are resolved, but the actual build (new database table, new fetchers, new page) hasn't started yet. Full details in **§11**. Everything in §0–§10 below still describes the live, shipped site (6 markets) — Gulf Watch is documented separately since none of it is deployed yet.
 
 > **This file now lives INSIDE the repo** (`MMAI_MASTER_HANDOVER.md` in the project root), so every version of it is permanently backed up on GitHub and can never be lost with a laptop, a chat, or a OneDrive sync. An older copy dated **2026-08-22** may still exist in `OneDrive/Documents/mmai project handover august 22/` — **that copy is stale and should be ignored or deleted.** It describes FRED as a live data source (it was removed for legal reasons), lists Norway as an active market (it isn't right now), and describes the BEA/EIA work as uncommitted (it was committed on 2026-08-22).
 
@@ -345,7 +347,7 @@ MMAI = (Σ weight × pillar_score) / (Σ active weights)  -- reweights around an
 1. **Do NOT commit or push without the user's explicit "GO"** — confirmed separately for each. Never bypassed.
 2. **Do NOT skip the Fable-or-approved-substitute review gate.** If Fable is out of credits, ASK each time whether to substitute Opus. Do not assume, do not skip.
 3. **Do NOT reintroduce FRED** as a data source — their ToS prohibits storing data in a database.
-4. **Do NOT re-add UAE** without solving the policy-rate-source problem.
+4. **Do NOT re-add UAE as a scored market** without solving the policy-rate-source problem — but re-adding UAE as a **non-scored Gulf Watch panel entry** (see §11) is the sanctioned, already-planned path forward, not a violation of this rule.
 5. **Do NOT re-add Market Momentum** as a 6th pillar without a licensed equity source.
 6. **Do NOT re-enable Norway** until Norges Bank confirms the license in writing.
 7. **Do NOT use green anywhere in the UI.** If adding a gradient stop, verify across the full 0–100 range first.
@@ -386,6 +388,56 @@ You are continuing an active, healthy, fully-deployed project. Read this entire 
 9. **Do not restart or redesign completed work.** All 6 markets, all pillars, all formulas, and the entire refresh/Supabase/UI pipeline work and are reviewed. Build incrementally.
 
 10. **When unsure what's already decided**, search §6 and §9 before asking the user to re-decide something settled.
+
+---
+
+## 11. GULF WATCH — IN-PROGRESS FEATURE (started 2026-08-25, not yet built)
+
+**Status as of this handover: research and planning complete, both open unknowns resolved, zero code written yet.** This section is the complete plan — a future session can build entirely from this, no external file needed.
+
+### 11.1 What it is and why
+
+MMAI's 6 scored markets all have complete data for all 5 pillars. Extensive research found that several Gulf countries have *some* clean, legal, live data (inflation, GDP growth, unemployment, and for some, real estate/FX data) but are missing an automatable policy rate — meaning they can never hit the 70% coverage threshold needed to show a composite score. Rather than repeat the mistake that got UAE removed (forcing incomplete data into a scored market), the plan is two-pronged:
+
+- **Gulf Watch panel** — UAE, Bahrain, Qatar, Kuwait, Oman, Saudi Arabia, each shown honestly with real live indicators (cost-of-living CPI, investment-confidence real estate where available, currency-stability FX reserves/current account) and **explicitly no composite score**.
+- Oman was originally going to be built as a genuine 7th *scored* market (it has all 4 indicators, unlike the other five) — **the site owner chose to set this aside for now**, so Oman ships as a panel country like the rest, not a scored one. This can be revisited later; nothing about the panel plan blocks it.
+
+The site owner lives in the UAE and specifically wants it represented prominently even without a score — this drove the "show honestly, no fake score" approach rather than leaving UAE out entirely.
+
+### 11.2 The two blocking unknowns — BOTH NOW RESOLVED
+
+1. **Oman's policy rate licensing** — resolved but moot since Oman was set aside as a scored market. For the record: the repo-rate data is genuinely sourced from the Central Bank of Oman, republished by Oman's National Centre for Statistics and Information on Oman's national open-data portal under Oman's government-wide Open Government License (already confirmed elsewhere on that same portal to permit commercial reuse and database storage). This is *not* the same risk shape as FRED — FRED was a private/quasi-restrictive redistributor with its own conflicting terms; here it's one arm of the Omani government republishing another arm's data under one unified, already-permissive national licence. If Oman is revisited as a scored market later, this licensing question is already answered.
+2. **Saudi Arabia's central bank/open-data-portal connectivity** — **confirmed unreachable**, tested directly from the live production site (not local dev, which gave an ambiguous result). A temporary diagnostic route (`app/api/diag-saudi/route.ts`, built and removed same-day, commits `bbd4f0d` → `9f5e448`) hit SAMA, Saudi's open-data portal, and GASTAT (as a control) from Vercel's actual servers. Result: SAMA and the open-data portal both failed to connect; GASTAT (Saudi's statistics office) responded normally. This settles it — Saudi's policy rate genuinely isn't available. Saudi ships as a panel country using GASTAT (CPI) and KAPSARC (a free re-publisher of Saudi's official REGA real-estate index).
+
+### 11.3 Full data-source picture (all verified this session, not assumed)
+
+| Country | Inflation (CPI) | GDP growth | Unemployment | Policy rate | Real estate |
+|---|---|---|---|---|---|
+| UAE | World Bank + FCSC monthly by emirate (clean reuse/attribution licence) | World Bank | World Bank | ❌ Confirmed blocked (Cloudflare) | Dubai Land Department raw transactions API, OAuth-based, "UAE Federal Open Data License" confirmed commercial-OK. **Not** the "Residential Sale Index" — that one is explicitly commercial-prohibited and PDF-only, avoid it entirely. |
+| Bahrain | World Bank + own monthly CPI, live API, "Bahrain Open Government Data License v1.0" confirmed commercial-OK | World Bank | World Bank | ❌ No usable feed | Survey and Land Registration Bureau (SLRB), same national open-data licence |
+| Qatar | World Bank + own monthly CPI, CC BY 4.0 | World Bank | World Bank (figure ~0.1% is real, independently confirmed by Qatar's own statistics authority — genuinely this low due to the migrant-labor-visa economy structure, needs a one-sentence caveat in the UI, not a different source) | ❌ QIBOR is Bloomberg-owned, paid distribution only | Ministry of Justice weekly real-estate dataset, same national open-data portal/licence as CPI |
+| Kuwait | World Bank only (no dedicated national monthly source found) | World Bank | World Bank | ❌ PDFs only | None found — ships with no real-estate figure, marked "unavailable" not "manual" (see §11.5) |
+| Oman | World Bank + own monthly (NCSI) | World Bank | World Bank | ✅ Available (CBO via NCSI, see §11.2) — moot, not being used since Oman isn't a scored market for now | Not researched (wasn't needed once Oman became a panel-only country) |
+| Saudi Arabia | World Bank + GASTAT monthly (confirmed reachable) | World Bank | World Bank | ❌ Confirmed unreachable (see §11.2) | KAPSARC free no-signup API, republishes REGA's official index quarterly since 2014 |
+
+### 11.4 The plan review — read this before writing any code
+
+Per the standing Fable-review rule, the first draft of this plan was reviewed by Opus (Fable was out of credits — user confirmed substitute) **before any code was written**. The review sent it back with real, blocking issues. **These are not yet fixed in code — they must be addressed as part of building, not skipped:**
+
+1. **The daily refresh job will likely start timing out.** It currently takes ~9s against Vercel Hobby's 10s default function limit. Adding new markets pushes it over. **Fix required:** add `export const maxDuration = 60;` to `app/api/refresh/route.ts`, and `AbortSignal.timeout(8000)` to every new fetcher — confirmed zero existing fetchers set any timeout at all.
+2. **A dormant bug in `app/page.tsx` and `components/SiteFooter.tsx`**: today, if a market has no data row, it silently falls back to hardcoded `FALLBACK_MARKETS` numbers *displayed under the same "LIVE DATA" banner as everything else*, and is *excluded* from the staleness calculation (making the footer look fresher, not staler, when a market is actually missing). This has never triggered because all 6 existing markets always succeed — the first new, unproven fetcher that fails will be the first thing to actually hit this path. **Fix required before any new market/panel country ships**, not after.
+3. **Policy-rate fetchers must be named for and sourced from the actual rate-setting institution**, never a statistics office republishing it — this is exactly the FRED mistake shape. (This is why Oman's would-be policy-rate fetcher was corrected from `ncsi.ts` to `cbo.ts` in the plan, even though it's currently unused.)
+4. Several smaller required fixes: add `CHECK` constraints to the new `gulf_indicators` table so "real estate value without a label" can't happen at the database level; add a genuine third source-status (`"unavailable"`, not `"manual"`) for cases like Kuwait's missing real estate, since labeling a nonexistent source as manually-verified would be a false statement; add Oman's/Gulf countries' name strings to match exactly between `lib/markets.ts`/`lib/gulfSources.ts` and wherever they're looked up (Norway's entries already have this exact silent bug — its 4 source rows never render on `/sources` because the name string doesn't match — worth fixing while touching this code).
+
+**Scope was also deliberately cut** after review: no Gulf-region map component in the first version (confirmed `lib/mapdata/world-paths.json` has no Bahrain polygon at all, and the other Gulf countries' paths are too small to render legibly at the existing map's zoom — building a whole new bespoke map component isn't worth it for a feature that's really carried by the cards, not a map). And Saudi Arabia will never be promoted to a scored market #8 as part of this release even though its connectivity is now resolved — that's explicitly deferred to a separate future change, so this release's scope doesn't balloon mid-build.
+
+### 11.5 Build order (once resumed)
+
+1. ~~Phase 0: resolve the two unknowns~~ — **done**.
+2. ~~Phase 1: Oman as scored market #7~~ — **set aside**, Oman folds into the panel work below instead.
+3. **Phase 2 (next up): Gulf panel schema + the fully-resolved countries.** New Supabase table `gulf_indicators` (schema, with the required CHECK constraints, is fully specified — ask for it if the original plan file isn't available). New fetchers: `lib/fetchers/dld.ts` (UAE real estate — name it for the institution, not the earlier typo'd draft name), `lib/fetchers/fcsc.ts` (UAE CPI), `lib/fetchers/bahrain-cpi.ts`, `lib/fetchers/bahrain-slrb.ts`, `lib/fetchers/qatar-psa.ts`, `lib/fetchers/qatar-moj.ts`, `lib/fetchers/gastat.ts` (Saudi CPI), `lib/fetchers/kapsarc.ts` (Saudi real estate), plus World Bank reuse for GDP/unemployment/Kuwait's CPI. New `lib/gulfSources.ts` (sibling type to `lib/sources.ts`, not a widened version of it — `sourceForPillar()` is typed strictly to the 5 scoring pillars). New separate cron route `app/api/refresh-gulf/route.ts` (kept separate from the main refresh specifically because of the execution-time budget in §11.4 point 1, not for the error-isolation reason an earlier draft of this plan mistakenly gave). Every new fetcher must be standalone-tested live before being wired in — same rule as every other fetcher in this project.
+4. **Phase 3: UI.** `components/GulfCard.tsx` (flat card, modeled on `CompareGrid.tsx` not `PillarGrid.tsx`, since there's no score to put in a ring), `app/gulf-watch/page.tsx` + `GulfWatchPageInner.tsx` (thin-wrapper + Suspense pattern, same as `app/compare/`), nav links added to all 7 files that currently duplicate nav markup (there's no shared nav component — confirmed and accepted as out of scope for this feature), a second `SourcesTable` block on `/sources` for Gulf entries, and `ExportDataButtons.tsx` updated so its "nothing held back" claim stays true once Gulf Watch ships.
+5. **Phase 4: polish** — full unattended cron cycle confirmed for both refresh routes before calling it done, same standard already applied to the main 6-market cron.
 
 ---
 *End of handover document.*
