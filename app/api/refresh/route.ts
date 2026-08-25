@@ -22,6 +22,14 @@ import { FALLBACK_MARKETS } from "@/lib/markets";
 
 const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
+// Vercel Hobby's default function timeout is 10s. This run already takes
+// ~9s across 6 markets, with no headroom for a 7th or for any new source
+// that's slower than the proven ones -- if it times out mid-loop, whichever
+// markets haven't run yet (the run is sequential) simply get no data that
+// day, silently, with no error surfaced anywhere. Raised explicitly rather
+// than relying on the platform default.
+export const maxDuration = 60;
+
 /**
  * All 7 markets are now wired to live sources for every indicator,
  * including GDP growth (US) and Brent Crude (shared across every market).

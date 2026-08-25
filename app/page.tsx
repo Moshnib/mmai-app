@@ -17,6 +17,14 @@ import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
 
+// A market whose last successful write is older than this is treated as
+// currently broken, not "a bit behind" -- daily refresh cadence means
+// anything past a couple of missed days is a real problem, not normal
+// publication lag (that's a different, already-accepted thing: annual
+// sources like World Bank GDP figures naturally carry old observation
+// dates while still refreshing successfully every day).
+const STALE_THRESHOLD_MS = 72 * 60 * 60 * 1000; // 72 hours
+
 function formatUpdatedAt(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
     month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
@@ -121,9 +129,18 @@ export default function OverviewPage() {
           .at(0);
         if (oldestOfLatestFetches) setLastUpdated(oldestOfLatestFetches);
 
+        const now = Date.now();
         const live: MarketData[] = FALLBACK_MARKETS.map((m) => {
           const row = latestByMarket.get(m.code);
-          if (!row) return m; // keep fallback for markets not yet in the database
+          const isStale = !row || now - new Date(row.fetched_at).getTime() > STALE_THRESHOLD_MS;
+          if (isStale) {
+            // No row, or the row is too old to trust: show this market
+            // honestly as N/A (via the existing coverage-threshold path)
+            // rather than silently falling back to hardcoded demo numbers
+            // displayed under the "LIVE DATA" banner every other market
+            // earns by actually being live.
+            return { ...m, raw: { inflation: null, gdpGrowth: null, unemployment: null, policyRate: null, brentYoY: null } };
+          }
           return {
             ...m,
             raw: {

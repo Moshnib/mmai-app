@@ -19,6 +19,10 @@ import { FALLBACK_MARKETS } from "@/lib/markets";
 // intraday, swapping this for Supabase Realtime is the right move.
 const RECHECK_MS = 10 * 60 * 1000; // 10 minutes
 
+// Matches app/page.tsx's threshold -- a market with no row at all, or
+// nothing newer than this, is currently broken, not "a bit behind."
+const STALE_THRESHOLD_MS = 72 * 60 * 60 * 1000; // 72 hours
+
 function formatStamp(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
     year: "numeric",
@@ -33,6 +37,7 @@ function formatStamp(iso: string): string {
 
 export default function SiteFooter() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [staleCount, setStaleCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +68,15 @@ export default function SiteFooter() {
         }
         if (latestPerMarket.length === 0) return;
 
+        // A market missing entirely from this result set (zero rows) is the
+        // worst case and wouldn't otherwise show up anywhere in this
+        // calculation -- count it as stale explicitly rather than let its
+        // total absence silently make the site look fresher than it is.
+        const now = Date.now();
+        const staleFromMissing = shown.size - seen.size;
+        const staleFromOldRows = latestPerMarket.filter((ts) => now - new Date(ts).getTime() > STALE_THRESHOLD_MS).length;
+        setStaleCount(staleFromMissing + staleFromOldRows);
+
         // Oldest of the per-market latest fetches -- if one market stalled, say
         // so rather than claim the freshness of the one that happened to run.
         setLastUpdated(latestPerMarket.sort()[0]);
@@ -91,6 +105,7 @@ export default function SiteFooter() {
         {lastUpdated && (
           <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11 }}>
             Data last updated {formatStamp(lastUpdated)}
+            {staleCount > 0 && ` · ${staleCount} market${staleCount === 1 ? "" : "s"} not currently refreshing`}
           </span>
         )}
       </div>
