@@ -42,7 +42,15 @@ export default function GulfWatchPageInner() {
           .select(
             "country_code, cpi_yoy, real_estate_value, real_estate_metric_label, fx_reserves_months_imports, current_account_pct_gdp, observation_date, fetched_at"
           )
-          .order("observation_date", { ascending: false })
+          // Sort by fetched_at ONLY, not observation_date first: unlike
+          // raw_indicators (one market, one shared reporting period per
+          // run), a Gulf Watch row blends three pillars with genuinely
+          // different natural dates (CPI's actual reporting month vs. a
+          // fallback to "today" when a fetch fails). A failed run's fake
+          // "today" observation_date would otherwise sort ahead of a real,
+          // earlier-dated successful run -- confirmed this actually
+          // happened against live data before this fix. fetched_at is the
+          // one field that unambiguously means "when we last wrote this."
           .order("fetched_at", { ascending: false })
           .limit(60); // 6 countries x recent refreshes -- same headroom pattern as raw_indicators' 200-row cap
         if (error || !data) return;

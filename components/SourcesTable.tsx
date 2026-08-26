@@ -75,12 +75,15 @@ export default function SourcesTable({
       try {
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
         const supabase = getPublicSupabaseClient();
-        const { data, error } = await supabase
-          .from(freshnessTable)
-          .select(`${freshnessKeyColumn}, fetched_at`)
-          .order("observation_date", { ascending: false })
-          .order("fetched_at", { ascending: false })
-          .limit(200);
+        // gulf_indicators sorts by fetched_at ONLY -- a row's
+        // observation_date can fall back to "today" when a fetch fails
+        // (see app/gulf-watch/GulfWatchPageInner.tsx for the full story),
+        // which would otherwise sort a failed run ahead of a real, earlier
+        // -dated successful one. raw_indicators doesn't have this failure
+        // mode, so its existing observation_date-first order is untouched.
+        let query = supabase.from(freshnessTable).select(`${freshnessKeyColumn}, fetched_at`);
+        query = freshnessTable === "gulf_indicators" ? query.order("fetched_at", { ascending: false }) : query.order("observation_date", { ascending: false }).order("fetched_at", { ascending: false });
+        const { data, error } = await query.limit(200);
         if (cancelled || error || !data) return;
 
         const byMarket: Record<string, string> = {};
