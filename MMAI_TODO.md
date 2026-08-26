@@ -1,5 +1,5 @@
 # MMAI — To-Do List
-*Last updated: 2026-08-26*
+*Last updated: 2026-08-26 (Gulf Watch: all 3 pillars complete for all 6 countries)*
 
 ## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
 While testing Gulf Watch's new refresh job, discovered the password
@@ -29,14 +29,26 @@ policy-rate source. Full plan and reasoning in `MMAI_MASTER_HANDOVER.md` §11.
 - [x] All 6 countries' inflation (CPI) data — built and verified live.
 - [x] Qatar's real estate activity (monthly transaction count) — built and
       verified live.
+- [x] All 6 countries' currency-stability numbers (FX reserves + current
+      account balance) — built and verified live. Since every Gulf currency
+      here is pegged to (or closely tracks) the US dollar, this is a
+      genuinely meaningful "can the peg hold" signal, not just filler data.
 - [x] New `gulf_indicators` database table — live, with the safeguards the
       review asked for (can't store a real-estate number without saying what
-      it means).
+      it means). One column got renamed after a naming mistake was caught
+      before any real data landed in it (was `fx_reserves_usd_bn`, actually
+      stores months of import cover, not a dollar amount — now named
+      correctly).
 - [x] A second daily refresh job (`/api/refresh-gulf`, 06:20 UTC) that
-      actually writes all 6 countries' data — built, tested, confirmed
-      writing real rows to the database.
+      actually writes all 6 countries' data across all 3 pillars — built,
+      tested, and confirmed end-to-end: manually triggered the live route
+      and checked the actual database rows, not just "it returned OK."
 - [x] Along the way, found and fixed a real security gap (see above) — the
       password protecting both refresh jobs wasn't actually working.
+
+**Every country now has a complete, verified 3-pillar data set** (cost of
+living, currency stability, and real estate where available) refreshing
+daily. Nothing has failed a live test yet in this feature.
 
 **Still ahead:**
 - [ ] Saudi Arabia's real estate (KAPSARC) — still needs your decision: send
