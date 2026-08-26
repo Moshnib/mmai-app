@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SOURCES } from "@/lib/sources";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import { GULF_SOURCES, GULF_NAME_TO_CODE } from "@/lib/gulfSources";
+import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import ExportDataButtons from "@/components/ExportDataButtons";
 import SourcesTable from "@/components/SourcesTable";
 
@@ -13,6 +15,11 @@ export const metadata: Metadata = {
 
 const marketOrder = ["All markets", ...FALLBACK_MARKETS.map((m) => m.name)];
 const codeForName = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.name, m.code]));
+
+const gulfOrder = GULF_COUNTRIES.map((c) => c.name);
+const gulfGrouped = gulfOrder
+  .map((name) => ({ name, entries: GULF_SOURCES.filter((s) => s.country === name) }))
+  .filter((g) => g.entries.length > 0);
 
 export default function SourcesPage() {
   const grouped = marketOrder
@@ -28,6 +35,7 @@ export default function SourcesPage() {
             <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
             <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
             <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
+            <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
             <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn</Link>
             <button className="navlink active">Sources</button>
             <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
@@ -46,6 +54,24 @@ export default function SourcesPage() {
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <SourcesTable groups={grouped} codeForName={codeForName} />
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 8 }}>
+            <p className="eyebrow">GULF WATCH (NON-SCORED)</p>
+            <h2>Six more countries, without a composite score</h2>
+            <p style={{ maxWidth: "68ch" }}>
+              UAE, Bahrain, Qatar, Saudi Arabia, Kuwait, and Oman appear on the{" "}
+              <Link href="/gulf-watch" style={{ color: "var(--gold-deep)" }}>Gulf Watch</Link> page with real, live
+              data — but none of them get an MMAI score. A usable, legal, automatable policy-rate source doesn&apos;t
+              exist for any of these six yet, and the 70% coverage threshold every scored market has to clear means
+              MMAI would rather show nothing than a number built on a gap. Entries marked{" "}
+              <b>UNAVAILABLE</b> below mean exactly that: no source exists at all, not that one is simply unused.
+            </p>
+          </div>
+          <SourcesTable groups={gulfGrouped} codeForName={GULF_NAME_TO_CODE} freshnessTable="gulf_indicators" freshnessKeyColumn="country_code" />
         </div>
       </div>
 

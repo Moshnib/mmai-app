@@ -6,7 +6,11 @@
 // freshness change never requires touching the scoring logic.
 // ============================================================
 
-export type FetchStatus = "live" | "manual";
+// "unavailable" is for Gulf Watch: a country with no source at all for an
+// indicator (e.g. Kuwait's real estate). Labeling that "manual" would be a
+// false statement -- "manual" means a human-verified figure exists; here,
+// none does.
+export type FetchStatus = "live" | "manual" | "unavailable";
 
 export interface SourceEntry {
   market: string;

@@ -97,6 +97,51 @@ const FLAGS: Record<string, React.ReactNode> = {
       <rect x="0" y="8.8" width="28" height="2.4" fill="#002868" />
     </>
   ),
+  // ---------- Gulf Watch flags ----------
+  AE: (
+    <>
+      <rect width="28" height="20" fill="#00732F" />
+      <rect y="6.67" width="28" height="6.67" fill="#fff" />
+      <rect y="13.33" width="28" height="6.67" fill="#000" />
+      <rect width="7" height="20" fill="#FF0000" />
+    </>
+  ),
+  BH: (
+    <>
+      <rect width="28" height="20" fill="#fff" />
+      <rect x="8" width="20" height="20" fill="#CE1126" />
+      <path d="M8,0 L11.2,2 L8,4 L11.2,6 L8,8 L11.2,10 L8,12 L11.2,14 L8,16 L11.2,18 L8,20 L0,20 L0,0 Z" fill="#fff" />
+    </>
+  ),
+  QA: (
+    <>
+      <rect width="28" height="20" fill="#8D1B3D" />
+      <path d="M10,0 L11.6,1.43 L10,2.86 L11.6,4.29 L10,5.71 L11.6,7.14 L10,8.57 L11.6,10 L10,11.43 L11.6,12.86 L10,14.29 L11.6,15.71 L10,17.14 L11.6,18.57 L10,20 L0,20 L0,0 Z" fill="#fff" />
+    </>
+  ),
+  SA: (
+    <>
+      <rect width="28" height="20" fill="#006C35" />
+      <rect x="4" y="8.5" width="16" height="1.6" fill="#fff" />
+      <path d="M20,7.5 L24,9.3 L20,11.1 Z" fill="#fff" />
+    </>
+  ),
+  KW: (
+    <>
+      <rect width="28" height="20" fill="#fff" />
+      <rect y="6.67" width="28" height="6.67" fill="#CE1126" />
+      <rect y="13.33" width="28" height="6.67" fill="#000" />
+      <path d="M0,0 L7,0 L0,10 L7,20 L0,20 Z" fill="#007A3D" />
+    </>
+  ),
+  OM: (
+    <>
+      <rect width="28" height="20" fill="#fff" />
+      <rect y="6.67" width="28" height="6.67" fill="#DB161B" />
+      <rect y="13.33" width="28" height="6.67" fill="#008000" />
+      <rect width="8" height="20" fill="#DB161B" />
+    </>
+  ),
 };
 
 export default function Flag({ code, size = 20 }: { code: string; size?: number }) {

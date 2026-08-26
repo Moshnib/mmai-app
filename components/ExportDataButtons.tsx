@@ -13,7 +13,10 @@ import { getPublicSupabaseClient } from "@/lib/supabase";
 const TABLES = [
   { table: "raw_indicators" as const, label: "Raw indicators (CSV)", filename: "mmai-raw-indicators.csv" },
   { table: "mmai_scores" as const, label: "Computed scores (CSV)", filename: "mmai-computed-scores.csv" },
+  { table: "gulf_indicators" as const, label: "Gulf Watch data (CSV)", filename: "mmai-gulf-indicators.csv" },
 ];
+
+type TableName = (typeof TABLES)[number]["table"];
 
 // Supabase's default per-request row cap (Project Settings > API > Max
 // Rows) is 1000 -- a plain select("*") silently truncates past that with
@@ -22,7 +25,7 @@ const TABLES = [
 // shorter-than-a-full-page response confirms there's nothing left.
 const PAGE_SIZE = 1000;
 
-async function fetchAllRows(table: "raw_indicators" | "mmai_scores"): Promise<Array<Record<string, unknown>>> {
+async function fetchAllRows(table: TableName): Promise<Array<Record<string, unknown>>> {
   const supabase = getPublicSupabaseClient();
   const rows: Array<Record<string, unknown>> = [];
   let from = 0;
@@ -92,7 +95,7 @@ type Status = "idle" | "loading" | "error" | "empty";
 export default function ExportDataButtons() {
   const [status, setStatus] = useState<Record<string, Status>>({});
 
-  async function exportTable(table: "raw_indicators" | "mmai_scores", filename: string) {
+  async function exportTable(table: TableName, filename: string) {
     setStatus((s) => ({ ...s, [table]: "loading" }));
     try {
       const rows = await fetchAllRows(table);
