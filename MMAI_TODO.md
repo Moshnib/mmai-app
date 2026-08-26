@@ -1,31 +1,53 @@
 # MMAI — To-Do List
-*Last updated: 2026-08-25*
+*Last updated: 2026-08-26*
+
+## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
+While testing Gulf Watch's new refresh job, discovered the password
+protecting **both** daily refresh endpoints (`/api/refresh` and the new
+`/api/refresh-gulf`) wasn't actually being enforced — every request
+succeeded regardless of what secret was sent, including none at all.
+Root cause unconfirmed (Vercel's "Secret" type variables can never be
+viewed again once saved, so there was no way to inspect what was
+actually stored) — most likely corrupted when it was last changed on
+2026-08-22. **Fixed**: deleted and recreated `CRON_SECRET` in Vercel
+with a known value (`mmai-verify-2026`, same as documented), redeployed,
+and re-verified — both endpoints now correctly reject requests with a
+missing or wrong secret, and accept only the right one. This predates
+Gulf Watch entirely; it was just discovered while testing it.
 
 ## 🚧 In progress — "Gulf Watch" feature (started 2026-08-25)
 
-A new section for the site, separate from the main 6-market score. Full plan
-and reasoning are in `MMAI_MASTER_HANDOVER.md` §11 — read that before
-continuing this. Short version:
+A new section for the site, separate from the main 6-market score — six
+countries (UAE, Bahrain, Qatar, Kuwait, Oman, Saudi Arabia) shown with real
+live numbers but **no composite score**, since none of them have a usable
+policy-rate source. Full plan and reasoning in `MMAI_MASTER_HANDOVER.md` §11.
 
-- **Oman** was going to become a real 7th scored market (it has clean data
-  for all 4 indicators) — **paused for now on your call**, so it joins the
-  panel below instead rather than being fully built out.
-- **Gulf Watch panel** (no official score, just honest live numbers): UAE,
-  Bahrain, Qatar, Kuwait, Oman, Saudi Arabia. Shows cost-of-living
-  (inflation), investment confidence (real estate activity where available),
-  and currency stability (FX reserves/current account) for each.
-- **Saudi Arabia's central bank was tested directly from the live site and
-  confirmed unreachable** — settled, not still an open question. It joins
-  the panel like everyone else, using Saudi's statistics office (GASTAT)
-  and a free re-publisher (KAPSARC) instead.
-- A full build plan exists (reviewed by Opus, since Fable was out of
-  credits) covering: a new database table, ~8 new data-fetcher files, a new
-  page, and a handful of real bugs the review caught that need fixing along
-  the way (a timeout risk in the daily refresh job, and a dormant bug where
-  a market with no data could silently show old fallback numbers under a
-  "LIVE" banner). **None of that has been built yet** — only the research
-  and planning stage is done.
-- Next session should pick up at "Phase 2" of the plan in the handover doc.
+**Done so far:**
+- [x] The two required bug fixes from the plan review (refresh-job timeout
+      protection, and the dormant "stale market shows old data under a LIVE
+      banner" bug) — both fixed on the main site, live and verified.
+- [x] All 6 countries' inflation (CPI) data — built and verified live.
+- [x] Qatar's real estate activity (monthly transaction count) — built and
+      verified live.
+- [x] New `gulf_indicators` database table — live, with the safeguards the
+      review asked for (can't store a real-estate number without saying what
+      it means).
+- [x] A second daily refresh job (`/api/refresh-gulf`, 06:20 UTC) that
+      actually writes all 6 countries' data — built, tested, confirmed
+      writing real rows to the database.
+- [x] Along the way, found and fixed a real security gap (see above) — the
+      password protecting both refresh jobs wasn't actually working.
+
+**Still ahead:**
+- [ ] Saudi Arabia's real estate (KAPSARC) — still needs your decision: send
+      a permission email (their terms conflict with their own "public
+      domain" label), or skip it.
+- [ ] Bahrain's real estate — already agreed to skip, source is too fragile.
+- [ ] The sources registry (so Gulf Watch data shows up honestly on the
+      `/sources` page, same transparency as everything else on the site).
+- [ ] The actual page — this is the one piece that makes any of the above
+      visible to a visitor. Nothing built so far shows up anywhere on the
+      live site yet.
 
 ## ✅ Just finished — full site audit (2026-08-24)
 - [x] **Confirmed the daily auto-refresh runs on its own.** On 2026-08-23 all
