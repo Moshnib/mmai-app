@@ -242,12 +242,65 @@ export default function OverviewPage() {
         </div>
       </div>
 
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <Link href="/gulf-watch" style={{ textDecoration: "none", display: "block" }}>
+            <div
+              className="gulf-promo"
+              style={{
+                background: "linear-gradient(120deg, rgba(185,140,255,0.16), rgba(34,211,238,0.10) 55%, rgba(217,164,65,0.14))",
+                border: "1px solid var(--hair)",
+                borderRadius: 22,
+                padding: "30px 34px",
+                display: "flex",
+                alignItems: "center",
+                gap: 26,
+                flexWrap: "wrap",
+                backdropFilter: "blur(14px)",
+                cursor: "pointer",
+              }}
+            >
+              <div
+                style={{
+                  width: 68, height: 68, borderRadius: 18, flexShrink: 0,
+                  background: "rgba(255,255,255,0.05)", border: "1px solid var(--hair)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="24" cy="12" r="6" fill="var(--gold)" opacity="0.85" />
+                  <path d="M10 8a7 7 0 108.5 8.5A8 8 0 0110 8z" fill="var(--gold-deep)" />
+                  <path d="M4 24c3-2.5 6-2.5 9 0s6 2.5 9 0 6-2.5 9 0" stroke="var(--ink-soft)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                  <path d="M4 29c3-2.5 6-2.5 9 0s6 2.5 9 0 6-2.5 9 0" stroke="var(--slate)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 240 }}>
+                <p className="eyebrow" style={{ margin: "0 0 6px" }}>SIX MORE COUNTRIES, NO SCORE NEEDED</p>
+                <h2 style={{ margin: "0 0 8px" }}>Gulf Watch</h2>
+                <p style={{ color: "var(--ink-soft)", fontSize: 14, margin: 0, maxWidth: "60ch" }}>
+                  Real, live cost-of-living, investment-confidence, and currency-stability data for UAE, Bahrain,
+                  Qatar, Saudi Arabia, Kuwait, and Oman.
+                </p>
+              </div>
+              <div
+                style={{
+                  fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700,
+                  color: "var(--gold)", display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
+                }}
+              >
+                Explore →
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
       <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">THE COMPOSITE, OPENED UP</p>
             <h2>Five pillars, weighted and shown in full</h2>
-            <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it — visit the Learn page for what each one means.</p>
+            <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it — visit the Learn More page for what each one means.</p>
           </div>
           <PillarGrid pillars={pillars} market={current} />
         </div>
