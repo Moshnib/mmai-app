@@ -31,12 +31,17 @@ export default function GulfWatchPageInner() {
     }))
   );
   const [loaded, setLoaded] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>("effect not run yet");
 
   useEffect(() => {
     async function load() {
       try {
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+          setDebugInfo("NEXT_PUBLIC_SUPABASE_URL is falsy, returned early");
+          return;
+        }
         const supabase = getPublicSupabaseClient();
+        setDebugInfo("client created, querying...");
         const { data, error } = await supabase
           .from("gulf_indicators")
           .select(
@@ -53,6 +58,7 @@ export default function GulfWatchPageInner() {
           // one field that unambiguously means "when we last wrote this."
           .order("fetched_at", { ascending: false })
           .limit(60); // 6 countries x recent refreshes -- same headroom pattern as raw_indicators' 200-row cap
+        setDebugInfo(`query done: error=${error ? JSON.stringify(error) : "none"} rows=${data ? data.length : "null"}`);
         if (error || !data) return;
 
         const latestByCountry = new Map<string, GulfRow>();
@@ -76,8 +82,8 @@ export default function GulfWatchPageInner() {
             };
           })
         );
-      } catch {
-        // Unreachable -- cards fall back to their "—" empty state.
+      } catch (err) {
+        setDebugInfo(`threw: ${(err as Error)?.message ?? String(err)}`);
       } finally {
         setLoaded(true);
       }
@@ -87,6 +93,10 @@ export default function GulfWatchPageInner() {
 
   return (
     <>
+      {/* TEMPORARY diagnostic banner -- remove once the stale-data issue is confirmed fixed */}
+      <div style={{ background: "#E14B4B", color: "#fff", padding: "8px 16px", fontSize: 12, fontFamily: "monospace" }}>
+        DEBUG: {debugInfo}
+      </div>
       <nav>
         <div className="navrow">
           <Link href="/" className="brand"><span className="dot" />MMAI</Link>
