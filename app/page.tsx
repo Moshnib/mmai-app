@@ -168,21 +168,6 @@ export default function OverviewPage() {
 
   return (
     <>
-      <nav>
-        <div className="navrow">
-          <Link href="/" className="brand"><span className="dot" />MMAI</Link>
-          <div className="navlinks">
-            <button className="navlink active">Overview</button>
-            <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
-            <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
-            <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
-            <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn More</Link>
-            <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
-            <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
-          </div>
-        </div>
-      </nav>
-
       <Link href="/gulf-watch" className="gulf-float" aria-label="Explore Gulf Watch — six more countries, no score needed">
         <div className="gulf-float-icon"><GulfMapIcon width={104} height={72} /></div>
         <div className="gulf-float-label">
@@ -279,7 +264,7 @@ export default function OverviewPage() {
             <h2>The MMAI Heat Map</h2>
             <p>Click a country on the map or a row below to jump straight to that market.</p>
           </div>
-          <div style={{ marginTop: 24, marginBottom: 24 }}>
+          <div className="world-map-wrap" style={{ marginTop: 24, marginBottom: 24 }}>
             <WorldMap markets={markets} current={current} onSelect={setCurrent} />
           </div>
           <Heatmap markets={markets} />

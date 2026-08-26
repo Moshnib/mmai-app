@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NavBar from "@/components/NavBar";
 import SiteFooter from "@/components/SiteFooter";
 
 const SITE_URL = "https://mmai-app.vercel.app";
@@ -44,6 +45,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        {/* One nav for every page, rendered here rather than copy-pasted
+            into each one (that duplication is what let the mobile menu go
+            unbuilt for so long). Above every page's own <Suspense>
+            boundary, so it stays visible during a page's loading fallback
+            instead of disappearing with the rest of the content. */}
+        <NavBar />
         {children}
         {/* One footer for every page, rendered here rather than copy-pasted
             into each one -- it carries a live "last updated" stamp, so it has

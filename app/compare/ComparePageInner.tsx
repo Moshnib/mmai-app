@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
 import { useLiveHistory } from "@/lib/useLiveHistory";
@@ -107,21 +106,6 @@ export default function ComparePageInner() {
 
   return (
     <>
-      <nav>
-        <div className="navrow">
-          <Link href="/" className="brand"><span className="dot" />MMAI</Link>
-          <div className="navlinks">
-            <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
-            <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
-            <button className="navlink active">Compare</button>
-            <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
-            <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn More</Link>
-            <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
-            <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="section">
         <div className="wrap">
           <div className="section-head">

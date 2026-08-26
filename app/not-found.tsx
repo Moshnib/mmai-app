@@ -7,21 +7,6 @@ export const metadata = {
 export default function NotFound() {
   return (
     <>
-      <nav>
-        <div className="navrow">
-          <Link href="/" className="brand"><span className="dot" />MMAI</Link>
-          <div className="navlinks">
-            <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
-            <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
-            <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
-            <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
-            <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn More</Link>
-            <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
-            <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="hero">
         <div className="wrap">
           <p className="eyebrow">404 — PAGE NOT FOUND</p>

@@ -27,7 +27,7 @@ body {
 
 /* Thin, dark-themed scrollbars everywhere (Chrome/Edge/Safari) -- the
    browser default is light and thick, which looks jarring against a dark
-   page. Applies globally, including the Heatmap's horizontal scroll. */
+   page. Applies globally, e.g. the Sources page table's horizontal scroll. */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.4); border-radius: 999px; }
@@ -69,6 +69,43 @@ nav {
 }
 .navlink.active { background: linear-gradient(135deg, var(--gold-deep), #6D28D9); color: #fff; }
 
+/* Mobile nav -- hamburger + slide-down panel, hidden entirely above
+   860px (matches the breakpoint already used by .score-panel and
+   .gulf-float elsewhere). Below it, .navlinks (7 links in one row,
+   confirmed to overflow its container on a phone) hides and the
+   hamburger takes over. The panel is server-rendered display:none by
+   default (never toggled via JS during render) so there's no hydration
+   mismatch -- only the "open" class, driven by client state, reveals it. */
+.navburger {
+  display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+  width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--hair);
+  background: none; cursor: pointer; flex-shrink: 0;
+}
+.navburger span { display: block; width: 20px; height: 2px; background: var(--ink); border-radius: 2px; transition: transform .2s ease, opacity .2s ease; }
+.navburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.navburger.open span:nth-child(2) { opacity: 0; }
+.navburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.navpanel {
+  display: none;
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: rgba(8, 8, 13, 0.96); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--hair);
+  padding: 8px 16px 16px; flex-direction: column; gap: 2px;
+}
+.navpanel-link {
+  display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px;
+  color: var(--slate); text-decoration: none; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 14.5px; font-weight: 600; text-align: left;
+}
+.navpanel-link.active { background: linear-gradient(135deg, var(--gold-deep), #6D28D9); color: #fff; }
+
+@media (max-width: 860px) {
+  .navlinks { display: none; }
+  .navburger { display: flex; }
+  .navpanel.open { display: flex; }
+}
+
 .hero { padding: 48px 0 36px; position: relative; z-index: 1; }
 .eyebrow {
   font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 700;
@@ -90,6 +127,11 @@ h1.headline {
 .tab {
   padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 600;
   color: var(--slate); cursor: pointer; border: none; background: none; font-family: inherit;
+  /* min-height (not just padding) so the flag icon + text inside some
+     .tab buttons don't stretch it past 44px while a plain-text one
+     stays under -- keeps every tab meeting the touch tap-target
+     minimum consistently, on both mobile and desktop. */
+  min-height: 44px; display: inline-flex; align-items: center;
 }
 .tab.active { background: linear-gradient(135deg, var(--gold-deep), #6D28D9); color: #fff; }
 
@@ -159,6 +201,14 @@ h1.headline {
   }
   .gulf-float:hover { padding-right: 16px; }
   .gulf-float-icon { transform: scale(0.72); transform-origin: center; margin: -10px -14px; }
+  /* .gulf-float becomes a fixed bottom bar at this width (see above) --
+     without this, it permanently covers the last ~80px of every page's
+     content, footer included. Applied to the shared footer rather than
+     just the homepage (the only page that renders .gulf-float) since
+     there's no cheap per-page body class to scope it to -- a little
+     extra breathing room in other pages' footers on mobile costs
+     nothing visible. */
+  footer { padding-bottom: 100px; }
 }
 .compare-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 20px -6px var(--gold); }
 .compare-name { font-weight: 700; font-size: 13.5px; color: var(--ink); }
@@ -168,12 +218,60 @@ h1.headline {
 .compare-bar-fill { height: 100%; border-radius: 3px; }
 
 .heatmap-grid { display: grid; grid-template-columns: 160px repeat(5, 1fr); gap: 6px; margin-top: 20px; overflow-x: auto; }
+.hm-row { display: contents; }
 .hm-colhead { font-size: 11px; font-weight: 700; color: var(--slate); text-align: center; padding: 8px 4px; }
 .hm-rowhead { font-size: 12.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; padding: 0 8px; }
+.hm-cell-label { display: none; }
+
+/* Below 860px, the 6-column grid (160px label + 5 equal fractions) would
+   squeeze each pillar into ~35px -- illegible. Flip to one stacked card
+   per market instead: .hm-row goes from "contents" (invisible wrapper,
+   grid children) to a real block (the card), .heatmap-grid stops being a
+   grid, and .hm-colhead (the desktop-only column headers, meaningless
+   without the grid) hides. This reuses the exact same markup for both
+   layouts -- no duplicated cells, no JS/resize-listener involved. */
+@media (max-width: 860px) {
+  /* The world map's viewBox scales its per-market score labels down
+     with it -- confirmed illegible at phone width. The heatmap below it
+     already carries the same per-market, per-pillar information in a
+     real mobile layout (see the .hm-row flip below), so hiding the map
+     rather than trying to make a wide SVG projection legible at 375px. */
+  .world-map-wrap { display: none; }
+  .heatmap-grid { display: block; overflow-x: visible; }
+  .hm-colhead { display: none; }
+  .heatmap-grid > .hm-row {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px;
+    background: var(--glass); border: 1px solid var(--hair);
+    border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
+  }
+  .heatmap-grid > .hm-row > .hm-rowhead { grid-column: 1 / -1; padding: 0 0 8px; border-bottom: 1px solid var(--hair); margin-bottom: 4px; }
+  .hm-cell-label { display: block; font-size: 9.5px; color: rgba(255,255,255,0.75); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
+  .hm-cell { min-height: 52px; padding: 6px 4px; }
+}
 .hm-cell { border-radius: 10px; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform .15s ease, filter .15s ease; }
 .hm-cell:hover { transform: scale(1.05); }
 .hm-cell .hm-val { font-family: "Space Grotesk", monospace; font-weight: 700; font-size: 15px; color: #fff; }
 .hm-cell.excluded { background: repeating-linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.04) 6px, rgba(255,255,255,0.08) 6px, rgba(255,255,255,0.08) 12px) !important; }
 .hm-cell.excluded .hm-val { color: var(--slate); font-size: 13px; }
+
+.sources-head, .sources-row { display: grid; grid-template-columns: 1.4fr 1.6fr 2.2fr 0.9fr 1.15fr; }
+.sources-head { padding: 10px 18px; font-size: 10.5px; }
+.sources-row { padding: 12px 18px; font-size: 12.5px; align-items: start; gap: 6px; }
+
+/* Below 860px, 5 equal-ish grid columns squeeze institution names like
+   "Federal Reserve Bank of St. Louis" into ~60px -- illegible. Flip each
+   row to a stacked card instead, with the header row (meaningless
+   without the grid) hidden and each field labeled via the data-label
+   attribute already on every span (a classic CSS-only responsive-table
+   technique -- content: attr(), no markup duplication, no JS). */
+@media (max-width: 860px) {
+  .sources-head { display: none; }
+  .sources-row { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+  .sources-row > span[data-label]::before {
+    content: attr(data-label); display: block; font-family: "IBM Plex Mono", monospace;
+    font-size: 9.5px; font-weight: 700; color: var(--gold-deep); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 3px;
+  }
+}
 
 footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10px; font-size: 12px; color: var(--slate); position: relative; z-index: 1; }

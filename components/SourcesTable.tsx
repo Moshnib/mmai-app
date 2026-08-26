@@ -49,8 +49,6 @@ function formatWhen(iso: string): string {
   });
 }
 
-const GRID = "1.4fr 1.6fr 2.2fr 0.9fr 1.15fr";
-
 export default function SourcesTable({
   groups,
   codeForName,
@@ -125,7 +123,7 @@ export default function SourcesTable({
             {group.name}
           </h2>
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden", backdropFilter: "blur(14px)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: GRID, background: "rgba(139,92,246,0.18)", padding: "10px 18px", fontSize: 10.5, fontFamily: "monospace", fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>
+            <div className="sources-head" style={{ background: "rgba(139,92,246,0.18)", fontFamily: "monospace", fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>
               <span>INDICATOR</span>
               <span>INSTITUTION</span>
               <span>LICENCE</span>
@@ -135,18 +133,11 @@ export default function SourcesTable({
             {group.entries.map((e, i) => (
               <div
                 key={i}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: GRID,
-                  padding: "12px 18px",
-                  fontSize: 12.5,
-                  borderTop: i > 0 ? "1px solid var(--hair)" : undefined,
-                  alignItems: "start",
-                  gap: 6,
-                }}
+                className="sources-row"
+                style={{ borderTop: i > 0 ? "1px solid var(--hair)" : undefined }}
               >
-                <span style={{ fontWeight: 700, color: "var(--ink)" }}>{e.indicator}</span>
-                <span style={{ color: "var(--ink-soft)" }}>
+                <span data-label="Indicator" style={{ fontWeight: 700, color: "var(--ink)" }}>{e.indicator}</span>
+                <span data-label="Institution" style={{ color: "var(--ink-soft)" }}>
                   {e.url ? (
                     <a
                       href={e.url}
@@ -160,11 +151,11 @@ export default function SourcesTable({
                     e.institution
                   )}
                 </span>
-                <span style={{ color: "var(--slate)" }}>
+                <span data-label="Licence" style={{ color: "var(--slate)" }}>
                   {e.license}
                   {e.note && <div style={{ fontSize: 10.5, fontStyle: "italic", color: "var(--gold-deep)", marginTop: 2 }}>{e.note}</div>}
                 </span>
-                <span>
+                <span data-label="Status">
                   <span
                     style={{
                       fontFamily: "monospace",
@@ -179,7 +170,7 @@ export default function SourcesTable({
                     {e.status === "live" ? "LIVE" : e.status === "manual" ? "MANUAL" : "UNAVAILABLE"}
                   </span>
                 </span>
-                <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--slate)" }}>
+                <span data-label="Last refreshed" style={{ fontFamily: "monospace", fontSize: 11, color: "var(--slate)" }}>
                   {refreshedFor(group.name, e)}
                 </span>
               </div>

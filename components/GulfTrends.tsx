@@ -61,14 +61,11 @@ function MiniChart({
         )}
       </div>
       {hasEnough ? (
-        // showDots is intentionally true here (unlike other TrendChart
-        // call sites): with connectNulls={false}, a real point with a
-        // null on both sides has no line segment to draw at all and
-        // would render as nothing without a dot. No series in the
-        // current generated data happens to have a null-flanked point,
-        // but lib/gulfHistory.ts is regenerated from live sources and
-        // that can change on a future run -- this is cheap, permanent
-        // insurance against a real data point silently disappearing.
+        // showDots=true is safe even for Saudi's 151-point monthly
+        // series -- TrendChart's own dot renderer thins dense series by
+        // real pixel spacing rather than drawing every point, while
+        // still always keeping isolated/edge points visible. See the
+        // comment on renderSpacedDot in components/TrendChart.tsx.
         <TrendChart series={series} height={170} showLegend={false} showDots connectNulls={false} yLabel={yLabel} />
       ) : (
         <div style={{ padding: "40px 0", textAlign: "center", color: "var(--slate)", fontSize: 12 }}>Not enough history yet</div>

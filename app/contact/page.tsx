@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
 
@@ -11,21 +10,6 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      <nav>
-        <div className="navrow">
-          <Link href="/" className="brand"><span className="dot" />MMAI</Link>
-          <div className="navlinks">
-            <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
-            <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
-            <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
-            <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
-            <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn More</Link>
-            <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
-            <button className="navlink active">Contact</button>
-          </div>
-        </div>
-      </nav>
-
       <div className="hero">
         <div className="wrap">
           <p className="eyebrow">CONTACT</p>

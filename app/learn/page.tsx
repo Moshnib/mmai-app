@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { PILLAR_NAMES, formatWeightPct, type PillarKey } from "@/lib/scoring";
 
@@ -88,21 +87,6 @@ const GULF_TOPICS = [
 export default function LearnPage() {
   return (
     <>
-      <nav>
-        <div className="navrow">
-          <Link href="/" className="brand"><span className="dot" />MMAI</Link>
-          <div className="navlinks">
-            <Link href="/" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Overview</Link>
-            <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
-            <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
-            <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
-            <button className="navlink active">Learn More</button>
-            <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
-            <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="hero">
         <div className="wrap">
           <p className="eyebrow">LEARN MORE</p>
