@@ -36,7 +36,7 @@ export default function SourcesPage() {
             <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
             <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
             <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
-            <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn</Link>
+            <Link href="/learn" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Learn More</Link>
             <button className="navlink active">Sources</button>
             <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
           </div>
@@ -101,7 +101,7 @@ export default function SourcesPage() {
             </p>
             <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: 0 }}>
               Every formula used to convert these raw figures into the 0–100 pillar scores and the composite MMAI score is
-              published in full on the <Link href="/learn" style={{ color: "var(--gold)" }}>Learn</Link> page — nothing in
+              published in full on the <Link href="/learn" style={{ color: "var(--gold)" }}>Learn More</Link> page — nothing in
               the calculation is hidden or proprietary.
             </p>
           </div>

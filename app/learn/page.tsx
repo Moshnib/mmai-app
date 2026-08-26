@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { PILLAR_NAMES, formatWeightPct, type PillarKey } from "@/lib/scoring";
 
 export const metadata: Metadata = {
-  title: "Learn the Indicators",
+  title: "Learn More",
   description:
-    "Inflation, GDP growth, unemployment, policy rates, and oil — what each one actually means for you, in plain language, with the exact formula MMAI uses to score it.",
+    "Inflation, GDP growth, unemployment, policy rates, and oil — plus Gulf Watch's cost-of-living, investment-confidence, and currency-stability figures — what each one actually means for you, in plain language.",
 };
 
 const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
@@ -58,6 +58,33 @@ const TOPICS = [
   },
 ];
 
+const GULF_TOPICS = [
+  {
+    id: "gulf-cost-of-living",
+    title: "Cost of Living — inflation across the Gulf",
+    def: "The same measure used everywhere else on MMAI: year-over-year change in the price of a representative basket of everyday goods and services, tracked separately for UAE, Bahrain, Qatar, Saudi Arabia, Kuwait, and Oman.",
+    impact: "A rising CPI in a Gulf market squeezes salaries, expat remittances, and local business costs the same way it does anywhere else — even though most of these currencies are pegged to the US dollar and largely import their monetary policy from the US Federal Reserve rather than setting it independently.",
+  },
+  {
+    id: "gulf-investment-confidence",
+    title: "Investment Confidence — where property markets are heating up or cooling down",
+    def: "Property transaction volumes and values, tracked differently in each country depending on what its land authority or statistics office actually publishes — from Dubai's raw transaction registry to Qatar's real estate trading index. Every Gulf Watch card labels its exact metric rather than showing a generic \"price\" number.",
+    impact: "Gulf economies lean heavily on real estate and foreign investment as part of their push to diversify away from oil. Rising transaction volumes tend to signal investor confidence in a country's direction; a slowdown often shows up here well before it reaches slower-moving indicators like GDP.",
+  },
+  {
+    id: "gulf-currency-stability",
+    title: "Currency Stability — FX reserves and the current account",
+    def: "FX reserves, measured in months of import cover, show how long a country could sustain its current imports using only its foreign currency reserves — a standard IMF stability benchmark. The current account balance (as % of GDP) shows whether a country is a net earner or net spender of foreign currency overall.",
+    impact: "Most Gulf currencies are pegged to the US dollar, so unlike a floating currency, strain on the peg doesn't show up as a falling exchange rate — it shows up here first, in shrinking reserves or a widening current account deficit, well before the peg itself would ever be tested.",
+  },
+  {
+    id: "gulf-no-score",
+    title: "Why Gulf Watch Has No Composite Score",
+    def: "Gulf Watch deliberately does not combine these figures into one score the way MMAI does for its six scored markets. A usable, legally licensable, automatable policy interest rate feed doesn't exist yet for any of these six countries, and MMAI's own rule requires at least 70% pillar coverage before a market earns a published score — so instead of filling the gap with a stand-in number, Gulf Watch shows exactly what's real and marks the rest \"N/A.\"",
+    impact: "Every figure on Gulf Watch traces back to its source on the Sources page, same as every scored market. The missing score here isn't a gap in the site — it's the same honesty rule that keeps every other number on MMAI trustworthy, applied consistently even when it means showing less rather than more.",
+  },
+];
+
 export default function LearnPage() {
   return (
     <>
@@ -69,7 +96,7 @@ export default function LearnPage() {
             <Link href="/trends" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Data Over Time</Link>
             <Link href="/compare" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Compare</Link>
             <Link href="/gulf-watch" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Gulf Watch</Link>
-            <button className="navlink active">Learn</button>
+            <button className="navlink active">Learn More</button>
             <Link href="/sources" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Sources</Link>
             <Link href="/contact" className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>Contact</Link>
           </div>
@@ -78,16 +105,20 @@ export default function LearnPage() {
 
       <div className="hero">
         <div className="wrap">
-          <p className="eyebrow">LEARN</p>
-          <h1 className="headline" style={{ maxWidth: "20ch" }}>
+          <p className="eyebrow">LEARN MORE</p>
+          <h1 className="headline" style={{ maxWidth: "22ch" }}>
             What these numbers actually mean — and why they affect you
           </h1>
-          <p className="sub">Every indicator behind the MMAI score, explained in plain language, with the exact formula used.</p>
+          <p className="sub">Every indicator behind the MMAI score, plus Gulf Watch&apos;s cost-of-living, investment-confidence, and currency-stability figures — explained in plain language, with the exact formula used where a formula applies.</p>
         </div>
       </div>
 
       <div className="section" style={{ paddingTop: 10 }}>
         <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 16 }}>
+            <p className="eyebrow">SCORED MARKETS</p>
+            <h2>The five pillars behind every MMAI score</h2>
+          </div>
           {TOPICS.map((t) => (
             <div
               key={t.id}
@@ -134,6 +165,46 @@ export default function LearnPage() {
                   <span style={{ color: "var(--slate)" }}>where weight =</span> {t.weights}
                 </div>
               )}
+              <div
+                style={{
+                  padding: "14px 16px",
+                  borderLeft: "3px solid var(--teal)",
+                  background: "var(--teal-bg)",
+                  borderRadius: "0 10px 10px 0",
+                }}
+              >
+                <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
+                  WHY THIS AFFECTS YOU
+                </div>
+                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 16 }}>
+            <p className="eyebrow">GULF WATCH (NON-SCORED)</p>
+            <h2>Six more countries, shown honestly without a score</h2>
+          </div>
+          {GULF_TOPICS.map((t) => (
+            <div
+              key={t.id}
+              id={`topic-${t.id}`}
+              style={{
+                background: "rgba(255,255,255,0.035)",
+                border: "1px solid var(--hair)",
+                borderRadius: 18,
+                padding: "28px 32px",
+                marginBottom: 18,
+                scrollMarginTop: 90,
+                backdropFilter: "blur(14px)",
+              }}
+            >
+              <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>{t.title}</h3>
+              <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{
                   padding: "14px 16px",
