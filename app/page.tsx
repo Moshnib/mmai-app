@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Gauge from "@/components/Gauge";
+import ScoreDisplay from "@/components/ScoreDisplay";
 import KeyRatesRow from "@/components/KeyRatesRow";
 import PillarGrid from "@/components/PillarGrid";
 import CompareGrid from "@/components/CompareGrid";
@@ -203,7 +203,7 @@ export default function OverviewPage() {
           </div>
 
           <div className="score-panel">
-            <Gauge score={composite} />
+            <ScoreDisplay score={composite} />
             <div className="score-right">
               <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
