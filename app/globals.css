@@ -131,8 +131,35 @@ h1.headline {
   padding: 16px 18px; cursor: pointer; transition: all .2s ease; backdrop-filter: blur(10px);
 }
 .compare-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
-.gulf-promo { transition: border-color .2s ease, transform .2s ease; }
-.gulf-promo:hover { border-color: rgba(255,255,255,0.28); transform: translateY(-2px); }
+
+/* Gulf Watch floating side widget -- deliberately OUT of the vertical
+   content flow (hero -> pillars -> compare -> map) rather than a banner
+   inside it, so it doesn't interrupt that reading order. Docked to the
+   right edge, vertically centered, below the sticky nav's z-index (50)
+   so it never floats over the open nav on short viewports. */
+.gulf-float {
+  position: fixed; top: 50%; right: 0; transform: translateY(-50%);
+  z-index: 40; display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(120deg, rgba(217,164,65,0.16), rgba(34,211,238,0.10));
+  border: 1px solid var(--hair); border-right: none;
+  border-radius: 16px 0 0 16px;
+  padding: 14px 18px 14px 14px;
+  text-decoration: none;
+  backdrop-filter: blur(14px);
+  transition: padding-right .2s ease, border-color .2s ease;
+  box-shadow: -6px 0 24px -10px rgba(0,0,0,0.5);
+}
+.gulf-float:hover { padding-right: 22px; border-color: rgba(255,255,255,0.28); }
+.gulf-float-label { white-space: nowrap; }
+@media (max-width: 860px) {
+  .gulf-float {
+    top: auto; bottom: 0; right: 0; left: 0; transform: none;
+    border-radius: 16px 16px 0 0; border-right: 1px solid var(--hair); border-bottom: none;
+    justify-content: center; padding: 10px 16px;
+  }
+  .gulf-float:hover { padding-right: 16px; }
+  .gulf-float-icon { transform: scale(0.72); transform-origin: center; margin: -10px -14px; }
+}
 .compare-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 20px -6px var(--gold); }
 .compare-name { font-weight: 700; font-size: 13.5px; color: var(--ink); }
 .compare-score { font-family: "Space Grotesk", monospace; font-weight: 700; font-size: 19px; }
