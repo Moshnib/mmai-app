@@ -94,3 +94,38 @@ create table if not exists feedback_submissions (
 -- No public read policy on purpose, same reasoning as subscribers:
 -- submissions should never be queryable from the browser.
 alter table feedback_submissions enable row level security;
+
+-- ============================================================
+-- GULF WATCH: a non-scored panel for UAE, Bahrain, Qatar, Kuwait, Saudi
+-- Arabia, and Oman. Deliberately a SEPARATE table from raw_indicators,
+-- not a reuse of it with policy_rate left null -- that would conflate
+-- "this run's policy rate happened to fail" with "this country
+-- structurally has no composite," which is exactly the ambiguity this
+-- feature exists to avoid. No link to mmai_scores; these countries
+-- never get a composite score. See MMAI_MASTER_HANDOVER.md section 11.
+-- ============================================================
+create table if not exists gulf_indicators (
+  id bigint generated always as identity primary key,
+  country_code text not null check (country_code in ('AE','BH','QA','SA','KW','OM')),
+  cpi_yoy numeric,
+  real_estate_value numeric,
+  real_estate_metric_label text,       -- required whenever real_estate_value is set
+                                        -- (see the check constraint below) -- a number
+                                        -- with no label is worse than no number at all,
+                                        -- since each country's real-estate figure is a
+                                        -- genuinely different kind of thing (Qatar's is a
+                                        -- monthly transaction count, others may differ).
+  fx_reserves_usd_bn numeric,
+  current_account_pct_gdp numeric,
+  observation_date date not null,
+  source_note text,
+  fetched_at timestamptz not null default now(),
+  status text not null default 'current' check (status in ('current', 'stale', 'missing')),
+  check (real_estate_value is null or real_estate_metric_label is not null)
+);
+
+create index if not exists idx_gulf_indicators_country_date on gulf_indicators (country_code, observation_date desc);
+
+alter table gulf_indicators enable row level security;
+
+create policy "Public read access" on gulf_indicators for select using (true);
