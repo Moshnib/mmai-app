@@ -1,7 +1,14 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import GulfWatchPageInner from "./GulfWatchPageInner";
 
+// No Suspense boundary here, unlike app/compare/page.tsx -- that one
+// needs it because ComparePageInner uses useSearchParams(), which
+// requires one. GulfWatchPageInner uses neither useSearchParams() nor
+// any other hook that needs it, so it was copied over unnecessarily
+// from the Compare pattern -- removed after it turned out to be
+// implicated in a real bug where this page's client-side effect never
+// fired in production (confirmed: the rest of the page hydrated fine,
+// but this specific Suspense-wrapped subtree's useEffect never ran).
 export const metadata: Metadata = {
   title: "Gulf Watch",
   description:
@@ -9,9 +16,5 @@ export const metadata: Metadata = {
 };
 
 export default function GulfWatchPage() {
-  return (
-    <Suspense fallback={<div style={{ padding: 60, textAlign: "center", color: "#9296AB" }}>Loading…</div>}>
-      <GulfWatchPageInner />
-    </Suspense>
-  );
+  return <GulfWatchPageInner />;
 }
