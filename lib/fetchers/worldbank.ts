@@ -74,3 +74,47 @@ export async function fetchCurrentAccountPctGdp(countryIso3: string): Promise<{ 
 
   return { currentAccountPctGdp: latest.value as number, observationDate: `${latest.date}-01-01` };
 }
+
+// ============================================================
+// Historical (full-series) variants -- used only by the one-time
+// backfill script, never by the daily refresh routes. The live
+// functions above intentionally fetch just per_page=20 and take the
+// latest non-null row; that's wrong for history, where the goal is
+// every year the API has, not just the newest one.
+//
+// per_page=300 is comfortably above every indicator's real total (all
+// 6 Gulf countries x GDP/inflation/unemployment/FX-reserves/current-
+// account confirmed at total=66, i.e. ~1960-2025) -- the pages===1
+// assert below means a future indicator that actually needs real
+// pagination fails loudly instead of silently truncating history.
+// ============================================================
+
+async function fetchWorldBankHistory(countryIso3: string, indicator: string, label: string): Promise<Array<{ period: string; value: number }>> {
+  const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/${indicator}?format=json&per_page=300`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`World Bank history request failed for ${label} ${countryIso3}: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  const meta = json[0] as { pages?: number; total?: number } | undefined;
+  if (meta?.pages && meta.pages !== 1) {
+    throw new Error(`World Bank history for ${label} ${countryIso3}: expected 1 page, got ${meta.pages} of ${meta.total} rows -- raise per_page`);
+  }
+
+  const rows: Array<{ date: string; value: number | null }> = json[1] ?? [];
+  return rows
+    .filter((r): r is { date: string; value: number } => r.value !== null)
+    .map((r) => ({ period: r.date, value: r.value }))
+    .sort((a, b) => a.period.localeCompare(b.period));
+}
+
+export function fetchInflationHistory(countryIso3: string) {
+  return fetchWorldBankHistory(countryIso3, "FP.CPI.TOTL.ZG", "inflation");
+}
+
+export function fetchFxReservesMonthsHistory(countryIso3: string) {
+  return fetchWorldBankHistory(countryIso3, "FI.RES.TOTL.MO", "FX reserves");
+}
+
+export function fetchCurrentAccountPctGdpHistory(countryIso3: string) {
+  return fetchWorldBankHistory(countryIso3, "BN.CAB.XOKA.GD.ZS", "current account");
+}

@@ -16,6 +16,7 @@ export default function TrendChart({
   yLabel,
   showLegend = true,
   showDots = true,
+  connectNulls = true,
 }: {
   series: Series[];
   height?: number;
@@ -23,6 +24,11 @@ export default function TrendChart({
   yLabel?: string;
   showLegend?: boolean;
   showDots?: boolean;
+  // Default true preserves the 6 scored markets' existing dense,
+  // gap-free series. Gulf Watch history has real gaps (see
+  // lib/fetchers/historyUtils.ts) that must render as gaps, not as an
+  // interpolated line implying data that doesn't exist -- pass false there.
+  connectNulls?: boolean;
 }) {
   // Recharts wants one array of objects keyed by series name, not separate arrays.
   const years = Array.from(new Set(series.flatMap((s) => s.data.map((d) => d.year)))).sort();
@@ -63,7 +69,7 @@ export default function TrendChart({
             strokeWidth={2.5}
             dot={showDots ? { r: 3.5, fill: s.color, strokeWidth: 0 } : false}
             activeDot={{ r: 5.5 }}
-            connectNulls
+            connectNulls={connectNulls}
           />
         ))}
       </LineChart>

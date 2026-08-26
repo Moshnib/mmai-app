@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import GulfCard, { type GulfCardData } from "@/components/GulfCard";
+import GulfTrends from "@/components/GulfTrends";
 
 interface GulfRow {
   country_code: string;
@@ -124,6 +125,8 @@ export default function GulfWatchPageInner() {
           </div>
         </div>
       </div>
+
+      <GulfTrends />
     </>
   );
 }
