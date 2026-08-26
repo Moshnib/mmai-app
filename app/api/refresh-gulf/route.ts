@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabaseClient } from "@/lib/supabase";
-import { fetchInflation } from "@/lib/fetchers/worldbank";
+import { fetchInflation, fetchFxReservesMonths, fetchCurrentAccountPctGdp } from "@/lib/fetchers/worldbank";
 import { fetchBahrainInflation } from "@/lib/fetchers/bahrainCpi";
 import { fetchQatarInflation } from "@/lib/fetchers/qatarCpi";
 import { fetchQatarRealEstate } from "@/lib/fetchers/qatarRealEstate";
@@ -19,20 +19,30 @@ import { fetchSaudiInflation } from "@/lib/fetchers/datasaudi";
  * These six countries never get a composite score — there's no
  * coverage threshold here, no pillar math, just each country's own
  * available raw numbers, stored honestly. A country missing an
- * indicator (e.g. Kuwait/UAE/Bahrain/Saudi all currently have no real
- * estate source) simply leaves that column null — see the schema's own
- * check constraint requiring a label whenever a real-estate value IS
- * present, so a number is never shown without saying what it is.
+ * indicator (e.g. every country's real estate except Qatar's) simply
+ * leaves that column null — see the schema's own check constraint
+ * requiring a label whenever a real-estate value IS present, so a
+ * number is never shown without saying what it is.
+ *
+ * Three pillars per country: cost of living (CPI), investment
+ * confidence (real estate, where available), currency stability (FX
+ * reserves + current account — every Gulf currency here is pegged to
+ * or closely tracks the US dollar, so reserve cover is a genuinely
+ * meaningful "can the peg hold" signal, unlike for the 6 main markets).
  */
 
 const GULF_COUNTRIES = ["AE", "BH", "QA", "SA", "KW", "OM"] as const;
 type GulfCountryCode = (typeof GULF_COUNTRIES)[number];
 
+const ISO3: Record<GulfCountryCode, string> = {
+  AE: "ARE", BH: "BHR", QA: "QAT", SA: "SAU", KW: "KWT", OM: "OMN",
+};
+
 const SOURCE_NOTES: Record<GulfCountryCode, string> = {
   AE: "World Bank (live)",
-  BH: "data.gov.bh (live)",
-  QA: "data.gov.qa (live)",
-  SA: "Data Saudi (live)",
+  BH: "data.gov.bh + World Bank (live)",
+  QA: "data.gov.qa + World Bank (live)",
+  SA: "Data Saudi + World Bank (live)",
   KW: "World Bank (live)",
   OM: "World Bank (live)",
 };
@@ -50,43 +60,39 @@ interface GulfRawIndicators {
   cpiYoy: number | null;
   realEstateValue: number | null;
   realEstateMetricLabel: string | null;
+  fxReservesMonths: number | null;
+  currentAccountPctGdp: number | null;
   observationDate: string;
+}
+
+async function fetchCpi(country: GulfCountryCode): Promise<{ inflation: number; observationDate: string } | null> {
+  if (country === "AE") return settle("UAE CPI", fetchInflation("ARE"));
+  if (country === "BH") return settle("Bahrain CPI", fetchBahrainInflation());
+  if (country === "QA") return settle("Qatar CPI", fetchQatarInflation());
+  if (country === "SA") return settle("Saudi CPI", fetchSaudiInflation());
+  if (country === "KW") return settle("Kuwait CPI", fetchInflation("KWT"));
+  return settle("Oman CPI", fetchInflation("OMN")); // OM
 }
 
 async function fetchGulfIndicators(country: GulfCountryCode): Promise<GulfRawIndicators> {
   const today = new Date().toISOString().slice(0, 10);
+  const iso3 = ISO3[country];
 
-  if (country === "AE") {
-    const cpi = await settle("UAE CPI", fetchInflation("ARE"));
-    return { cpiYoy: cpi?.inflation ?? null, realEstateValue: null, realEstateMetricLabel: null, observationDate: cpi?.observationDate ?? today };
-  }
-  if (country === "BH") {
-    const cpi = await settle("Bahrain CPI", fetchBahrainInflation());
-    return { cpiYoy: cpi?.inflation ?? null, realEstateValue: null, realEstateMetricLabel: null, observationDate: cpi?.observationDate ?? today };
-  }
-  if (country === "QA") {
-    const [cpi, realEstate] = await Promise.all([
-      settle("Qatar CPI", fetchQatarInflation()),
-      settle("Qatar real estate", fetchQatarRealEstate()),
-    ]);
-    return {
-      cpiYoy: cpi?.inflation ?? null,
-      realEstateValue: realEstate?.realEstateValue ?? null,
-      realEstateMetricLabel: realEstate?.realEstateMetricLabel ?? null,
-      observationDate: cpi?.observationDate ?? realEstate?.observationDate ?? today,
-    };
-  }
-  if (country === "SA") {
-    const cpi = await settle("Saudi CPI", fetchSaudiInflation());
-    return { cpiYoy: cpi?.inflation ?? null, realEstateValue: null, realEstateMetricLabel: null, observationDate: cpi?.observationDate ?? today };
-  }
-  if (country === "KW") {
-    const cpi = await settle("Kuwait CPI", fetchInflation("KWT"));
-    return { cpiYoy: cpi?.inflation ?? null, realEstateValue: null, realEstateMetricLabel: null, observationDate: cpi?.observationDate ?? today };
-  }
-  // OM
-  const cpi = await settle("Oman CPI", fetchInflation("OMN"));
-  return { cpiYoy: cpi?.inflation ?? null, realEstateValue: null, realEstateMetricLabel: null, observationDate: cpi?.observationDate ?? today };
+  const [cpi, fx, ca, realEstate] = await Promise.all([
+    fetchCpi(country),
+    settle(`${country} FX reserves`, fetchFxReservesMonths(iso3)),
+    settle(`${country} current account`, fetchCurrentAccountPctGdp(iso3)),
+    country === "QA" ? settle("Qatar real estate", fetchQatarRealEstate()) : Promise.resolve(null),
+  ]);
+
+  return {
+    cpiYoy: cpi?.inflation ?? null,
+    realEstateValue: realEstate?.realEstateValue ?? null,
+    realEstateMetricLabel: realEstate?.realEstateMetricLabel ?? null,
+    fxReservesMonths: fx?.fxReservesMonths ?? null,
+    currentAccountPctGdp: ca?.currentAccountPctGdp ?? null,
+    observationDate: cpi?.observationDate ?? realEstate?.observationDate ?? today,
+  };
 }
 
 export const maxDuration = 60;
@@ -103,7 +109,7 @@ export async function GET(request: Request) {
   for (const country of GULF_COUNTRIES) {
     try {
       const raw = await fetchGulfIndicators(country);
-      const partial = raw.cpiYoy == null;
+      const partial = raw.cpiYoy == null || raw.fxReservesMonths == null || raw.currentAccountPctGdp == null;
       const baseNote = SOURCE_NOTES[country];
       const sourceNote = partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote;
 
@@ -112,6 +118,8 @@ export async function GET(request: Request) {
         cpi_yoy: raw.cpiYoy,
         real_estate_value: raw.realEstateValue,
         real_estate_metric_label: raw.realEstateMetricLabel,
+        fx_reserves_months_imports: raw.fxReservesMonths,
+        current_account_pct_gdp: raw.currentAccountPctGdp,
         observation_date: raw.observationDate,
         source_note: sourceNote,
         status: "current",

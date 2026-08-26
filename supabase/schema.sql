@@ -115,7 +115,11 @@ create table if not exists gulf_indicators (
                                         -- since each country's real-estate figure is a
                                         -- genuinely different kind of thing (Qatar's is a
                                         -- monthly transaction count, others may differ).
-  fx_reserves_usd_bn numeric,
+  fx_reserves_months_imports numeric,  -- how many months of imports current reserves
+                                        -- could cover -- World Bank FI.RES.TOTL.MO.
+                                        -- (Named _usd_bn in an earlier draft before the
+                                        -- actual indicator was picked -- fixed before any
+                                        -- data was ever written to it.)
   current_account_pct_gdp numeric,
   observation_date date not null,
   source_note text,

@@ -43,3 +43,34 @@ export async function fetchUnemployment(countryIso3: string): Promise<{ unemploy
 
   return { unemployment: latest.value as number, observationDate: `${latest.date}-01-01` };
 }
+
+// Gulf Watch's "currency stability" pillar — how well a country's reserves
+// cover its dollar-pegged (or basket-pegged) currency, and whether it's
+// running an external surplus or deficit. Same World Bank source/licence
+// as everything else above, confirmed live for all 6 Gulf Watch countries.
+
+export async function fetchFxReservesMonths(countryIso3: string): Promise<{ fxReservesMonths: number; observationDate: string }> {
+  const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/FI.RES.TOTL.MO?format=json&per_page=20`;
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error(`World Bank request failed: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  const rows: Array<{ date: string; value: number | null }> = json[1] ?? [];
+  const latest = rows.find((r) => r.value !== null);
+  if (!latest) throw new Error(`World Bank FX reserves for ${countryIso3}: no non-null values found`);
+
+  return { fxReservesMonths: latest.value as number, observationDate: `${latest.date}-01-01` };
+}
+
+export async function fetchCurrentAccountPctGdp(countryIso3: string): Promise<{ currentAccountPctGdp: number; observationDate: string }> {
+  const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/BN.CAB.XOKA.GD.ZS?format=json&per_page=20`;
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error(`World Bank request failed: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  const rows: Array<{ date: string; value: number | null }> = json[1] ?? [];
+  const latest = rows.find((r) => r.value !== null);
+  if (!latest) throw new Error(`World Bank current account for ${countryIso3}: no non-null values found`);
+
+  return { currentAccountPctGdp: latest.value as number, observationDate: `${latest.date}-01-01` };
+}
