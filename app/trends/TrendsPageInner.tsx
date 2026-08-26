@@ -118,6 +118,7 @@ export default function TrendsPageInner({
                 key={m.code}
                 className={`tab${m.code === current ? " active" : ""}`}
                 onClick={() => setCurrent(m.code)}
+                aria-pressed={m.code === current}
                 style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
                 <Flag code={m.code} size={18} /> {m.name}

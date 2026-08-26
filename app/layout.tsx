@@ -45,13 +45,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        {/* Standard "skip to content" pattern -- invisible until it
+            receives keyboard focus (first Tab press on any page), so a
+            keyboard user isn't forced through the full nav every single
+            page load to reach the actual content. */}
+        <a href="#main-content" className="skip-link">Skip to main content</a>
         {/* One nav for every page, rendered here rather than copy-pasted
             into each one (that duplication is what let the mobile menu go
             unbuilt for so long). Above every page's own <Suspense>
             boundary, so it stays visible during a page's loading fallback
             instead of disappearing with the rest of the content. */}
         <NavBar />
-        {children}
+        <main id="main-content">{children}</main>
         {/* One footer for every page, rendered here rather than copy-pasted
             into each one -- it carries a live "last updated" stamp, so it has
             to be a single component that can re-check on its own. */}

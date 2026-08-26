@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
+import RelationshipScatter, { type ScatterSeriesData, type ScatterPoint } from "@/components/RelationshipScatter";
 import Flag from "@/components/Flag";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import {
@@ -12,7 +13,24 @@ import {
   GULF_REAL_ESTATE_HISTORY,
   type GulfHistorySeries,
 } from "@/lib/gulfHistory";
-import { latestPoint, type LatestPoint } from "@/lib/gulfHistoryHelpers";
+import { latestPoint, annualizeCpi, pairAnnualSeries, type LatestPoint } from "@/lib/gulfHistoryHelpers";
+
+// Distinct from every indicator color already used elsewhere in this
+// file (#E14B4B inflation, #22D3EE FX reserves, #8B5CF6 current
+// account, #D9A441 real estate) -- the scatter plot puts inflation and
+// FX reserves on its two AXES, so reusing either of those two colors
+// for a country would read as "this country is a variable", not "this
+// is a place". No green anywhere (site-wide rule).
+const COUNTRY_COLORS: Record<string, string> = {
+  AE: "#F0975B",
+  BH: "#F472B6",
+  QA: "#60A5FA",
+  SA: "#C084FC",
+  KW: "#FBBF24",
+  OM: "#FB7185",
+};
+
+const RELATIONSHIP_TRAIL_YEARS = 6;
 
 const CARD_STYLE: React.CSSProperties = {
   background: "rgba(255,255,255,0.035)",
@@ -150,6 +168,33 @@ function ComparisonTable() {
   );
 }
 
+// Pairs each country's annualized CPI with its annual FX-reserves
+// figure on matching years only (never an inflation reading from one
+// year against an FX reading from another). Countries with fewer than
+// 2 paired years are excluded from the chart entirely rather than
+// drawn as a single floating dot with no trail -- same "not enough
+// history yet" bar this file already uses in seriesFor()/hasEnough,
+// applied here for consistency rather than a stricter one invented
+// just for this chart.
+function buildRelationshipSeries(): { series: ScatterSeriesData[]; excluded: string[] } {
+  const series: ScatterSeriesData[] = [];
+  const excluded: string[] = [];
+  for (const c of GULF_COUNTRIES) {
+    const cpiAnnual = annualizeCpi(GULF_CPI_HISTORY[c.code]);
+    const fxAnnual = (GULF_FX_RESERVES_HISTORY[c.code]?.points ?? [])
+      .filter((p): p is { period: string; value: number } => p.value !== null)
+      .map((p) => ({ year: p.period, value: p.value }));
+    const paired = pairAnnualSeries(cpiAnnual, fxAnnual, RELATIONSHIP_TRAIL_YEARS);
+    if (paired.length < 2) {
+      excluded.push(c.name);
+      continue;
+    }
+    const points: ScatterPoint[] = paired.map((p, i) => ({ ...p, isCurrent: i === paired.length - 1 }));
+    series.push({ key: c.code, name: c.name, color: COUNTRY_COLORS[c.code] ?? "#9296AB", points });
+  }
+  return { series, excluded };
+}
+
 export default function GulfTrends() {
   const [current, setCurrent] = useState("AE");
   const countryName = GULF_COUNTRIES.find((c) => c.code === current)?.name ?? current;
@@ -158,6 +203,11 @@ export default function GulfTrends() {
   const fx = seriesFor(current, "FX reserves (months of imports)", "#22D3EE", GULF_FX_RESERVES_HISTORY);
   const ca = seriesFor(current, "Current account (% of GDP)", "#8B5CF6", GULF_CURRENT_ACCOUNT_HISTORY);
   const re = seriesFor(current, "Real estate transactions", "#D9A441", GULF_REAL_ESTATE_HISTORY);
+
+  // Static generated data (lib/gulfHistory.ts) -- computing this once
+  // per mount rather than per render is enough; no live/dynamic input
+  // feeds it, unlike the per-country memos on the Compare page.
+  const { series: relationshipSeries, excluded: relationshipExcluded } = useMemo(() => buildRelationshipSeries(), []);
 
   return (
     <>
@@ -178,6 +228,7 @@ export default function GulfTrends() {
                 key={c.code}
                 className={`tab${c.code === current ? " active" : ""}`}
                 onClick={() => setCurrent(c.code)}
+                aria-pressed={c.code === current}
                 style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
                 <Flag code={c.code} size={18} /> {c.name}
@@ -215,6 +266,29 @@ export default function GulfTrends() {
             </p>
           </div>
           <ComparisonTable />
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">COST OF LIVING VS. CURRENCY STABILITY</p>
+            <h2>Inflation against FX reserves, country by country</h2>
+            <p style={{ maxWidth: "68ch" }}>
+              Each ring is a country&apos;s most recent year with both figures available — not necessarily the same
+              calendar year for every country, since each one&apos;s data runs to a different date (hover a point for
+              its real year). The faint trail behind each ring is its last {RELATIONSHIP_TRAIL_YEARS} years.
+              Inflation is averaged to a full calendar year here so monthly and annual sources compare fairly.
+            </p>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", backdropFilter: "blur(14px)" }}>
+            <RelationshipScatter series={relationshipSeries} xLabel="Inflation (%, annual average)" yLabel="FX reserves (months of imports)" height={380} />
+            {relationshipExcluded.length > 0 && (
+              <p style={{ fontSize: 11, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.6 }}>
+                Not enough overlapping years yet for: {relationshipExcluded.join(", ")}.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </>

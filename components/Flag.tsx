@@ -152,6 +152,12 @@ export default function Flag({ code, size = 20 }: { code: string; size?: number 
       width={size}
       height={size * (20 / 28)}
       viewBox="0 0 28 20"
+      // Decorative -- every usage of this component sits directly next
+      // to the country/market name as visible text, so the flag itself
+      // adds nothing a screen reader needs to announce. Without this,
+      // an unlabeled SVG can get read out as a bare "image", noise
+      // right before the name that already says the same thing.
+      aria-hidden="true"
       style={{ borderRadius: 3, boxShadow: "0 0 0 1px rgba(255,255,255,0.15)", flexShrink: 0, display: "inline-block", verticalAlign: "middle" }}
     >
       {content}

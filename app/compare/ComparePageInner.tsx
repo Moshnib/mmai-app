@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import TrendChart, { type Series } from "@/components/TrendChart";
+import RelationshipScatter, { type ScatterSeriesData, type ScatterPoint } from "@/components/RelationshipScatter";
 import Flag from "@/components/Flag";
 import { useLiveHistory } from "@/lib/useLiveHistory";
 import { PILLAR_NAMES, RAW_FIELD, computePillarScores, computeComposite, type PillarKey, type PillarScores, type RawIndicators } from "@/lib/scoring";
@@ -104,6 +105,36 @@ export default function ComparePageInner() {
     [yearsInRange, selectedPillar, selectedMarkets]
   );
 
+  // Inflation and policy rate come from live Supabase data now (via
+  // useLiveHistory replacing each market's last point), where the two
+  // fields are independently nullable -- one source failing doesn't take
+  // the other down with it (see app/api/refresh/route.ts's per-indicator
+  // settle() calls). A year missing EITHER value can't become a scatter
+  // point, so this filters both null together with a type predicate
+  // (a plain .filter() doesn't narrow TypeScript's nullable union) rather
+  // than assuming they always travel together, which only held for the
+  // old static-only lib/history.ts data. The last point that actually
+  // has both values is marked "current" -- never just the last point in
+  // the array, which could be a real but incomplete year sitting behind
+  // a null in one field.
+  const relationshipSeries: ScatterSeriesData[] = useMemo(() => {
+    return selectedMarkets.map((code) => {
+      const history = (liveHistory[code] ?? []).filter((h) => yearsInRange.includes(h.year));
+      const points: ScatterPoint[] = history.flatMap((h) => {
+        const { inflation, policyRate } = h.indicators;
+        if (inflation == null || policyRate == null) return [];
+        return [{ x: inflation, y: policyRate, period: h.year }];
+      });
+      if (points.length > 0) points[points.length - 1] = { ...points[points.length - 1], isCurrent: true };
+      return {
+        key: code,
+        name: marketNames[code],
+        color: MARKET_COLORS[code] ?? "#9296AB",
+        points,
+      };
+    });
+  }, [yearsInRange, selectedMarkets, liveHistory, marketNames]);
+
   return (
     <>
       <div className="section">
@@ -140,6 +171,7 @@ export default function ComparePageInner() {
                   <button
                     key={code}
                     onClick={() => toggleMarket(code)}
+                    aria-pressed={active}
                     style={{
                       display: "flex", alignItems: "center", gap: 7,
                       padding: "7px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
@@ -179,6 +211,7 @@ export default function ComparePageInner() {
               <button
                 key={key}
                 onClick={() => setSelectedPillar(key)}
+                aria-pressed={selectedPillar === key}
                 style={{
                   padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
                   border: selectedPillar === key ? "1px solid var(--gold)" : "1px solid var(--hair)",
@@ -203,6 +236,22 @@ export default function ComparePageInner() {
               {RAW_FIELD[selectedPillar].label.toUpperCase()} — RAW RATE
             </div>
             <TrendChart series={rawIndicatorSeries} height={320} yLabel={RAW_FIELD[selectedPillar].unit} showDots={false} />
+          </div>
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 16 }}>
+            <p className="eyebrow">INFLATION VS. POLICY RATE</p>
+            <h2>How each market is actually positioned right now</h2>
+            <p>
+              Each ring is where a market sits today; the faint trail behind it is where it&apos;s been over the
+              selected year range. Same markets and years as above.
+            </p>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", backdropFilter: "blur(14px)" }}>
+            <RelationshipScatter series={relationshipSeries} xLabel="Inflation (%)" yLabel="Policy rate (%)" height={380} showLegend={false} />
           </div>
         </div>
       </div>

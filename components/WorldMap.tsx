@@ -38,6 +38,26 @@ function project(lon: number, lat: number, width: number, height: number): [numb
   return [x, y];
 }
 
+// Every click target on this map (country shape, score-label pill,
+// legend entry) was mouse/touch-only -- no role, no tabIndex, no way
+// to tell a keyboard or screen-reader user it was interactive at all,
+// let alone activate it. This makes any of them behave like a real
+// button: focusable, announced, and activatable with Enter or Space,
+// on top of the click handler each element already has.
+function a11yButtonProps(label: string, onActivate: () => void) {
+  return {
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-label": label,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onActivate();
+      }
+    },
+  };
+}
+
 export default function WorldMap({ markets, current, onSelect }: { markets: MarketData[]; current: string; onSelect: (code: string) => void }) {
   const countryToMarket: Record<string, string> = {};
   Object.entries(MARKET_COUNTRY_IDS).forEach(([market, ids]) => {
@@ -77,6 +97,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
                 transition: "fill-opacity 0.25s ease, filter 0.25s ease",
               }}
               onClick={() => onSelect(marketCode)}
+              {...a11yButtonProps(tooltipText, () => onSelect(marketCode))}
             >
               <title>{tooltipText}</title>
             </path>
@@ -100,6 +121,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
               key={m.code}
               style={{ cursor: "pointer", pointerEvents: "auto" }}
               onClick={() => onSelect(m.code)}
+              {...a11yButtonProps(`${m.name}: ${label}`, () => onSelect(m.code))}
             >
               <rect
                 x={x - pillW / 2}
@@ -137,6 +159,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
               key={m.code}
               onClick={() => onSelect(m.code)}
               style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", color: m.code === current ? "#fff" : "#9296AB" }}
+              {...a11yButtonProps(m.name, () => onSelect(m.code))}
             >
               <i style={{ width: 8, height: 8, borderRadius: "50%", background: band.color, boxShadow: `0 0 6px ${band.color}` }} />
               <Flag code={m.code} size={16} />
