@@ -1,5 +1,5 @@
 # MMAI — To-Do List
-*Last updated: 2026-08-26 (Gulf Watch: all 3 pillars complete for all 6 countries)*
+*Last updated: 2026-08-26 (Gulf Watch: fully live, debugged, and expanded with history/charts)*
 
 ## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
 While testing Gulf Watch's new refresh job, discovered the password
@@ -15,51 +15,40 @@ and re-verified — both endpoints now correctly reject requests with a
 missing or wrong secret, and accept only the right one. This predates
 Gulf Watch entirely; it was just discovered while testing it.
 
-## 🚧 In progress — "Gulf Watch" feature (started 2026-08-25)
+## ✅ "Gulf Watch" feature — live, debugged, and expanded (2026-08-25 → 26)
 
-A new section for the site, separate from the main 6-market score — six
+A new section of the site, separate from the main 6-market score — six
 countries (UAE, Bahrain, Qatar, Kuwait, Oman, Saudi Arabia) shown with real
 live numbers but **no composite score**, since none of them have a usable
 policy-rate source. Full plan and reasoning in `MMAI_MASTER_HANDOVER.md` §11.
 
-**Done so far:**
-- [x] The two required bug fixes from the plan review (refresh-job timeout
-      protection, and the dormant "stale market shows old data under a LIVE
-      banner" bug) — both fixed on the main site, live and verified.
-- [x] All 6 countries' inflation (CPI) data — built and verified live.
-- [x] Qatar's real estate activity (monthly transaction count) — built and
-      verified live.
-- [x] All 6 countries' currency-stability numbers (FX reserves + current
-      account balance) — built and verified live. Since every Gulf currency
-      here is pegged to (or closely tracks) the US dollar, this is a
-      genuinely meaningful "can the peg hold" signal, not just filler data.
-- [x] New `gulf_indicators` database table — live, with the safeguards the
-      review asked for (can't store a real-estate number without saying what
-      it means). One column got renamed after a naming mistake was caught
-      before any real data landed in it (was `fx_reserves_usd_bn`, actually
-      stores months of import cover, not a dollar amount — now named
-      correctly).
-- [x] A second daily refresh job (`/api/refresh-gulf`, 06:20 UTC) that
-      actually writes all 6 countries' data across all 3 pillars — built,
-      tested, and confirmed end-to-end: manually triggered the live route
-      and checked the actual database rows, not just "it returned OK."
-- [x] Along the way, found and fixed a real security gap (see above) — the
-      password protecting both refresh jobs wasn't actually working.
-
-**Every country now has a complete, verified 3-pillar data set** (cost of
-living, currency stability, and real estate where available) refreshing
-daily. Nothing has failed a live test yet in this feature.
+**The whole feature is live at `/gulf-watch` now** — cards, historical trend
+charts, a comparison table across all 6 countries, a homepage entry point,
+and Gulf Watch content on the "Learn More" page. Along the way:
+- Found and fixed a real security gap — the password protecting both daily
+  refresh jobs wasn't actually working (see above).
+- Found and fixed 3 separate bugs that kept the page showing stale/fake data
+  right after it first went live (a sort-order bug, a cache-staleness issue,
+  and a Next.js code pattern that silently stopped the page from loading
+  real data at all) — full detail in the handover doc §11.7.
+- Caught and prevented two would-have-shipped fake-data problems while
+  building the historical charts: Saudi's data source returns 12 fabricated
+  "0.0% inflation" months for 2013 (dropped before it ever reached the
+  site), and a first-draft "is this month's data complete" rule would have
+  deleted the single busiest month in Qatar's whole real-estate history by
+  mistake (caught and fixed before it shipped).
 
 **Still ahead:**
+- [ ] **Homepage widget — you said you don't like the current design,** will
+      revisit with you later. Not urgent, just flagging it's not finished.
+- [ ] **Interactive Gulf map** — the last item on your original wishlist.
+      Deliberately saved for last because the site's underlying map data
+      can't show all 6 countries clearly (one country's outline is missing
+      entirely, two others are too small to see).
 - [ ] Saudi Arabia's real estate (KAPSARC) — still needs your decision: send
       a permission email (their terms conflict with their own "public
       domain" label), or skip it.
 - [ ] Bahrain's real estate — already agreed to skip, source is too fragile.
-- [ ] The sources registry (so Gulf Watch data shows up honestly on the
-      `/sources` page, same transparency as everything else on the site).
-- [ ] The actual page — this is the one piece that makes any of the above
-      visible to a visitor. Nothing built so far shows up anywhere on the
-      live site yet.
 
 ## ✅ Just finished — full site audit (2026-08-24)
 - [x] **Confirmed the daily auto-refresh runs on its own.** On 2026-08-23 all
