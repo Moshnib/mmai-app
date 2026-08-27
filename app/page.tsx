@@ -174,6 +174,16 @@ export default function OverviewPage() {
               Last updated {formatUpdatedAt(lastUpdated)} (oldest of the {markets.length} markets) · scheduled to refresh daily at 06:00 UTC
             </p>
           )}
+          {/* One plain sentence for a visitor who has never heard of MMAI
+              before landing here -- the headline right below is a hook,
+              not an explanation, and assumes the reader already knows
+              what "macro environment" means to them personally. This
+              line answers "what even is this" before asking the
+              headline's more evocative question. */}
+          <p style={{ fontSize: 14, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px 0 0", lineHeight: 1.6 }}>
+            MMAI reads public government data — inflation, jobs, interest rates — and turns it into one plain-language
+            score per country, updated daily. Not investment advice, just the honest picture.
+          </p>
           <h1 className="headline">Is today&apos;s macro environment supportive, or working against you?</h1>
           <p className="sub">One transparent number, built entirely from licensed public data — with every formula, weight, and source open for anyone to check.</p>
 
@@ -206,17 +216,36 @@ export default function OverviewPage() {
                 <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
               </div>
               <Sparkline marketCode={current} currentScore={composite} />
-              <Link
-                href="/learn#topic-mmai"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6, marginTop: 16,
-                  fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
-                  color: "var(--gold)", textDecoration: "none", padding: "7px 14px",
-                  border: "1px solid rgba(34,211,238,0.35)", borderRadius: 999, background: "rgba(34,211,238,0.08)",
-                }}
-              >
-                Σ How is this score calculated? →
-              </Link>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+                <Link
+                  href="/learn#topic-mmai"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
+                    color: "var(--gold)", textDecoration: "none", padding: "7px 14px",
+                    border: "1px solid rgba(34,211,238,0.35)", borderRadius: 999, background: "rgba(34,211,238,0.08)",
+                  }}
+                >
+                  Σ How is this score calculated? →
+                </Link>
+                {/* A light nudge toward the real subscribe form at the
+                    bottom of the page, not a second copy of it -- most
+                    visitors never scroll that far (it's the last of six
+                    sections), so this catches them right where they're
+                    already looking at a score, without duplicating the
+                    email-capture form and its state. */}
+                <a
+                  href="#subscribe"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
+                    color: "var(--gold-deep)", textDecoration: "none", padding: "7px 14px",
+                    border: "1px solid rgba(139,92,246,0.35)", borderRadius: 999, background: "rgba(139,92,246,0.08)",
+                  }}
+                >
+                  🔔 Notify me when {market.name}&apos;s status changes →
+                </a>
+              </div>
             </div>
           </div>
 
@@ -292,7 +321,7 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section" style={{ paddingTop: 0 }} id="subscribe">
         <div className="wrap" style={{ maxWidth: 560 }}>
           <SubscribeForm />
         </div>

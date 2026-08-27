@@ -60,6 +60,11 @@ body::before {
 
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
+/* Any in-page anchor jump (e.g. the homepage's "notify me" link to
+   #subscribe) lands under the sticky nav without this -- its ~64px
+   height would cover the top of whatever section it jumped to. */
+[id] { scroll-margin-top: 80px; }
+
 nav {
   position: sticky; top: 0; z-index: 50;
   background: rgba(8, 8, 13, 0.82); backdrop-filter: blur(14px);
