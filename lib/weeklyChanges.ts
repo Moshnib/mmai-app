@@ -29,7 +29,7 @@ import { STALE_THRESHOLD_MS } from "@/lib/constants";
 // a data source changes for any market. Until it's bumped, every market
 // will correctly show "not enough history yet" for a few days after the
 // swap -- that's the intended, honest behavior, not a bug to route around.
-const COMPARABILITY_FLOOR = new Date("2026-08-22T06:00:00Z").getTime();
+export const COMPARABILITY_FLOOR = new Date("2026-08-22T06:00:00Z").getTime();
 
 // Bucket window: an older bucket must be at least MIN days and at most
 // MAX days older than the bucket before it. The lower bound is what
@@ -38,7 +38,7 @@ const COMPARABILITY_FLOOR = new Date("2026-08-22T06:00:00Z").getTime();
 // from being labeled "last week" just because they're the next-oldest
 // thing sitting in the table -- confirmed live that retired/paused
 // markets (AE, NO) still have rows in raw_indicators indefinitely.
-const BUCKET_MIN_GAP_DAYS = 6;
+export const BUCKET_MIN_GAP_DAYS = 6;
 const BUCKET_MAX_GAP_DAYS = 10;
 
 // Query window: bounded, not "last 60 days" -- an unbounded window is

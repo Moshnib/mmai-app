@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { colorForScore } from "@/lib/scoring";
-import { fetchAllWeeklyChanges, type WeeklyMarketResult } from "@/lib/weeklyChanges";
+import { fetchAllWeeklyChanges, COMPARABILITY_FLOOR, BUCKET_MIN_GAP_DAYS, type WeeklyMarketResult } from "@/lib/weeklyChanges";
+
+function formatDate(ms: number): string {
+  return new Date(ms).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+// Every market's tracking started at the same coordinated launch (verified
+// live: all six markets' earliest fully-comparable row lands within the
+// same minute of each other on 2026-08-22), so one shared since/expected
+// pair is accurate for all of them -- not an approximation.
+const TRACKING_SINCE = formatDate(COMPARABILITY_FLOOR);
+const FIRST_COMPARISON_EXPECTED = formatDate(COMPARABILITY_FLOOR + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000);
 
 // Matches lib/scoring.ts's COLOR_STOPS[1] (the orange stop) -- not
 // imported since scoring.ts doesn't export the raw stops, only
@@ -87,6 +98,18 @@ export default function WeeklyFeed() {
         </div>
       )}
 
+      {results?.some((r) => !r.isStale && r.buckets.length < 2) && (
+        <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 14, padding: "10px 12px", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10, fontSize: 12, color: "var(--ink-soft)", lineHeight: 1.6 }}>
+          <span aria-hidden="true">●</span>
+          <span>
+            Live tracking began <b style={{ color: "var(--ink)" }}>{TRACKING_SINCE}</b>, when every source came online at once. A
+            comparison needs two readings at least {BUCKET_MIN_GAP_DAYS} days apart, so the first real week-over-week changes
+            appear starting around <b style={{ color: "var(--ink)" }}>{FIRST_COMPARISON_EXPECTED}</b> — this isn&apos;t a gap in the
+            data, it&apos;s how young the tracking still is.
+          </span>
+        </div>
+      )}
+
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
           <thead>
@@ -116,7 +139,9 @@ export default function WeeklyFeed() {
                   {r.isStale ? (
                     <td style={{ ...td, color: "var(--slate)" }} colSpan={5}>Not currently refreshing — no recent data available.</td>
                   ) : !hasEnough ? (
-                    <td style={{ ...td, color: "var(--slate)" }} colSpan={5}>Not enough history yet — check back in a few days.</td>
+                    <td style={{ ...td, color: "var(--slate)" }} colSpan={5}>
+                      Tracking since {TRACKING_SINCE} — first comparison expected ~{FIRST_COMPARISON_EXPECTED}.
+                    </td>
                   ) : (
                     <>
                       <td style={td}><CompositeCell now={now.composite} then={then.composite} /></td>
