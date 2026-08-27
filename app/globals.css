@@ -83,8 +83,8 @@ nav {
 .navlink.active { background: linear-gradient(135deg, var(--gold-deep), #6D28D9); color: #fff; }
 
 /* Mobile nav -- hamburger + slide-down panel, hidden entirely above
-   860px (matches the breakpoint already used by .score-panel and
-   .gulf-float elsewhere). Below it, .navlinks (7 links in one row,
+   860px (matches the breakpoint already used by .score-panel and the
+   Sources table elsewhere). Below it, .navlinks (7 links in one row,
    confirmed to overflow its container on a phone) hides and the
    hamburger takes over. The panel is server-rendered display:none by
    default (never toggled via JS during render) so there's no hydration
@@ -178,94 +178,29 @@ h1.headline {
 .pillar-name { font-size: 11.5px; font-weight: 700; margin: 10px 0 2px; color: var(--ink); }
 .pillar-weight { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--slate); }
 
-.compare-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 24px; }
-@media (max-width: 900px) { .compare-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 560px) { .compare-grid { grid-template-columns: repeat(2, 1fr); } }
+/* The only remaining user is the 6-card Gulf Watch grid (/gulf-watch and
+   the homepage's Gulf Watch section) -- 3 columns divides 6 evenly with no
+   orphaned card, unlike the 5-column layout this was originally built for. */
+.compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
+@media (max-width: 900px) { .compare-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .compare-grid { grid-template-columns: repeat(1, 1fr); } }
 .compare-card {
   background: var(--glass); border: 1px solid var(--hair); border-radius: 16px;
   padding: 16px 18px; cursor: pointer; transition: all .2s ease; backdrop-filter: blur(10px);
 }
 .compare-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
-
-/* Gulf Watch floating side widget -- deliberately OUT of the vertical
-   content flow (hero -> pillars -> compare -> map) rather than a banner
-   inside it, so it doesn't interrupt that reading order. Docked to the
-   right edge, vertically centered, below the sticky nav's z-index (50)
-   so it never floats over the open nav on short viewports. */
-.gulf-float {
-  position: fixed; top: 50%; right: 0; transform: translateY(-50%);
-  z-index: 40; display: flex; align-items: center; gap: 10px;
-  background: linear-gradient(120deg, rgba(217,164,65,0.16), rgba(34,211,238,0.10));
-  border: 1px solid var(--hair); border-right: none;
-  border-radius: 16px 0 0 16px;
-  padding: 14px 18px 14px 14px;
-  text-decoration: none;
-  backdrop-filter: blur(14px);
-  transition: padding-right .2s ease, border-color .2s ease;
-  box-shadow: -6px 0 24px -10px rgba(0,0,0,0.5);
-}
-.gulf-float:hover { padding-right: 22px; border-color: rgba(255,255,255,0.28); }
-.gulf-float-label { white-space: nowrap; }
-@media (max-width: 860px) {
-  .gulf-float {
-    top: auto; bottom: 0; right: 0; left: 0; transform: none;
-    border-radius: 16px 16px 0 0; border-right: 1px solid var(--hair); border-bottom: none;
-    justify-content: center; padding: 10px 16px;
-  }
-  .gulf-float:hover { padding-right: 16px; }
-  .gulf-float-icon { transform: scale(0.72); transform-origin: center; margin: -10px -14px; }
-  /* .gulf-float becomes a fixed bottom bar at this width (see above) --
-     without this, it permanently covers the last ~80px of every page's
-     content, footer included. Applied to the shared footer rather than
-     just the homepage (the only page that renders .gulf-float) since
-     there's no cheap per-page body class to scope it to -- a little
-     extra breathing room in other pages' footers on mobile costs
-     nothing visible. */
-  footer { padding-bottom: 100px; }
-}
-.compare-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 20px -6px var(--gold); }
 .compare-name { font-weight: 700; font-size: 13.5px; color: var(--ink); }
-.compare-score { font-family: "Space Grotesk", monospace; font-weight: 700; font-size: 19px; }
-.compare-band { font-size: 10.5px; color: var(--slate); font-weight: 600; }
-.compare-bar { height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 10px; overflow: hidden; }
-.compare-bar-fill { height: 100%; border-radius: 3px; }
 
-.heatmap-grid { display: grid; grid-template-columns: 160px repeat(5, 1fr); gap: 6px; margin-top: 20px; overflow-x: auto; }
-.hm-row { display: contents; }
-.hm-colhead { font-size: 11px; font-weight: 700; color: var(--slate); text-align: center; padding: 8px 4px; }
-.hm-rowhead { font-size: 12.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; padding: 0 8px; }
-.hm-cell-label { display: none; }
-
-/* Below 860px, the 6-column grid (160px label + 5 equal fractions) would
-   squeeze each pillar into ~35px -- illegible. Flip to one stacked card
-   per market instead: .hm-row goes from "contents" (invisible wrapper,
-   grid children) to a real block (the card), .heatmap-grid stops being a
-   grid, and .hm-colhead (the desktop-only column headers, meaningless
-   without the grid) hides. This reuses the exact same markup for both
-   layouts -- no duplicated cells, no JS/resize-listener involved. */
+/* Text fallback shown only where the map itself is hidden (see the
+   world-map-wrap rule below) -- without this, a phone user has no way
+   to reach any market other than the one currently selected above. */
+.map-mobile-links { display: none; }
 @media (max-width: 860px) {
   /* The world map's viewBox scales its per-market score labels down
-     with it -- confirmed illegible at phone width. The heatmap below it
-     already carries the same per-market, per-pillar information in a
-     real mobile layout (see the .hm-row flip below), so hiding the map
-     rather than trying to make a wide SVG projection legible at 375px. */
+     with it -- confirmed illegible at phone width. */
   .world-map-wrap { display: none; }
-  .heatmap-grid { display: block; overflow-x: visible; }
-  .hm-colhead { display: none; }
-  .heatmap-grid > .hm-row {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px;
-    background: var(--glass); border: 1px solid var(--hair);
-    border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
-  }
-  .heatmap-grid > .hm-row > .hm-rowhead { grid-column: 1 / -1; padding: 0 0 8px; border-bottom: 1px solid var(--hair); margin-bottom: 4px; }
-  .hm-cell-label { display: block; font-size: 9.5px; color: rgba(255,255,255,0.75); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
-  .hm-cell { min-height: 52px; padding: 6px 4px; }
+  .map-mobile-links { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: -8px; margin-bottom: 24px; }
 }
-.hm-cell { border-radius: 10px; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform .15s ease, filter .15s ease; }
-.hm-cell:hover { transform: scale(1.05); }
-.hm-cell .hm-val { font-family: "Space Grotesk", monospace; font-weight: 700; font-size: 15px; color: #fff; }
-.hm-cell.excluded { background: repeating-linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.04) 6px, rgba(255,255,255,0.08) 6px, rgba(255,255,255,0.08) 12px) !important; }
-.hm-cell.excluded .hm-val { color: var(--slate); font-size: 13px; }
 
 .sources-head, .sources-row { display: grid; grid-template-columns: 1.4fr 1.6fr 2.2fr 0.9fr 1.15fr; }
 .sources-head { padding: 10px 18px; font-size: 10.5px; }

@@ -10,7 +10,7 @@ already validated in the deck, workbook, and methodology paper), and
 automatically switches to live Supabase data the moment you connect a database.
 
 ## What's already done for you
-- `/` — Overview page: gauge, pillar grid, market comparison, heat map (all ported from the tested HTML site)
+- `/` — Overview page: score display, pillar grid, an interactive world map (click a market to open its Data Over Time page), a Gulf Watch section, and a weekly change feed. (Note: this line described the original ported-from-HTML version; see `MMAI_MASTER_HANDOVER.md` for the current, restructured homepage.)
 - `/learn` — Learn page: all 6 educational topics
 - `/api/refresh` — a real serverless function that fetches **live** BLS (US CPI, unemployment) and New York Fed (US Fed Funds Rate) data, computes scores, and writes to Supabase
 - `lib/scoring.ts` — the exact 7 equations from the methodology paper, unit-tested

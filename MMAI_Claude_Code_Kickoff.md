@@ -103,6 +103,11 @@ app/
     unsubscribe/route.ts      -- Token-based, no login needed
 
 components/
+  [Snapshot from this project's kickoff -- component names below are what
+  existed at that point. Gauge.tsx, Heatmap.tsx, CompareGrid.tsx, and
+  GulfMapIcon.tsx have since been deleted and replaced (ScoreDisplay.tsx,
+  a homepage Gulf Watch section, and a redesigned WorldMap.tsx respectively)
+  -- see MMAI_MASTER_HANDOVER.md for current state.]
   Gauge.tsx, PillarGrid.tsx, Heatmap.tsx, WorldMap.tsx, Sparkline.tsx,
   CompareGrid.tsx, TrendChart.tsx (the shared multi-series chart component,
   used by both Trends and Compare pages), SubscribeForm.tsx

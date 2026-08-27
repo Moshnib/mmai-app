@@ -1,30 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import KeyRatesRow from "@/components/KeyRatesRow";
 import PillarGrid from "@/components/PillarGrid";
-import CompareGrid from "@/components/CompareGrid";
-import Heatmap from "@/components/Heatmap";
 import Sparkline from "@/components/Sparkline";
 import WorldMap from "@/components/WorldMap";
+import GulfCard from "@/components/GulfCard";
+import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
-import GulfMapIcon from "@/components/GulfMapIcon";
 import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
-
-// A market whose last successful write is older than this is treated as
-// currently broken, not "a bit behind" -- daily refresh cadence means
-// anything past a couple of missed days is a real problem, not normal
-// publication lag (that's a different, already-accepted thing: annual
-// sources like World Bank GDP figures naturally carry old observation
-// dates while still refreshing successfully every day).
-const STALE_THRESHOLD_MS = 72 * 60 * 60 * 1000; // 72 hours
+import { useGulfIndicators } from "@/lib/useGulfIndicators";
+import { STALE_THRESHOLD_MS } from "@/lib/constants";
 
 function formatUpdatedAt(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
@@ -91,10 +85,12 @@ function rateNarrativeFor(raw: RawIndicators): string | null {
 }
 
 export default function OverviewPage() {
+  const router = useRouter();
   const [markets, setMarkets] = useState<MarketData[]>(FALLBACK_MARKETS);
   const [current, setCurrent] = useState("US");
   const [dataSource, setDataSource] = useState<"live" | "fallback">("fallback");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const { countries: gulfCountries, loaded: gulfLoaded } = useGulfIndicators();
 
   useEffect(() => {
     async function loadLiveData() {
@@ -168,14 +164,6 @@ export default function OverviewPage() {
 
   return (
     <>
-      <Link href="/gulf-watch" className="gulf-float" aria-label="Explore Gulf Watch — six more countries, no score needed">
-        <div className="gulf-float-icon"><GulfMapIcon width={104} height={72} /></div>
-        <div className="gulf-float-label">
-          <p className="eyebrow" style={{ margin: "0 0 2px" }}>GULF WATCH</p>
-          <p style={{ fontSize: 12, color: "var(--ink-soft)", margin: 0 }}>6 more countries →</p>
-        </div>
-      </Link>
-
       <div className="hero">
         <div className="wrap">
           <p className="eyebrow">
@@ -251,24 +239,56 @@ export default function OverviewPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">CROSS-MARKET VIEW</p>
-            <h2>How the {markets.length} markets compare today</h2>
+            <p className="eyebrow">EXPLORE MORE</p>
+            <h2>See how the other {markets.length - 1} markets are doing</h2>
+            <p>Click a country to open its full history on the Data Over Time page.</p>
           </div>
-          <CompareGrid markets={markets} current={current} onSelect={setCurrent} />
+          <div className="world-map-wrap" style={{ marginTop: 24, marginBottom: 24 }}>
+            <WorldMap markets={markets} current={current} onSelect={(code) => router.push(`/trends?market=${code}`)} />
+          </div>
+          {/* Text fallback for the map's mobile-hidden state (illegible
+              at phone width) -- Heatmap used to be the mobile-friendly
+              alternative for "see the other markets"; now that it's
+              gone, hiding the map with nothing in its place would leave
+              phones with no way to explore markets other than the
+              currently-selected one at all. Hidden above 860px via
+              .map-mobile-links so it doesn't duplicate the map on desktop. */}
+          <div className="map-mobile-links">
+            {markets.filter((m) => m.code !== current).map((m) => (
+              <Link key={m.code} href={`/trends?market=${m.code}`} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--ink-soft)", textDecoration: "none", fontSize: 13 }}>
+                <Flag code={m.code} size={16} /> {m.name}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="section">
+      <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">EVERY MARKET, EVERY PILLAR, AT A GLANCE</p>
-            <h2>The MMAI Heat Map</h2>
-            <p>Click a country on the map or a row below to jump straight to that market.</p>
+            <p className="eyebrow">SIX MORE COUNTRIES</p>
+            <h2>Gulf Watch</h2>
+            <p>Real, live data on cost of living, investment confidence, and currency stability — shown honestly, with no composite score built on a gap.</p>
           </div>
-          <div className="world-map-wrap" style={{ marginTop: 24, marginBottom: 24 }}>
-            <WorldMap markets={markets} current={current} onSelect={setCurrent} />
+          <div className="compare-grid" style={{ opacity: gulfLoaded ? 1 : 0.5, transition: "opacity 0.3s ease", marginBottom: 16 }}>
+            {gulfCountries.map((c) => (
+              <GulfCard key={c.code} country={c} />
+            ))}
           </div>
-          <Heatmap markets={markets} />
+          <Link href="/gulf-watch" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--gold-deep)", textDecoration: "none" }}>
+            See history and comparison →
+          </Link>
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">SINCE LAST WEEK</p>
+            <h2>Weekly feed</h2>
+            <p>What changed for each market since roughly a week ago — the raw numbers, no interpretation.</p>
+          </div>
+          <WeeklyFeed />
         </div>
       </div>
 

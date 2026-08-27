@@ -98,8 +98,9 @@ Everything below was checked directly, not assumed:
 
 ```
 app/
-  page.tsx                    -- Overview homepage (client component). Gauge, PillarGrid,
-                                 KeyRatesRow, Heatmap, WorldMap, CompareGrid, SubscribeForm.
+  page.tsx                    -- Overview homepage (client component). ScoreDisplay, PillarGrid,
+                                 KeyRatesRow, WorldMap (click navigates to /trends?market=X),
+                                 Gulf Watch card section, WeeklyFeed, SubscribeForm.
   layout.tsx                  -- per-page titles/descriptions, SiteFooter
   icon.tsx                    -- generated favicon (replaced the Next.js starter logo)
   opengraph-image.tsx         -- social sharing card
@@ -132,9 +133,12 @@ lib/
     norgesbank, nyfed, ons, rba, ssb, statcan, worldbank
 
 components/
-  Gauge, PillarGrid, KeyRatesRow, Heatmap, WorldMap, Sparkline, CompareGrid,
-  TrendChart, Flag, SubscribeForm, ContactForm, ExportDataButtons,
-  SiteFooter, SourcesTable
+  ScoreDisplay, PillarGrid, KeyRatesRow, WorldMap, Sparkline, GulfCard,
+  GulfTrends, WeeklyFeed, RelationshipScatter, TrendChart, Flag,
+  SubscribeForm, ContactForm, ExportDataButtons, SiteFooter, SourcesTable,
+  NavBar
+  (Gauge, Heatmap, CompareGrid, GulfMapIcon deleted -- see §homepage
+  restructure below for what replaced each one.)
 
 supabase/schema.sql           -- raw_indicators, mmai_scores, subscribers + latest_scores view.
                                  RLS: public read-only on the first two; subscribers has NO
@@ -473,11 +477,39 @@ Shipped, in this order:
 
 ### 11.9 What's left for Gulf Watch
 
-1. **Homepage widget redesign** — site owner explicitly unhappy with the current floating-card version (§11.8, item 3). Ask what specifically isn't working before proposing a new direction; don't assume.
+1. ~~**Homepage widget redesign**~~ — **done, see §12.** The floating card is gone; Gulf Watch now has a real section on the homepage.
 2. **Interactive Gulf map** — deliberately deferred twice now (original Phase 3 scope cut, and again during the §11.8 expansion) because the site's real map data can't represent all 6 countries legibly. Last item in the site owner's agreed build order.
 3. **Saudi real estate (KAPSARC)** — still an open decision, not built. See §11.3's note: KAPSARC's Terms of Use prohibit automated access without written permission, contradicting the dataset's own "Public Domain" tag. Needs either written permission or an explicit site-owner decision to skip.
 4. **Bahrain real estate** — site owner explicitly said to skip/deprioritize this one (SLRB's data isn't covered by a confirmed open licence anyway).
 5. A live overlay unioning `lib/gulfHistory.ts`'s static backfill with the daily cron's ongoing `gulf_indicators` writes (mirroring `useLiveHistory.ts`'s existing pattern for the 6 scored markets) was intentionally scoped OUT of §11.8 — the backfill's charts currently read only the static file, not live data. Worth doing once the daily cron has accumulated enough of its own history to matter. Note if this is ever built: `app/api/refresh-gulf/route.ts` currently stamps every indicator in a row with the *CPI's* observation date, not each indicator's own — a live overlay keyed on that shared date would misfile FX-reserves/current-account/real-estate figures under the wrong period. Fix that stamping first.
+
+## 12. Homepage restructure, Weekly Feed, and the map redesign (2026-08-27)
+
+The site owner flagged real redundancy on the homepage: the pillar breakdown, a heat map, and a "cross-market view" grid were three overlapping ways to do the same "pick a market, see its score" job, the floating Gulf Watch widget (§11.8) was still unliked, and there was no way to see what changed week over week. Planned via `EnterPlanMode`, reviewed pre-code by Opus (Fable substitute, per §9's rule), then built.
+
+**Homepage restructure (`app/page.tsx`).** Deleted `components/CompareGrid.tsx` and `components/Heatmap.tsx` outright (confirmed zero other references first) — both were second/third copies of the market-select flow already covered by the hero tabs. `WorldMap`'s `onSelect` now calls `router.push(\`/trends?market=\${code}\`)` instead of updating in-page state, turning the map into a launch point into the deep-dive page rather than a third selector. New sections, in order after the existing hero + pillar breakdown: a map section ("See how the other N markets are doing"), a real Gulf Watch card section (replacing the floating widget — `GulfMapIcon.tsx` deleted too), and a new Weekly Feed section, before `SubscribeForm`.
+
+**Weekly Feed (`lib/weeklyChanges.ts`, `components/WeeklyFeed.tsx`).** Shows each scored market's composite + 5 raw indicators, this fetch vs. roughly a week earlier, plain ↑/↓/— with no color on the indicator deltas (color-coding "unemployment rose" as good or bad would be exactly the interpretation this feature exists to avoid) — only the composite delta may use `colorForScore()`. Built on `raw_indicators` directly (append-only, no dedup). A first-draft "just compare rows ~6 days apart" design was checked against live data before being built and would have published fabricated deltas from fetcher source-swaps, not real economic changes — so the shipped version gates every comparison behind: a hard `COMPARABILITY_FLOOR` timestamp (rows before the last source swap aren't comparable to rows after it), a 72h staleness check, a 6–10 day bucket-gap window (so a stalled/retired market's old rows never get labeled "last week"), and a full-population requirement (all 5 indicators non-null — a partial row has different pillar coverage than a full one, so comparing them is a fake delta even with zero real change behind it).
+
+The post-code Opus review pass caught two real bugs in this first version, both fixed same-session:
+- **`isStale` was computed from the *filtered* newest bucket, not the market's actual newest row.** That meant a market writing full rows on schedule — refreshing correctly — could get mislabeled "not currently refreshing" for days after `COMPARABILITY_FLOOR` moves (every row temporarily fails the floor filter) or whenever its most recent rows happened to be partial. Fixed by querying the true newest row per market (scope-only, no floor/population filter) in a separate lightweight query, and keeping "not enough history yet" as the distinct, correct message for the floor/population case.
+- **The Brent-crude delta compared "now" and "then" from two different markets' independently-newest rows**, and a missing delta rendered as a bare "—" — which in this feature's own vocabulary means "genuinely flat," not "unknown." Fixed: the delta now requires both values from the same market's paired buckets, and an unpaired state renders "no comparison yet" instead of a silent false "—".
+- Also fixed in the same pass: the `QUERY_ROW_LIMIT` (200) cap now applies server-side, scoped/floor/population-filtered, so the budget is spent only on rows that can become a bucket instead of being burned on retired markets or partial rows during a burst-write day.
+
+**`lib/useGulfIndicators.ts`** (new) extracts the Gulf Watch Supabase fetch (previously inline in `GulfWatchPageInner.tsx`) so both `/gulf-watch` and the homepage's new Gulf section read the exact same live data the exact same way — same `fetched_at`-only ordering (never `observation_date` first; that was the §11.7 sort-order bug, and reintroducing it "for consistency" would bring it back), same `.limit(60)`, same latest-row-per-country dedup.
+
+**`lib/constants.ts`** (new) hoists `STALE_THRESHOLD_MS` (72h) out of what were three separate copies (`app/page.tsx`, `components/GulfCard.tsx`, `components/SiteFooter.tsx`) into one place — the third copy (SiteFooter's) was missed in the first pass and caught by the same review; all three now import from here.
+
+**`.compare-grid` (`app/globals.css`)** changed from a 5-column responsive grid to 3 columns (→2→1 on smaller widths) — it's now used exclusively by the two 6-card Gulf Watch grids (`/gulf-watch` and the homepage section), and 5 columns orphaned the 6th card.
+
+**WorldMap visual redesign (`components/WorldMap.tsx`).** Went through several owner-reviewed rounds — mocked up as real interactive HTML pages (published as Artifacts, not static images, since the owner specifically wanted to see it move, not just look at it) rather than built blind:
+- Round 1 offered three distinct treatments (glow/pulse, terminal-readout panel, dim-until-hover). Owner feedback: **"too busy / cluttered"** and **"doesn't feel like a real map."**
+- Round 2 stripped it to one plain choropleth-style map — color only, a single small cursor tooltip, no floating pills/glow/panels. Owner feedback: **"closer."**
+- Round 3 addressed three specific asks: bigger (cropped the viewBox to cut the empty Antarctica band at the bottom, `worldPaths.height` 480 → `CROP_HEIGHT` 420, so the six real markets fill more of the frame off the same underlying geometry), scores visible without hovering (moved from the earlier floating-pill treatment straight to a plain always-visible number with a dark stroke-halo for legibility against same-colored country fill), and a choice between three color schemes shown side by side on the real map with real live scores. Owner picked **Option 1 — the site's existing `colorForScore()` gradient**, so no color system change was needed anywhere.
+
+The shipped version: cropped map, always-visible score labels, single hover tooltip (name + band only, not the number — it's already on the map), click still navigates to `/trends?market=CODE`.
+
+The post-code review caught one real regression here: **the a11y relabel from §12's own click-behavior change (value → navigation action) had accidentally dropped the score out of the accessible name entirely** — `aria-label` overrides descendant text, so a keyboard/screen-reader user got "View United States on the Data Over Time page" with no number and no band, on the one page whose entire purpose is that number. Made worse by Euro Area's 11 constituent-country paths each carrying an identical focusable label (11 duplicate tab stops for one market). Fixed: country `<path>` elements are now `tabIndex={-1}`/`aria-hidden` (mouse/touch-only — the map's real visual, not a focus target), and the one score `<text>` label per market (plus the legend entry below it, which now also shows the score) carries the full accessible name — e.g. "View United States, score 78.5, Supportive, on the Data Over Time page" — restoring WCAG 2.5.3 (Label in Name) compliance and cutting Euro Area from 11 tab stops to 1.
 
 ---
 *End of handover document.*

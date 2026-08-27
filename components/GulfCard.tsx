@@ -11,6 +11,12 @@ export interface GulfCardData {
   fxReservesMonthsImports: number | null;
   currentAccountPctGdp: number | null;
   fetchedAt: string | null;
+  // Computed once when the data is fetched (lib/useGulfIndicators.ts),
+  // not here at render time -- calling Date.now() directly in a
+  // component body is an impure render (flagged by the
+  // react-hooks/purity rule: results can shift between renders with no
+  // prop change), even though the practical risk here is low.
+  isStale: boolean;
   hasScore?: boolean; // Oman-shaped escape hatch for later, unused today
 }
 
@@ -26,7 +32,7 @@ function Stat({ label, value }: { label: string; value: string | null }) {
 }
 
 export default function GulfCard({ country }: { country: GulfCardData }) {
-  const isStale = !country.fetchedAt || Date.now() - new Date(country.fetchedAt).getTime() > 72 * 60 * 60 * 1000;
+  const isStale = country.isStale;
 
   return (
     <div className="compare-card" style={{ cursor: "default" }}>

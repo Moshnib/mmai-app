@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import { STALE_THRESHOLD_MS } from "@/lib/constants";
 
 // The one footer for the whole site (rendered from app/layout.tsx), carrying a
 // live "last updated" stamp.
@@ -18,10 +19,6 @@ import { FALLBACK_MARKETS } from "@/lib/markets";
 // would cost far more than it returns. If the refresh cadence ever becomes
 // intraday, swapping this for Supabase Realtime is the right move.
 const RECHECK_MS = 10 * 60 * 1000; // 10 minutes
-
-// Matches app/page.tsx's threshold -- a market with no row at all, or
-// nothing newer than this, is currently broken, not "a bit behind."
-const STALE_THRESHOLD_MS = 72 * 60 * 60 * 1000; // 72 hours
 
 function formatStamp(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
