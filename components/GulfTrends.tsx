@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
-import RelationshipScatter, { type ScatterSeriesData, type ScatterPoint } from "@/components/RelationshipScatter";
+import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import {
@@ -168,31 +168,32 @@ function ComparisonTable() {
   );
 }
 
-// Pairs each country's annualized CPI with its annual FX-reserves
-// figure on matching years only (never an inflation reading from one
-// year against an FX reading from another). Countries with fewer than
-// 2 paired years are excluded from the chart entirely rather than
-// drawn as a single floating dot with no trail -- same "not enough
-// history yet" bar this file already uses in seriesFor()/hasEnough,
-// applied here for consistency rather than a stricter one invented
-// just for this chart.
-function buildRelationshipSeries(): { series: ScatterSeriesData[]; excluded: string[] } {
-  const series: ScatterSeriesData[] = [];
+// Pairs each country's annualized CPI with its annual FX-reserves figure
+// on matching years only (never an inflation reading from one year
+// against an FX reading from another), capped to the most recent
+// RELATIONSHIP_TRAIL_YEARS. A country needs at least 1 paired year to
+// show up at all -- unlike the old trail-line version, a lone year is
+// still a real, useful frame to land on while scrubbing the slider, not
+// a "trail" that needs a minimum length to draw.
+function buildRelationshipSeries(): { series: TimeSliderSeriesData[]; years: string[]; excluded: string[] } {
+  const series: TimeSliderSeriesData[] = [];
   const excluded: string[] = [];
+  const yearSet = new Set<string>();
   for (const c of GULF_COUNTRIES) {
     const cpiAnnual = annualizeCpi(GULF_CPI_HISTORY[c.code]);
     const fxAnnual = (GULF_FX_RESERVES_HISTORY[c.code]?.points ?? [])
       .filter((p): p is { period: string; value: number } => p.value !== null)
       .map((p) => ({ year: p.period, value: p.value }));
     const paired = pairAnnualSeries(cpiAnnual, fxAnnual, RELATIONSHIP_TRAIL_YEARS);
-    if (paired.length < 2) {
+    if (paired.length === 0) {
       excluded.push(c.name);
       continue;
     }
-    const points: ScatterPoint[] = paired.map((p, i) => ({ ...p, isCurrent: i === paired.length - 1 }));
-    series.push({ key: c.code, name: c.name, color: COUNTRY_COLORS[c.code] ?? "#9296AB", points });
+    const byYear = new Map(paired.map((p) => [p.period, { x: p.x, y: p.y }]));
+    paired.forEach((p) => yearSet.add(p.period));
+    series.push({ key: c.code, name: c.name, color: COUNTRY_COLORS[c.code] ?? "#9296AB", byYear });
   }
-  return { series, excluded };
+  return { series, years: Array.from(yearSet).sort(), excluded };
 }
 
 export default function GulfTrends() {
@@ -207,7 +208,7 @@ export default function GulfTrends() {
   // Static generated data (lib/gulfHistory.ts) -- computing this once
   // per mount rather than per render is enough; no live/dynamic input
   // feeds it, unlike the per-country memos on the Compare page.
-  const { series: relationshipSeries, excluded: relationshipExcluded } = useMemo(() => buildRelationshipSeries(), []);
+  const { series: relationshipSeries, years: relationshipYears, excluded: relationshipExcluded } = useMemo(() => buildRelationshipSeries(), []);
 
   return (
     <>
@@ -275,17 +276,17 @@ export default function GulfTrends() {
             <p className="eyebrow">COST OF LIVING VS. CURRENCY STABILITY</p>
             <h2>Inflation against FX reserves, country by country</h2>
             <p style={{ maxWidth: "68ch" }}>
-              Each ring is a country&apos;s most recent year with both figures available — not necessarily the same
-              calendar year for every country, since each one&apos;s data runs to a different date (hover a point for
-              its real year). The faint trail behind each ring is its last {RELATIONSHIP_TRAIL_YEARS} years.
-              Inflation is averaged to a full calendar year here so monthly and annual sources compare fairly.
+              Drag the slider (or hit play) to move through {relationshipYears[0]}–{relationshipYears[relationshipYears.length - 1]} and
+              watch each country&apos;s position change. A country with no reading for a given year is simply hidden
+              that year, not guessed at. Inflation is averaged to a full calendar year here so monthly and annual
+              sources compare fairly.
             </p>
           </div>
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", backdropFilter: "blur(14px)" }}>
-            <RelationshipScatter series={relationshipSeries} xLabel="Inflation (%, annual average)" yLabel="FX reserves (months of imports)" height={380} />
+            <TimeSliderScatter series={relationshipSeries} years={relationshipYears} xLabel="Inflation (%, annual average)" yLabel="FX reserves (months of imports)" height={380} />
             {relationshipExcluded.length > 0 && (
               <p style={{ fontSize: 11, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.6 }}>
-                Not enough overlapping years yet for: {relationshipExcluded.join(", ")}.
+                No year with both figures available yet for: {relationshipExcluded.join(", ")}.
               </p>
             )}
           </div>
