@@ -277,6 +277,56 @@ h1.headline {
 .compare-chip .cc-score { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 24px; line-height: 1.1; }
 .compare-chip .cc-band { font-size: 10.5px; color: var(--slate); }
 
+/* ===== Page header with a side insight card (design reference on the
+   Compare, Gulf Watch and Data Over Time pages) ===== */
+.page-head-row {
+  display: grid; grid-template-columns: 1fr minmax(280px, 380px); gap: 28px; align-items: start;
+}
+@media (max-width: 900px) { .page-head-row { grid-template-columns: 1fr; } }
+.insight-card {
+  background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: var(--card-radius); padding: 16px 18px; backdrop-filter: blur(10px);
+}
+.insight-card h3 {
+  font-family: "Space Grotesk", sans-serif; font-size: 14.5px; font-weight: 600;
+  margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
+}
+.insight-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.insight-card li {
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.5;
+  display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start;
+}
+.insight-card li i { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex: none; }
+
+/* Large chart container -- one consistent frame for every full-width
+   chart across the site. */
+.chart-card {
+  background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: 18px; padding: 22px 24px; backdrop-filter: blur(12px);
+}
+.chart-card-label {
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 700;
+  color: var(--gold-deep); letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+
+/* Selector row used for pillars / indicators -- one chart at a time,
+   the selected one clearly active (brief §11, §18, §26). */
+.selector-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.selector-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 12px; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--hair); background: var(--card-bg); color: var(--slate);
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  min-height: 44px;
+}
+.selector-btn:hover { color: var(--ink-soft); border-color: rgba(255,255,255,0.2); }
+.selector-btn.active {
+  border-color: var(--gold-deep); color: #fff;
+  background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(109,40,217,0.18));
+}
+
 /* ===== Weekly Signals rows (design reference: a two-column grid of
    compact rows, not a wide table) ===== */
 .signal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
