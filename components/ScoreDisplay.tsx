@@ -40,7 +40,17 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "8px 0 18px" }}>
         <span
           className="gauge-num"
-          style={{ color: band.color, textShadow: `0 0 22px ${band.color}55`, transition: "color 0.4s ease, text-shadow 0.4s ease" }}
+          style={{
+            color: band.color,
+            // The composite is the page's headline figure, so it gets a
+            // stronger glow and a slight brightness lift than the same
+            // colour carries elsewhere. The hue still comes from
+            // colorForScore(), so the score-to-colour meaning is
+            // unchanged -- this is emphasis, not a different scale.
+            textShadow: `0 0 10px ${band.color}88, 0 0 34px ${band.color}55`,
+            filter: "brightness(1.15) saturate(1.1)",
+            transition: "color 0.4s ease, text-shadow 0.4s ease",
+          }}
         >
           {score === null ? "N/A" : score.toFixed(1)}
         </span>
@@ -58,7 +68,8 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
             width: `${progress}%`,
             background: band.color,
             borderRadius: 999,
-            boxShadow: `0 0 12px -2px ${band.color}`,
+            boxShadow: `0 0 16px 0 ${band.color}`,
+            filter: "brightness(1.15) saturate(1.1)",
             transition: "width 1.1s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease",
           }}
         />

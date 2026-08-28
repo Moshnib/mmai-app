@@ -91,7 +91,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", overflow: "visible" }} role="img" aria-label={`MMAI score from ${points[0].year} to ${last.year}`}>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={band.color} stopOpacity="0.28" />
+            <stop offset="0%" stopColor={band.color} stopOpacity="0.38" />
             <stop offset="100%" stopColor={band.color} stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -111,7 +111,18 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
         ))}
 
         <path d={area} fill={`url(#${gradId})`} />
-        <path d={line} fill="none" stroke={band.color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 5px ${band.color}70)` }} />
+        {/* The score line is the chart's subject, so it carries a
+            heavier stroke and a stronger glow than the gridlines and
+            axis around it. Colour still comes from colorForScore(). */}
+        <path
+          d={line}
+          fill="none"
+          stroke={band.color}
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ filter: `drop-shadow(0 0 4px ${band.color}) drop-shadow(0 0 12px ${band.color}70) brightness(1.12) saturate(1.1)` }}
+        />
 
         {points.map((p, i) =>
           i % labelEvery === 0 || i === points.length - 1 ? (
@@ -121,14 +132,15 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
           ) : null
         )}
 
-        <circle cx={x(points.length - 1)} cy={y(last.value)} r={4} fill={band.color} style={{ filter: `drop-shadow(0 0 6px ${band.color})` }} />
+        <circle cx={x(points.length - 1)} cy={y(last.value)} r={5} fill={band.color} style={{ filter: `drop-shadow(0 0 10px ${band.color}) brightness(1.15)` }} />
         <text
-          x={x(points.length - 1) + 9}
+          x={x(points.length - 1) + 10}
           y={y(last.value) + 4}
           fontFamily="Space Grotesk, sans-serif"
           fontWeight={700}
-          fontSize={14}
+          fontSize={15}
           fill={band.color}
+          style={{ filter: "brightness(1.15) saturate(1.1)" }}
         >
           {last.value.toFixed(1)}
         </text>
