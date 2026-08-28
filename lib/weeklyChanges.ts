@@ -29,7 +29,15 @@ import { STALE_THRESHOLD_MS } from "@/lib/constants";
 // a data source changes for any market. Until it's bumped, every market
 // will correctly show "not enough history yet" for a few days after the
 // swap -- that's the intended, honest behavior, not a bug to route around.
-export const COMPARABILITY_FLOOR = new Date("2026-08-22T06:00:00Z").getTime();
+export const COMPARABILITY_FLOOR = new Date("2026-08-29T06:00:00Z").getTime();
+// Bumped 2026-08-28 from 2026-08-22T06:00:00Z. Unemployment moved off
+// the World Bank's ILO-modelled ANNUAL estimate onto monthly national
+// sources for four markets (Canada -> Statistics Canada, UK -> ONS,
+// Australia -> ABS, Japan -> OECD). The values genuinely differ --
+// Canada 6.907 -> 6.4, UK 4.746 -> 4.9, Australia 4.09 -> 4.46 -- so
+// comparing a pre-swap row with a post-swap one would report a
+// week-over-week "change" that is a source swap, not an economic move.
+// The timestamp is the first scheduled run that writes the new source.
 
 // Bucket window: an older bucket must be at least MIN days and at most
 // MAX days older than the bucket before it. The lower bound is what

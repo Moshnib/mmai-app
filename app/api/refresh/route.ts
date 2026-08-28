@@ -5,13 +5,14 @@ import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
 import { fetchGdpGrowth, fetchUnemployment, fetchInflation } from "@/lib/fetchers/worldbank";
-import { fetchAustraliaInflation } from "@/lib/fetchers/abs";
+import { fetchAustraliaInflation, fetchAustraliaUnemployment } from "@/lib/fetchers/abs";
+import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
 import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowth, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
 import { fetchEuroAreaPolicyRate } from "@/lib/fetchers/ecb";
-import { fetchCanadaInflation } from "@/lib/fetchers/statcan";
+import { fetchCanadaInflation, fetchCanadaUnemployment } from "@/lib/fetchers/statcan";
 import { fetchCanadaPolicyRate } from "@/lib/fetchers/boc";
-import { fetchUkInflation } from "@/lib/fetchers/ons";
+import { fetchUkInflation, fetchUkUnemployment } from "@/lib/fetchers/ons";
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
@@ -85,7 +86,7 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
     // in-browser 2026-08-21, after this server's own fetch was blocked).
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("JP inflation", fetchInflation("JPN")),
-      settle("JP unemployment", fetchUnemployment("JPN")),
+      settle("JP unemployment", fetchJapanUnemployment()),
       settle("JP GDP growth", fetchGdpGrowth("JPN")),
       settle("JP policy rate", fetchJapanPolicyRate()),
     ]);
@@ -105,7 +106,7 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
     // matched an independent news report of the same rate on the same date.
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("AU inflation", fetchAustraliaInflation()),
-      settle("AU unemployment", fetchUnemployment("AUS")),
+      settle("AU unemployment", fetchAustraliaUnemployment()),
       settle("AU GDP growth", fetchGdpGrowth("AUS")),
       settle("AU policy rate", fetchAustraliaPolicyRate()),
     ]);
@@ -140,13 +141,16 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
   }
 
   if (market === "CA") {
-    // CPI via Statistics Canada's WDS API (YoY computed from the raw
-    // index). GDP/unemployment via World Bank, same pattern as JP/AU.
-    // Policy rate via the Bank of Canada's own Valet API. All confirmed
-    // live 2026-08-21.
+    // CPI and unemployment both via Statistics Canada's WDS API (CPI's
+    // YoY computed from the raw index; unemployment published as a rate
+    // already). GDP via World Bank. Policy rate via the Bank of
+    // Canada's own Valet API. All confirmed live 2026-08-21, with
+    // unemployment moved off the World Bank 2026-08-28 -- that was an
+    // ILO modelled ANNUAL estimate running a year behind (2025: 6.907)
+    // where StatCan publishes the real monthly rate (2026-07: 6.4).
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("CA inflation", fetchCanadaInflation()),
-      settle("CA unemployment", fetchUnemployment("CAN")),
+      settle("CA unemployment", fetchCanadaUnemployment()),
       settle("CA GDP growth", fetchGdpGrowth("CAN")),
       settle("CA policy rate", fetchCanadaPolicyRate()),
     ]);
@@ -167,7 +171,7 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
     // All confirmed live 2026-08-21.
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("UK inflation", fetchUkInflation()),
-      settle("UK unemployment", fetchUnemployment("GBR")),
+      settle("UK unemployment", fetchUkUnemployment()),
       settle("UK GDP growth", fetchGdpGrowth("GBR")),
       settle("UK policy rate", fetchUkPolicyRate()),
     ]);
@@ -210,7 +214,7 @@ const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
 
 const SOURCE_NOTES: Record<string, string> = {
   US: "BLS + BEA + New York Fed + EIA (live)",
-  JP: "World Bank + BOJ + EIA (live)",
+  JP: "World Bank + OECD + BOJ + EIA (live)",
   AU: "ABS + World Bank + RBA + EIA (live)",
   EA: "Eurostat + ECB + EIA (live)",
   CA: "Statistics Canada + World Bank + Bank of Canada + EIA (live)",
