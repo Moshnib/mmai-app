@@ -7,7 +7,7 @@ import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
 import PillarGrid from "@/components/PillarGrid";
-import Sparkline from "@/components/Sparkline";
+import ScoreTrendChart from "@/components/ScoreTrendChart";
 import WorldMap from "@/components/WorldMap";
 import GulfCard from "@/components/GulfCard";
 import WeeklyFeed from "@/components/WeeklyFeed";
@@ -210,6 +210,10 @@ export default function OverviewPage() {
           </div>
           </div>
 
+          {/* One card: context strip, score beside its trend chart, then
+              the three headline indicators -- matching the design
+              reference, rather than four separate floating panels. */}
+          <div className="snapshot-card">
           <MarketSnapshotStrip
             marketName={market.name}
             composite={composite}
@@ -218,15 +222,18 @@ export default function OverviewPage() {
           />
 
           <div className="score-panel">
-            <ScoreDisplay score={composite} />
-            <div className="score-right">
-              <h2>{market.name}</h2>
-              {/* One-line definition directly under the score, per brief §2 */}
-              <p className="meta-label" style={{ margin: "0 0 10px" }}>
+            <div style={{ width: "100%", maxWidth: 260 }}>
+              <p className="meta-label" style={{ margin: "0 0 4px" }}>MMAI Composite Score</p>
+              <p style={{ fontSize: 12, color: "var(--slate)", margin: "0 0 14px", lineHeight: 1.5 }}>
                 Composite view of the current macro backdrop
               </p>
+              <ScoreDisplay score={composite} />
+            </div>
+            <div className="score-right">
+              <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
-              <div className="meta-row" style={{ marginBottom: 16 }}>
+              <ScoreTrendChart marketCode={current} currentScore={composite} />
+              <div className="meta-row" style={{ marginTop: 14 }}>
                 <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
                 <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
                 {/* Source COUNT, not the licence-review date -- that date is
@@ -235,7 +242,6 @@ export default function OverviewPage() {
                     headline and in the footer. */}
                 <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
               </div>
-              <Sparkline marketCode={current} currentScore={composite} />
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
                 <Link
                   href="/learn#topic-mmai"
@@ -270,7 +276,9 @@ export default function OverviewPage() {
           </div>
 
           <KeyRatesRow raw={market.raw} />
-          {rateNarrative && <p className="score-narrative" style={{ maxWidth: "68ch" }}>{rateNarrative}</p>}
+          </div>
+
+          {rateNarrative && <p className="score-narrative" style={{ maxWidth: "68ch", marginTop: 18 }}>{rateNarrative}</p>}
         </div>
       </div>
 

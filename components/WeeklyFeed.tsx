@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Flag from "@/components/Flag";
 import { colorForScore } from "@/lib/scoring";
 import { fetchAllWeeklyChanges, COMPARABILITY_FLOOR, BUCKET_MIN_GAP_DAYS, type WeeklyMarketResult } from "@/lib/weeklyChanges";
 
@@ -28,40 +29,12 @@ function delta(now: number | null, then: number | null): { symbol: string; text:
   return { symbol, text: `${symbol} ${Math.abs(diff).toFixed(1)}` };
 }
 
-const th: React.CSSProperties = { padding: "8px 10px", fontSize: 10.5, color: "var(--slate)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, textAlign: "left" };
-const td: React.CSSProperties = { padding: "9px 10px", verticalAlign: "top", fontFamily: "IBM Plex Mono, monospace", fontSize: 12 };
-
-function IndicatorCell({ now, then, unit }: { now: number | null; then: number | null; unit: string }) {
-  if (now == null) return <span style={{ color: "var(--slate)" }}>—</span>;
-  const d = delta(now, then);
-  return (
-    <div>
-      <div style={{ color: "var(--ink)" }}>{now.toFixed(1)}{unit}</div>
-      {/* Deliberately no color here -- unemployment rising and GDP rising
-          aren't both "good", so color-coding direction would itself be
-          the interpretation this feed explicitly avoids. Plain symbol
-          and number only. */}
-      <div style={{ color: "var(--slate)", fontSize: 10.5 }}>{d ? d.text : "—"}</div>
-    </div>
-  );
-}
-
-function CompositeCell({ now, then }: { now: number | null; then: number | null }) {
-  if (now == null) return <span style={{ color: "var(--slate)" }}>—</span>;
-  const color = colorForScore(now);
-  const d = delta(now, then);
-  return (
-    <div>
-      <div style={{ color, fontWeight: 700 }}>{now.toFixed(1)}</div>
-      {/* The composite (unlike the raw indicators) is genuinely
-          directional by design, so it's the one cell allowed to use the
-          site's score color -- visually distinct from the neutral
-          indicator cells beside it, so that distinction doesn't bleed
-          into implying a judgment on the raw numbers. */}
-      <div style={{ color: d && d.symbol === "↑" ? "var(--teal)" : d && d.symbol === "↓" ? COMPOSITE_DOWN_COLOR : "var(--slate)", fontSize: 10.5 }}>{d ? d.text : "—"}</div>
-    </div>
-  );
-}
+// The old wide-table layout's cell components were removed when this
+// moved to the design reference's two-column row grid. The rules they
+// encoded still hold and now live inline in the row markup below:
+// indicator figures carry no directional colour (unemployment rising
+// and GDP rising are not both "good"), and only the composite -- which
+// is directional by design -- uses the site's score colour.
 
 export default function WeeklyFeed() {
   const [results, setResults] = useState<WeeklyMarketResult[] | null>(null);
@@ -110,52 +83,79 @@ export default function WeeklyFeed() {
         </div>
       )}
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--hair)" }}>
-              <th style={th}>Market</th>
-              <th style={th}>Score</th>
-              <th style={th}>Inflation</th>
-              <th style={th}>GDP growth</th>
-              <th style={th}>Unemployment</th>
-              <th style={th}>Policy rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results === null &&
-              [0, 1, 2].map((i) => (
-                <tr key={i} style={{ borderBottom: "1px solid var(--hair)" }}>
-                  <td style={{ ...td, color: "var(--slate)" }} colSpan={6}>Loading…</td>
-                </tr>
-              ))}
-            {results?.map((r) => {
-              const now = r.buckets[0];
-              const then = r.buckets[1];
-              const hasEnough = !!now && !!then;
-              return (
-                <tr key={r.marketCode} style={{ borderBottom: "1px solid var(--hair)" }}>
-                  <td style={{ ...td, fontWeight: 700, color: "var(--ink)" }}>{r.marketName}</td>
-                  {r.isStale ? (
-                    <td style={{ ...td, color: "var(--slate)" }} colSpan={5}>Not currently refreshing — no recent data available.</td>
-                  ) : !hasEnough ? (
-                    <td style={{ ...td, color: "var(--slate)" }} colSpan={5}>
-                      Tracking since {TRACKING_SINCE} — first comparison expected ~{FIRST_COMPARISON_EXPECTED}.
-                    </td>
-                  ) : (
-                    <>
-                      <td style={td}><CompositeCell now={now.composite} then={then.composite} /></td>
-                      <td style={td}><IndicatorCell now={now.raw.inflation ?? null} then={then.raw.inflation ?? null} unit="%" /></td>
-                      <td style={td}><IndicatorCell now={now.raw.gdpGrowth ?? null} then={then.raw.gdpGrowth ?? null} unit="%" /></td>
-                      <td style={td}><IndicatorCell now={now.raw.unemployment ?? null} then={then.raw.unemployment ?? null} unit="%" /></td>
-                      <td style={td}><IndicatorCell now={now.raw.policyRate ?? null} then={then.raw.policyRate ?? null} unit="%" /></td>
-                    </>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* Two-column grid of compact rows (design reference) rather than a
+          wide table. The figures and the no-interpretation rule are
+          unchanged -- only the layout differs. */}
+      <div className="signal-grid">
+        {results === null &&
+          [0, 1, 2, 4].map((i) => (
+            <div key={i} className="signal-row">
+              <span className="signal-market" style={{ color: "var(--slate)" }}>Loading…</span>
+              <span />
+              <span />
+            </div>
+          ))}
+
+        {results?.map((r) => {
+          const now = r.buckets[0];
+          const then = r.buckets[1];
+          const hasEnough = !!now && !!then;
+          const scoreDelta = hasEnough ? delta(now.composite, then.composite) : null;
+          const stateColor =
+            scoreDelta?.symbol === "↑" ? "var(--teal)" : scoreDelta?.symbol === "↓" ? COMPOSITE_DOWN_COLOR : "var(--slate)";
+
+          return (
+            <div key={r.marketCode} className="signal-row">
+              <span className="signal-market">
+                <Flag code={r.marketCode} size={18} />
+                <span>{r.marketName}</span>
+              </span>
+
+              <span className="signal-body">
+                {r.isStale ? (
+                  <span className="signal-headline" style={{ color: "var(--slate)", fontWeight: 500 }}>
+                    Not currently refreshing — no recent data available.
+                  </span>
+                ) : !hasEnough ? (
+                  <>
+                    <span className="signal-headline" style={{ color: "var(--slate)", fontWeight: 500 }}>
+                      Tracking since {TRACKING_SINCE}
+                    </span>
+                    <span className="signal-detail">First comparison expected ~{FIRST_COMPARISON_EXPECTED}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="signal-headline">
+                      MMAI score{" "}
+                      <b style={{ color: colorForScore(now.composite), fontFamily: "Space Grotesk, sans-serif" }}>
+                        {now.composite != null ? now.composite.toFixed(1) : "—"}
+                      </b>
+                      {scoreDelta && <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>}
+                    </span>
+                    <span className="signal-detail">
+                      {[
+                        ["Infl", now.raw.inflation],
+                        ["GDP", now.raw.gdpGrowth],
+                        ["Unemp", now.raw.unemployment],
+                        ["Rate", now.raw.policyRate],
+                      ]
+                        .map(([label, v]) => `${label} ${v != null ? `${(v as number).toFixed(1)}%` : "—"}`)
+                        .join("  ·  ")}
+                    </span>
+                  </>
+                )}
+              </span>
+
+              <span
+                className="signal-state"
+                style={{ background: `${stateColor === "var(--slate)" ? "rgba(255,255,255,0.06)" : "transparent"}`, border: `1px solid var(--hair)`, color: stateColor }}
+                aria-hidden="true"
+              >
+                {scoreDelta ? scoreDelta.symbol : "·"}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <p style={{ fontSize: 11, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.6 }}>
