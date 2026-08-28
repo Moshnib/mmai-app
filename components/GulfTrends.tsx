@@ -195,8 +195,83 @@ function buildRelationshipSeries(): { series: TimeSliderSeriesData[]; years: str
   return { series, years: Array.from(yearSet).sort(), excluded };
 }
 
+// The three indicators every GCC country reports on a genuinely
+// comparable basis, for the cross-country chart (brief §18).
+//
+// Real estate is deliberately absent: only Qatar has a source, so a
+// "comparison" chart would be one line. It stays in the per-country
+// section below.
+//
+// Inflation is annualised first (annualizeCpi, the same helper the
+// scatter plot already uses and that carries a 12-month completeness
+// guard). BH/QA/SA publish CPI monthly while AE/KW/OM are annual via
+// the World Bank -- plotting those raw on one axis would mix two
+// different statistics, which the brief explicitly warns against. The
+// chart label says "annual average" so the transformation is stated,
+// not silent.
+const CROSS_INDICATORS = [
+  { key: "cpi", label: "Inflation (YoY)", axis: "%", note: "Annual average — monthly sources averaged to the calendar year." },
+  { key: "fx", label: "FX reserves", axis: "months", note: "Months of import cover, World Bank basis for all six." },
+  { key: "ca", label: "Current account", axis: "% of GDP", note: "Share of GDP, World Bank basis for all six." },
+] as const;
+
+type CrossIndicatorKey = (typeof CROSS_INDICATORS)[number]["key"];
+
+// Kuwait's reserves series runs back to the 1970s while the UAE's
+// starts in 2023. Showing the full union would squash every recent
+// move into the right-hand edge, so the chart caps to a recent window.
+const CROSS_YEARS = 15;
+
+function buildCrossSeries(indicator: CrossIndicatorKey): { series: Series[]; excluded: string[] } {
+  const series: Series[] = [];
+  const excluded: string[] = [];
+
+  // Common upper bound so a country with a longer history doesn't
+  // stretch the axis past everyone else's data.
+  const allYears = new Set<string>();
+  for (const c of GULF_COUNTRIES) {
+    const pts =
+      indicator === "cpi"
+        ? annualizeCpi(GULF_CPI_HISTORY[c.code]).map((p) => p.year)
+        : (indicator === "fx" ? GULF_FX_RESERVES_HISTORY : GULF_CURRENT_ACCOUNT_HISTORY)[c.code]?.points
+            .filter((p) => p.value !== null)
+            .map((p) => p.period) ?? [];
+    pts.forEach((y) => allYears.add(y));
+  }
+  const years = Array.from(allYears).sort().slice(-CROSS_YEARS);
+  const keep = new Set(years);
+
+  for (const c of GULF_COUNTRIES) {
+    const raw =
+      indicator === "cpi"
+        ? annualizeCpi(GULF_CPI_HISTORY[c.code]).map((p) => ({ year: p.year, value: p.value }))
+        : ((indicator === "fx" ? GULF_FX_RESERVES_HISTORY : GULF_CURRENT_ACCOUNT_HISTORY)[c.code]?.points ?? [])
+            .filter((p): p is { period: string; value: number } => p.value !== null)
+            .map((p) => ({ year: p.period, value: p.value }));
+
+    const data = raw.filter((p) => keep.has(p.year));
+    if (data.length === 0) {
+      excluded.push(c.name);
+      continue;
+    }
+    // Every year in the window, with real gaps left as null rather than
+    // bridged -- TrendChart renders those as gaps (connectNulls={false}).
+    const byYear = new Map(data.map((p) => [p.year, p.value]));
+    series.push({
+      key: c.code,
+      name: c.name,
+      color: COUNTRY_COLORS[c.code] ?? "#9296AB",
+      data: years.map((y) => ({ year: y, value: byYear.get(y) ?? null })),
+    });
+  }
+  return { series, excluded };
+}
+
 export default function GulfTrends() {
   const [current, setCurrent] = useState("AE");
+  const [crossIndicator, setCrossIndicator] = useState<CrossIndicatorKey>("cpi");
+  const cross = useMemo(() => buildCrossSeries(crossIndicator), [crossIndicator]);
+  const crossMeta = CROSS_INDICATORS.find((i) => i.key === crossIndicator)!;
 
   const cpi = seriesFor(current, "Inflation (YoY)", "#E14B4B", GULF_CPI_HISTORY);
   const fx = seriesFor(current, "FX reserves (months of imports)", "#22D3EE", GULF_FX_RESERVES_HISTORY);
@@ -212,12 +287,51 @@ export default function GulfTrends() {
     <>
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="section-head">
-            <p className="eyebrow">DATA OVER TIME</p>
-            <h2>Six countries, each on its own real timeline</h2>
+          {/* Primary analytical block (brief §18): one large chart, all
+              six countries, switched by indicator tab -- rather than a
+              grid of small per-country charts. */}
+          <div className="section-head" style={{ marginBottom: 16 }}>
+            <p className="eyebrow">TRACK THE INDICATORS</p>
+            <h2>All six countries, one indicator at a time</h2>
             <p style={{ maxWidth: "68ch" }}>
-              Pick a country below. Every chart uses that indicator&apos;s own real reporting dates — annual figures
-              are never stretched to look monthly, and a gap in the data renders as a gap, not a smoothed-over line.
+              Pick an indicator to compare the region on a single, consistent basis. A gap in a country&apos;s data
+              renders as a gap, never a smoothed-over line.
+            </p>
+          </div>
+
+          <div className="selector-row">
+            {CROSS_INDICATORS.map((ind) => (
+              <button
+                key={ind.key}
+                className={`selector-btn${crossIndicator === ind.key ? " active" : ""}`}
+                onClick={() => setCrossIndicator(ind.key)}
+                aria-pressed={crossIndicator === ind.key}
+              >
+                {ind.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="chart-card" style={{ marginBottom: 34 }}>
+            <div className="chart-card-label">
+              {crossMeta.label} — all six GCC economies
+              <span className="meta-label" style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}>
+                Annual
+              </span>
+            </div>
+            <TrendChart series={cross.series} height={360} yLabel={crossMeta.axis} showDots connectNulls={false} />
+            <p style={{ fontSize: 11, color: "var(--slate)", margin: "12px 0 0", lineHeight: 1.6 }}>
+              {crossMeta.note}
+              {cross.excluded.length > 0 && ` No comparable data in this window for: ${cross.excluded.join(", ")}.`}
+            </p>
+          </div>
+
+          <div className="section-head" style={{ marginBottom: 16 }}>
+            <p className="eyebrow">COUNTRY DETAIL</p>
+            <h2>Each country on its own real timeline</h2>
+            <p style={{ maxWidth: "68ch" }}>
+              Pick a country to see every indicator it publishes, each on that indicator&apos;s own reporting dates —
+              annual figures are never stretched to look monthly.
             </p>
           </div>
 
