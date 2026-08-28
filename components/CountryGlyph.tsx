@@ -69,20 +69,23 @@ export default function CountryGlyph({
   const b = boundsOf(paths);
   if (!b) return null;
 
-  // A little breathing room so the shape doesn't touch the edges.
-  const pad = Math.max(b.w, b.h) * 0.08;
+  // Minimal breathing room. Each glyph is cropped to its own bounding
+  // box and scaled to fill, so a small country (the UK) renders at the
+  // same visual size as a large one (Canada) -- the shape is being used
+  // as an identifier, not to convey relative land area.
+  const pad = Math.max(b.w, b.h) * 0.04;
 
   return (
     <svg
       viewBox={`${b.x - pad} ${b.y - pad} ${b.w + pad * 2} ${b.h + pad * 2}`}
       width={size}
-      height={size * 0.62}
+      height={size * 0.78}
       aria-hidden="true"
-      style={{ display: "block", overflow: "visible" }}
+      style={{ display: "block", overflow: "visible", filter: `drop-shadow(0 0 8px ${color}55)` }}
       preserveAspectRatio="xMidYMid meet"
     >
       {paths.map((d, i) => (
-        <path key={i} d={d} fill={color} fillOpacity={0.85} stroke={color} strokeWidth={0.4} strokeLinejoin="round" />
+        <path key={i} d={d} fill={color} fillOpacity={0.92} stroke={color} strokeWidth={0.5} strokeLinejoin="round" />
       ))}
     </svg>
   );
