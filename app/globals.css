@@ -168,6 +168,12 @@ h1.headline {
 .hero-centered { text-align: center; }
 .hero-centered .eyebrow { margin-bottom: 10px; }
 .hero-centered .sub { margin-left: auto; margin-right: auto; }
+/* The market selector spans the full content width so its edges line up
+   with the snapshot card directly beneath it -- as an inline-flex row it
+   shrank to its own content and sat visibly narrower. Scoped to the hero
+   so the country tabs on Gulf Watch keep their compact sizing. */
+.hero-centered .tabs { display: flex; width: 100%; }
+.hero-centered .tabs .tab { flex: 1 1 150px; justify-content: center; }
 .hl-cyan { color: var(--gold); }
 .hl-violet { color: var(--gold-deep); }
 .sub { font-size: 16px; color: var(--slate); max-width: 60ch; line-height: 1.6; margin: 0 0 28px; }
