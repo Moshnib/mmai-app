@@ -77,6 +77,9 @@ export const STABLECOINS: StablecoinToken[] = [
   { symbol: "DAI", name: "Dai", issuer: "Sky", backing: "crypto-backed", chain: "ethereum", address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", decimals: 18 },
   { symbol: "USDe", name: "Ethena USDe", issuer: "Ethena", backing: "synthetic", chain: "ethereum", address: "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3", decimals: 18 },
   { symbol: "PYUSD", name: "PayPal USD", issuer: "PayPal", backing: "fiat-backed", chain: "ethereum", address: "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8", decimals: 6 },
+  { symbol: "USD1", name: "USD1", issuer: "World Liberty Financial", backing: "fiat-backed", chain: "ethereum", address: "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d", decimals: 18 },
+  { symbol: "USDG", name: "Global Dollar", issuer: "Paxos", backing: "fiat-backed", chain: "ethereum", address: "0xe343167631d89B6Ffc58B88d6b7fB0228795491D", decimals: 6 },
+  { symbol: "FDUSD", name: "First Digital USD", issuer: "First Digital", backing: "fiat-backed", chain: "ethereum", address: "0xc5f0f7b66764F6ec8C8Dff7BA683102295E16409", decimals: 18 },
 
   // ---------- Tron ----------
   // Tron holds MORE USDT than Ethereum does ($94.27B vs $88.31B when
@@ -90,7 +93,41 @@ export const STABLECOINS: StablecoinToken[] = [
   { symbol: "USDC", name: "USD Coin", issuer: "Circle", backing: "fiat-backed", chain: "solana", address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6 },
   { symbol: "USDT", name: "Tether", issuer: "Tether", backing: "fiat-backed", chain: "solana", address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", decimals: 6 },
   { symbol: "PYUSD", name: "PayPal USD", issuer: "PayPal", backing: "fiat-backed", chain: "solana", address: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", decimals: 6 },
+  { symbol: "USDG", name: "Global Dollar", issuer: "Paxos", backing: "fiat-backed", chain: "solana", address: "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH", decimals: 6 },
 ];
+
+// ============================================================
+// WHY THESE FIGURES DIFFER FROM AN AGGREGATOR'S
+//
+// Checked against a public aggregator on 2026-08-28 after the site
+// owner spotted a gap. The differences are real and have concrete,
+// verified causes -- they are definition differences, not errors.
+//
+// 1. TOTAL SUPPLY, NOT CIRCULATING SUPPLY. This module reads
+//    totalSupply(): every token that exists on that chain. Aggregators
+//    usually publish CIRCULATING supply, which subtracts tokens an
+//    issuer has minted but not yet sold. Verified on-chain: Tether's
+//    treasury (0x5754...B949) holds $1.90B of authorised-but-unissued
+//    USDT on Ethereum alone. Real, counted here, excluded there.
+//
+// 2. WHICH TOKENS COUNT AS A STABLECOIN. USDe is a synthetic dollar
+//    held to its peg by a hedged derivatives position rather than by
+//    cash in a bank. Some aggregators bucket that separately. It is
+//    included here and labelled "synthetic" on the page rather than
+//    quietly folded in with the cash-backed ones.
+//
+// 3. COVERAGE. The list above is deliberately finite. USD1, USDG and
+//    FDUSD were added after this check found them untracked. EURC is
+//    deliberately EXCLUDED -- it is pegged to the euro, and this page
+//    counts dollars.
+//
+// A hypothesis worth recording as REFUTED: that DAI and USDS
+// double-count, since Sky lets holders convert one to the other. The
+// Sky converter contract holds $0.00 of DAI, so no double count exists.
+//
+// The honest position is not to chase another site's number. It is to
+// state precisely which measure this is, which the page does.
+// ============================================================
 
 const ENDPOINTS: Record<StablecoinChain, string> = {
   ethereum: "https://ethereum-rpc.publicnode.com",

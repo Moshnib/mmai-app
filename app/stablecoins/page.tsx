@@ -105,7 +105,7 @@ export default async function StablecoinsPage() {
           </p>
 
           <div className="snapshot-card" style={{ marginTop: 26 }}>
-            <div className="meta-label">Total supply across Ethereum, Tron and Solana</div>
+            <div className="meta-label">Tokens in existence across Ethereum, Tron and Solana</div>
             <div
               style={{
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 46, lineHeight: 1.05,
@@ -116,8 +116,8 @@ export default async function StablecoinsPage() {
               {money(total)}
             </div>
             <p style={{ fontSize: 12.5, color: "var(--slate)", margin: 0, lineHeight: 1.6, maxWidth: "70ch" }}>
-              Counting {rows.length} tokens across three networks. Read directly from each blockchain when this
-              page was last built, and refreshed at most every ten minutes.
+              Counting {rows.length} dollar-pegged tokens across three networks. Read directly from each
+              blockchain when this page was last built, and refreshed at most every ten minutes.
               {missing > 0 && ` ${missing} of ${STABLECOINS.length} could not be read on this build and are excluded rather than estimated.`}
             </p>
           </div>
@@ -259,6 +259,15 @@ export default async function StablecoinsPage() {
               data provider&apos;s product, so there is no estimate and no intermediary between the chain and this
               page. Backing type is the one hand-maintained field here, and describes the kind of asset an issuer
               says stands behind the token, not an audit of it.
+            </p>
+            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "10px 0 0", lineHeight: 1.7 }}>
+              <b>Why these figures differ from a crypto data site.</b> This page counts every token that{" "}
+              <b style={{ color: "var(--ink)" }}>exists</b> on each chain. Most aggregators publish{" "}
+              <b style={{ color: "var(--ink)" }}>circulating</b> supply, which subtracts tokens an issuer has
+              created but not yet sold — Tether&apos;s own treasury holds about $1.9B of unissued USDT on Ethereum
+              alone. Neither measure is wrong; they answer different questions, and this one is the question a
+              blockchain can answer without anybody&apos;s estimate. Coverage differs too: the tokens listed above
+              are the ones tracked here, and euro-pegged coins are excluded because this page counts dollars.
             </p>
             <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "10px 0 0", lineHeight: 1.7 }}>
               Deliberately absent: the live peg price. It is readable, but no source for it has cleared this
