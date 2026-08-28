@@ -107,11 +107,10 @@ function Stat({
         <span style={{ display: "block", fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
           {value ?? "—"}
         </span>
-        {asOfLabel && (
-          <span style={{ display: "block", fontFamily: "IBM Plex Mono, monospace", fontSize: 9.5, color: "var(--slate)", marginTop: 1 }}>
-            as of {asOfLabel}
-          </span>
-        )}
+        {/* Class rather than an inline font-size: at 9.5px this was the
+            smallest text on the site and unreadable on a phone, and an
+            inline size cannot be raised by a media query. */}
+        {asOfLabel && <span className="gulf-obs-date">as of {asOfLabel}</span>}
       </span>
     </div>
   );

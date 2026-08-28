@@ -74,7 +74,7 @@ function MiniChart({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)" }}>{title}</span>
         {granularity && (
-          <span style={{ fontFamily: "monospace", fontSize: 10, color: "var(--slate)", textTransform: "uppercase" }}>{granularity}</span>
+          <span className="micro-note" style={{ textTransform: "uppercase" }}>{granularity}</span>
         )}
       </div>
       {hasEnough ? (
@@ -110,7 +110,7 @@ function ComparisonCell({ lp, kind, noSourceHint }: { lp: LatestPoint | null; ki
       <div style={{ fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
         {formatValue(lp.point.value as number, kind)}
       </div>
-      <div style={{ fontSize: 10, color: "var(--slate)", fontFamily: "monospace" }}>
+      <div className="micro-note">
         {lp.label}
         {lp.granularity === "annual" ? " · annual" : ""}
       </div>

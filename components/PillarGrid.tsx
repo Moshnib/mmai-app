@@ -118,9 +118,7 @@ export default function PillarGrid({ pillars, market }: { pillars: PillarScores;
             <div className="pillar-desc">{PILLAR_DESC[key]}</div>
             <div className="pillar-weight" style={{ marginTop: 6 }}>{formatWeightPct(key)} weight</div>
             {!excluded && (
-              <div style={{ marginTop: 6, fontSize: 10, fontFamily: "monospace", color: "var(--gold-deep)" }}>
-                View trend →
-              </div>
+              <div className="pillar-cta">View trend →</div>
             )}
           </>
         );

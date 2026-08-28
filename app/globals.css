@@ -123,7 +123,9 @@ nav {
    mismatch -- only the "open" class, driven by client state, reveals it. */
 .navburger {
   display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
-  width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--hair);
+  /* 44px, not 40 -- this is the only way to reach the nav on a phone,
+     and 44 is the smallest comfortable touch target. */
+  width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--hair);
   background: none; cursor: pointer; flex-shrink: 0;
 }
 .navburger span { display: block; width: 20px; height: 2px; background: var(--ink); border-radius: 2px; transition: transform .2s ease, opacity .2s ease; }
@@ -162,6 +164,22 @@ h1.headline {
   font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: clamp(30px, 5vw, 52px);
   line-height: 1.12; margin: 0 auto 16px; max-width: 22ch; letter-spacing: -0.015em;
 }
+/* 1.12 is right for a two-line headline at 52px. On a phone the same
+   headline wraps to four lines at 30px, and Space Grotesk's natural
+   glyph box at that size is ~39px against a 33.6px line box -- so
+   consecutive lines physically overlapped by 6px and descenders ran into
+   the next line's capitals. Measured on the homepage at 375px. */
+@media (max-width: 640px) {
+  h1.headline { line-height: 1.26; }
+}
+
+.micro-note { font-size: 10px; color: var(--slate); font-family: "IBM Plex Mono", monospace; }
+.pillar-cta { margin-top: 6px; font-size: 10px; font-family: "IBM Plex Mono", monospace; color: var(--gold-deep); }
+.gulf-obs-date {
+  display: block; font-family: "IBM Plex Mono", monospace;
+  font-size: 10px; color: var(--slate); margin-top: 1px;
+}
+
 /* Hero is centred, matching the design reference. The two coloured
    phrases in the headline use the site's existing cyan and violet
    accents -- no new colours introduced. */
@@ -501,3 +519,25 @@ h1.headline {
 }
 
 footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10px; font-size: 12px; color: var(--slate); position: relative; z-index: 1; }
+
+/* ===== Mobile legibility floor =====
+   MUST STAY LAST IN THIS FILE. A media query adds no specificity, so
+   these only win by coming after the base rules they override --
+   .pillar-weight's own `font-size: 10px` sits ~60 lines above and beat
+   an identical selector placed earlier.
+
+   A 9.5px or 10px label is readable on a desktop monitor at arm's length
+   and genuinely is not on a phone. Measured on the homepage at 375px:
+   22 separate text elements sat below 10.5px. Small screens only, so the
+   dense look of the cards on a large screen is untouched. */
+@media (max-width: 640px) {
+  .meta-label { font-size: 11px; }
+  .pillar-weight { font-size: 11px; }
+  .pillar-cta { font-size: 11px; }
+  .gulf-obs-date { font-size: 11px; }
+  .micro-note { font-size: 11px; }
+  .chart-card-label { font-size: 11px; }
+  .pillar-select-card .psc-desc { font-size: 12px; }
+  .signal-detail { font-size: 11.5px; }
+  .data-table thead th { font-size: 11px; }
+}
