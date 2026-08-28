@@ -231,12 +231,34 @@ export default function TrendsPageInner({
                 Start with the composite, then open any one of the five pillars to see its own trend and the raw
                 indicator underneath it.
               </p>
-              <p className="meta-label" style={{ marginTop: 14 }}>
-                Latest data: {latestPoint?.year ?? "—"} · Annual · {sourcesForMarket(marketNames[current]).length} sources
-              </p>
+              {/* Inside the left column, beside the panel -- matching
+                  the design reference. Full-width below the header (as
+                  this was) left the panel floating with 150px of dead
+                  space under it, which is what made its position read
+                  as wrong. These two columns now fill each other out. */}
+              <div className="tabs tabs-inline" style={{ marginTop: 20 }}>
+                {FALLBACK_MARKETS.map((m) => (
+                  <button
+                    key={m.code}
+                    className={`tab${m.code === current ? " active" : ""}`}
+                    onClick={() => setCurrent(m.code)}
+                    aria-pressed={m.code === current}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }}
+                  >
+                    <Flag code={m.code} size={17} /> {m.name}
+                  </button>
+                ))}
+              </div>
+
             </div>
 
-            <div className="insight-card">
+            {/* Stretches to the full header height so it ends flush
+                with the market tabs beside it (as the design reference
+                shows) instead of stopping short and leaving a void.
+                The "latest data" line is pinned to its bottom, which
+                fills that height with something real rather than
+                padding. */}
+            <div className="insight-card insight-card-tall">
               {/* The period lives in the heading, not in one bullet:
                   the composite bullet is suppressed whenever coverage
                   falls under the publication gate, and without it the
@@ -309,22 +331,13 @@ export default function TrendsPageInner({
                   against.
                 </p>
               )}
+
+              <p className="meta-label insight-card-foot">
+                Latest data: {latestPoint?.year ?? "—"} · Annual · {sourcesForMarket(marketNames[current]).length} sources
+              </p>
             </div>
           </div>
 
-          <div className="tabs" style={{ display: "flex", width: "100%", marginTop: 28 }}>
-            {FALLBACK_MARKETS.map((m) => (
-              <button
-                key={m.code}
-                className={`tab${m.code === current ? " active" : ""}`}
-                onClick={() => setCurrent(m.code)}
-                aria-pressed={m.code === current}
-                style={{ flex: "1 1 150px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-              >
-                <Flag code={m.code} size={18} /> {m.name}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 

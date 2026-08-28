@@ -348,6 +348,23 @@ h1.headline {
    explicitly NOT five tiny charts side by side -- name, current score
    and a short descriptor, with the selection feeding the large chart
    directly underneath). */
+/* Market tabs sitting INSIDE a header column rather than spanning the
+   page. They size to their own content and wrap, instead of each
+   stretching to an equal share of the full width -- six stretched pills
+   don't fit a ~720px column without the labels crowding their flags. */
+/* Header panel that runs the full height of the header row, with its
+   footer line pushed to the bottom edge. Scoped to its own class so the
+   Compare and Gulf Watch headers, which share .insight-card, keep their
+   existing compact sizing. */
+.insight-card-tall { align-self: stretch; display: flex; flex-direction: column; }
+.insight-card-foot {
+  margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--hair);
+}
+@media (min-width: 901px) { .insight-card-foot { margin-top: auto; } }
+
+.tabs-inline { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+.tabs-inline .tab { flex: 0 1 auto; padding: 9px 13px; font-size: 12.5px; }
+
 /* Breakpoints deliberately match .pillar-grid above -- the two are the
    same five-across layout on two different pages, so they must reflow
    at the same widths. */
