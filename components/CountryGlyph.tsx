@@ -28,6 +28,39 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   NO: ["578"],
 };
 
+// Some markets carry territory so far from the landmass everyone
+// recognises that auto-fitting the whole thing shrinks the recognisable
+// part to nothing. Measured against the real path data at the size the
+// homepage strip renders (124px wide):
+//
+//   US  -- Alaska, Hawaii and the Pacific territories stretch the
+//          bounding box by 1.82x, leaving the contiguous mainland only
+//          63px wide (measured: 115px after this fix).
+//   EA  -- one French overseas subpath (Reunion, ~x335,y225) stretches
+//          the box to 229x182 while the whole of Europe sits inside
+//          110x94, so the continent rendered just 54px wide (measured:
+//          104px after this fix).
+//
+// So those two markets declare the window their glyph should frame, in
+// the paths' own 960x480 map space; subpaths outside it are dropped
+// from BOTH the viewBox and the drawing. Every other market auto-fits
+// (measured: their main landmass already fills 78-100% of its box).
+//
+// This is a framing choice for a decorative identifier, not a claim
+// about territory -- WorldMap still draws every country in full.
+const GLYPH_FOCUS: Record<string, [number, number, number, number]> = {
+  US: [140, 100, 320, 180],
+  EA: [430, 40, 590, 170],
+};
+
+// These rectangles are only meaningful in the 960x480 space the file
+// declares. If world-paths.json is ever regenerated at another size the
+// rectangle would still intersect SOMETHING -- plausibly Alaska rather
+// than the mainland -- so the "no matches" fallback below wouldn't catch
+// it and we'd ship a glyph of Alaska labelled "United States". Checking
+// the declared size turns that into a clean fall back to auto-fit.
+const MAP_SPACE_OK = worldPaths.width === 960 && worldPaths.height === 480;
+
 /** Cheap bounding box straight off the path's numeric pairs. Good
  *  enough for framing a silhouette -- it ignores curve control points,
  *  which can only ever make the box slightly generous, never crop the
@@ -63,8 +96,25 @@ export default function CountryGlyph({
   const ids = MARKET_COUNTRY_IDS[code];
   if (!ids) return null;
 
-  const paths = worldPaths.countries.filter((c) => ids.includes(String(c.id))).map((c) => c.d);
-  if (paths.length === 0) return null;
+  // Split into subpaths so a focus window can drop individual islands
+  // rather than whole countries -- the Euro Area's outlier is one
+  // subpath of France, not a separate entry.
+  const allPaths = worldPaths.countries
+    .filter((c) => ids.includes(String(c.id)))
+    .flatMap((c) => c.d.split(/(?=M)/).filter((s) => s.trim().length > 8));
+  if (allPaths.length === 0) return null;
+
+  const focus = MAP_SPACE_OK ? GLYPH_FOCUS[code] : undefined;
+  // If a focus window ever stops matching the geometry (someone
+  // regenerates world-paths.json), fall back to drawing everything
+  // rather than rendering an empty box.
+  const focused = focus
+    ? allPaths.filter((d) => {
+        const sb = boundsOf([d]);
+        return sb ? sb.x + sb.w > focus[0] && sb.x < focus[2] && sb.y + sb.h > focus[1] && sb.y < focus[3] : false;
+      })
+    : allPaths;
+  const paths = focused.length > 0 ? focused : allPaths;
 
   const b = boundsOf(paths);
   if (!b) return null;

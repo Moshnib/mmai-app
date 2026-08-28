@@ -9,7 +9,7 @@ const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
 // five cards should make it obvious what each one measures without a
 // separate legend). These describe the EXISTING pillars -- the names
 // themselves come from PILLAR_NAMES and are methodology, not copy.
-const PILLAR_DESC: Record<PillarKey, string> = {
+export const PILLAR_DESC: Record<PillarKey, string> = {
   PS: "Inflation trends & price pressures",
   GM: "Output, demand & economic momentum",
   LM: "Employment, wage growth & participation",
@@ -21,7 +21,7 @@ const PILLAR_DESC: Record<PillarKey, string> = {
 // card structure. Inline SVG rather than an icon dependency -- five
 // glyphs don't justify a package, and these inherit currentColor so
 // they follow each card's own score colour.
-const PILLAR_ICONS: Record<PillarKey, React.ReactNode> = {
+export const PILLAR_ICONS: Record<PillarKey, React.ReactNode> = {
   // coins — price level
   PS: (
     <>

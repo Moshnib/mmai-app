@@ -13,10 +13,23 @@ import { RAW_FIELD, type PillarKey, type RawIndicators } from "@/lib/scoring";
 // quarter-point (e.g. 2.25%), but CPI/unemployment are published to one
 // decimal -- showing a second decimal there implies precision the source
 // release doesn't have.
-const STATS: Array<{ pillar: PillarKey; color: string; decimals: number }> = [
-  { pillar: "PS", color: "#E14B4B", decimals: 1 }, // inflation
-  { pillar: "MC", color: "#8B5CF6", decimals: 2 }, // policy rate
-  { pillar: "LM", color: "#22D3EE", decimals: 1 }, // unemployment
+// Exported so every place that prints a raw indicator uses ONE
+// definition of this rule. Printing a policy rate at 1 decimal is not a
+// rounding nicety -- it invents rates no central bank ever set (4.35
+// becomes "4.3", 2.25 becomes "2.3"), so a second copy of this map that
+// drifted would put wrong numbers on the page.
+export const RAW_DECIMALS: Record<PillarKey, number> = {
+  PS: 1, // inflation
+  GM: 1, // GDP growth
+  LM: 1, // unemployment
+  MC: 2, // policy rate -- set to the nearest quarter-point
+  EC: 1, // Brent YoY
+};
+
+const STATS: Array<{ pillar: PillarKey; color: string }> = [
+  { pillar: "PS", color: "#E14B4B" }, // inflation
+  { pillar: "MC", color: "#8B5CF6" }, // policy rate
+  { pillar: "LM", color: "#22D3EE" }, // unemployment
 ];
 
 // A short descriptor under each value, matching the design reference's
@@ -42,7 +55,8 @@ function descriptorFor(pillar: PillarKey, value: number): string {
 export default function KeyRatesRow({ raw }: { raw: RawIndicators }) {
   return (
     <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, margin: "20px 0 10px" }}>
-      {STATS.map(({ pillar, color, decimals }) => {
+      {STATS.map(({ pillar, color }) => {
+        const decimals = RAW_DECIMALS[pillar];
         const { key, label, unit } = RAW_FIELD[pillar];
         const value = raw[key];
         return (

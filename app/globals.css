@@ -344,6 +344,47 @@ h1.headline {
   background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(109,40,217,0.18));
 }
 
+/* Five equal pillar cards that drive one chart below them (brief §26:
+   explicitly NOT five tiny charts side by side -- name, current score
+   and a short descriptor, with the selection feeding the large chart
+   directly underneath). */
+/* Breakpoints deliberately match .pillar-grid above -- the two are the
+   same five-across layout on two different pages, so they must reflow
+   at the same widths. */
+.pillar-select-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+@media (max-width: 980px) { .pillar-select-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .pillar-select-grid { grid-template-columns: repeat(2, 1fr); } }
+.pillar-select-card {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  padding: 16px 16px 14px; border-radius: 16px;
+  border: 1px solid var(--hair); background: var(--card-bg);
+  font-family: inherit; font-size: inherit; color: inherit;
+  -webkit-appearance: none; appearance: none;
+  backdrop-filter: blur(10px);
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+.pillar-select-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
+.pillar-select-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .pillar-select-card { transition: none; }
+  .pillar-select-card:hover { transform: none; }
+}
+.pillar-select-card[aria-pressed="true"] { border-color: var(--gold-deep); background: rgba(139,92,246,0.10); }
+.pillar-select-card .psc-name {
+  font-family: "Space Grotesk", sans-serif; font-size: 13px; font-weight: 600;
+  color: var(--ink-soft); line-height: 1.25;
+}
+.pillar-select-card .psc-score {
+  font-family: "Space Grotesk", sans-serif; font-size: 34px; font-weight: 700;
+  line-height: 1; margin: 10px 0 2px; font-variant-numeric: tabular-nums;
+}
+.pillar-select-card .psc-desc { font-size: 11.5px; color: var(--slate); line-height: 1.4; margin-top: 6px; }
+
+/* Chart beside a narrow facts panel (raw-indicator detail, and the
+   macro-forces chart with its notes). */
+.detail-split { display: grid; grid-template-columns: 1fr minmax(230px, 300px); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .detail-split { grid-template-columns: 1fr; } }
+
 /* ===== Weekly Signals rows (design reference: a two-column grid of
    compact rows, not a wide table) ===== */
 .signal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
