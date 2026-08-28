@@ -5,6 +5,7 @@ import { fetchBahrainInflation } from "@/lib/fetchers/bahrainCpi";
 import { fetchQatarInflation } from "@/lib/fetchers/qatarCpi";
 import { fetchQatarRealEstate } from "@/lib/fetchers/qatarRealEstate";
 import { fetchSaudiInflation } from "@/lib/fetchers/datasaudi";
+import { fetchBisPolicyRate } from "@/lib/fetchers/bis";
 
 /**
  * Gulf Watch's own refresh job — writes to gulf_indicators, never to
@@ -42,8 +43,8 @@ const SOURCE_NOTES: Record<GulfCountryCode, string> = {
   AE: "World Bank (live)",
   BH: "data.gov.bh + World Bank (live)",
   QA: "data.gov.qa + World Bank (live)",
-  SA: "Data Saudi + World Bank (live)",
-  KW: "World Bank (live)",
+  SA: "Data Saudi + World Bank + BIS (live)",
+  KW: "World Bank + BIS (live)",
   OM: "World Bank (live)",
 };
 
@@ -77,6 +78,13 @@ interface GulfRawIndicators {
   realEstateObservationDate: string | null;
   fxReservesObservationDate: string | null;
   currentAccountObservationDate: string | null;
+  // Only Saudi Arabia and Kuwait have a usable policy-rate source (BIS).
+  // The label travels with the value because these are different
+  // instruments -- Saudi's repo rate vs Kuwait's discount rate -- same
+  // reasoning as realEstateMetricLabel above.
+  policyRate: number | null;
+  policyRateLabel: string | null;
+  policyRateObservationDate: string | null;
 }
 
 async function fetchCpi(country: GulfCountryCode): Promise<{ inflation: number; observationDate: string } | null> {
@@ -88,15 +96,26 @@ async function fetchCpi(country: GulfCountryCode): Promise<{ inflation: number; 
   return settle("Oman CPI", fetchInflation("OMN")); // OM
 }
 
+// BIS carries central bank policy rates for Saudi Arabia and Kuwait
+// only (of these six). UAE and Bahrain are absent from BIS and IMF
+// alike, and their own central banks are bot-protected; Qatar and Oman
+// are available from IMF but not wired in yet.
+async function fetchPolicyRate(country: GulfCountryCode) {
+  if (country === "SA") return settle("Saudi policy rate", fetchBisPolicyRate("SA"));
+  if (country === "KW") return settle("Kuwait policy rate", fetchBisPolicyRate("KW"));
+  return null;
+}
+
 async function fetchGulfIndicators(country: GulfCountryCode): Promise<GulfRawIndicators> {
   const today = new Date().toISOString().slice(0, 10);
   const iso3 = ISO3[country];
 
-  const [cpi, fx, ca, realEstate] = await Promise.all([
+  const [cpi, fx, ca, realEstate, policy] = await Promise.all([
     fetchCpi(country),
     settle(`${country} FX reserves`, fetchFxReservesMonths(iso3)),
     settle(`${country} current account`, fetchCurrentAccountPctGdp(iso3)),
     country === "QA" ? settle("Qatar real estate", fetchQatarRealEstate()) : Promise.resolve(null),
+    fetchPolicyRate(country),
   ]);
 
   return {
@@ -110,6 +129,9 @@ async function fetchGulfIndicators(country: GulfCountryCode): Promise<GulfRawInd
     realEstateObservationDate: realEstate?.observationDate ?? null,
     fxReservesObservationDate: fx?.observationDate ?? null,
     currentAccountObservationDate: ca?.observationDate ?? null,
+    policyRate: policy?.policyRate ?? null,
+    policyRateLabel: policy?.rateLabel ?? null,
+    policyRateObservationDate: policy?.observationDate ?? null,
   };
 }
 
@@ -143,6 +165,9 @@ export async function GET(request: Request) {
         real_estate_observation_date: raw.realEstateObservationDate,
         fx_reserves_observation_date: raw.fxReservesObservationDate,
         current_account_observation_date: raw.currentAccountObservationDate,
+        policy_rate: raw.policyRate,
+        policy_rate_label: raw.policyRateLabel,
+        policy_rate_observation_date: raw.policyRateObservationDate,
         source_note: sourceNote,
         status: "current",
       });

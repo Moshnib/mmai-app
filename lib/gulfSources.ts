@@ -9,7 +9,7 @@ import type { FetchStatus } from "./sources";
 // Single source of truth for the /sources page's Gulf Watch section.
 // ============================================================
 
-export type GulfCategory = "cost-of-living" | "investment-confidence" | "currency-stability";
+export type GulfCategory = "cost-of-living" | "investment-confidence" | "currency-stability" | "monetary-policy";
 
 export interface GulfSourceEntry {
   country: string;
@@ -57,12 +57,14 @@ export const GULF_SOURCES: GulfSourceEntry[] = [
   { country: "Saudi Arabia", countryCode: "SA", indicator: "Real Estate Activity", category: "investment-confidence", institution: "—", license: "—", status: "unavailable", lastVerified: "2026-08-26", note: "KAPSARC republishes the official REGA index via a free API, but their Terms of Use explicitly prohibit automated access without written permission — contradicts the dataset's own \"Public Domain\" tag. Not used until that's resolved." },
   { country: "Saudi Arabia", countryCode: "SA", indicator: "FX Reserves (Import Cover)", category: "currency-stability", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-26", url: "https://data.worldbank.org/" },
   { country: "Saudi Arabia", countryCode: "SA", indicator: "Current Account Balance", category: "currency-stability", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-26", url: "https://data.worldbank.org/" },
+  { country: "Saudi Arabia", countryCode: "SA", indicator: "Policy Rate (official market repo rate)", category: "monetary-policy", institution: "Bank for International Settlements, republishing the Saudi Arabian Monetary Authority", license: "BIS Terms of permitted use — use is unrestricted provided BIS is cited as the source; commercial use permitted provided inclusion results in no additional charge to subscribers", status: "live", lastVerified: "2026-08-28", note: "SAMA's own site is bot-protected, so the rate is taken from BIS's daily central bank policy rate series (WS_CBPOL), which names SAMA as the originating authority.", url: "https://data.bis.org/topics/CBPOL" },
 
   // ---------- Kuwait ----------
   { country: "Kuwait", countryCode: "KW", indicator: "Inflation (CPI)", category: "cost-of-living", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-26", note: "Annual figure. No dedicated national monthly source was found.", url: "https://data.worldbank.org/" },
   { country: "Kuwait", countryCode: "KW", indicator: "Real Estate Activity", category: "investment-confidence", institution: "—", license: "—", status: "unavailable", lastVerified: "2026-08-26", note: "No public data source found." },
   { country: "Kuwait", countryCode: "KW", indicator: "FX Reserves (Import Cover)", category: "currency-stability", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-26", url: "https://data.worldbank.org/" },
   { country: "Kuwait", countryCode: "KW", indicator: "Current Account Balance", category: "currency-stability", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-26", url: "https://data.worldbank.org/" },
+  { country: "Kuwait", countryCode: "KW", indicator: "Policy Rate (discount rate)", category: "monetary-policy", institution: "Bank for International Settlements, republishing the Central Bank of Kuwait", license: "BIS Terms of permitted use — use is unrestricted provided BIS is cited as the source; commercial use permitted provided inclusion results in no additional charge to subscribers", status: "live", lastVerified: "2026-08-28", note: "From BIS's daily central bank policy rate series (WS_CBPOL), which names the Central Bank of Kuwait as the originating authority.", url: "https://data.bis.org/topics/CBPOL" },
 
   // ---------- Oman ----------
   { country: "Oman", countryCode: "OM", indicator: "Inflation (CPI)", category: "cost-of-living", institution: "World Bank", license: "CC BY 4.0", status: "live", lastVerified: "2026-08-26", note: "Annual figure. Oman's own National Centre for Statistics and Information publishes a monthly series under a confirmed permissive licence, not yet wired in.", url: "https://data.worldbank.org/" },

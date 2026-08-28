@@ -7,6 +7,7 @@ import {
   GULF_FX_RESERVES_GRANULARITY,
   GULF_CURRENT_ACCOUNT_GRANULARITY,
   GULF_REAL_ESTATE_GRANULARITY,
+  GULF_POLICY_RATE_GRANULARITY,
 } from "@/lib/gulfMarkets";
 
 export interface GulfCardData {
@@ -30,6 +31,13 @@ export interface GulfCardData {
   realEstateObservationDate: string | null;
   fxReservesObservationDate: string | null;
   currentAccountObservationDate: string | null;
+  // Saudi Arabia and Kuwait only (BIS). The label travels with the
+  // value because these are different instruments -- Saudi's repo rate
+  // vs Kuwait's discount rate -- so a shared generic heading would
+  // imply a comparability that isn't there.
+  policyRate: number | null;
+  policyRateLabel: string | null;
+  policyRateObservationDate: string | null;
   fetchedAt: string | null;
   // Computed once when the data is fetched (lib/useGulfIndicators.ts),
   // not here at render time -- calling Date.now() directly in a
@@ -53,13 +61,22 @@ export interface GulfCardData {
 // malformed value returns null (no date shown) instead of the string
 // "Invalid Date". Delegates the actual wording to formatPeriod() so
 // these cards and GulfTrends' comparison table can never disagree.
-function formatObsDate(iso: string, granularity: "annual" | "monthly"): string | null {
-  const m = /^(\d{4})-(\d{2})/.exec(iso);
+function formatObsDate(iso: string, granularity: "annual" | "monthly" | "daily"): string | null {
+  const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(iso);
   if (!m) return null;
-  const [, year, month] = m;
+  const [, year, month, day] = m;
+  if (granularity === "annual") return formatPeriod(year, "annual");
+
   const monthIndex = Number(month) - 1;
-  if (granularity === "monthly" && (monthIndex < 0 || monthIndex > 11)) return null;
-  return formatPeriod(granularity === "annual" ? year : `${year}-${month}`, granularity);
+  if (monthIndex < 0 || monthIndex > 11) return null;
+  if (granularity === "daily") {
+    // A daily granularity with no day component means the stored value
+    // doesn't match what the source is supposed to provide -- show no
+    // date rather than silently degrade it to a month.
+    if (!day) return null;
+    return formatPeriod(`${year}-${month}-${day}`, "daily");
+  }
+  return formatPeriod(`${year}-${month}`, "monthly");
 }
 
 function Stat({
@@ -71,7 +88,7 @@ function Stat({
   label: string;
   value: string | null;
   asOf?: string | null;
-  granularity?: "annual" | "monthly";
+  granularity?: "annual" | "monthly" | "daily";
 }) {
   // Only ever shown alongside a real value. A null value means the
   // figure is missing or stale, and its reporting period alone would
@@ -141,6 +158,17 @@ export default function GulfCard({ country }: { country: GulfCardData }) {
           asOf={country.currentAccountObservationDate}
           granularity={GULF_CURRENT_ACCOUNT_GRANULARITY}
         />
+        {/* Saudi Arabia and Kuwait only -- the other four have no
+            usable policy-rate source, so the row is absent entirely
+            rather than showing a dash, same pattern as real estate. */}
+        {country.policyRateLabel != null && (
+          <Stat
+            label={country.policyRateLabel}
+            value={isStale || country.policyRate == null ? null : `${country.policyRate.toFixed(2)}%`}
+            asOf={country.policyRateObservationDate}
+            granularity={GULF_POLICY_RATE_GRANULARITY}
+          />
+        )}
       </div>
 
       <div style={{ borderTop: "1px solid var(--hair)", marginTop: 8, paddingTop: 8, fontSize: 10.5, color: "var(--slate)", lineHeight: 1.5 }}>
@@ -148,7 +176,16 @@ export default function GulfCard({ country }: { country: GulfCardData }) {
           "Not currently refreshing — no recent data available."
         ) : (
           <>
-            No composite score — policy rate data isn&apos;t available for this country.
+            {/* Which sentence is true depends on the country: since BIS
+                supplies Saudi's and Kuwait's policy rates, the original
+                "policy rate data isn't available" line would sit
+                directly beneath a displayed policy rate on those two
+                cards. Gulf Watch still shows no composite for anyone --
+                for those two that is now a deliberate design choice
+                rather than a missing input. */}
+            {country.policyRateLabel != null
+              ? "Not scored — Gulf Watch shows each country's raw indicators rather than a composite."
+              : "No composite score — policy rate data isn't available for this country."}
             {country.fxReservesMonthsImports != null && (
               <>
                 {" "}FX reserves use the World Bank&apos;s own calculation — other institutions (e.g. the IMF) sometimes report a

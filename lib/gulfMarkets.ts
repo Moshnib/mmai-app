@@ -56,3 +56,12 @@ export const GULF_CURRENT_ACCOUNT_GRANULARITY = "annual" as const;
 /** Real estate exists only for Qatar today (a monthly transaction count
  *  from data.gov.qa). */
 export const GULF_REAL_ESTATE_GRANULARITY = "monthly" as const;
+
+/** Policy rates exist only for Saudi Arabia and Kuwait today, from BIS's
+ *  daily central-bank-policy-rate series. Daily rather than monthly
+ *  because a policy rate is a current level, not a period average --
+ *  the date is the day that rate was in effect. UAE and Bahrain have no
+ *  usable source at all (absent from both BIS and IMF; their own
+ *  central banks are bot-protected); Qatar and Oman are available from
+ *  IMF but not yet wired in. */
+export const GULF_POLICY_RATE_GRANULARITY = "daily" as const;

@@ -50,9 +50,10 @@ export default function SourcesPage() {
             <p style={{ maxWidth: "68ch" }}>
               UAE, Bahrain, Qatar, Saudi Arabia, Kuwait, and Oman appear on the{" "}
               <Link href="/gulf-watch" style={{ color: "var(--gold-deep)" }}>Gulf Watch</Link> page with real, live
-              data — but none of them get an MMAI score. A usable, legal, automatable policy-rate source doesn&apos;t
-              exist for any of these six yet, and the 70% coverage threshold every scored market has to clear means
-              MMAI would rather show nothing than a number built on a gap. Entries marked{" "}
+              data — but none of them get an MMAI score. Gulf Watch deliberately shows each country&apos;s raw
+              indicators instead of a composite. Policy rates are now live for Saudi Arabia and Kuwait, via BIS
+              republishing their own central banks; no usable, legal, automatable source has been found for the UAE
+              or Bahrain, and Qatar&apos;s and Oman&apos;s are not wired in yet. Entries marked{" "}
               <b>UNAVAILABLE</b> below mean exactly that: no source exists at all, not that one is simply unused.
             </p>
           </div>

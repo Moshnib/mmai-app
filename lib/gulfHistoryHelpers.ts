@@ -2,13 +2,19 @@ import type { GulfHistoryPoint, GulfHistorySeries } from "./gulfHistory";
 
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// "2025" for annual, "2026-07" -> "Jul 2026" for monthly -- never lets a
-// monthly point read as if it were a bare year, and never implies an
-// annual figure happened in a specific month (see the historical
-// backfill's review notes on this exact confusion risk).
-export function formatPeriod(period: string, granularity: "annual" | "monthly"): string {
+// "2025" for annual, "2026-07" -> "Jul 2026" for monthly, "2026-08-13"
+// -> "13 Aug 2026" for daily -- never lets a monthly point read as if it
+// were a bare year, and never implies an annual figure happened in a
+// specific month (see the historical backfill's review notes on this
+// exact confusion risk).
+//
+// "daily" was added for central bank policy rates (BIS), which are a
+// current level rather than a period average -- the exact day a rate
+// took effect is real information, not spurious precision.
+export function formatPeriod(period: string, granularity: "annual" | "monthly" | "daily"): string {
   if (granularity === "annual") return period;
-  const [y, m] = period.split("-").map(Number);
+  const [y, m, d] = period.split("-").map(Number);
+  if (granularity === "daily") return `${d} ${MONTH_ABBR[m - 1]} ${y}`;
   return `${MONTH_ABBR[m - 1]} ${y}`;
 }
 

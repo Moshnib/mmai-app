@@ -22,6 +22,9 @@ interface GulfRow {
   real_estate_observation_date: string | null;
   fx_reserves_observation_date: string | null;
   current_account_observation_date: string | null;
+  policy_rate: number | null;
+  policy_rate_label: string | null;
+  policy_rate_observation_date: string | null;
   fetched_at: string;
 }
 
@@ -38,6 +41,9 @@ function emptyCountries(): GulfCardData[] {
     realEstateObservationDate: null,
     fxReservesObservationDate: null,
     currentAccountObservationDate: null,
+    policyRate: null,
+    policyRateLabel: null,
+    policyRateObservationDate: null,
     fetchedAt: null,
     isStale: true, // no data fetched yet
   }));
@@ -66,7 +72,7 @@ export function useGulfIndicators(): { countries: GulfCardData[]; loaded: boolea
         const { data, error } = await supabase
           .from("gulf_indicators")
           .select(
-            "country_code, cpi_yoy, real_estate_value, real_estate_metric_label, fx_reserves_months_imports, current_account_pct_gdp, observation_date, cpi_observation_date, real_estate_observation_date, fx_reserves_observation_date, current_account_observation_date, fetched_at"
+            "country_code, cpi_yoy, real_estate_value, real_estate_metric_label, fx_reserves_months_imports, current_account_pct_gdp, observation_date, cpi_observation_date, real_estate_observation_date, fx_reserves_observation_date, current_account_observation_date, policy_rate, policy_rate_label, policy_rate_observation_date, fetched_at"
           )
           .order("fetched_at", { ascending: false })
           .limit(60);
@@ -86,6 +92,7 @@ export function useGulfIndicators(): { countries: GulfCardData[]; loaded: boolea
                 fxReservesMonthsImports: null, currentAccountPctGdp: null,
                 cpiObservationDate: null, realEstateObservationDate: null,
                 fxReservesObservationDate: null, currentAccountObservationDate: null,
+                policyRate: null, policyRateLabel: null, policyRateObservationDate: null,
                 fetchedAt: null, isStale: true,
               };
             }
@@ -107,6 +114,9 @@ export function useGulfIndicators(): { countries: GulfCardData[]; loaded: boolea
               realEstateObservationDate: row.real_estate_observation_date,
               fxReservesObservationDate: row.fx_reserves_observation_date,
               currentAccountObservationDate: row.current_account_observation_date,
+              policyRate: row.policy_rate,
+              policyRateLabel: row.policy_rate_label,
+              policyRateObservationDate: row.policy_rate_observation_date,
               fetchedAt: row.fetched_at,
               // Computed here, at fetch time inside an effect, not in
               // GulfCard's render body -- Date.now() during render is an

@@ -121,6 +121,18 @@ create table if not exists gulf_indicators (
                                         -- actual indicator was picked -- fixed before any
                                         -- data was ever written to it.)
   current_account_pct_gdp numeric,
+  policy_rate numeric,                 -- central bank policy rate. Saudi Arabia and
+  policy_rate_label text,              -- Kuwait only, from BIS (WS_CBPOL), which
+                                        -- republishes each country's own central bank.
+                                        -- The label is REQUIRED whenever a rate is set
+                                        -- (see the check constraint below) for the same
+                                        -- reason real_estate_metric_label is: Saudi's
+                                        -- repo rate and Kuwait's discount rate are
+                                        -- different instruments, so a bare number under
+                                        -- a shared "Policy rate" heading would imply a
+                                        -- comparability that isn't there.
+                                        -- UAE/Bahrain have no usable source at all;
+                                        -- Qatar/Oman exist in IMF's MFS_IR, not wired in.
   observation_date date not null,      -- legacy, kept for backward compatibility --
                                         -- CPI's own date if available, else real
                                         -- estate's, else the refresh date. New code
@@ -141,10 +153,15 @@ create table if not exists gulf_indicators (
   real_estate_observation_date date,
   fx_reserves_observation_date date,
   current_account_observation_date date,
+  policy_rate_observation_date date,   -- daily: a policy rate is a current level, not a
+                                        -- period average, so the exact effective date is
+                                        -- real information (see GULF_POLICY_RATE_GRANULARITY)
   source_note text,
   fetched_at timestamptz not null default now(),
   status text not null default 'current' check (status in ('current', 'stale', 'missing')),
-  check (real_estate_value is null or real_estate_metric_label is not null)
+  check (real_estate_value is null or real_estate_metric_label is not null),
+  constraint gulf_indicators_policy_rate_label_check
+    check (policy_rate is null or policy_rate_label is not null)
 );
 
 create index if not exists idx_gulf_indicators_country_date on gulf_indicators (country_code, observation_date desc);
