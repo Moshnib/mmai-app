@@ -80,15 +80,15 @@ export default function PillarGrid({ pillars, market }: { pillars: PillarScores;
         const cardBody = (
           <>
             <svg
-              viewBox="0 0 16 16" width={18} height={18} aria-hidden="true"
+              viewBox="0 0 16 16" width={24} height={24} aria-hidden="true"
               fill="none" stroke={excluded ? "#3A3D4A" : band.color}
               strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"
-              style={{ display: "block", margin: "0 auto 10px", opacity: excluded ? 0.6 : 0.9 }}
+              style={{ display: "block", margin: "0 auto 12px", opacity: excluded ? 0.6 : 0.95 }}
             >
               {PILLAR_ICONS[key]}
             </svg>
-            <div style={{ width: 60, height: 60, margin: "0 auto", position: "relative" }}>
-              <svg viewBox="0 0 56 56" width={60} height={60} style={{ transform: "rotate(-90deg)", overflow: "visible" }}>
+            <div style={{ width: 92, height: 92, margin: "0 auto", position: "relative" }}>
+              <svg viewBox="0 0 56 56" width={92} height={92} style={{ transform: "rotate(-90deg)", overflow: "visible" }}>
                 <circle cx={28} cy={28} r={23} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
                 <circle
                   cx={28} cy={28} r={23} fill="none"
@@ -98,11 +98,19 @@ export default function PillarGrid({ pillars, market }: { pillars: PillarScores;
                   strokeDasharray={`${circumference * pct} ${circumference}`}
                   style={{
                     transition: "stroke-dasharray 0.8s ease, filter 0.4s ease",
-                    filter: excluded ? undefined : `drop-shadow(0 0 5px ${band.color}90)`,
+                    filter: excluded ? undefined : `drop-shadow(0 0 6px ${band.color}) brightness(1.1)`,
                   }}
                 />
               </svg>
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 13, color: excluded ? "var(--slate)" : band.color, textShadow: excluded ? undefined : `0 0 10px ${band.color}50` }}>
+              <div
+                style={{
+                  position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26,
+                  color: excluded ? "var(--slate)" : band.color,
+                  textShadow: excluded ? undefined : `0 0 14px ${band.color}70`,
+                  filter: excluded ? undefined : "brightness(1.12) saturate(1.05)",
+                }}
+              >
                 {excluded ? "—" : val!.toFixed(0)}
               </div>
             </div>
