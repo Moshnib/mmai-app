@@ -362,6 +362,20 @@ h1.headline {
 }
 @media (min-width: 901px) { .insight-card-foot { margin-top: auto; } }
 
+/* ===== Data table =====
+   Wide content scrolls inside its OWN container so the page body never
+   scrolls sideways -- .scroll-x carries the overflow, not the table. */
+.scroll-x { overflow-x: auto; border: 1px solid var(--hair); border-radius: var(--card-radius); background: var(--card-bg); }
+.data-table { border-collapse: collapse; width: 100%; min-width: 640px; }
+.data-table th, .data-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+.data-table thead th {
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--slate);
+  background: rgba(255,255,255,0.03);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table td { font-size: 13px; color: var(--ink-soft); }
+
 .tabs-inline { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
 .tabs-inline .tab { flex: 0 1 auto; padding: 9px 13px; font-size: 12.5px; }
 

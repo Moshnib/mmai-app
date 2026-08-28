@@ -124,7 +124,15 @@ async function postJson(url: string, body: unknown): Promise<unknown> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    next: { revalidate: 0 },
+    // No `next: { revalidate: 0 }` here, unlike the macro fetchers.
+    // Those run inside a cron route where "always fresh" is right. This
+    // one is called from a page that sets its own revalidate window, and
+    // a per-fetch revalidate:0 OVERRIDES the page's setting -- it forced
+    // /stablecoins to render dynamically, which would have meant every
+    // visitor triggering eleven live blockchain calls. Caught by the
+    // build, which reported the route as dynamic. Leaving this unset lets
+    // the calling page decide, so the supply is read at most once per
+    // window no matter how many people load the page.
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`request failed: ${res.status} ${res.statusText}`);

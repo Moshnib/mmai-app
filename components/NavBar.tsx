@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/trends", label: "Data Over Time" },
   { href: "/compare", label: "Compare" },
   { href: "/gulf-watch", label: "Gulf Watch" },
+  { href: "/stablecoins", label: "Stablecoins" },
   { href: "/learn", label: "Learn More" },
   { href: "/sources", label: "Sources" },
   { href: "/contact", label: "Contact" },
