@@ -401,7 +401,9 @@ You are continuing an active, healthy, fully-deployed project. Read this entire 
 
 ### 11.1 What it is and why
 
-MMAI's 6 scored markets all have complete data for all 5 pillars. Extensive research found that several Gulf countries have *some* clean, legal, live data (inflation, GDP growth, unemployment, and for some, real estate/FX data) but are missing an automatable policy rate — meaning they can never hit the 70% coverage threshold needed to show a composite score. Rather than repeat the mistake that got UAE removed (forcing incomplete data into a scored market), the plan is two-pronged:
+MMAI's 6 scored markets all have complete data for all 5 pillars. Extensive research found that several Gulf countries have *some* clean, legal, live data (inflation, GDP growth, unemployment, and for some, real estate/FX data) but were missing an automatable policy rate. Rather than repeat the mistake that got UAE removed (forcing incomplete data into a scored market), the plan is two-pronged:
+
+> **⚠️ This paragraph's original reasoning is now OUT OF DATE — read §11.9 before acting on it.** It said Gulf countries "can never hit the 70% coverage threshold" because no policy rate was available. That stopped being true on 2026-08-26, when BIS came online for Saudi Arabia (repo) and Kuwait (discount) — those two now have all five pillars and *could* be scored. They are still deliberately unscored, but for a completely different reason, recorded in §11.9. Do not enable Gulf scoring on the strength of "the data is available now."
 
 - **Gulf Watch panel** — UAE, Bahrain, Qatar, Kuwait, Oman, Saudi Arabia, each shown honestly with real live indicators (cost-of-living CPI, investment-confidence real estate where available, currency-stability FX reserves/current account) and **explicitly no composite score**.
 - Oman was originally going to be built as a genuine 7th *scored* market (it has all 4 indicators, unlike the other five) — **the site owner chose to set this aside for now**, so Oman ships as a panel country like the rest, not a scored one. This can be revisited later; nothing about the panel plan blocks it.
@@ -411,7 +413,7 @@ The site owner lives in the UAE and specifically wants it represented prominentl
 ### 11.2 The two blocking unknowns — BOTH NOW RESOLVED
 
 1. **Oman's policy rate licensing** — resolved but moot since Oman was set aside as a scored market. For the record: the repo-rate data is genuinely sourced from the Central Bank of Oman, republished by Oman's National Centre for Statistics and Information on Oman's national open-data portal under Oman's government-wide Open Government License (already confirmed elsewhere on that same portal to permit commercial reuse and database storage). This is *not* the same risk shape as FRED — FRED was a private/quasi-restrictive redistributor with its own conflicting terms; here it's one arm of the Omani government republishing another arm's data under one unified, already-permissive national licence. If Oman is revisited as a scored market later, this licensing question is already answered.
-2. **Saudi Arabia's central bank/open-data-portal connectivity** — **confirmed unreachable**, tested directly from the live production site (not local dev, which gave an ambiguous result). A temporary diagnostic route (`app/api/diag-saudi/route.ts`, built and removed same-day, commits `bbd4f0d` → `9f5e448`) hit SAMA, Saudi's open-data portal, and GASTAT (as a control) from Vercel's actual servers. Result: SAMA and the open-data portal both failed to connect; GASTAT (Saudi's statistics office) responded normally. This settles it — Saudi's policy rate genuinely isn't available. Saudi ships as a panel country using GASTAT (CPI) and KAPSARC (a free re-publisher of Saudi's official REGA real-estate index).
+2. **Saudi Arabia's central bank/open-data-portal connectivity** — **confirmed unreachable**, tested directly from the live production site (not local dev, which gave an ambiguous result). A temporary diagnostic route (`app/api/diag-saudi/route.ts`, built and removed same-day, commits `bbd4f0d` → `9f5e448`) hit SAMA, Saudi's open-data portal, and GASTAT (as a control) from Vercel's actual servers. Result: SAMA and the open-data portal both failed to connect; GASTAT (Saudi's statistics office) responded normally. This settles it — Saudi's policy rate isn't available *from SAMA or Saudi's own open-data portal*. Saudi ships as a panel country using GASTAT (CPI) and KAPSARC (a free re-publisher of Saudi's official REGA real-estate index). **Superseded 2026-08-26:** the rate is available after all, from BIS, which republishes SAMA's own official market repo rate (4.25%) — see §11.8. The finding above stays accurate about SAMA's own endpoints; the conclusion drawn from it did not survive checking a third-party republisher.
 
 ### 11.3 Full data-source picture (all verified live, not assumed — updated after actually building each fetcher)
 
@@ -476,6 +478,18 @@ Shipped, in this order:
    - A chart bug where an isolated real data point (a real month with no neighboring data) would render as literally nothing with dots disabled — fixed by keeping dots visible on all Gulf charts.
 
 ### 11.9 What's left for Gulf Watch
+
+**0. Composite scoring for Gulf — DECIDED 2026-08-28, do not re-open casually.**
+
+The site owner's decision: **leave every Gulf country unscored for now**, and revisit only as a *separately labelled group* once there is a labour-market indicator worth trusting. Never rank Gulf countries against the developed markets in the same table.
+
+Why this needs stating explicitly: as of §11.8/§14 the data-availability objection is **gone**. Saudi Arabia and Kuwait have all five pillars (BIS policy rates), so the engine *would* happily produce a composite for them. The reason not to is no longer technical.
+
+A feasibility check run before the decision found **all six Gulf countries would score roughly 81-91** — above every scored market (US 78.5, Euro Area 79.2, Japan 79.1, UK 76.9, Canada 75.5, Australia 74.7). That is not a bug in the arithmetic; it is the Labour Market pillar working exactly as designed on an input that doesn't mean the same thing in the Gulf. The pillar rewards low official unemployment, and Gulf unemployment is low substantially because of how migrant labour is counted, not because those labour markets are stronger than Germany's. Publishing "Saudi Arabia 88, United States 78.5" would be indefensible to any informed reader, and MMAI is going to FINTECH.TV.
+
+Three options were put to the owner: (1) leave unscored, (2) adapt the methodology for Gulf, (3) score but present as a clearly separate group. The owner chose the recommendation of **(1) now, (3) later**. Option (2) is genuine research, not a sprint — it needs a defensible alternative labour measure (participation rate? national-vs-expatriate breakdown?) and a public explanation of why two methodologies coexist.
+
+**Trigger to revisit:** a labour indicator for Gulf countries that is live, legally usable, and economically comparable. Until then, the honest position is the current one. If a future session is tempted to enable Gulf scoring, re-read this entry first — the tempting argument ("the data is all there now!") is precisely the one that was already considered and rejected.
 
 1. ~~**Homepage widget redesign**~~ — **done, see §12.** The floating card is gone; Gulf Watch now has a real section on the homepage.
 2. **Interactive Gulf map** — deliberately deferred twice now (original Phase 3 scope cut, and again during the §11.8 expansion) because the site's real map data can't represent all 6 countries legibly. Last item in the site owner's agreed build order.
