@@ -11,6 +11,33 @@
   --slate: #8A8EA3;         /* muted/meta text */
   --hair: rgba(255, 255, 255, 0.1); /* borders */
   --glass: rgba(255, 255, 255, 0.035);
+
+  /* One card system, per the design brief's consistency rules (§7, §37):
+     every card on every page uses these three values rather than
+     re-inventing a radius/padding/border per component. Existing
+     hand-rolled cards are being migrated onto .mmai-card over time. */
+  --card-radius: 16px;
+  --card-pad: 18px 20px;
+  --card-bg: rgba(255, 255, 255, 0.035);
+}
+
+/* The shared card. Use this instead of repeating
+   background/border/radius/blur inline. */
+.mmai-card {
+  background: var(--card-bg);
+  border: 1px solid var(--hair);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
+  backdrop-filter: blur(10px);
+}
+
+/* Small uppercase metadata / section label. The brief allows monospace
+   uppercase ONLY for these -- never for headings or body copy. */
+.meta-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--slate);
 }
 
 * { box-sizing: border-box; }
@@ -132,9 +159,17 @@ nav {
   letter-spacing: 2px; margin: 0 0 14px;
 }
 h1.headline {
-  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: clamp(28px, 4.4vw, 44px);
-  line-height: 1.1; margin: 0 0 16px; max-width: 16ch; letter-spacing: -0.01em;
+  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: clamp(30px, 5vw, 52px);
+  line-height: 1.12; margin: 0 auto 16px; max-width: 22ch; letter-spacing: -0.015em;
 }
+/* Hero is centred, matching the design reference. The two coloured
+   phrases in the headline use the site's existing cyan and violet
+   accents -- no new colours introduced. */
+.hero-centered { text-align: center; }
+.hero-centered .eyebrow { margin-bottom: 10px; }
+.hero-centered .sub { margin-left: auto; margin-right: auto; }
+.hl-cyan { color: var(--gold); }
+.hl-violet { color: var(--gold-deep); }
 .sub { font-size: 16px; color: var(--slate); max-width: 60ch; line-height: 1.6; margin: 0 0 28px; }
 
 .tabs {
@@ -182,6 +217,64 @@ h1.headline {
 .pillar-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
 .pillar-name { font-size: 11.5px; font-weight: 700; margin: 10px 0 2px; color: var(--ink); }
 .pillar-weight { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--slate); }
+/* One-line plain-language descriptor under each pillar name, so the five
+   cards explain what they measure without a separate legend (brief §3). */
+.pillar-desc { font-size: 10.5px; color: var(--slate); line-height: 1.45; margin-top: 5px; }
+
+/* ===== Featured Market Snapshot strip (brief §2) =====
+   A compact context bar directly above the score card: what you're
+   looking at, when it was last verified, and 2-3 short state chips. */
+.snapshot-strip {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
+  padding: 12px 18px; margin-bottom: 14px;
+  background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: var(--card-radius); backdrop-filter: blur(10px);
+}
+.snapshot-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--hair); background: rgba(255,255,255,0.03);
+  font-size: 11.5px; font-weight: 600; color: var(--ink-soft);
+  white-space: nowrap;
+}
+.chip i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+@media (max-width: 720px) {
+  .snapshot-chips { margin-left: 0; width: 100%; }
+}
+
+/* ===== Compact market comparison strip (brief §4) =====
+   Replaces the full-width map as the primary cross-market read: name,
+   score, status, nothing else. The map stays below as a secondary,
+   de-emphasised navigation aid rather than the dominant element. */
+.compare-strip {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+  margin-top: 20px;
+}
+@media (max-width: 900px) { .compare-strip { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 520px) { .compare-strip { grid-template-columns: repeat(2, 1fr); } }
+.compare-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 14px 10px; text-align: center; text-decoration: none;
+  background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: var(--card-radius); backdrop-filter: blur(10px);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+.compare-chip:hover { border-color: rgba(255,255,255,0.24); transform: translateY(-2px); }
+.compare-chip .cc-name { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.compare-chip .cc-score { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 24px; line-height: 1.1; }
+.compare-chip .cc-band { font-size: 10.5px; color: var(--slate); }
+
+/* ===== Closing call-to-action band (brief §8, item 7) ===== */
+.cta-band {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 20px;
+  padding: 26px 30px; border-radius: 20px;
+  border: 1px solid rgba(139,92,246,0.3);
+  background: linear-gradient(120deg, rgba(139,92,246,0.14), rgba(34,211,238,0.07));
+}
+.cta-band h2 { font-family: "Space Grotesk", sans-serif; font-size: 24px; font-weight: 600; margin: 0 0 6px; }
+.cta-band p { margin: 0; color: var(--slate); font-size: 14px; }
 
 /* The only remaining user is the 6-card Gulf Watch grid (/gulf-watch and
    the homepage's Gulf Watch section) -- 3 columns divides 6 evenly with no

@@ -5,6 +5,66 @@ import Link from "next/link";
 
 const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
 
+// One-line plain-language descriptor per pillar (design brief §3: the
+// five cards should make it obvious what each one measures without a
+// separate legend). These describe the EXISTING pillars -- the names
+// themselves come from PILLAR_NAMES and are methodology, not copy.
+const PILLAR_DESC: Record<PillarKey, string> = {
+  PS: "Inflation trends & price pressures",
+  GM: "Output, demand & economic momentum",
+  LM: "Employment, wage growth & participation",
+  MC: "Policy stance & financial conditions",
+  EC: "Oil prices & external conditions",
+};
+
+// Simple line icons, one per pillar, matching the design reference's
+// card structure. Inline SVG rather than an icon dependency -- five
+// glyphs don't justify a package, and these inherit currentColor so
+// they follow each card's own score colour.
+const PILLAR_ICONS: Record<PillarKey, React.ReactNode> = {
+  // coins — price level
+  PS: (
+    <>
+      <ellipse cx="8" cy="5" rx="5.5" ry="2.2" />
+      <path d="M2.5 5v4c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V5" />
+      <path d="M2.5 9v4c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V9" />
+    </>
+  ),
+  // rising bars — growth
+  GM: (
+    <>
+      <path d="M2 14h12" />
+      <rect x="3.5" y="9" width="2.6" height="5" />
+      <rect x="7.7" y="6" width="2.6" height="8" />
+      <rect x="11.9" y="3.5" width="2.6" height="10.5" />
+    </>
+  ),
+  // people — labour market
+  LM: (
+    <>
+      <circle cx="6" cy="5.5" r="2.4" />
+      <path d="M1.8 14c0-2.4 1.9-4 4.2-4s4.2 1.6 4.2 4" />
+      <circle cx="12.2" cy="6.4" r="1.9" />
+      <path d="M11 10.3c2 .1 3.4 1.6 3.4 3.7" />
+    </>
+  ),
+  // bank — monetary conditions
+  MC: (
+    <>
+      <path d="M8 2l6 3.2H2L8 2z" />
+      <path d="M3.6 6.4v6M6.8 6.4v6M9.2 6.4v6M12.4 6.4v6" />
+      <path d="M2 14h12" />
+    </>
+  ),
+  // globe/arrow — external & commodities
+  EC: (
+    <>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M2 8h12M8 2c1.8 2 2.7 4 2.7 6s-.9 4-2.7 6c-1.8-2-2.7-4-2.7-6S6.2 4 8 2z" />
+    </>
+  ),
+};
+
 export default function PillarGrid({ pillars, market }: { pillars: PillarScores; market: string }) {
   return (
     <div className="pillar-grid">
@@ -19,6 +79,14 @@ export default function PillarGrid({ pillars, market }: { pillars: PillarScores;
 
         const cardBody = (
           <>
+            <svg
+              viewBox="0 0 16 16" width={18} height={18} aria-hidden="true"
+              fill="none" stroke={excluded ? "#3A3D4A" : band.color}
+              strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"
+              style={{ display: "block", margin: "0 auto 10px", opacity: excluded ? 0.6 : 0.9 }}
+            >
+              {PILLAR_ICONS[key]}
+            </svg>
             <div style={{ width: 60, height: 60, margin: "0 auto", position: "relative" }}>
               <svg viewBox="0 0 56 56" width={60} height={60} style={{ transform: "rotate(-90deg)", overflow: "visible" }}>
                 <circle cx={28} cy={28} r={23} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
@@ -39,7 +107,8 @@ export default function PillarGrid({ pillars, market }: { pillars: PillarScores;
               </div>
             </div>
             <div className="pillar-name">{PILLAR_NAMES[key]}</div>
-            <div className="pillar-weight">{formatWeightPct(key)} weight</div>
+            <div className="pillar-desc">{PILLAR_DESC[key]}</div>
+            <div className="pillar-weight" style={{ marginTop: 6 }}>{formatWeightPct(key)} weight</div>
             {!excluded && (
               <div style={{ marginTop: 6, fontSize: 10, fontFamily: "monospace", color: "var(--gold-deep)" }}>
                 View trend →

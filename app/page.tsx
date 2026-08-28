@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ScoreDisplay from "@/components/ScoreDisplay";
+import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
 import PillarGrid from "@/components/PillarGrid";
 import Sparkline from "@/components/Sparkline";
@@ -12,7 +13,8 @@ import GulfCard from "@/components/GulfCard";
 import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
-import { narrativeDrivers, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators } from "@/lib/scoring";
+import CountryGlyph from "@/components/CountryGlyph";
+import { narrativeDrivers, bandFor, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
@@ -166,6 +168,9 @@ export default function OverviewPage() {
     <>
       <div className="hero">
         <div className="wrap">
+          {/* Only the intro block is centred (design reference); the
+              score panel below keeps its left-aligned reading order. */}
+          <div className="hero-centered">
           <p className="eyebrow">
             MOSHNIB MARKET ANALYSIS INDEX · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
           </p>
@@ -180,12 +185,15 @@ export default function OverviewPage() {
               what "macro environment" means to them personally. This
               line answers "what even is this" before asking the
               headline's more evocative question. */}
-          <p style={{ fontSize: 14, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px 0 0", lineHeight: 1.6 }}>
+          <p style={{ fontSize: 14, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px auto 0", lineHeight: 1.6 }}>
             MMAI reads public government data — inflation, jobs, interest rates — and turns it into one plain-language
             score per country, updated daily. Not investment advice, just the honest picture.
           </p>
-          <h1 className="headline">Is today&apos;s macro environment supportive, or working against you?</h1>
-          <p className="sub">One transparent number, built entirely from licensed public data — with every formula, weight, and source open for anyone to check.</p>
+          <h1 className="headline">
+            Is today&apos;s macro environment <span className="hl-cyan">supportive</span> — or{" "}
+            <span className="hl-violet">working against you?</span>
+          </h1>
+          <p className="sub">One composite score. Five economic pillars. Verified market signals.</p>
 
           <div className="tabs">
             {markets.map((m) => (
@@ -200,11 +208,23 @@ export default function OverviewPage() {
               </button>
             ))}
           </div>
+          </div>
+
+          <MarketSnapshotStrip
+            marketName={market.name}
+            composite={composite}
+            raw={market.raw}
+            verifiedAt={lastUpdated ? formatUpdatedAt(lastUpdated) : null}
+          />
 
           <div className="score-panel">
             <ScoreDisplay score={composite} />
             <div className="score-right">
               <h2>{market.name}</h2>
+              {/* One-line definition directly under the score, per brief §2 */}
+              <p className="meta-label" style={{ margin: "0 0 10px" }}>
+                Composite view of the current macro backdrop
+              </p>
               <p className="score-narrative">{narrativeFor(market)}</p>
               <div className="meta-row" style={{ marginBottom: 16 }}>
                 <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
@@ -257,9 +277,9 @@ export default function OverviewPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">THE COMPOSITE, OPENED UP</p>
+            <p className="eyebrow">WHAT DRIVES THE SCORE</p>
             <h2>Five pillars, weighted and shown in full</h2>
-            <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it — visit the Learn More page for what each one means.</p>
+            <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it. Click one to see its history.</p>
           </div>
           <PillarGrid pillars={pillars} market={current} />
         </div>
@@ -268,10 +288,31 @@ export default function OverviewPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">EXPLORE MORE</p>
-            <h2>See how the other {markets.length - 1} markets are doing</h2>
-            <p>Click a country to open its full history on the Data Over Time page.</p>
+            <p className="eyebrow">COMPARE MARKETS</p>
+            <h2>How every market scores right now</h2>
+            <p>Click a market to open its full history on the Data Over Time page.</p>
           </div>
+
+          {/* Primary cross-market read: name, score, status, nothing
+              else (brief §4). The map below is kept as a secondary
+              navigation aid rather than the dominant element. */}
+          <div className="compare-strip">
+            {markets.map((m) => {
+              const { composite: mScore } = scoreMarket(m);
+              const mBand = bandFor(mScore);
+              return (
+                <Link key={m.code} href={`/trends?market=${m.code}`} className="compare-chip">
+                  <span className="cc-name">{m.name}</span>
+                  <CountryGlyph code={m.code} color={mBand.color} size={52} />
+                  <span className="cc-score" style={{ color: mBand.color }}>
+                    {mScore === null ? "—" : mScore.toFixed(1)}
+                  </span>
+                  <span className="cc-band">{mBand.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
           <div className="world-map-wrap" style={{ marginTop: 24, marginBottom: 24 }}>
             <WorldMap markets={markets} current={current} onSelect={(code) => router.push(`/trends?market=${code}`)} />
           </div>
@@ -292,12 +333,26 @@ export default function OverviewPage() {
         </div>
       </div>
 
+      {/* Weekly Signals sits BEFORE Gulf Watch, per the brief's page
+          flow (§8): situation -> drivers -> comparison -> what changed
+          -> Gulf context. */}
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">SIX MORE COUNTRIES</p>
-            <h2>Gulf Watch</h2>
-            <p>Real, live data on cost of living, investment confidence, and currency stability — shown honestly, with no composite score built on a gap.</p>
+            <p className="eyebrow">WEEKLY SIGNALS</p>
+            <h2>What changed this week</h2>
+            <p>Movement for each market since roughly a week ago — the raw numbers, no interpretation.</p>
+          </div>
+          <WeeklyFeed />
+        </div>
+      </div>
+
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">GULF WATCH</p>
+            <h2>The six GCC economies</h2>
+            <p>Verified indicators only — cost of living, currency stability, and where available real estate and policy rates. No composite score is shown for these countries yet.</p>
           </div>
           <div className="compare-grid" style={{ opacity: gulfLoaded ? 1 : 0.5, transition: "opacity 0.3s ease", marginBottom: 16 }}>
             {gulfCountries.map((c) => (
@@ -310,14 +365,39 @@ export default function OverviewPage() {
         </div>
       </div>
 
+      {/* Closing call-to-action (brief §8, item 7). Points at the two
+          things that actually answer "where does this come from" --
+          methodology and sources -- rather than a marketing link. */}
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="section-head">
-            <p className="eyebrow">SINCE LAST WEEK</p>
-            <h2>Weekly feed</h2>
-            <p>What changed for each market since roughly a week ago — the raw numbers, no interpretation.</p>
+          <div className="cta-band">
+            <div>
+              <h2>Turn macro data into clear signals.</h2>
+              <p>Every number traced to a named source, with its real reporting period. Not investment advice.</p>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link
+                href="/learn"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
+                  background: "linear-gradient(135deg, var(--gold-deep), #6D28D9)", color: "#fff",
+                  fontWeight: 700, fontSize: 13.5, textDecoration: "none",
+                }}
+              >
+                How MMAI is calculated →
+              </Link>
+              <Link
+                href="/sources"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
+                  border: "1px solid var(--hair)", color: "var(--ink-soft)",
+                  fontWeight: 700, fontSize: 13.5, textDecoration: "none",
+                }}
+              >
+                Sources
+              </Link>
+            </div>
           </div>
-          <WeeklyFeed />
         </div>
       </div>
 

@@ -19,6 +19,26 @@ const STATS: Array<{ pillar: PillarKey; color: string; decimals: number }> = [
   { pillar: "LM", color: "#22D3EE", decimals: 1 }, // unemployment
 ];
 
+// A short descriptor under each value, matching the design reference's
+// card structure. Deliberately describes the CURRENT LEVEL against the
+// thresholds MMAI already publishes (Equation 1's 2% target, Equation
+// 4's 2.5% neutral) -- never a direction like "easing" or "trending",
+// which would need a previous reading this component doesn't have.
+function descriptorFor(pillar: PillarKey, value: number): string {
+  if (pillar === "PS") {
+    const gap = value - 2.0;
+    if (Math.abs(gap) <= 0.5) return "Near the 2% target";
+    return gap > 0 ? "Above the 2% target" : "Below the 2% target";
+  }
+  if (pillar === "MC") {
+    const gap = value - 2.5;
+    if (Math.abs(gap) <= 0.5) return "Near neutral";
+    return gap > 0 ? "Restrictive vs neutral" : "Accommodative vs neutral";
+  }
+  if (value <= 4) return "Tight labour market";
+  return value <= 6 ? "Steady labour market" : "Loose labour market";
+}
+
 export default function KeyRatesRow({ raw }: { raw: RawIndicators }) {
   return (
     <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, margin: "20px 0 10px" }}>
@@ -40,9 +60,14 @@ export default function KeyRatesRow({ raw }: { raw: RawIndicators }) {
             <dt style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700, color, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>
               {label}
             </dt>
-            <dd style={{ margin: 0, fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 26, color: "var(--ink)" }}>
+            <dd style={{ margin: 0, fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 28, color: "var(--ink)", lineHeight: 1.15 }}>
               {value != null ? `${value.toFixed(decimals)}${unit}` : "—"}
             </dd>
+            {value != null && (
+              <div style={{ marginTop: 5, fontSize: 11, color: "var(--slate)" }}>
+                {descriptorFor(pillar, value)}
+              </div>
+            )}
           </div>
         );
       })}
