@@ -312,7 +312,7 @@ export default function OverviewPage() {
                 <Link key={m.code} href={`/trends?market=${m.code}`} className="compare-chip">
                   <span className="cc-name">{m.name}</span>
                   <span className="cc-glyph">
-                    <CountryGlyph code={m.code} color={mBand.color} size={96} />
+                    <CountryGlyph code={m.code} color={mBand.color} size={124} />
                   </span>
                   <span className="cc-score" style={{ color: mBand.color }}>
                     {mScore === null ? "—" : mScore.toFixed(1)}

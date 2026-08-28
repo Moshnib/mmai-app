@@ -271,25 +271,28 @@ h1.headline {
 }
 @media (max-width: 900px) { .compare-strip { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 520px) { .compare-strip { grid-template-columns: repeat(2, 1fr); } }
+/* Sized to sit proportionally alongside the five pillar cards above:
+   comparable padding, a shape block close to the pillar ring's 92px,
+   and the same score type size. */
 .compare-chip {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 18px 12px 16px; text-align: center; text-decoration: none;
+  padding: 22px 12px 18px; text-align: center; text-decoration: none;
   background: var(--card-bg); border: 1px solid var(--hair);
   border-radius: var(--card-radius); backdrop-filter: blur(10px);
   transition: border-color 0.18s ease, transform 0.18s ease;
 }
 .compare-chip:hover { border-color: rgba(255,255,255,0.24); transform: translateY(-2px); }
-.compare-chip .cc-name { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+.compare-chip .cc-name { font-size: 13px; font-weight: 700; color: var(--ink); }
 /* Fixed height so all six shapes occupy the same block regardless of
    their aspect ratio -- otherwise a wide country (the US) and a tall
    one (the UK) push their score lines to different heights and the row
    stops reading as a set. */
 .compare-chip .cc-glyph {
-  height: 76px; display: flex; align-items: center; justify-content: center;
-  margin: 2px 0 2px;
+  height: 96px; display: flex; align-items: center; justify-content: center;
+  margin: 4px 0 2px;
 }
-.compare-chip .cc-score { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 26px; line-height: 1.1; }
-.compare-chip .cc-band { font-size: 10.5px; color: var(--slate); }
+.compare-chip .cc-score { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; }
+.compare-chip .cc-band { font-size: 11px; color: var(--slate); }
 
 /* ===== Page header with a side insight card (design reference on the
    Compare, Gulf Watch and Data Over Time pages) ===== */
