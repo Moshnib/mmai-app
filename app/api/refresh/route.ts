@@ -248,12 +248,35 @@ export async function GET(request: Request) {
       // the only way to know whether the band actually changed.
       const { data: previousRows } = await supabase
         .from("mmai_scores")
-        .select("band")
+        .select("band, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_ec")
         .eq("market", market)
         .order("observation_date", { ascending: false })
         .order("computed_at", { ascending: false })
         .limit(1);
-      const previousBand = previousRows?.[0]?.band as string | undefined;
+      const previousRow = previousRows?.[0];
+      const previousBand = previousRow?.band as string | undefined;
+
+      // WHICH pillars contributed, as a 5-character signature ("11111" =
+      // all five). computeComposite reweights across whatever is
+      // populated, so a composite built from four pillars is not the
+      // same measurement as one built from five -- comparing them
+      // reports a band change with no economic content behind it.
+      //
+      // This is not hypothetical. If Labour Market alone goes null for
+      // Canada, the reweighting lifts its composite from 76.5 to 81.2
+      // and crosses into a higher band. Without this guard every
+      // subscriber watching Canada is emailed an upgrade caused by a
+      // fetcher outage, then a downgrade when the source recovers.
+      //
+      // Same reasoning as isFullyPopulated() in lib/weeklyChanges.ts,
+      // which exists to stop exactly this class of fake delta on the
+      // homepage feed. The email path never got the equivalent guard.
+      const shapeOf = (vals: Array<number | null | undefined>) => vals.map((v) => (v == null ? "0" : "1")).join("");
+      const currentShape = shapeOf([pillars.PS, pillars.GM, pillars.LM, pillars.MC, pillars.EC]);
+      const previousShape = previousRow
+        ? shapeOf([previousRow.pillar_ps, previousRow.pillar_gm, previousRow.pillar_lm, previousRow.pillar_mc, previousRow.pillar_ec])
+        : null;
+      const comparableToPrevious = previousShape !== null && previousShape === currentShape;
 
       // SOURCE_NOTES describes what a fully-successful run looks like --
       // if any live indicator actually came back null this run (a source
@@ -302,7 +325,16 @@ export async function GET(request: Request) {
       // Band actually changed (and there WAS a previous band to compare
       // against, i.e. this isn't the market's very first-ever row) --
       // notify every subscriber watching this market.
-      if (previousBand && previousBand !== band.label && composite !== null) {
+      if (previousBand && previousBand !== band.label && composite !== null && !comparableToPrevious) {
+        // Deliberately silent to subscribers, loud in the logs: the band
+        // moved, but the two readings were built from different pillars,
+        // so there is nothing honest to tell anyone.
+        console.warn(
+          `${market}: band ${previousBand} -> ${band.label} SUPPRESSED — pillar coverage changed (${previousShape} -> ${currentShape}). Not an economic move; no email sent.`
+        );
+      }
+
+      if (previousBand && previousBand !== band.label && composite !== null && comparableToPrevious) {
         const { data: subscribers } = await supabase
           .from("subscribers")
           .select("email, unsubscribe_token, markets");
