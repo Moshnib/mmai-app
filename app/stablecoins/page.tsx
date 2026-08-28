@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import TrendChart, { type Series } from "@/components/TrendChart";
 import { fetchAllStablecoinSupplies, STABLECOINS, type StablecoinSupply, type StablecoinChain } from "@/lib/fetchers/stablecoins";
+import { ETHEREUM_STABLECOIN_HISTORY } from "@/lib/stablecoinHistory";
 
 export const metadata: Metadata = {
   title: "Stablecoins",
@@ -64,6 +66,25 @@ export default async function StablecoinsPage() {
     bySymbol.set(r.symbol, entry);
   }
   const coins = [...bySymbol.values()].sort((a, b) => b.total - a.total);
+
+  // History is the committed backfill, charted in BILLIONS -- raw dollar
+  // values would put 12-digit numbers on the axis. Labelled "Sep '23"
+  // style from each point's own real block date.
+  const history = ETHEREUM_STABLECOIN_HISTORY;
+  const peak = history.reduce((a, b) => (b.total > a.total ? b : a));
+  const historySeries: Series[] = [
+    {
+      key: "ethereum-total",
+      name: "Ethereum stablecoin supply",
+      color: "#22D3EE",
+      data: history.map((p) => {
+        const d = new Date(`${p.date}T00:00:00Z`);
+        const label = `${d.toLocaleString("en-US", { month: "short", timeZone: "UTC" })} '${p.date.slice(2, 4)}`;
+        return { year: label, value: Math.round((p.total / 1e9) * 10) / 10 };
+      }),
+    },
+  ];
+  const tronTotal = rows.filter((r) => r.chain === "tron").reduce((s, r) => s + r.supply, 0);
 
   const chainTotals = CHAIN_ORDER.map((chain) => ({
     chain,
@@ -163,6 +184,42 @@ export default async function StablecoinsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Deliberately BELOW the all-chain totals above. Ethereum's supply
+          peaked and has fallen while Tron's grew past it, so a reader who
+          met this line first would conclude stablecoins are shrinking.
+          They are not -- the supply moved chains. Context first, then the
+          chart, and the heading names the chain rather than saying
+          "stablecoin supply". */}
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">OVER TIME · ETHEREUM ONLY</p>
+            <h2>Stablecoin supply on Ethereum, three years</h2>
+            <p>
+              Read from Ethereum&apos;s own archive, one point roughly every thirty days, each dated by the
+              block it came from.
+            </p>
+          </div>
+
+          <div className="chart-card" style={{ marginTop: 20 }}>
+            <div className="chart-card-label">
+              <span>Total supply on Ethereum</span>
+              <span style={{ marginLeft: "auto", color: "var(--slate)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                {money(history[0].total)} in {history[0].date.slice(0, 4)} → {money(history[history.length - 1].total)} today
+              </span>
+            </div>
+            <TrendChart series={historySeries} height={320} yLabel="$B" showLegend={false} showDots={false} />
+            <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", paddingTop: 12, borderTop: "1px dashed var(--hair)", lineHeight: 1.7 }}>
+              <b style={{ color: "var(--ink-soft)" }}>Read this line carefully.</b> Ethereum&apos;s stablecoin
+              supply peaked near {money(peak.total)} in {peak.date.slice(0, 7)} and has fallen since. That is not
+              stablecoins shrinking — over the same stretch Tron grew past Ethereum to become the largest home for
+              Tether, at {money(tronTotal)} today. The supply moved chains rather than leaving. Tron and Solana
+              publish no comparable history, so this chart covers Ethereum alone.
+            </p>
           </div>
         </div>
       </div>
