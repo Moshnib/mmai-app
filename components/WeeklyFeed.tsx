@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Flag from "@/components/Flag";
-import { colorForScore } from "@/lib/scoring";
-import { fetchAllWeeklyChanges, COMPARABILITY_FLOOR, BUCKET_MIN_GAP_DAYS, type WeeklyMarketResult } from "@/lib/weeklyChanges";
+import { colorForScore, type PillarKey } from "@/lib/scoring";
+import { FALLBACK_MARKETS } from "@/lib/markets";
+import { RAW_DECIMALS } from "@/components/KeyRatesRow";
+import { fetchAllWeeklyChanges, COMPARABILITY_FLOOR, BUCKET_MIN_GAP_DAYS, type WeeklyChangesResult } from "@/lib/weeklyChanges";
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -37,11 +39,22 @@ function delta(now: number | null, then: number | null): { symbol: string; text:
 // is directional by design -- uses the site's score colour.
 
 export default function WeeklyFeed() {
-  const [results, setResults] = useState<WeeklyMarketResult[] | null>(null);
+  const [data, setData] = useState<WeeklyChangesResult | null>(null);
 
   useEffect(() => {
-    fetchAllWeeklyChanges(2).then(setResults);
+    let alive = true;
+    // .catch as well as .then: fetchAllWeeklyChanges swallows its own
+    // errors today, but a future edit that let one escape would have
+    // left this stuck on the skeleton forever with no way to tell.
+    fetchAllWeeklyChanges(2)
+      .then((r) => alive && setData(r))
+      .catch(() => alive && setData({ ok: false, reason: "unavailable" }));
+    return () => {
+      alive = false;
+    };
   }, []);
+
+  const results = data?.ok ? data.markets : null;
 
   // Brent is one global series shared by every market, not a per-market
   // figure -- showing it as 6 duplicate columns would be exactly the
@@ -86,10 +99,27 @@ export default function WeeklyFeed() {
       {/* Two-column grid of compact rows (design reference) rather than a
           wide table. The figures and the no-interpretation rule are
           unchanged -- only the layout differs. */}
+      {/* Reaching the database failed -- say THAT, rather than the old
+          behaviour of flagging every market stale and rendering "Not
+          currently refreshing", which blamed the data pipeline for what
+          is almost always a connection problem on the reader's side. */}
+      {data && !data.ok && (
+        <div style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "12px 14px", background: "rgba(240,151,91,0.06)", border: "1px solid rgba(240,151,91,0.22)", borderRadius: 10, fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.6 }}>
+          <span aria-hidden="true">●</span>
+          <span>
+            {data.reason === "unconfigured"
+              ? "Weekly signals aren't configured in this environment, so there's nothing to show here."
+              : "Couldn't load this week's signals — the live data couldn't be reached just now. The scores above are unaffected. Refreshing the page usually fixes it."}
+          </span>
+        </div>
+      )}
+
       <div className="signal-grid">
-        {results === null &&
-          [0, 1, 2, 4].map((i) => (
-            <div key={i} className="signal-row">
+        {/* One skeleton per market, so the block doesn't visibly jump
+            from four rows to six when the data lands. */}
+        {data === null &&
+          FALLBACK_MARKETS.map((m) => (
+            <div key={m.code} className="signal-row" aria-hidden="true">
               <span className="signal-market" style={{ color: "var(--slate)" }}>Loading…</span>
               <span />
               <span />
@@ -133,13 +163,17 @@ export default function WeeklyFeed() {
                       {scoreDelta && <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>}
                     </span>
                     <span className="signal-detail">
-                      {[
-                        ["Infl", now.raw.inflation],
-                        ["GDP", now.raw.gdpGrowth],
-                        ["Unemp", now.raw.unemployment],
-                        ["Rate", now.raw.policyRate],
-                      ]
-                        .map(([label, v]) => `${label} ${v != null ? `${(v as number).toFixed(1)}%` : "—"}`)
+                      {/* Per-field precision (RAW_DECIMALS), not a
+                          blanket one decimal: a policy rate is set to
+                          the quarter-point, so 4.35 printed here as
+                          "4.3%" was a rate the RBA never set. */}
+                      {([
+                        ["Infl", now.raw.inflation, "PS"],
+                        ["GDP", now.raw.gdpGrowth, "GM"],
+                        ["Unemp", now.raw.unemployment, "LM"],
+                        ["Rate", now.raw.policyRate, "MC"],
+                      ] as Array<[string, number | null, PillarKey]>)
+                        .map(([label, v, p]) => `${label} ${v != null ? `${v.toFixed(RAW_DECIMALS[p])}%` : "—"}`)
                         .join("  ·  ")}
                     </span>
                   </>

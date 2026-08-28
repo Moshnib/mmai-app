@@ -51,6 +51,15 @@ const BUCKET_MAX_GAP_DAYS = 10;
 const QUERY_WINDOW_DAYS = 12;
 const QUERY_ROW_LIMIT = 200;
 
+// Nothing below cancels a hung request on its own: a Supabase call that
+// never settles (unreachable host, DNS stall, captive portal) left the
+// feed on "Loading…" indefinitely, with no path out. Measured locally
+// with the database unreachable: 7.2 seconds of skeleton rows before the
+// underlying fetch finally failed, and an outright stall would have sat
+// there forever. This bounds that wait.
+const QUERY_TIMEOUT_MS = 8000;
+const TIMED_OUT = Symbol("weekly-changes-timeout");
+
 export interface WeeklyBucket {
   fetchedAt: string;
   raw: RawIndicators;
@@ -135,19 +144,29 @@ function buildBuckets(rowsDesc: RawIndicatorRow[], weeksBack: number): WeeklyBuc
   return buckets;
 }
 
+// "Couldn't reach the database" and "every market has stopped
+// refreshing" are completely different facts, and this used to return
+// the same value for both -- every market flagged isStale, which the
+// feed rendered as "Not currently refreshing — no recent data
+// available." That is a claim about the refresh pipeline, published
+// whenever the READER's browser couldn't open a connection, while the
+// pipeline was very likely running perfectly. The caller now gets to
+// tell the two apart and say which one actually happened.
+export type WeeklyChangesResult =
+  | { ok: true; markets: WeeklyMarketResult[] }
+  | { ok: false; reason: "unconfigured" | "unavailable" };
+
 /** Fetches weekly-bucketed history for every FALLBACK_MARKETS market in
  *  one query (not one round-trip per market), applying every gate above.
  *  `weeksBack=2` is "this week vs last week" (the homepage feed);
  *  a future Trends-page weekly table would call this with a larger
  *  weeksBack instead of a second implementation. */
-export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyMarketResult[]> {
+export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyChangesResult> {
   const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
   const marketCodes = FALLBACK_MARKETS.map((m) => m.code);
 
-  const empty: WeeklyMarketResult[] = FALLBACK_MARKETS.map((m) => ({ marketCode: m.code, marketName: m.name, isStale: true, buckets: [] }));
-
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return empty;
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return { ok: false, reason: "unconfigured" };
     const supabase = getPublicSupabaseClient();
 
     const windowStart = new Date(Date.now() - QUERY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -163,7 +182,11 @@ export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyMa
     // rows across all markets, so a slow stretch inside the 12-day
     // window can otherwise approach the cap and silently drop the
     // oldest -- exactly the "prior" buckets a comparison needs).
-    const [freshnessRes, comparableRes] = await Promise.all([
+    // Raced against a timer rather than left open-ended. The abandoned
+    // request is harmless -- it settles into nothing -- but the reader
+    // gets a definite answer instead of an endless skeleton.
+    const settled = await Promise.race([
+      Promise.all([
       supabase
         .from("raw_indicators")
         .select("market, fetched_at")
@@ -183,13 +206,20 @@ export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyMa
         .not("brent_yoy", "is", null)
         .order("fetched_at", { ascending: false })
         .limit(QUERY_ROW_LIMIT),
+      ]),
+      new Promise<typeof TIMED_OUT>((resolve) => setTimeout(() => resolve(TIMED_OUT), QUERY_TIMEOUT_MS)),
     ]);
-    if (freshnessRes.error || !freshnessRes.data || comparableRes.error || !comparableRes.data) return empty;
+
+    if (settled === TIMED_OUT) return { ok: false, reason: "unavailable" };
+    const [freshnessRes, comparableRes] = settled;
+    if (freshnessRes.error || !freshnessRes.data || comparableRes.error || !comparableRes.data) {
+      return { ok: false, reason: "unavailable" };
+    }
 
     const freshnessRows = freshnessRes.data as Array<{ market: string; fetched_at: string }>;
     const comparableRows = comparableRes.data as RawIndicatorRow[];
 
-    return FALLBACK_MARKETS.map((m) => {
+    const markets = FALLBACK_MARKETS.map((m) => {
       const newestAny = freshnessRows.find((r) => r.market === m.code); // already fetched_at-desc from the query
       const isStale = !newestAny || Date.now() - new Date(newestAny.fetched_at).getTime() > STALE_THRESHOLD_MS;
 
@@ -202,7 +232,9 @@ export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyMa
       const buckets = buildBuckets(marketComparableRows, weeksBack);
       return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets };
     });
+
+    return { ok: true, markets };
   } catch {
-    return empty;
+    return { ok: false, reason: "unavailable" };
   }
 }
