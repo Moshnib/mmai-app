@@ -362,11 +362,11 @@ export default function OverviewPage() {
           <div className="section-head">
             <p className="eyebrow">GULF WATCH</p>
             <h2>The six GCC economies</h2>
-            <p>Verified indicators only — cost of living, currency stability, and where available real estate and policy rates. No composite score is shown for these countries yet.</p>
+            <p>Verified indicators only — no composite score for these countries yet. Tap a country for its full data.</p>
           </div>
-          <div className="compare-grid" style={{ opacity: gulfLoaded ? 1 : 0.5, transition: "opacity 0.3s ease", marginBottom: 16 }}>
+          <div className="gulf-strip" style={{ opacity: gulfLoaded ? 1 : 0.5, transition: "opacity 0.3s ease", marginBottom: 16 }}>
             {gulfCountries.map((c) => (
-              <GulfCard key={c.code} country={c} />
+              <GulfCard key={c.code} country={c} compact />
             ))}
           </div>
           <Link href="/gulf-watch" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--gold-deep)", textDecoration: "none" }}>

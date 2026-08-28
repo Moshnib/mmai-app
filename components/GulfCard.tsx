@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Flag from "@/components/Flag";
 import { formatPeriod } from "@/lib/gulfHistoryHelpers";
 import {
@@ -116,7 +117,7 @@ function Stat({
   );
 }
 
-export default function GulfCard({ country }: { country: GulfCardData }) {
+export default function GulfCard({ country, compact = false }: { country: GulfCardData; compact?: boolean }) {
   const isStale = country.isStale;
   // Whether a policy-rate SOURCE exists for this country -- deliberately
   // read from config rather than from country.policyRateLabel, so a
@@ -124,6 +125,38 @@ export default function GulfCard({ country }: { country: GulfCardData }) {
   // null) can't make the footer claim no source exists. See
   // GULF_POLICY_RATE_LABELS.
   const policyRateHeading = GULF_POLICY_RATE_LABELS[country.code];
+
+  // The homepage shows a condensed version -- two headline figures and
+  // a short "Score pending" note -- with the full indicator set living
+  // on /gulf-watch. Compact cards are links, so tapping a country on
+  // the homepage goes somewhere.
+  if (compact) {
+    return (
+      <Link href="/gulf-watch" className="compare-card gulf-compact">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <Flag code={country.code} size={22} />
+          <span className="compare-name">{country.name}</span>
+        </div>
+        <div style={{ borderTop: "1px solid var(--hair)", paddingTop: 4 }}>
+          <Stat
+            label="Inflation (YoY)"
+            value={isStale || country.cpiYoy == null ? null : `${country.cpiYoy.toFixed(1)}%`}
+            asOf={country.cpiObservationDate}
+            granularity={GULF_CPI_GRANULARITY[country.code]}
+          />
+          <Stat
+            label="Current account"
+            value={isStale || country.currentAccountPctGdp == null ? null : `${country.currentAccountPctGdp.toFixed(1)}% of GDP`}
+            asOf={country.currentAccountObservationDate}
+            granularity={GULF_CURRENT_ACCOUNT_GRANULARITY}
+          />
+        </div>
+        <div style={{ borderTop: "1px solid var(--hair)", marginTop: 8, paddingTop: 8, fontSize: 10.5, color: "var(--slate)" }}>
+          {isStale ? "Not refreshing" : "Score pending"}
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <div className="compare-card" style={{ cursor: "default" }}>

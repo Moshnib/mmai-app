@@ -380,6 +380,14 @@ h1.headline {
 .compare-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
 .compare-name { font-weight: 700; font-size: 13.5px; color: var(--ink); }
 
+/* Homepage Gulf strip: all six countries across one row, condensed,
+   with the full indicator set on /gulf-watch (design reference). */
+.gulf-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 20px; }
+@media (max-width: 1080px) { .gulf-strip { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 620px) { .gulf-strip { grid-template-columns: repeat(2, 1fr); } }
+.gulf-compact { display: block; text-decoration: none; color: inherit; cursor: pointer; }
+.gulf-compact .compare-name { font-size: 12.5px; }
+
 /* Text fallback shown only where the map itself is hidden (see the
    world-map-wrap rule below) -- without this, a phone user has no way
    to reach any market other than the one currently selected above. */
