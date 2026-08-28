@@ -5,7 +5,8 @@ import type { FetchStatus } from "./sources";
 // Sibling to lib/sources.ts, not a widened version of it: SourceEntry's
 // `pillar` field is typed strictly to the 5 scoring pillars and
 // sourceForPillar() depends on that being exhaustive -- these six
-// countries don't have pillars at all, just three honest categories.
+// countries don't have pillars at all, just the honest categories in
+// GulfCategory below (four since BIS policy rates were added).
 // Single source of truth for the /sources page's Gulf Watch section.
 // ============================================================
 

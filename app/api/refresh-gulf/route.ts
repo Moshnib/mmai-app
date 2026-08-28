@@ -6,6 +6,7 @@ import { fetchQatarInflation } from "@/lib/fetchers/qatarCpi";
 import { fetchQatarRealEstate } from "@/lib/fetchers/qatarRealEstate";
 import { fetchSaudiInflation } from "@/lib/fetchers/datasaudi";
 import { fetchBisPolicyRate } from "@/lib/fetchers/bis";
+import { GULF_POLICY_RATE_LABELS } from "@/lib/gulfMarkets";
 
 /**
  * Gulf Watch's own refresh job — writes to gulf_indicators, never to
@@ -149,7 +150,17 @@ export async function GET(request: Request) {
   for (const country of GULF_COUNTRIES) {
     try {
       const raw = await fetchGulfIndicators(country);
-      const partial = raw.cpiYoy == null || raw.fxReservesMonths == null || raw.currentAccountPctGdp == null;
+      // Policy rate counts toward PARTIAL only for the countries that
+// actually have a source. Ignoring it entirely would let SOURCE_NOTES
+      // keep claiming "+ BIS (live)" on a day the BIS fetch failed;
+      // counting it for everyone would mark the other four PARTIAL every
+      // single day, since they have no policy-rate source by design.
+      const expectsPolicyRate = country in GULF_POLICY_RATE_LABELS;
+      const partial =
+        raw.cpiYoy == null ||
+        raw.fxReservesMonths == null ||
+        raw.currentAccountPctGdp == null ||
+        (expectsPolicyRate && raw.policyRate == null);
       const baseNote = SOURCE_NOTES[country];
       const sourceNote = partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote;
 

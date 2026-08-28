@@ -65,3 +65,21 @@ export const GULF_REAL_ESTATE_GRANULARITY = "monthly" as const;
  *  central banks are bot-protected); Qatar and Oman are available from
  *  IMF but not yet wired in. */
 export const GULF_POLICY_RATE_GRANULARITY = "daily" as const;
+
+/** Which countries have a usable policy-rate source, and the heading to
+ *  show for each. Saudi's repo rate and Kuwait's discount rate are
+ *  different instruments, so the heading is per-country rather than a
+ *  shared "Policy rate".
+ *
+ *  CRITICAL: this is the source of truth for "does a policy-rate source
+ *  EXIST", and it must never be inferred from whether a given row
+ *  happens to carry a value. A transient BIS outage leaves policy_rate
+ *  null for a day; deriving existence from the data would then make the
+ *  card claim no source exists for Saudi Arabia and Kuwait -- false, and
+ *  the same class of dishonest copy this whole feature was built to fix,
+ *  just pointing the other way. Presence of DATA and existence of a
+ *  SOURCE are separate questions. */
+export const GULF_POLICY_RATE_LABELS: Record<string, string> = {
+  SA: "Policy rate (repo)",
+  KW: "Policy rate (discount)",
+};

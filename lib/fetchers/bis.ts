@@ -30,31 +30,37 @@
 // month even when the rate is unchanged and current today.
 // ============================================================
 
-/** Short display names for each rate. Deliberately a fixed map rather
- *  than parsed out of the response's own COMPILATION prose (e.g. "From
- *  1 Jan 2000 onwards: official market repo rate.") -- BIS can reword
- *  that text freely, and these are genuinely different instruments, so
- *  the label has to be stable and explicit. Stored alongside the value
- *  (see gulf_indicators.policy_rate_label) for the same reason
- *  real_estate_metric_label exists: a bare number under a generic
- *  "Policy rate" heading would imply Saudi's repo rate and Kuwait's
- *  discount rate are the same measurement. */
-const RATE_LABELS = {
-  SA: "Policy rate (repo)",
-  KW: "Policy rate (discount)",
-} as const;
+// Labels live in lib/gulfMarkets.ts rather than here so the UI can name
+// the row even on a day BIS fails and no label reaches the database --
+// see GULF_POLICY_RATE_LABELS' own comment. Deliberately a fixed map
+// rather than parsed out of the response's own COMPILATION prose (e.g.
+// "From 1 Jan 2000 onwards: official market repo rate."), which BIS can
+// reword freely. The value is still stored WITH its label
+// (gulf_indicators.policy_rate_label) for the same reason
+// real_estate_metric_label exists: a bare number under a generic
+// "Policy rate" heading would imply Saudi's repo rate and Kuwait's
+// discount rate are the same measurement.
+import { GULF_POLICY_RATE_LABELS } from "@/lib/gulfMarkets";
 
-export type BisPolicyRateArea = keyof typeof RATE_LABELS;
+/** BIS REF_AREA codes for the areas MMAI actually fetches. These happen
+ *  to match the ISO-2 country codes used elsewhere in Gulf Watch. */
+export type BisPolicyRateArea = "SA" | "KW";
 
 // Quote-aware CSV field splitter. NOT interchangeable with the plain
 // line.split(",") used in abs.ts/rba.ts: verified against the live full
-// CBPOL response that 25 of 50 rows carry quoted free-text fields
-// containing commas (COMPILATION and SUPP_INFO_BREAKS), which under a
-// naive split yield 15/16/17/18/20/22/26 columns for what is meant to
-// be a fixed 15-column table. Saudi's and Kuwait's rows happen to be
-// comma-free today, so a naive parser would look correct right up until
-// BIS rewords a footnote and it silently starts reading the wrong
-// column. Handles RFC 4180 doubled quotes ("") inside a quoted field.
+// CBPOL response that 25 of its 49 daily rows carry quoted free-text
+// fields containing commas (COMPILATION and SUPP_INFO_BREAKS). Under a
+// naive split those 25 yield 16/17/18/20/22/26 columns instead of the
+// correct 15, silently shifting TIME_PERIOD and OBS_VALUE. Saudi's and
+// Kuwait's rows happen to be comma-free today, so a naive parser would
+// look correct right up until BIS rewords a footnote and it starts
+// reading the wrong column. Handles RFC 4180 doubled quotes ("")
+// inside a quoted field.
+//
+// Note the call order in fetchBisPolicyRate: the response is split on
+// newlines BEFORE this runs, so a newline inside a quoted field can
+// never merge two records -- it fragments the row and trips the
+// exactly-one-data-row guard instead.
 function parseCsvLine(line: string): string[] {
   const fields: string[] = [];
   let current = "";
@@ -119,14 +125,21 @@ export async function fetchBisPolicyRate(
 
   const cols = parseCsvLine(dataRows[0]);
   const observationDate = cols[timeIdx]?.trim();
-  const policyRate = parseFloat(cols[valueIdx] ?? "");
+  const rawValue = (cols[valueIdx] ?? "").trim();
 
   if (!observationDate || !/^\d{4}-\d{2}-\d{2}$/.test(observationDate)) {
     throw new Error(`BIS policy rate ${refArea}: unexpected TIME_PERIOD "${observationDate}"`);
   }
-  if (!Number.isFinite(policyRate)) {
+  // Strict numeric match rather than parseFloat + Number.isFinite:
+  // parseFloat("4,25") is 4 -- finite, so it would pass the check and
+  // ship 4.00% as Saudi's repo rate. A comma decimal is unlikely from
+  // this endpoint but is the one input that yields a silently WRONG
+  // number rather than an error, which is the failure mode that matters
+  // here. Bare Number() is not the fix either: Number("") is 0.
+  if (!/^-?\d+(\.\d+)?$/.test(rawValue)) {
     throw new Error(`BIS policy rate ${refArea}: non-numeric OBS_VALUE "${cols[valueIdx]}"`);
   }
+  const policyRate = Number(rawValue);
 
-  return { policyRate, rateLabel: RATE_LABELS[refArea], observationDate };
+  return { policyRate, rateLabel: GULF_POLICY_RATE_LABELS[refArea], observationDate };
 }

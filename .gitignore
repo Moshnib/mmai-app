@@ -5,3 +5,8 @@ node_modules/
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
+# Machine-specific Claude Code settings (local permissions, launch
+# config, task locks). Deliberately not shared -- it has been untracked
+# and manually excluded from every commit so far; ignoring it removes
+# the chance of sweeping it in by accident.
+.claude/

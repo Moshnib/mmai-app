@@ -8,6 +8,7 @@ import {
   GULF_CURRENT_ACCOUNT_GRANULARITY,
   GULF_REAL_ESTATE_GRANULARITY,
   GULF_POLICY_RATE_GRANULARITY,
+  GULF_POLICY_RATE_LABELS,
 } from "@/lib/gulfMarkets";
 
 export interface GulfCardData {
@@ -117,6 +118,12 @@ function Stat({
 
 export default function GulfCard({ country }: { country: GulfCardData }) {
   const isStale = country.isStale;
+  // Whether a policy-rate SOURCE exists for this country -- deliberately
+  // read from config rather than from country.policyRateLabel, so a
+  // failed BIS fetch (which leaves both the value and the stored label
+  // null) can't make the footer claim no source exists. See
+  // GULF_POLICY_RATE_LABELS.
+  const policyRateHeading = GULF_POLICY_RATE_LABELS[country.code];
 
   return (
     <div className="compare-card" style={{ cursor: "default" }}>
@@ -158,12 +165,16 @@ export default function GulfCard({ country }: { country: GulfCardData }) {
           asOf={country.currentAccountObservationDate}
           granularity={GULF_CURRENT_ACCOUNT_GRANULARITY}
         />
-        {/* Saudi Arabia and Kuwait only -- the other four have no
-            usable policy-rate source, so the row is absent entirely
-            rather than showing a dash, same pattern as real estate. */}
-        {country.policyRateLabel != null && (
+        {/* Keyed on whether a SOURCE exists (a code-level fact), not on
+            whether today's row carries a value. The other four countries
+            have no policy-rate source at all, so their row is absent
+            entirely -- same as real estate. Saudi and Kuwait always show
+            the row: if a BIS fetch failed, it shows "—" like any other
+            temporarily-missing indicator, rather than vanishing and
+            implying no source exists. */}
+        {policyRateHeading && (
           <Stat
-            label={country.policyRateLabel}
+            label={country.policyRateLabel ?? policyRateHeading}
             value={isStale || country.policyRate == null ? null : `${country.policyRate.toFixed(2)}%`}
             asOf={country.policyRateObservationDate}
             granularity={GULF_POLICY_RATE_GRANULARITY}
@@ -183,7 +194,7 @@ export default function GulfCard({ country }: { country: GulfCardData }) {
                 cards. Gulf Watch still shows no composite for anyone --
                 for those two that is now a deliberate design choice
                 rather than a missing input. */}
-            {country.policyRateLabel != null
+            {policyRateHeading
               ? "Not scored — Gulf Watch shows each country's raw indicators rather than a composite."
               : "No composite score — policy rate data isn't available for this country."}
             {country.fxReservesMonthsImports != null && (
