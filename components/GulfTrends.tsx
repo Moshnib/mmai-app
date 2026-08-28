@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
@@ -198,7 +197,6 @@ function buildRelationshipSeries(): { series: TimeSliderSeriesData[]; years: str
 
 export default function GulfTrends() {
   const [current, setCurrent] = useState("AE");
-  const countryName = GULF_COUNTRIES.find((c) => c.code === current)?.name ?? current;
 
   const cpi = seriesFor(current, "Inflation (YoY)", "#E14B4B", GULF_CPI_HISTORY);
   const fx = seriesFor(current, "FX reserves (months of imports)", "#22D3EE", GULF_FX_RESERVES_HISTORY);
@@ -241,16 +239,15 @@ export default function GulfTrends() {
             <MiniChart title="Inflation (YoY)" granularity={cpi.granularity} series={cpi.series} hasEnough={cpi.hasEnough} yLabel="%" />
             <MiniChart title="FX reserves (months of imports)" granularity={fx.granularity} series={fx.series} hasEnough={fx.hasEnough} />
             <MiniChart title="Current account (% of GDP)" granularity={ca.granularity} series={ca.series} hasEnough={ca.hasEnough} yLabel="%" />
-            {current === "QA" ? (
+            {/* Only Qatar has a real estate fetcher wired up -- the
+                other 5 countries' "no source" card used to always take
+                up a grid slot here explaining why it was blank. Hiding
+                it entirely (the grid is auto-fit, so the remaining 3
+                cards reflow to fill the row) is the more honest version
+                -- it doesn't imply real estate is a field these
+                countries almost have. Still documented on /sources. */}
+            {current === "QA" && (
               <MiniChart title="Real estate transactions" granularity={re.granularity} series={re.series} hasEnough={re.hasEnough} />
-            ) : (
-              <div style={CARD_STYLE}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Real estate transactions</div>
-                <div style={{ padding: "40px 0", textAlign: "center", color: "var(--slate)", fontSize: 12, lineHeight: 1.6 }}>
-                  No real estate source exists for {countryName} yet — see the{" "}
-                  <Link href="/sources" style={{ color: "var(--gold-deep)" }}>Sources</Link> page for why.
-                </div>
-              </div>
             )}
           </div>
         </div>

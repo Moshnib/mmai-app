@@ -18,6 +18,10 @@ interface GulfRow {
   fx_reserves_months_imports: number | null;
   current_account_pct_gdp: number | null;
   observation_date: string;
+  cpi_observation_date: string | null;
+  real_estate_observation_date: string | null;
+  fx_reserves_observation_date: string | null;
+  current_account_observation_date: string | null;
   fetched_at: string;
 }
 
@@ -30,6 +34,10 @@ function emptyCountries(): GulfCardData[] {
     realEstateMetricLabel: null,
     fxReservesMonthsImports: null,
     currentAccountPctGdp: null,
+    cpiObservationDate: null,
+    realEstateObservationDate: null,
+    fxReservesObservationDate: null,
+    currentAccountObservationDate: null,
     fetchedAt: null,
     isStale: true, // no data fetched yet
   }));
@@ -58,7 +66,7 @@ export function useGulfIndicators(): { countries: GulfCardData[]; loaded: boolea
         const { data, error } = await supabase
           .from("gulf_indicators")
           .select(
-            "country_code, cpi_yoy, real_estate_value, real_estate_metric_label, fx_reserves_months_imports, current_account_pct_gdp, observation_date, fetched_at"
+            "country_code, cpi_yoy, real_estate_value, real_estate_metric_label, fx_reserves_months_imports, current_account_pct_gdp, observation_date, cpi_observation_date, real_estate_observation_date, fx_reserves_observation_date, current_account_observation_date, fetched_at"
           )
           .order("fetched_at", { ascending: false })
           .limit(60);
@@ -72,7 +80,15 @@ export function useGulfIndicators(): { countries: GulfCardData[]; loaded: boolea
         setCountries(
           GULF_COUNTRIES.map((c) => {
             const row = latestByCountry.get(c.code);
-            if (!row) return { code: c.code, name: c.name, cpiYoy: null, realEstateValue: null, realEstateMetricLabel: null, fxReservesMonthsImports: null, currentAccountPctGdp: null, fetchedAt: null, isStale: true };
+            if (!row) {
+              return {
+                code: c.code, name: c.name, cpiYoy: null, realEstateValue: null, realEstateMetricLabel: null,
+                fxReservesMonthsImports: null, currentAccountPctGdp: null,
+                cpiObservationDate: null, realEstateObservationDate: null,
+                fxReservesObservationDate: null, currentAccountObservationDate: null,
+                fetchedAt: null, isStale: true,
+              };
+            }
             return {
               code: c.code,
               name: c.name,
@@ -81,6 +97,16 @@ export function useGulfIndicators(): { countries: GulfCardData[]; loaded: boolea
               realEstateMetricLabel: row.real_estate_metric_label,
               fxReservesMonthsImports: row.fx_reserves_months_imports,
               currentAccountPctGdp: row.current_account_pct_gdp,
+              // Older rows (written before this column existed) have
+              // null here even though the row itself has a real CPI
+              // value -- falling back to the legacy shared
+              // observation_date keeps those cards showing a real date
+              // instead of "date unknown" until the next refresh
+              // overwrites them with the real, field-specific one.
+              cpiObservationDate: row.cpi_observation_date ?? row.observation_date,
+              realEstateObservationDate: row.real_estate_observation_date,
+              fxReservesObservationDate: row.fx_reserves_observation_date,
+              currentAccountObservationDate: row.current_account_observation_date,
               fetchedAt: row.fetched_at,
               // Computed here, at fetch time inside an effect, not in
               // GulfCard's render body -- Date.now() during render is an

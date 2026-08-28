@@ -1,6 +1,13 @@
 "use client";
 
 import Flag from "@/components/Flag";
+import { formatPeriod } from "@/lib/gulfHistoryHelpers";
+import {
+  GULF_CPI_GRANULARITY,
+  GULF_FX_RESERVES_GRANULARITY,
+  GULF_CURRENT_ACCOUNT_GRANULARITY,
+  GULF_REAL_ESTATE_GRANULARITY,
+} from "@/lib/gulfMarkets";
 
 export interface GulfCardData {
   code: string;
@@ -10,6 +17,19 @@ export interface GulfCardData {
   realEstateMetricLabel: string | null;
   fxReservesMonthsImports: number | null;
   currentAccountPctGdp: number | null;
+  // Each field's own true reporting period -- CPI, FX reserves, and
+  // current account routinely come from different years for the same
+  // country (World Bank publishes annually and often lags by 1-2 years;
+  // national CPI sources vary too). A single shared date used to hide
+  // this -- a site owner spot-check against IMF/national sources found
+  // no way to tell which numbers were current and which were stale,
+  // because the real per-field dates were being fetched correctly but
+  // discarded before reaching the database. Null on rows written before
+  // this existed, or when that specific source failed this run.
+  cpiObservationDate: string | null;
+  realEstateObservationDate: string | null;
+  fxReservesObservationDate: string | null;
+  currentAccountObservationDate: string | null;
   fetchedAt: string | null;
   // Computed once when the data is fetched (lib/useGulfIndicators.ts),
   // not here at render time -- calling Date.now() directly in a
@@ -20,12 +40,59 @@ export interface GulfCardData {
   hasScore?: boolean; // Oman-shaped escape hatch for later, unused today
 }
 
-function Stat({ label, value }: { label: string; value: string | null }) {
+// Stored dates are Postgres `date` values ("2025-01-01"), but the DAY is
+// never meaningful and the MONTH is only meaningful for monthly sources
+// -- World Bank stamps an annual figure as Jan 1 of its year, so
+// rendering that as "Jan 2025" would invent a January reading for a
+// whole-calendar-year statistic. Granularity therefore has to be passed
+// in (from lib/gulfMarkets.ts), never sniffed from the string: an annual
+// 2026 figure and a real January 2026 reading are both "2026-01-01".
+//
+// Parsed with a regex rather than `new Date()` on purpose -- no
+// timezone can shift a date across a year boundary this way, and a
+// malformed value returns null (no date shown) instead of the string
+// "Invalid Date". Delegates the actual wording to formatPeriod() so
+// these cards and GulfTrends' comparison table can never disagree.
+function formatObsDate(iso: string, granularity: "annual" | "monthly"): string | null {
+  const m = /^(\d{4})-(\d{2})/.exec(iso);
+  if (!m) return null;
+  const [, year, month] = m;
+  const monthIndex = Number(month) - 1;
+  if (granularity === "monthly" && (monthIndex < 0 || monthIndex > 11)) return null;
+  return formatPeriod(granularity === "annual" ? year : `${year}-${month}`, granularity);
+}
+
+function Stat({
+  label,
+  value,
+  asOf,
+  granularity,
+}: {
+  label: string;
+  value: string | null;
+  asOf?: string | null;
+  granularity?: "annual" | "monthly";
+}) {
+  // Only ever shown alongside a real value. A null value means the
+  // figure is missing or stale, and its reporting period alone would
+  // read as if that period's number were on display -- and for the
+  // legacy fallback path in useGulfIndicators, the date behind a null
+  // CPI can be a FETCH date rather than a reporting period. Do not
+  // render a date without a value (e.g. as a "last known: ..." line)
+  // without fixing that fallback first.
+  const asOfLabel = value != null && asOf && granularity ? formatObsDate(asOf, granularity) : null;
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", gap: 10 }}>
       <span style={{ fontSize: 11.5, color: "var(--slate)" }}>{label}</span>
-      <span style={{ fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
-        {value ?? "—"}
+      <span style={{ textAlign: "right" }}>
+        <span style={{ display: "block", fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
+          {value ?? "—"}
+        </span>
+        {asOfLabel && (
+          <span style={{ display: "block", fontFamily: "IBM Plex Mono, monospace", fontSize: 9.5, color: "var(--slate)", marginTop: 1 }}>
+            as of {asOfLabel}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -42,18 +109,37 @@ export default function GulfCard({ country }: { country: GulfCardData }) {
       </div>
 
       <div style={{ borderTop: "1px solid var(--hair)", paddingTop: 4 }}>
-        <Stat label="Inflation (YoY)" value={isStale || country.cpiYoy == null ? null : `${country.cpiYoy.toFixed(1)}%`} />
         <Stat
-          label={country.realEstateMetricLabel ?? "Real estate activity"}
-          value={isStale || country.realEstateValue == null ? null : country.realEstateValue.toLocaleString()}
+          label="Inflation (YoY)"
+          value={isStale || country.cpiYoy == null ? null : `${country.cpiYoy.toFixed(1)}%`}
+          asOf={country.cpiObservationDate}
+          granularity={GULF_CPI_GRANULARITY[country.code]}
         />
+        {/* Only Qatar has a real estate fetcher wired up (see
+            app/api/refresh-gulf/route.ts) -- every other country's
+            real_estate_metric_label is permanently null, by design, not
+            a temporary gap. Showing "Real estate activity: —" implied a
+            number was coming; hiding the row entirely for those 5
+            countries is the honest version. */}
+        {country.realEstateMetricLabel != null && (
+          <Stat
+            label={country.realEstateMetricLabel}
+            value={isStale || country.realEstateValue == null ? null : country.realEstateValue.toLocaleString()}
+            asOf={country.realEstateObservationDate}
+            granularity={GULF_REAL_ESTATE_GRANULARITY}
+          />
+        )}
         <Stat
           label="FX reserves"
           value={isStale || country.fxReservesMonthsImports == null ? null : `${country.fxReservesMonthsImports.toFixed(1)} mo. imports`}
+          asOf={country.fxReservesObservationDate}
+          granularity={GULF_FX_RESERVES_GRANULARITY}
         />
         <Stat
           label="Current account"
           value={isStale || country.currentAccountPctGdp == null ? null : `${country.currentAccountPctGdp.toFixed(1)}% of GDP`}
+          asOf={country.currentAccountObservationDate}
+          granularity={GULF_CURRENT_ACCOUNT_GRANULARITY}
         />
       </div>
 
@@ -61,7 +147,15 @@ export default function GulfCard({ country }: { country: GulfCardData }) {
         {isStale ? (
           "Not currently refreshing — no recent data available."
         ) : (
-          "No composite score — policy rate data isn't available for this country."
+          <>
+            No composite score — policy rate data isn&apos;t available for this country.
+            {country.fxReservesMonthsImports != null && (
+              <>
+                {" "}FX reserves use the World Bank&apos;s own calculation — other institutions (e.g. the IMF) sometimes report a
+                different figure for the same year using a different method.
+              </>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -63,6 +63,20 @@ interface GulfRawIndicators {
   fxReservesMonths: number | null;
   currentAccountPctGdp: number | null;
   observationDate: string;
+  // Each field's OWN true reporting period, distinct from the single
+  // shared `observationDate` above (kept for backward compatibility with
+  // the not-null legacy column). CPI, FX reserves, and current account
+  // routinely come from different years for the same country -- see
+  // app/api/refresh-gulf's git history for why collapsing them into one
+  // date was a real problem (a site owner spot-checked several Gulf
+  // Watch numbers against IMF/national sources and found no way to tell,
+  // from the UI, which figures were current and which were over a year
+  // old -- because that information was being fetched correctly but
+  // thrown away before it reached the database).
+  cpiObservationDate: string | null;
+  realEstateObservationDate: string | null;
+  fxReservesObservationDate: string | null;
+  currentAccountObservationDate: string | null;
 }
 
 async function fetchCpi(country: GulfCountryCode): Promise<{ inflation: number; observationDate: string } | null> {
@@ -92,6 +106,10 @@ async function fetchGulfIndicators(country: GulfCountryCode): Promise<GulfRawInd
     fxReservesMonths: fx?.fxReservesMonths ?? null,
     currentAccountPctGdp: ca?.currentAccountPctGdp ?? null,
     observationDate: cpi?.observationDate ?? realEstate?.observationDate ?? today,
+    cpiObservationDate: cpi?.observationDate ?? null,
+    realEstateObservationDate: realEstate?.observationDate ?? null,
+    fxReservesObservationDate: fx?.observationDate ?? null,
+    currentAccountObservationDate: ca?.observationDate ?? null,
   };
 }
 
@@ -121,6 +139,10 @@ export async function GET(request: Request) {
         fx_reserves_months_imports: raw.fxReservesMonths,
         current_account_pct_gdp: raw.currentAccountPctGdp,
         observation_date: raw.observationDate,
+        cpi_observation_date: raw.cpiObservationDate,
+        real_estate_observation_date: raw.realEstateObservationDate,
+        fx_reserves_observation_date: raw.fxReservesObservationDate,
+        current_account_observation_date: raw.currentAccountObservationDate,
         source_note: sourceNote,
         status: "current",
       });

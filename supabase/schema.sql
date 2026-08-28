@@ -121,7 +121,26 @@ create table if not exists gulf_indicators (
                                         -- actual indicator was picked -- fixed before any
                                         -- data was ever written to it.)
   current_account_pct_gdp numeric,
-  observation_date date not null,
+  observation_date date not null,      -- legacy, kept for backward compatibility --
+                                        -- CPI's own date if available, else real
+                                        -- estate's, else the refresh date. New code
+                                        -- should read the four per-field columns
+                                        -- below instead; this one can't tell you
+                                        -- whether the CPI or FX/current-account
+                                        -- figure it reflects is the stale one.
+  -- Each field's OWN true reporting period. Added after a site owner
+  -- spot-check against IMF/national sources found no way to tell, from
+  -- the single shared date above, which numbers were current and which
+  -- were over a year old -- the real per-field dates were being fetched
+  -- correctly but discarded before reaching this table. Null on rows
+  -- written before these columns existed, or when that source failed on
+  -- a given run. NOTE: these carry no granularity -- an annual figure
+  -- and a real January reading are both "YYYY-01-01", so the UI must
+  -- take granularity from lib/gulfMarkets.ts, never from these values.
+  cpi_observation_date date,
+  real_estate_observation_date date,
+  fx_reserves_observation_date date,
+  current_account_observation_date date,
   source_note text,
   fetched_at timestamptz not null default now(),
   status text not null default 'current' check (status in ('current', 'stale', 'missing')),
