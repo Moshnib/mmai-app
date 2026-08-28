@@ -67,7 +67,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 8, fontSize: 11, color: "var(--slate)" }}>
+      <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center", marginBottom: 8, fontSize: 11, color: "var(--slate)" }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <i style={{ width: 8, height: 8, borderRadius: "50%", background: band.color, flex: "none" }} />
           MMAI Score
@@ -75,6 +75,16 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <i style={{ width: 14, height: 0, borderTop: "1px dashed rgba(255,255,255,0.35)", flex: "none" }} />
           Neutral (50)
+        </span>
+        {/* States the frequency outright rather than leaving a reader to
+            infer it from the tick labels. The brief's data rules require
+            every point to carry its real period; monthly is a separate,
+            later piece of work that needs monthly source series first. */}
+        <span
+          className="meta-label"
+          style={{ marginLeft: "auto", letterSpacing: 1, border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}
+        >
+          Annual
         </span>
       </div>
 
