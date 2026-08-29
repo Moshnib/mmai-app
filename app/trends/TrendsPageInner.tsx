@@ -6,6 +6,7 @@ import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
 import { PILLAR_DESC, PILLAR_ICONS } from "@/components/PillarGrid";
 import { RAW_DECIMALS } from "@/components/KeyRatesRow";
+import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
 import { useLiveHistory } from "@/lib/useLiveHistory";
 import { PILLAR_NAMES, formatWeightPct, RAW_FIELD, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -175,15 +176,48 @@ export default function TrendsPageInner({
     }),
   }], [focusPillar, history, pillarCurrentScores]);
 
+  // MONTHLY where the sources publish monthly, annual only as a
+  // fallback. Inflation, unemployment and the policy rate all have a
+  // real monthly back-series (lib/monthlyHistory.ts); GDP growth and
+  // Brent do not, so those two still fall back to the annual points.
+  // This is why the chart stopped being one dot per year.
+  const monthly = MONTHLY_HISTORY[current] ?? [];
+  const monthlyField: Partial<Record<PillarKey, keyof MonthlyPoint>> = {
+    PS: "inflation",
+    LM: "unemployment",
+    MC: "policyRate",
+  };
+
   const rawDetailSeries: Series[] = useMemo(() => {
     const field = RAW_FIELD[focusPillar];
+    const mField = monthlyField[focusPillar];
+    const color = bandFor(pillarCurrentScores[focusPillar]).color;
+
+    if (mField) {
+      // Points with no published value are DROPPED, not zeroed -- Japan
+      // has no monthly inflation at all and Australia's starts in 2025,
+      // and a zero would draw a cliff that never happened.
+      const pts = monthly
+        .map((m) => ({ year: m.period, value: m[mField] as number | null }))
+        .filter((p) => p.value != null);
+      if (pts.length > 1) {
+        return [{ key: field.key, name: `${field.label} (${marketNames[current]})`, color, data: pts }];
+      }
+    }
+
     return [{
       key: field.key,
       name: `${field.label} (${marketNames[current]})`,
-      color: bandFor(pillarCurrentScores[focusPillar]).color,
+      color,
       data: history.map((h) => ({ year: h.year, value: h.indicators[field.key] as number | null })),
     }];
-  }, [focusPillar, history, current, marketNames, pillarCurrentScores]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusPillar, history, current, marketNames, pillarCurrentScores, monthly]);
+
+  const rawIsMonthly = (() => {
+    const f = monthlyField[focusPillar];
+    return !!f && monthly.filter((m) => m[f] != null).length > 1;
+  })();
 
   // Fixed colors here, not score-based — these are raw rates, not 0-100
   // scores, so there's no "band" to color by. Picked from the same
@@ -426,7 +460,20 @@ export default function TrendsPageInner({
       <div className="section" style={{ paddingTop: 26 }}>
         <div className="wrap">
           <div className="chart-card">
-            {sectionLabel(4, `Raw indicator behind ${PILLAR_NAMES[focusPillar]}`)}
+            <div className="chart-card-label">
+              <span style={{ color: "var(--slate)" }}>4</span>
+              <span>Raw indicator behind {PILLAR_NAMES[focusPillar]}</span>
+              {/* States the frequency outright. The same chart is monthly
+                  for inflation/unemployment/policy rate and annual for
+                  GDP and Brent, and a reader should not have to infer
+                  which from the tick spacing. */}
+              <span
+                className="meta-label"
+                style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}
+              >
+                {rawIsMonthly ? `Monthly · ${rawDetailSeries[0].data.length} points` : "Annual"}
+              </span>
+            </div>
             <div className="detail-split">
               <div>
                 {hasTrend ? (
