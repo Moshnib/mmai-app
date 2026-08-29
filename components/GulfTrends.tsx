@@ -273,6 +273,27 @@ export default function GulfTrends() {
   const cross = useMemo(() => buildCrossSeries(crossIndicator), [crossIndicator]);
   const crossMeta = CROSS_INDICATORS.find((i) => i.key === crossIndicator)!;
 
+  // Which countries are drawn. Six lines on one axis is legible on a
+  // desktop and genuinely not on a phone, and the comparison a reader
+  // actually wants is usually two or three countries rather than all of
+  // them. Defaults to all so the chart is unchanged until touched.
+  const [shown, setShown] = useState<Set<string>>(() => new Set(GULF_COUNTRIES.map((c) => c.code)));
+  const toggleCountry = (code: string) =>
+    setShown((prev) => {
+      const next = new Set(prev);
+      // Never allow an empty chart -- deselecting the last country would
+      // leave an axis with nothing on it and no way to tell whether the
+      // data failed or the filter did.
+      if (next.has(code)) {
+        if (next.size === 1) return prev;
+        next.delete(code);
+      } else next.add(code);
+      return next;
+    });
+
+  const visibleSeries = cross.series.filter((s) => shown.has(s.key));
+  const allShown = shown.size === GULF_COUNTRIES.length;
+
   const cpi = seriesFor(current, "Inflation (YoY)", "#E14B4B", GULF_CPI_HISTORY);
   const fx = seriesFor(current, "FX reserves (months of imports)", "#22D3EE", GULF_FX_RESERVES_HISTORY);
   const ca = seriesFor(current, "Current account (% of GDP)", "#8B5CF6", GULF_CURRENT_ACCOUNT_HISTORY);
@@ -312,14 +333,49 @@ export default function GulfTrends() {
             ))}
           </div>
 
+          {/* Country filter. Each chip carries its own line colour, so the
+              control and the chart read as the same object -- a reader
+              never has to match a name to a line by guesswork. */}
+          <div className="country-filter">
+            {cross.series.map((s) => {
+              const on = shown.has(s.key);
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  className={`country-chip${on ? " on" : ""}`}
+                  aria-pressed={on}
+                  onClick={() => toggleCountry(s.key)}
+                  style={on ? { borderColor: s.color, color: "#fff" } : undefined}
+                >
+                  <i style={{ background: on ? s.color : "transparent", borderColor: s.color }} />
+                  {s.name}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="country-chip country-chip-all"
+              onClick={() => setShown(new Set(GULF_COUNTRIES.map((c) => c.code)))}
+              disabled={allShown}
+            >
+              Show all
+            </button>
+          </div>
+
           <div className="chart-card" style={{ marginBottom: 34 }}>
             <div className="chart-card-label">
-              {crossMeta.label} — all six GCC economies
+              {crossMeta.label} —{" "}
+              {allShown
+                ? "all six GCC economies"
+                : visibleSeries.length === 1
+                  ? visibleSeries[0].name
+                  : `${visibleSeries.length} of six`}
               <span className="meta-label" style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}>
                 Annual
               </span>
             </div>
-            <TrendChart series={cross.series} height={360} yLabel={crossMeta.axis} showDots connectNulls={false} />
+            <TrendChart series={visibleSeries} height={360} yLabel={crossMeta.axis} showDots connectNulls={false} />
             <p style={{ fontSize: 11, color: "var(--slate)", margin: "12px 0 0", lineHeight: 1.6 }}>
               {crossMeta.note}
               {cross.excluded.length > 0 && ` No comparable data in this window for: ${cross.excluded.join(", ")}.`}
