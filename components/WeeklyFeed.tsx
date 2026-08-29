@@ -5,18 +5,21 @@ import Flag from "@/components/Flag";
 import { colorForScore, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { RAW_DECIMALS } from "@/components/KeyRatesRow";
-import { fetchAllWeeklyChanges, COMPARABILITY_FLOOR, BUCKET_MIN_GAP_DAYS, type WeeklyChangesResult } from "@/lib/weeklyChanges";
+import { fetchAllWeeklyChanges, floorFor, BUCKET_MIN_GAP_DAYS, type WeeklyChangesResult } from "@/lib/weeklyChanges";
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-// Every market's tracking started at the same coordinated launch (verified
-// live: all six markets' earliest fully-comparable row lands within the
-// same minute of each other on 2026-08-22), so one shared since/expected
-// pair is accurate for all of them -- not an approximation.
-const TRACKING_SINCE = formatDate(COMPARABILITY_FLOOR);
-const FIRST_COMPARISON_EXPECTED = formatDate(COMPARABILITY_FLOOR + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000);
+// PER MARKET. These dates used to be two module constants off one shared
+// floor, on the stated assumption that every market started tracking at
+// the same moment. That stopped being true the moment four markets'
+// unemployment source was swapped and the other two were left alone --
+// and printing one date for all six would have told a reader the US had
+// no comparable history when it had a week of it.
+const trackingSince = (market: string) => formatDate(floorFor(market));
+const firstComparison = (market: string) =>
+  formatDate(floorFor(market) + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000);
 
 // Matches lib/scoring.ts's COLOR_STOPS[1] (the orange stop) -- not
 // imported since scoring.ts doesn't export the raw stops, only
@@ -87,11 +90,29 @@ export default function WeeklyFeed() {
       {results?.some((r) => !r.isStale && r.buckets.length < 2) && (
         <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 14, padding: "10px 12px", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10, fontSize: 12, color: "var(--ink-soft)", lineHeight: 1.6 }}>
           <span aria-hidden="true">●</span>
+          {/* Names the affected markets rather than implying all six are
+              waiting. After a source swap only the swapped markets reset,
+              so a blanket "tracking began" line would understate what the
+              rest of the feed can already show. */}
           <span>
-            Live tracking began <b style={{ color: "var(--ink)" }}>{TRACKING_SINCE}</b>, when every source came online at once. A
-            comparison needs two readings at least {BUCKET_MIN_GAP_DAYS} days apart, so the first real week-over-week changes
-            appear starting around <b style={{ color: "var(--ink)" }}>{FIRST_COMPARISON_EXPECTED}</b> — this isn&apos;t a gap in the
-            data, it&apos;s how young the tracking still is.
+            {(() => {
+              const waiting = (results ?? []).filter((r) => !r.isStale && r.buckets.length < 2);
+              const names = waiting.map((r) => r.marketName).join(", ");
+              const soonest = Math.min(...waiting.map((r) => floorFor(r.marketCode)));
+              return (
+                <>
+                  A week-over-week comparison needs two readings at least {BUCKET_MIN_GAP_DAYS} days apart from the
+                  same source. <b style={{ color: "var(--ink)" }}>{names}</b>{" "}
+                  {waiting.length === 1 ? "changed source" : "changed source"} on{" "}
+                  <b style={{ color: "var(--ink)" }}>{formatDate(soonest)}</b>, so{" "}
+                  {waiting.length === 1 ? "its" : "their"} first real change appears around{" "}
+                  <b style={{ color: "var(--ink)" }}>
+                    {formatDate(soonest + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000)}
+                  </b>{" "}
+                  — not a gap in the data, just how recently that source changed.
+                </>
+              );
+            })()}
           </span>
         </div>
       )}
@@ -149,9 +170,11 @@ export default function WeeklyFeed() {
                 ) : !hasEnough ? (
                   <>
                     <span className="signal-headline" style={{ color: "var(--slate)", fontWeight: 500 }}>
-                      Tracking since {TRACKING_SINCE}
+                      Tracking since {trackingSince(r.marketCode)}
                     </span>
-                    <span className="signal-detail">First comparison expected ~{FIRST_COMPARISON_EXPECTED}</span>
+                    <span className="signal-detail">
+                      First comparison expected ~{firstComparison(r.marketCode)}
+                    </span>
                   </>
                 ) : (
                   <>
