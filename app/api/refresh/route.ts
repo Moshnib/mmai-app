@@ -7,6 +7,7 @@ import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
 import { fetchGdpGrowth, fetchUnemployment, fetchInflation } from "@/lib/fetchers/worldbank";
 import { fetchAustraliaInflation, fetchAustraliaUnemployment } from "@/lib/fetchers/abs";
 import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
+import { fetchAllBondYieldSeries, BOND_YIELD_SOURCE } from "@/lib/fetchers/bondYields";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
 import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowth, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
 import { fetchEuroAreaPolicyRate } from "@/lib/fetchers/ecb";
@@ -365,5 +366,49 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ refreshedAt: new Date().toISOString(), results });
+  // ---------- Bond yields ----------
+  // Writes the WHOLE series each source returns, not just today's row.
+  // bond_yields has a unique (market, observation_date), so the first
+  // run backfills every day the sources still publish and later runs
+  // insert only the new trading day -- ignoreDuplicates makes a re-run
+  // a no-op rather than an error. That is why this needed no separate
+  // backfill script and no extra SQL.
+  //
+  // A yield for a given day is a FACT about that day and never changes,
+  // which is what makes ignoring conflicts correct here. Contrast
+  // raw_indicators, which appends a fresh row per run because the score
+  // is recomputed.
+  let bondResult: { inserted: number; markets: number; error?: string } = { inserted: 0, markets: 0 };
+  try {
+    const series = await fetchAllBondYieldSeries();
+    // One year, so Australia's thirteen years of history doesn't land in
+    // one go while the other five contribute a few months.
+    const cutoff = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const rows = Object.values(series)
+      .flat()
+      .filter((y) => y.observationDate >= cutoff)
+      .map((y) => ({
+        market: y.market,
+        yield_10y: y.yield10y,
+        yield_2y: y.yield2y,
+        observation_date: y.observationDate,
+        source_note: BOND_YIELD_SOURCE[y.market] ?? null,
+      }));
+
+    if (rows.length > 0) {
+      const { error } = await supabase
+        .from("bond_yields")
+        .upsert(rows, { onConflict: "market,observation_date", ignoreDuplicates: true });
+      if (error) throw new Error(error.message);
+      bondResult = { inserted: rows.length, markets: Object.keys(series).length };
+    }
+  } catch (err) {
+    // Never fails the whole refresh: bond yields are a displayed
+    // indicator, not a pillar, so the scores above are unaffected.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Bond yields failed:", message);
+    bondResult = { inserted: 0, markets: 0, error: message };
+  }
+
+  return NextResponse.json({ refreshedAt: new Date().toISOString(), results, bondYields: bondResult });
 }

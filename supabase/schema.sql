@@ -169,3 +169,42 @@ create index if not exists idx_gulf_indicators_country_date on gulf_indicators (
 alter table gulf_indicators enable row level security;
 
 create policy "Public read access" on gulf_indicators for select using (true);
+
+-- ============================================================
+-- BOND YIELDS: 10-year government bond yields, one row per market
+-- per trading day. Added 2026-08-29.
+--
+-- Stored rather than fetched live, deliberately. Sources disappear:
+-- this project has already had to drop FRED over licensing, and in a
+-- single day of work saw DefiLlama block commercial reuse, OECD
+-- rate-limit, Statistics Canada serve an outage page and a 502, and
+-- Japan's MoF only answer on one URL path. Owning a copy of every
+-- reading collected means none of that can take history away.
+--
+-- unique (market, observation_date) rather than the append-per-run
+-- pattern used by raw_indicators. A bond yield for a given day is a
+-- FACT about that day and never changes, so a second write for the same
+-- day is a duplicate, not a new observation. This is also what lets the
+-- daily job write its whole fetched series with ignoreDuplicates: the
+-- first run backfills, every later run adds only the new trading day.
+--
+-- yield_2y is nullable because only the US and Australian curves
+-- publish a 2-year. Where both exist the 10y-2y spread is available.
+--
+-- Bond yields are a DISPLAYED indicator, not a pillar -- they do not
+-- enter the MMAI composite.
+-- ============================================================
+create table if not exists bond_yields (
+  id bigint generated always as identity primary key,
+  market text not null,                -- 'US', 'EA', 'CA', 'UK', 'JP', 'AU'
+  yield_10y numeric not null,          -- %, 10-year government bond
+  yield_2y numeric,                    -- % (only US and AU publish one)
+  observation_date date not null,      -- the trading day this yield is for
+  source_note text,                    -- e.g. 'US Treasury daily yield curve'
+  fetched_at timestamptz not null default now(),
+  unique (market, observation_date)
+);
+
+alter table bond_yields enable row level security;
+
+create policy "Public read access" on bond_yields for select using (true);

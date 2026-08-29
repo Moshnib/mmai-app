@@ -102,16 +102,34 @@ function num(s: string | undefined): number | null {
   return Number(t);
 }
 
-/** Picks the row with the newest parsed date that carries a value.
- *  Never "the last row" -- none of these feeds guarantee ordering. */
-function newest<T extends { date: string; v10: number }>(rows: T[]): T {
-  const usable = rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && Number.isFinite(r.v10));
+/** Every usable row, oldest first. Sorted explicitly and filtered to
+ *  rows that actually parsed -- never "the last row", since none of
+ *  these feeds guarantee ordering, and never a row whose date failed to
+ *  parse (that is how a footer note or a blank line gets in). */
+function toSeries(
+  market: string,
+  rows: Array<{ date: string; v10: number; v2?: number | null }>
+): BondYield[] {
+  const usable = rows
+    .filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && Number.isFinite(r.v10))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((r) => ({
+      market,
+      yield10y: r.v10,
+      yield2y: r.v2 ?? null,
+      observationDate: r.date,
+    }));
   if (usable.length === 0) throw new Error("no usable observations");
-  return usable.sort((a, b) => a.date.localeCompare(b.date))[usable.length - 1];
+  return usable;
+}
+
+/** Newest reading in a series. */
+export function latestOf(series: BondYield[]): BondYield {
+  return series[series.length - 1];
 }
 
 // ---------- United States ----------
-export async function fetchUsBondYield(): Promise<BondYield> {
+export async function fetchUsBondYields(): Promise<BondYield[]> {
   const year = new Date().getUTCFullYear();
   const url = `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_yield_curve&field_tdr_date_year=${year}&page&_format=csv`;
   const lines = (await getText(url)).trim().split("\n");
@@ -130,16 +148,18 @@ export async function fetchUsBondYield(): Promise<BondYield> {
       v2: i2 === -1 ? null : num(c[i2]),
     };
   });
-  const r = newest(rows);
-  return { market: "US", yield10y: r.v10, yield2y: r.v2, observationDate: r.date };
+  return toSeries("US", rows);
 }
 
 // ---------- United Kingdom ----------
-export async function fetchUkBondYield(): Promise<BondYield> {
+export async function fetchUkBondYields(): Promise<BondYield[]> {
   // IUDMNPY confirmed from BoE's own metadata as "10 year Nominal Par
-  // Yield". A 30-day window so a bank holiday run still finds a row.
+  // Yield". 120 days rather than a handful: BoE needs an explicit range,
+  // and this is the one source where the window size decides how much
+  // history a backfill can reach. Also means a run over a bank holiday
+  // still finds plenty of rows.
   const to = new Date();
-  const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const from = new Date(to.getTime() - 120 * 24 * 60 * 60 * 1000);
   const fmt = (d: Date) =>
     `${String(d.getUTCDate()).padStart(2, "0")}/${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()]}/${d.getUTCFullYear()}`;
   const url = `https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUDMNPY&UsingCodes=Y&CSVF=TN&Datefrom=${fmt(from)}&Dateto=${fmt(to)}`;
@@ -155,15 +175,14 @@ export async function fetchUkBondYield(): Promise<BondYield> {
       v10: num(c[1]) ?? NaN,
     };
   });
-  const r = newest(rows);
-  return { market: "UK", yield10y: r.v10, yield2y: null, observationDate: r.date };
+  return toSeries("UK", rows);
 }
 
 // ---------- Euro Area ----------
-export async function fetchEuroAreaBondYield(): Promise<BondYield> {
+export async function fetchEuroAreaBondYields(): Promise<BondYield[]> {
   // AAA-rated euro-area government yield curve, 10-year spot.
   const url =
-    "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y?lastNObservations=10&format=csvdata";
+    "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y?lastNObservations=150&format=csvdata";
   const lines = (await getText(url)).trim().split("\n");
   const header = parseCsvLine(lines[0]);
   const di = header.indexOf("TIME_PERIOD");
@@ -174,13 +193,12 @@ export async function fetchEuroAreaBondYield(): Promise<BondYield> {
     date: (c[di] ?? "").trim(),
     v10: num(c[vi]) ?? NaN,
   }));
-  const r = newest(rows);
-  return { market: "EA", yield10y: r.v10, yield2y: null, observationDate: r.date };
+  return toSeries("EA", rows);
 }
 
 // ---------- Canada ----------
-export async function fetchCanadaBondYield(): Promise<BondYield> {
-  const url = "https://www.bankofcanada.ca/valet/observations/BD.CDN.10YR.DQ.YLD/json?recent=10";
+export async function fetchCanadaBondYields(): Promise<BondYield[]> {
+  const url = "https://www.bankofcanada.ca/valet/observations/BD.CDN.10YR.DQ.YLD/json?recent=150";
   const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(TIMEOUT_MS) });
   if (!res.ok) throw new Error(`Bank of Canada request failed: ${res.status} ${res.statusText}`);
   const json = (await res.json()) as { observations?: Array<Record<string, { v?: string } | string>> };
@@ -190,12 +208,11 @@ export async function fetchCanadaBondYield(): Promise<BondYield> {
     const v = typeof cell === "object" && cell ? num(cell.v ?? "") : null;
     return { date: typeof o.d === "string" ? o.d : "", v10: v ?? NaN };
   });
-  const r = newest(rows);
-  return { market: "CA", yield10y: r.v10, yield2y: null, observationDate: r.date };
+  return toSeries("CA", rows);
 }
 
 // ---------- Australia ----------
-export async function fetchAustraliaBondYield(): Promise<BondYield> {
+export async function fetchAustraliaBondYields(): Promise<BondYield[]> {
   // f2-data.csv is the DAILY table. f2.1-data.csv is monthly -- reading
   // that one would publish end-of-month values as if they were today's.
   const url = "https://www.rba.gov.au/statistics/tables/csv/f2-data.csv";
@@ -222,12 +239,11 @@ export async function fetchAustraliaBondYield(): Promise<BondYield> {
       v2: col2 === -1 ? null : num(c[col2]),
     };
   });
-  const r = newest(rows);
-  return { market: "AU", yield10y: r.v10, yield2y: r.v2, observationDate: r.date };
+  return toSeries("AU", rows);
 }
 
 // ---------- Japan ----------
-export async function fetchJapanBondYield(): Promise<BondYield> {
+export async function fetchJapanBondYields(): Promise<BondYield[]> {
   // The /english/ path is required; without it the URL 404s. The file
   // covers the CURRENT MONTH only and ends with a human-readable note,
   // which the date regex below simply fails to match and skips.
@@ -249,33 +265,65 @@ export async function fetchJapanBondYield(): Promise<BondYield> {
       v10: num(c[i10]) ?? NaN,
     };
   });
-  const r = newest(rows);
-  return { market: "JP", yield10y: r.v10, yield2y: null, observationDate: r.date };
+  return toSeries("JP", rows);
 }
 
-const READERS: Record<string, () => Promise<BondYield>> = {
-  US: fetchUsBondYield,
-  UK: fetchUkBondYield,
-  EA: fetchEuroAreaBondYield,
-  CA: fetchCanadaBondYield,
-  AU: fetchAustraliaBondYield,
-  JP: fetchJapanBondYield,
+export const BOND_YIELD_MARKETS = ["US", "UK", "EA", "CA", "AU", "JP"] as const;
+
+const READERS: Record<string, () => Promise<BondYield[]>> = {
+  US: fetchUsBondYields,
+  UK: fetchUkBondYields,
+  EA: fetchEuroAreaBondYields,
+  CA: fetchCanadaBondYields,
+  AU: fetchAustraliaBondYields,
+  JP: fetchJapanBondYields,
 };
 
-/** Reads every market concurrently. One source failing yields null for
- *  that market rather than sinking the run -- six independent
- *  government endpoints, so all-or-nothing would rarely complete. */
+/** Named per market so a row can say where it came from, the same way
+ *  raw_indicators carries source_note. */
+export const BOND_YIELD_SOURCE: Record<string, string> = {
+  US: "US Treasury daily yield curve",
+  UK: "Bank of England IADB IUDMNPY",
+  EA: "ECB AAA euro-area yield curve, 10y spot",
+  CA: "Bank of Canada Valet BD.CDN.10YR.DQ.YLD",
+  AU: "RBA F2 FCMYGBAG10D",
+  JP: "Japan Ministry of Finance JGB daily",
+};
+
+/** A government bond yield outside this range means the parse found the
+ *  wrong column, not an extraordinary market. */
+function plausible(y: BondYield): boolean {
+  return Number.isFinite(y.yield10y) && y.yield10y >= -5 && y.yield10y <= 30;
+}
+
+/** Full available series per market, oldest first. Used by the backfill
+ *  and by anything that wants more than today's number. */
+export async function fetchAllBondYieldSeries(): Promise<Record<string, BondYield[]>> {
+  const out: Record<string, BondYield[]> = {};
+  await Promise.all(
+    Object.entries(READERS).map(async ([market, read]) => {
+      try {
+        const series = (await read()).filter(plausible);
+        if (series.length) out[market] = series;
+      } catch (err) {
+        console.error(`Bond yield series ${market} failed:`, err instanceof Error ? err.message : err);
+      }
+    })
+  );
+  return out;
+}
+
+/** Reads every market concurrently and returns only the newest reading.
+ *  One source failing yields null for that market rather than sinking
+ *  the run -- six independent government endpoints, so all-or-nothing
+ *  would rarely complete. */
 export async function fetchAllBondYields(): Promise<Array<BondYield | null>> {
   return Promise.all(
     Object.entries(READERS).map(async ([market, read]) => {
       try {
-        const r = await read();
-        // A government bond yield outside this range means the parse
-        // found the wrong column, not an extraordinary market.
-        if (!Number.isFinite(r.yield10y) || r.yield10y < -5 || r.yield10y > 30) {
-          throw new Error(`implausible yield ${r.yield10y}`);
-        }
-        return r;
+        const series = (await read()).filter(plausible);
+        if (!series.length) throw new Error("no plausible observations");
+        return latestOf(series);
       } catch (err) {
         console.error(`Bond yield ${market} failed:`, err instanceof Error ? err.message : err);
         return null;
