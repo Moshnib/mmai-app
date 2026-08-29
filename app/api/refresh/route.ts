@@ -235,13 +235,46 @@ export async function GET(request: Request) {
   const supabase = getServiceSupabaseClient();
   const results: Array<{ market: string; status: string; composite: number | null }> = [];
 
+  // ---------- Freshness guard ----------
+  // The scheduled trigger runs THREE times a day, not once, because a
+  // single daily attempt has no way to recover from a missed run -- and
+  // Vercel's Hobby-tier crons skipped a day entirely, leaving the site
+  // showing a stale "last updated" date to every visitor.
+  //
+  // This is what makes the extra attempts safe: a market that already
+  // has a reading stamped today is skipped, so the later runs are
+  // no-ops on a good day and fill the gap on a bad one. Self-healing
+  // rather than duplicating.
+  //
+  // ?force=1 overrides it, for a deliberate re-run after fixing a source.
+  const force = new URL(request.url).searchParams.get("force") === "1";
+  const today = new Date().toISOString().slice(0, 10);
+  let alreadyToday = new Set<string>();
+  if (!force) {
+    const { data: doneRows } = await supabase
+      .from("raw_indicators")
+      .select("market")
+      .gte("fetched_at", `${today}T00:00:00Z`);
+    alreadyToday = new Set((doneRows ?? []).map((r) => r.market as string));
+  }
+
+  const pending = MARKETS.filter((m) => !alreadyToday.has(m));
+  if (pending.length === 0) {
+    return NextResponse.json({
+      refreshedAt: new Date().toISOString(),
+      skipped: true,
+      reason: `All ${MARKETS.length} markets already have a reading for ${today}. Pass ?force=1 to refresh anyway.`,
+      results: [],
+    });
+  }
+
   // Fetched once, shared by every market -- see the comment above
   // fetchRawIndicators(). Outside the per-market try/catch below so one
   // market's Supabase error can't re-trigger a redundant EIA call.
   const brentResult = await settle("Brent Crude YoY", fetchBrentYoY());
   const brentYoY = brentResult?.brentYoY ?? null;
 
-  for (const market of MARKETS) {
+  for (const market of pending) {
     try {
       const raw = await fetchRawIndicators(market, brentYoY);
       const pillars = computePillarScores(raw);

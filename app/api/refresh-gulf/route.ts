@@ -147,7 +147,33 @@ export async function GET(request: Request) {
   const supabase = getServiceSupabaseClient();
   const results: Array<{ country: string; status: string }> = [];
 
-  for (const country of GULF_COUNTRIES) {
+  // Freshness guard -- same reasoning as app/api/refresh/route.ts. The
+  // scheduled trigger runs three times a day so a missed or failed
+  // attempt recovers on its own; skipping countries already written
+  // today is what keeps the extra attempts harmless no-ops instead of
+  // duplicate rows. ?force=1 overrides.
+  const force = new URL(request.url).searchParams.get("force") === "1";
+  const today = new Date().toISOString().slice(0, 10);
+  let alreadyToday = new Set<string>();
+  if (!force) {
+    const { data: doneRows } = await supabase
+      .from("gulf_indicators")
+      .select("country_code")
+      .gte("fetched_at", `${today}T00:00:00Z`);
+    alreadyToday = new Set((doneRows ?? []).map((r) => r.country_code as string));
+  }
+
+  const pending = GULF_COUNTRIES.filter((c) => !alreadyToday.has(c));
+  if (pending.length === 0) {
+    return NextResponse.json({
+      refreshedAt: new Date().toISOString(),
+      skipped: true,
+      reason: `All ${GULF_COUNTRIES.length} countries already have a reading for ${today}. Pass ?force=1 to refresh anyway.`,
+      results: [],
+    });
+  }
+
+  for (const country of pending) {
     try {
       const raw = await fetchGulfIndicators(country);
       // Policy rate counts toward PARTIAL only for the countries that

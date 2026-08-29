@@ -1,0 +1,68 @@
+# ============================================================
+# Scheduled data refresh — the PRIMARY trigger for MMAI's data.
+#
+# WHY THIS EXISTS
+# vercel.json also declares crons, but this project is on Vercel's Hobby
+# tier where cron jobs are explicitly best-effort: Vercel may delay them
+# by hours or skip a day entirely. Observed directly -- 2026-08-28 ran 25
+# minutes late, 2026-08-29 had not run at all two hours past schedule,
+# while both routes answered correctly when called by hand. The site then
+# showed "Data last updated Aug 28" to every visitor.
+#
+# GitHub Actions schedules are far more dependable, are free on this
+# plan (a curl takes seconds against a 2,000 minute monthly allowance),
+# and are re-runnable by hand from the Actions tab when something does
+# go wrong.
+#
+# THREE RUNS A DAY, NOT ONE. The later two are safety nets: if the 06:10
+# run fails or GitHub delays it, the next attempt fills the gap on its
+# own. This is only safe because the routes skip markets that already
+# have a reading for today -- see the freshness guard in
+# app/api/refresh/route.ts. Extra runs are cheap no-ops, never duplicates.
+#
+# The Vercel crons are deliberately LEFT IN PLACE as a third layer. If
+# they fire, they simply find the work already done.
+# ============================================================
+name: Refresh MMAI data
+
+on:
+  schedule:
+    # UTC. 06:10 is the intended daily refresh; the rest are recovery.
+    - cron: "10 6 * * *"
+    - cron: "0 12 * * *"
+    - cron: "0 18 * * *"
+  # Adds a "Run workflow" button in the Actions tab, so a missed day can
+  # be fixed in one click without waiting or touching a terminal.
+  workflow_dispatch:
+
+concurrency:
+  # Never let two refreshes overlap.
+  group: mmai-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Refresh scored markets
+        run: |
+          echo "Calling /api/refresh …"
+          code=$(curl -sS -o /tmp/main.json -w "%{http_code}" --max-time 120 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://mmai-app.vercel.app/api/refresh")
+          echo "HTTP $code"
+          head -c 800 /tmp/main.json; echo
+          # Fail the run on a non-200 so the failure is visible in the
+          # Actions tab and by email, rather than silently doing nothing.
+          [ "$code" = "200" ] || exit 1
+
+      - name: Refresh Gulf Watch
+        run: |
+          echo "Calling /api/refresh-gulf …"
+          code=$(curl -sS -o /tmp/gulf.json -w "%{http_code}" --max-time 120 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://mmai-app.vercel.app/api/refresh-gulf")
+          echo "HTTP $code"
+          head -c 800 /tmp/gulf.json; echo
+          [ "$code" = "200" ] || exit 1
