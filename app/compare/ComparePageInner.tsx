@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
@@ -328,25 +327,6 @@ export default function ComparePageInner() {
             <TimeSliderScatter series={relationshipSeries} years={yearsInRange} xLabel="Inflation (%)" yLabel="Policy rate (%)" height={380} />
           </div>
 
-          {/* Short methodology footer (brief §13, item 5) */}
-          <div
-            className="mmai-card"
-            style={{ marginTop: 18, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}
-          >
-            <span style={{ fontSize: 12.5, color: "var(--slate)", lineHeight: 1.6, maxWidth: "70ch" }}>
-              MMAI is a composite index (0–100) built from five weighted pillars. A higher score means a more supportive
-              macro backdrop. Not investment advice.
-            </span>
-            <Link
-              href="/learn#topic-mmai"
-              style={{
-                fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5, fontWeight: 700,
-                color: "var(--gold-deep)", textDecoration: "none", whiteSpace: "nowrap",
-              }}
-            >
-              How MMAI is calculated →
-            </Link>
-          </div>
         </div>
       </div>
     </>
