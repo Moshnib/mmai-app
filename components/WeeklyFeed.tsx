@@ -148,10 +148,17 @@ export default function WeeklyFeed() {
           ))}
 
         {results?.map((r) => {
-          const now = r.buckets[0];
+          // `latest` drives what is DISPLAYED and ignores the
+          // comparability floor -- a current reading is always valid.
+          // `buckets` drives the DELTA and respects the floor, because a
+          // change spanning a source swap would be a fetcher artefact.
+          // Splitting these is what stopped four markets rendering as an
+          // empty "tracking since" row while their live numbers sat
+          // unused in the same response.
+          const now = r.buckets[0] ?? r.latest;
           const then = r.buckets[1];
-          const hasEnough = !!now && !!then;
-          const scoreDelta = hasEnough ? delta(now.composite, then.composite) : null;
+          const hasFigures = !!now;
+          const scoreDelta = r.buckets[0] && then ? delta(r.buckets[0].composite, then.composite) : null;
           const stateColor =
             scoreDelta?.symbol === "↑" ? "var(--teal)" : scoreDelta?.symbol === "↓" ? COMPOSITE_DOWN_COLOR : "var(--slate)";
 
@@ -167,7 +174,7 @@ export default function WeeklyFeed() {
                   <span className="signal-headline" style={{ color: "var(--slate)", fontWeight: 500 }}>
                     Not currently refreshing — no recent data available.
                   </span>
-                ) : !hasEnough ? (
+                ) : !hasFigures ? (
                   <>
                     <span className="signal-headline" style={{ color: "var(--slate)", fontWeight: 500 }}>
                       Tracking since {trackingSince(r.marketCode)}
@@ -183,7 +190,16 @@ export default function WeeklyFeed() {
                       <b style={{ color: colorForScore(now.composite), fontFamily: "Space Grotesk, sans-serif" }}>
                         {now.composite != null ? now.composite.toFixed(1) : "—"}
                       </b>
-                      {scoreDelta && <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>}
+                      {scoreDelta ? (
+                        <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>
+                      ) : (
+                        // Says WHY there is no delta rather than leaving a
+                        // blank the reader has to interpret. The figure
+                        // beside it is live either way.
+                        <span style={{ color: "var(--slate)", marginLeft: 8, fontWeight: 500 }}>
+                          no weekly comparison yet
+                        </span>
+                      )}
                     </span>
                     <span className="signal-detail">
                       {/* Per-field precision (RAW_DECIMALS), not a

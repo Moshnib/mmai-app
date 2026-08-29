@@ -122,6 +122,14 @@ export interface WeeklyMarketResult {
   // claim about a healthy pipeline -- see buckets.length < 2 for that case.
   isStale: boolean;
   buckets: WeeklyBucket[]; // newest first, comparable rows only (see fetchAllWeeklyChanges)
+  /** The newest fully-populated reading, IGNORING the comparability
+   *  floor. A current value is always valid -- it is only a COMPARISON
+   *  across a source swap that is meaningless. Gating both on the same
+   *  floor left four markets showing nothing at all for a week after
+   *  their unemployment source changed, when their live numbers were
+   *  sitting right there. So this drives the display, and `buckets`
+   *  drives the delta. */
+  latest: WeeklyBucket | null;
 }
 
 interface RawIndicatorRow {
@@ -276,12 +284,25 @@ export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyCh
       // this is what stops one market's source swap from truncating
       // another market's usable history.
       const marketFloor = floorFor(m.code);
-      const marketComparableRows = comparableRows
-        .filter((r) => r.market === m.code)
-        .filter((r) => new Date(r.fetched_at).getTime() >= marketFloor)
-        .filter(isFullyPopulated); // already fetched_at-desc
-      const buckets = buildBuckets(marketComparableRows, weeksBack);
-      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets };
+      const marketRows = comparableRows.filter((r) => r.market === m.code).filter(isFullyPopulated); // already fetched_at-desc
+
+      // Display value: newest reading, floor ignored. Always valid.
+      const newest = marketRows[0];
+      const latest: WeeklyBucket | null = newest
+        ? {
+            fetchedAt: newest.fetched_at,
+            raw: toRawIndicators(newest),
+            composite: computeComposite(computePillarScores(toRawIndicators(newest))).composite,
+          }
+        : null;
+
+      // Comparison: floor applied, because a delta spanning a source
+      // swap would report a fetcher change as an economic move.
+      const buckets = buildBuckets(
+        marketRows.filter((r) => new Date(r.fetched_at).getTime() >= marketFloor),
+        weeksBack
+      );
+      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets, latest };
     });
 
     return { ok: true, markets };
