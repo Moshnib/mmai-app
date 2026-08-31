@@ -187,3 +187,63 @@ Implemented and verified. Committed to `main`.
 
 ### Rollback method
 `git revert <commit>`, or set `STALE_AFTER_DAYS = 0` to disable the guard while keeping the logging.
+
+---
+
+## 2026-08-31 — Inflation targets became per-market; Australia scored against 2.5%
+
+**Category:** Parameter correction. The scoring *function* is unchanged; only the benchmark it measures against differs, and only where the issuing central bank differs.
+
+### Old rule
+`priceStabilityScore(inflation, target = 2.0)` applied **2.0% to all six markets**.
+
+### New rule
+`INFLATION_TARGET` in `lib/scoring.ts` holds each central bank's own stated benchmark. `computePillarScores` now takes a **required** `market` argument.
+
+| Market | Target | Source, read 31 Aug 2026 |
+|---|---|---|
+| US | 2.0% | Federal Reserve — stated on the PCE index |
+| EA | 2.0% | ECB — symmetric 2% medium-term, HICP |
+| UK | 2.0% | Bank of England — *"The Government has set us a target of keeping inflation at 2%"* |
+| CA | 2.0% | Bank of Canada — *"the 2% midpoint of the 1%–3% control range"* |
+| JP | 2.0% | Bank of Japan — *"Price Stability Target" of 2 Percent* |
+| **AU** | **2.5%** | Reserve Bank of Australia — see below |
+
+### Reason
+Australia is the only one of the six whose target is a **range**, not a point: *"Australia's inflation target is to keep annual consumer price inflation between 2 and 3 per cent."* It was being scored against 2.0% like everyone else, penalising it for inflation its own central bank considers on target.
+
+**2.5% is not MMAI rounding that band to a convenient midpoint.** The RBA's own explainer states that *"the Statement on the Conduct of Monetary Policy specifies that the Reserve Bank sets monetary policy such that inflation is expected to return to the midpoint of the target."* The midpoint of 2–3% is 2.5%. This upgrades the Australian target from a **design choice** to a **sourced value** — the evidence audit had classified it as the former.
+
+The RBA page also confirms Australia's target measure is **CPI**, so unlike the US, the *source* was already correct.
+
+Charter §10 requires precisely this shape: *"common scoring function, economy-appropriate official measure and benchmark."*
+
+### Data used
+Each central bank's own page, read live on 31 August 2026. The RBA and Bank of England pages were unreachable via plain HTTP fetch (403) and were read through a browser instead.
+
+### Test results
+- `npx tsc --noEmit` clean; `npx eslint` on all ten touched files: **0 errors, 0 new warnings**.
+- `npm run build` clean.
+- `scripts/verify-scoring.ts` — all cases pass, values unchanged (none is Australia).
+- `scripts/verify-history.ts` — all pass; it covers US/EA/CA only, so this is genuine isolation rather than a false pass.
+- **Isolation check:** re-scoring every market's latest point shows all five non-AU composites identical to the decimal.
+
+### Impact
+
+| | Before | After | Change |
+|---|---|---|---|
+| AU Price Stability | 73.75 | 81.25 | +7.50 |
+| **AU composite** | **73.54** | **75.42** | **+1.88** |
+
+Across Australia's full stored history the change is **+1.88 in six years and −1.88 in two** (2019 and 2020), because inflation was *below* 2% then and is therefore further from a 2.5 midpoint than from a 2.0 point. **The correction cuts both ways**, which is what distinguishes it from a change tuned to flatter one market.
+
+One band change across eight years: **2025, Supportive → Strongly Supportive**. Australia remains last of six on the current reading; no ranking changed.
+
+### Note on the signature change
+`market` was made **required**, not optional-with-default. An optional parameter would let a call site silently score Australia against 2.0 while the refresh route scored it against 2.5 — stored and displayed scores would then disagree, a class of bug this project has already hit. Making it required forced all 16 call sites to be visited by the compiler.
+
+### Approval status
+Implemented and verified. Committed to `main`.
+
+### Rollback method
+`git revert <commit>`. To keep the per-market structure but restore uniform 2.0, set `AU: 2.0` in `INFLATION_TARGET`.

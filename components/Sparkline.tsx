@@ -13,7 +13,7 @@ export default function Sparkline({ marketCode, currentScore }: { marketCode: st
   const history = liveHistory[marketCode] ?? [];
   const points = history
     .map((h) => {
-      const pillars = computePillarScores(h.indicators);
+      const pillars = computePillarScores(h.indicators, marketCode);
       const { composite } = computeComposite(pillars);
       return { year: h.year, value: composite };
     })

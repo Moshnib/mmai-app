@@ -334,7 +334,7 @@ export async function GET(request: Request) {
   for (const market of pending) {
     try {
       const raw = await fetchRawIndicators(market, brentYoY);
-      const pillars = computePillarScores(raw);
+      const pillars = computePillarScores(raw, market);
       const { composite, coverage } = computeComposite(pillars);
       const band = bandFor(composite);
       const observationDate = new Date().toISOString().slice(0, 10);

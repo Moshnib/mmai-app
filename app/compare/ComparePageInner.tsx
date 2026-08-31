@@ -85,7 +85,7 @@ export default function ComparePageInner() {
         name: marketNames[code],
         color: MARKET_COLORS[code] ?? "#9296AB",
         data: history.map((h) => {
-          const pillars = computePillarScores(h.indicators);
+          const pillars = computePillarScores(h.indicators, code);
           return { year: h.year, value: valueFn(pillars, h.indicators) };
         }),
       };

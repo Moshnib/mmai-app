@@ -11,7 +11,7 @@ let allPass = true;
 for (const market of Object.keys(expected)) {
   for (const point of HISTORY[market]) {
     if (!(point.year in expected[market])) continue;
-    const pillars = computePillarScores(point.indicators);
+    const pillars = computePillarScores(point.indicators, market);
     const { composite } = computeComposite(pillars);
     const rounded = composite === null ? null : Math.round(composite * 10) / 10;
     const exp = expected[market][point.year];
