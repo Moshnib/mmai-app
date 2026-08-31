@@ -324,3 +324,69 @@ newyorkfed.org/research/policy/rstar/overview*.
 **This removes the last non-data blocker on the neutral-rate work.** What
 still blocks it: HLW covers three of six markets — the UK, Japan and
 Australia have no published estimate.
+
+---
+
+## The coefficients: better than assumed, and the compression is not a defect
+
+```
+npx tsx research/coefficient-audit.ts    what the constants implicitly claim
+npx tsx research/why-compressed.ts       why the composite spans only ~56 points
+```
+
+I previously wrote that the composite's narrow range was "score compression"
+and that fixing it "requires the coefficients." **That was wrong, and the
+panel disproves it.**
+
+### 1. The coefficients are empirically well-scaled
+
+Nobody had ever written down what 15, 10, 10, 12 and 1.2 actually *claim*.
+Each fixes the point where its pillar hits zero. Against 29 years of history:
+
+| Pillar | Implies 0 at | Observed extreme | |
+|---|---|---|---|
+| Price Stability | inflation 8.67% | 8.06% (UK 1990) | just inside |
+| Growth | −5.0% growth | −5.94% (JP 2009) | just outside |
+| Labour | 12.0% unemployment | 12.02% (EA 2013) | **almost exactly at the boundary** |
+| Monetary | rate 10.83% | 13.88% (UK 1990) | outside |
+| External | ±83% Brent | −47% to +60% | comfortably inside |
+
+Saturation across 174 observations per pillar: **0% to 4.5%.** The equations
+are operating inside their range almost always, and each pillar uses
+**71–100 of its 100 points**.
+
+These constants were chosen by judgement, not derivation — but the judgement
+was **good**. That is a real distinction: *undocumented in origin* is not the
+same as *wrong in effect*.
+
+### 2. The compression is the arithmetic of independence
+
+Every pillar uses most of its range, yet the composite spans only 56 points.
+Not a defect — a mathematical consequence of averaging weakly-correlated
+series. Tested directly:
+
+```
+composite standard deviation
+  predicted, if pillars were perfectly independent   7.82
+  observed                                           9.05
+  ratio                                              1.158
+  if instead they moved in lockstep                 16.96  (1.9x wider)
+```
+
+The observed spread sits almost exactly where independence predicts. **The
+narrow range is the price MMAI pays for pillars that measure different
+things** — the property §8.1 confirms and that the five-pillar structure
+exists to deliver.
+
+**You cannot have both non-redundant pillars and a composite that spans
+0–100.** Anything that widened the range would do so by making the pillars
+more alike.
+
+### What this means
+
+- The coefficients do **not** need urgent recalibration. They are defensible
+  in effect; what they lack is a documented derivation.
+- Recalibrating the **bands** was the correct and sufficient response to the
+  labelling defect — not a stopgap for a deeper problem, because there isn't
+  one.
+- The remaining honest gap is provenance, not accuracy.
