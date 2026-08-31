@@ -143,3 +143,47 @@ Implemented and verified. Committed to `main`.
 
 ### Standing note
 These figures are **observations about the current panel, not parameters**. They will drift as history accumulates and must be re-measured rather than trusted indefinitely. `PILLAR_INFLUENCE_MEASURED` carries the measurement date for exactly this reason.
+
+---
+
+## 2026-08-31 — Refresh no longer overwrites a published score with a failed fetch
+
+**Category:** Data-integrity guard. No equation, weight, band or source changed.
+
+### Old rule
+Every refresh wrote its result unconditionally. If a source was briefly unavailable and coverage fell below the 0.70 publication gate, the market's stored score became `null` / *Not Publishable*, replacing a good reading.
+
+### New rule
+A run that produces **no publishable score at all** is skipped for that market when a publishable score already exists and is **less than 3 days old**. Nothing is written, the reason is logged, and the API response reports `skipped` for that market. The next run retries.
+
+### Reason
+Found the hard way, an hour after adding the `force` option. A forced re-run to pick up the US PCE change re-fetched all six markets; both Statistics Canada calls — inflation *and* unemployment, which share one source — failed together. Canada's coverage fell to 0.6 and a good **76.4952** was overwritten with *Not Publishable*.
+
+Nothing about Canada's economy changed. A source was briefly unavailable, and the site showed a gap to every visitor until the next run.
+
+The freshness guard added on 29 August prevents duplicate **work**. It does nothing about a re-run producing **worse data** — a risk that only exists because `?force=1` exists. This is the other half of it.
+
+### Data used
+Live incident, 31 August 2026:
+
+| Run | CA inflation | CA unemployment | Coverage | Composite |
+|---|---|---|---|---|
+| 00:44 UTC | 3.03 | 6.4 | 1.00 | 76.4952 |
+| 06:00 UTC (forced) | **null** | **null** | **0.60** | **null** |
+| 06:01 UTC (forced retry) | 3.03 | 6.4 | 1.00 | 76.4952 |
+
+### Test results
+`npx tsc --noEmit` clean, `npx eslint` 0 errors, `npm run build` clean. The retry at 06:01 confirms the failure was transient — the same source answered normally 60 seconds later, which is precisely the case the guard is for.
+
+### Impact
+No effect on any current score. The guard is a no-op on every successful run. It changes behaviour only when a market would otherwise go unpublishable, which no market currently is.
+
+**Deliberately narrow.** It fires only when a run yields *nothing publishable*. A market that loses one pillar while staying above the gate still writes, because that is a genuine change in what could be measured — and the existing pillar-shape signature already stops that faking a band-change email.
+
+**Bounded** by `STALE_AFTER_DAYS = 3`, so a permanently dead source cannot freeze a stale score indefinitely. Past that window the gap *is* the truth and the site should show it.
+
+### Approval status
+Implemented and verified. Committed to `main`.
+
+### Rollback method
+`git revert <commit>`, or set `STALE_AFTER_DAYS = 0` to disable the guard while keeping the logging.

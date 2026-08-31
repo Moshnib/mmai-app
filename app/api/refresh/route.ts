@@ -343,7 +343,7 @@ export async function GET(request: Request) {
       // the only way to know whether the band actually changed.
       const { data: previousRows } = await supabase
         .from("mmai_scores")
-        .select("band, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_ec")
+        .select("band, composite, observation_date, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_ec")
         .eq("market", market)
         .order("observation_date", { ascending: false })
         .order("computed_at", { ascending: false })
@@ -390,6 +390,53 @@ export async function GET(request: Request) {
           ? " — US inflation via BLS CPI (BEA PCE unavailable); PCE is the scored series"
           : "");
       const sourceNote = (partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote) + fallbackNote;
+
+      // ---------- Publication-regression guard ----------
+      // A transient source outage must not replace a PUBLISHED score
+      // with a gap on the live site.
+      //
+      // Observed 2026-08-31: a forced re-run to pick up the US PCE change
+      // re-fetched every market, both Statistics Canada calls (inflation
+      // AND unemployment) failed together, Canada's coverage fell to 0.6,
+      // and a good 76.50 was overwritten with "Not Publishable". The run
+      // an hour earlier had all five pillars. Nothing about Canada's
+      // economy changed -- a source was briefly unavailable.
+      //
+      // The freshness guard above prevents duplicate WORK. It does nothing
+      // about a re-run producing WORSE data, a risk that exists only
+      // because ?force=1 exists. This is the other half of it.
+      //
+      // Deliberately narrow: it fires only when a run produces NO
+      // publishable score at all AND a recent one exists. A market that
+      // merely loses one pillar while staying above the gate still writes,
+      // because that is a real change in what could be measured -- and the
+      // shape signature above already stops it faking a band move.
+      //
+      // Bounded by STALE_AFTER_DAYS so a permanently dead source cannot
+      // freeze a stale score forever. Past that window the gap IS the
+      // truth and the site should show it.
+      const STALE_AFTER_DAYS = 3;
+      const previousComposite = previousRow?.composite as number | null | undefined;
+      const previousObsDate = previousRow?.observation_date as string | undefined;
+      const previousAgeDays = previousObsDate
+        ? (Date.parse(observationDate) - Date.parse(previousObsDate)) / 86_400_000
+        : Number.POSITIVE_INFINITY;
+
+      if (composite == null && previousComposite != null && previousAgeDays <= STALE_AFTER_DAYS) {
+        console.error(
+          `${market}: SKIPPED WRITE — no publishable score this run ` +
+            `(coverage ${coverage.toFixed(2)}, shape ${currentShape}), but a published ` +
+            `score of ${previousComposite} exists from ${previousObsDate}. Treating this as a ` +
+            `transient source failure rather than overwriting good data; the next ` +
+            `run retries. Source note would have been: ${sourceNote}`
+        );
+        results.push({
+          market,
+          status: `skipped: nothing publishable this run (coverage ${coverage.toFixed(2)}); kept ${previousObsDate} reading`,
+          composite: null,
+        });
+        continue;
+      }
 
       // Supabase's client doesn't throw on a failed write -- it returns
       // {error}. Run both inserts, then check both errors together (not
