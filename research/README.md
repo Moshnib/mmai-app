@@ -245,3 +245,44 @@ the bottom 30% of its scale even at the trough of the GFC.
 Bands only redistribute labels across the range the score actually occupies.
 **Fixing the compression requires the coefficients** — which is the next
 calibration, and the one this panel now makes possible.
+
+### A rescale was proposed, then rejected — `rescale-demo.ts`
+
+Charter §4 requires rejected equations be preserved with the reason. This is one.
+
+**Proposed:** stretch the composite so the historical floor (30.5) maps to 10
+and the ceiling (87.4) to 90, so a crisis reads low.
+
+**Rejected**, for four reasons, any one sufficient:
+
+1. **It is dynamic min-max, which the charter explicitly rejects — twice.**
+   §9.1: *"Pure percentile scoring and dynamic min-max are not preferred as
+   the core solution because they can make scores excessively sample-relative
+   or unstable when extremes change."*
+2. **The entire scale hangs on one observation** — UK 1990. A single worse
+   year would move the anchor and **retroactively change every score MMAI has
+   ever published.** An index whose history rewrites itself is not a benchmark.
+3. **It breaks reproducibility by hand,** adding two magic numbers from a
+   dataset readers do not have. That property is MMAI's strongest claim.
+4. **It adds two unsourced parameters** — the audit would go from 2-of-12
+   sourced to 2-of-14. Wrong direction.
+
+### What to do instead: change only the bands
+
+Verified — changing the thresholds from **30/45/65/80 → 40/55/74/85** fixes the
+real defect while touching nothing else:
+
+| Episode | Score | Now | After |
+|---|---|---|---|
+| **US 2009** — worst year since the 1930s | 47.8 | **Balanced** | **Challenging** |
+| Euro Area 2009 | 47.7 | Balanced | Challenging |
+| Japan 2009 | 45.8 | Balanced | Challenging |
+| UK 1990 recession | 30.5 | Challenging | **Highly Challenging** |
+| Canada 1991 recession | 39.1 | Challenging | Highly Challenging |
+| Australia 2009 (dodged recession) | 74.7 | Supportive | Supportive |
+
+- **"Highly Challenging" goes from used 0 times in 173 years to 3.**
+- **All six current market labels are unchanged** — no disruption for readers.
+- **No score changes. No parameter is added. Hand-reproducibility intact.**
+
+Strictly better than the rescale on every dimension.
