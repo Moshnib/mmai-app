@@ -36,7 +36,7 @@ Everything below was checked directly, not assumed:
 
 ## 1. PROJECT OVERVIEW
 
-**What MMAI is:** Market Pulse / **MMAI (Moshnib Market Analysis Index)** — a Next.js macro-economic dashboard built for Mohammad Elmoshnib / FINTECH.TV. It tracks **6 active markets** across **5 weighted "pillars"** and combines them into a single 0–100 composite score with a plain-language interpretation band ("Supportive," "Balanced," etc.).
+**What MMAI is:** Market Pulse / **MMAI (Moshnib Macro Analysis Index)** — a Next.js macro-economic dashboard built for Mohammad Elmoshnib / FINTECH.TV. It tracks **6 active markets** across **5 weighted "pillars"** and combines them into a single 0–100 composite score with a plain-language interpretation band ("Supportive," "Balanced," etc.).
 
 **Main objective:** A transparent, source-cited, continuously-updating single number communicating whether the macro environment in a given market is broadly supportive or challenging — explicitly **NOT** an investment or trading signal. This disclaimer appears in the footer and on the Learn page and **must stay**.
 

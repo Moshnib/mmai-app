@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   // custom domain.
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "MMAI — Moshnib Market Analysis Index",
+    default: "MMAI — Moshnib Macro Analysis Index",
     // Child pages set just their own name; this appends the brand.
     template: "%s — MMAI",
   },
@@ -22,14 +22,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "MMAI",
-    title: "MMAI — Moshnib Market Analysis Index",
+    title: "MMAI — Moshnib Macro Analysis Index",
     description: DESCRIPTION,
     url: SITE_URL,
     locale: "en",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MMAI — Moshnib Market Analysis Index",
+    title: "MMAI — Moshnib Macro Analysis Index",
     description: DESCRIPTION,
   },
 };

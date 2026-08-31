@@ -7,7 +7,7 @@ import { ImageResponse } from "next/og";
 // Deliberately built from the site's own tokens (app/globals.css) rather than
 // a stock template, so a shared link looks like the product it points at.
 
-export const alt = "MMAI — Moshnib Market Analysis Index";
+export const alt = "MMAI — Moshnib Macro Analysis Index";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

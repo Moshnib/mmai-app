@@ -6,7 +6,7 @@
 
 ## 1. What this is
 
-**Market Pulse / MMAI (Moshnib Market Analysis Index)** — a Next.js macro-economic dashboard for Mohammad Elmoshnib / FINTECH.TV. It tracks 7 countries across 5 weighted "pillars" (Price Stability, Growth Momentum, Labour Market, Monetary Conditions, External & Commodities) and combines them into a single 0–100 composite score with a plain-language interpretation band (e.g. "Supportive," "Balanced").
+**Market Pulse / MMAI (Moshnib Macro Analysis Index)** — a Next.js macro-economic dashboard for Mohammad Elmoshnib / FINTECH.TV. It tracks 7 countries across 5 weighted "pillars" (Price Stability, Growth Momentum, Labour Market, Monetary Conditions, External & Commodities) and combines them into a single 0–100 composite score with a plain-language interpretation band (e.g. "Supportive," "Balanced").
 
 **Explicitly not** an investment/trading signal — it's an analytical communication tool. This disclaimer appears throughout the site and should stay.
 
