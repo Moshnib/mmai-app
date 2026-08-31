@@ -5,7 +5,7 @@
 import { computePillarScores, computeComposite } from "../lib/scoring";
 import panel from "./historical-panel.json";
 
-const P = panel as unknown as { panel: Record<string, Array<Record<string, number|null> & {year:number}>>; markets: Array<{code:string}> };
+const P = panel as unknown as { panel: Record<string, Array<{ year: number; inflation: number | null; gdpGrowth: number | null; unemployment: number | null; policyRate: number | null; brentYoY: number | null }>>; markets: Array<{code:string}> };
 const OBS: {code:string;year:number;score:number}[] = [];
 for (const m of P.markets) for (const r of P.panel[m.code] ?? []) {
   const { composite } = computeComposite(computePillarScores(r, m.code));
