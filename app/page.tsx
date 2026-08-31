@@ -14,7 +14,7 @@ import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
 import CountryGlyph from "@/components/CountryGlyph";
-import { narrativeDrivers, bandFor, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators } from "@/lib/scoring";
+import { narrativeDrivers, bandFor, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators , inflationTargetFor } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
@@ -59,11 +59,14 @@ function narrativeFor(market: MarketData): string {
 // numbers moving in opposite directions (as with Japan's above-target
 // inflation alongside a still near-zero policy rate) -- falls back to a
 // plain, neutral statement of the three numbers with no interpretive claim.
-function rateNarrativeFor(raw: RawIndicators): string | null {
+function rateNarrativeFor(raw: RawIndicators, marketCode: string): string | null {
   const { inflation, policyRate, unemployment } = raw;
   if (inflation == null || policyRate == null || unemployment == null) return null;
 
-  const INFLATION_TARGET = 2;
+  // The market's OWN target, not a flat 2 for everyone -- Australia's is
+  // 2.5. Hardcoding it here told Australian readers their inflation was
+  // measured against a benchmark MMAI does not use for them.
+  const INFLATION_TARGET = inflationTargetFor(marketCode);
   const RATE_NEUTRAL = 2.5;
   const INTERPRETIVE_GAP = 0.8;
 
@@ -78,10 +81,10 @@ function rateNarrativeFor(raw: RawIndicators): string | null {
   const unempStr = unemployment.toFixed(1);
 
   if (bothAbove) {
-    return `Inflation is at ${inflStr}%, above the 2% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally raise rates to cool inflation, and that same move tends to slow hiring — though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
+    return `Inflation is at ${inflStr}%, above the ${INFLATION_TARGET}% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally raise rates to cool inflation, and that same move tends to slow hiring — though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
   }
   if (bothBelow) {
-    return `Inflation is at ${inflStr}%, below the 2% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally cut rates to support hiring and growth, though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
+    return `Inflation is at ${inflStr}%, below the ${INFLATION_TARGET}% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally cut rates to support hiring and growth, though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
   }
   return `Inflation is at ${inflStr}%, the policy rate is at ${rateStr}%, and unemployment is at ${unempStr}%. These are the same three numbers central banks generally weigh when setting policy — trying to keep prices near target without pushing unemployment too high.`;
 }
@@ -162,7 +165,7 @@ export default function OverviewPage() {
 
   const market = markets.find((m) => m.code === current)!;
   const { pillars, composite, coveragePillars } = scoreMarket(market);
-  const rateNarrative = rateNarrativeFor(market.raw);
+  const rateNarrative = rateNarrativeFor(market.raw, market.code);
 
   return (
     <>
@@ -275,7 +278,7 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <KeyRatesRow raw={market.raw} />
+          <KeyRatesRow raw={market.raw} market={market.code} />
           </div>
 
           {rateNarrative && <p className="score-narrative" style={{ maxWidth: "68ch", marginTop: 18 }}>{rateNarrative}</p>}
