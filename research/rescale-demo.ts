@@ -105,7 +105,7 @@ for (const [,name,s] of LIVE) {
 console.log("\n  Order is IDENTICAL. A straight-line stretch cannot reorder anything.");
 
 console.log("\n\nHOW THE 173 HISTORICAL YEARS SPREAD ACROSS THE LABELS\n");
-for (const [label,bands,name] of [[OLD_BANDS,"now"],[NEW_BANDS,"after"]].map(([b,n])=>[n,b,n]) as Array<[string,number[],string]>) {
+for (const [bands, name] of [[OLD_BANDS, "now"], [NEW_BANDS, "after"]] as Array<[number[], string]>) {
   const scores = OBS.map(o => name==="now" ? o.s : rescale(o.s));
   const cnt:Record<string,number>={};
   for (const s of scores) cnt[cls(s,bands)]=(cnt[cls(s,bands)]??0)+1;

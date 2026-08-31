@@ -13,7 +13,7 @@
 // Run:  npx tsx research/compare.ts
 // ============================================================
 
-import { computePillarScores, computeComposite, bandFor, PILLAR_NAMES, type PillarKey } from "@/lib/scoring";
+import { computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
 import { computePillarScoresV2, computeCompositeV2, V2_PARAMETERS, redundancyVerdict } from "./v2-candidate";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { HISTORY } from "@/lib/history";
@@ -27,7 +27,6 @@ function pad(s: string | number, n: number, right = false): string {
   const t = String(s);
   return right ? t.padStart(n) : t.padEnd(n);
 }
-const f2 = (v: number | null) => (v == null ? "  —  " : v.toFixed(2));
 
 console.log("=".repeat(78));
 console.log("MMAI  —  V1 (production) vs CANDIDATE V2  —  research only, nothing released");
