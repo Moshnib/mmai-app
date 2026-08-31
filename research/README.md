@@ -186,3 +186,62 @@ Supportive 109 · Balanced 34 · Strongly Supportive 25 · Challenging 5
 Charter §15 requires that verbal bands "must themselves be researched and
 documented. They should not be invented merely for visual appeal." This is
 the evidence that they were not, and now the data exists to fix them.
+
+---
+
+## Band calibration (charter §15) — evidence now exists
+
+```
+npx tsx research/calibrate-bands.ts        compare three schemes against named episodes
+npx tsx research/band-uniqueness.ts        is the answer unique? (no)
+npx tsx research/band-recommendation.ts    pick within the defensible region
+```
+
+Charter §15 requires verbal bands be researched, "not invented merely for
+visual appeal." The current 30/45/65/80 were invented. Scored over the
+1990–2018 panel they put **63% of all observations in one band** and never
+once reached the bottom label — not in 2009.
+
+### Method: anchor to identified episodes, not to quantiles
+
+Charter §9.1 cautions against purely percentile-based approaches: they are
+sample-relative and drift as data accumulates. So thresholds are instead
+required to classify **ten named macroeconomic episodes** the way an
+economist would. The anchors are the argument — to dispute the bands you
+must dispute a specific historical claim.
+
+A pure-quantile scheme was run as the baseline and **fails badly: 3/10**.
+It labels US 2008 "Highly Challenging", which is simply wrong.
+
+### The result, and the honest caveat
+
+An episode-anchored search satisfies **10/10**. That is exactly the result to
+distrust — the search was designed to maximise anchor hits.
+
+Checking for uniqueness: **2,376 threshold sets satisfy all ten anchors.**
+The anchors CONSTRAIN each threshold to a range; they do not fix a point:
+
+| Threshold | Defensible range | Current value | Verdict |
+|---|---|---|---|
+| Highly Challenging / Challenging | 40 – 45 | 30 | **outside** |
+| Challenging / Balanced | 48 – 59 | 45 | **outside** |
+| Balanced / Supportive | 64 – 74 | 65 | survives |
+| Supportive / Strongly Supportive | 85 – 87 | 80 | **outside** |
+
+**Three of the four current thresholds sit outside any defensible range.**
+Only the 65 survives — by coincidence, not by design.
+
+Recommended within the feasible region, choosing the most even distribution
+and preferring legible numbers: **40 / 55 / 74 / 85**. All five bands are
+used and all ten anchors hold.
+
+### The deeper problem bands cannot fix
+
+Even at 40/55/74/85, **91% of observations still land in Balanced or
+Supportive**. That is not a band failure — it is score compression. Across
+29 years and six markets the composite spans only 30.5 to 87.4, never using
+the bottom 30% of its scale even at the trough of the GFC.
+
+Bands only redistribute labels across the range the score actually occupies.
+**Fixing the compression requires the coefficients** — which is the next
+calibration, and the one this panel now makes possible.
