@@ -4,8 +4,21 @@ import {
   formatWeightPct,
   formatInfluencePct,
   PILLAR_INFLUENCE_MEASURED,
+  INFLATION_TARGET,
   type PillarKey,
 } from "@/lib/scoring";
+import { FALLBACK_MARKETS } from "@/lib/markets";
+
+// Rendered FROM INFLATION_TARGET rather than typed out as prose.
+//
+// On 2026-08-31 Australia's target moved to 2.5% and this page still read
+// "|inflation - 2%|" for every market, which silently broke the promise at
+// the bottom of this page that a reader can reproduce any published score
+// by hand. A formula written out by hand WILL drift from the engine; one
+// generated from the engine cannot.
+const TARGET_LIST = FALLBACK_MARKETS
+  .map((m) => `${m.name} ${INFLATION_TARGET[m.code] ?? 2}%`)
+  .join("  ·  ");
 
 export const metadata: Metadata = {
   title: "Learn More",
@@ -20,7 +33,10 @@ const TOPICS = [
     id: "cpi",
     title: "Inflation & CPI — the price of everything you buy",
     def: "The Consumer Price Index (CPI) tracks the price of a representative basket of everyday goods and services. Inflation is how fast that basket's total cost is rising year over year.",
-    formula: "Price Stability Score = clamp(100 − 15 × |inflation − 2%|, 0, 100)",
+    formula: "Price Stability Score = clamp(100 − 15 × |inflation − target|, 0, 100)",
+    targets: TARGET_LIST,
+    targetNote:
+      "The target is each central bank's own published objective, not one number applied to everyone. Five of the six aim at 2%. Australia is the exception: the Reserve Bank targets a 2–3% range and sets policy so inflation returns to the midpoint, so MMAI scores Australia against 2.5%. The United States is measured on the PCE price index rather than CPI, because that is the index the Federal Reserve defines its 2% target on.",
     impact: "When CPI rises faster than your income, your money buys less. This is why inflation directly shapes wage negotiations and why central banks raise interest rates specifically to slow it down.",
   },
   {
@@ -161,6 +177,22 @@ export default function LearnPage() {
                   }}
                 >
                   <span style={{ color: "var(--slate)" }}>where weight =</span> {t.weights}
+                </div>
+              )}
+
+              {/* Per-market targets, rendered from INFLATION_TARGET so the
+                  published formula cannot drift from the scoring engine. */}
+              {"targets" in t && t.targets && (
+                <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
+                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 8 }}>
+                    Each market’s own target
+                  </div>
+                  <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8, marginBottom: 10 }}>
+                    {t.targets}
+                  </div>
+                  {"targetNote" in t && t.targetNote && (
+                    <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>{t.targetNote}</p>
+                  )}
                 </div>
               )}
 
