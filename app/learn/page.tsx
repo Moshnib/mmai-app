@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { PILLAR_NAMES, formatWeightPct, type PillarKey } from "@/lib/scoring";
+import {
+  PILLAR_NAMES,
+  formatWeightPct,
+  formatInfluencePct,
+  PILLAR_INFLUENCE_MEASURED,
+  type PillarKey,
+} from "@/lib/scoring";
 
 export const metadata: Metadata = {
   title: "Learn More",
@@ -53,6 +59,14 @@ const TOPICS = [
     // Weights are read from PILLAR_WEIGHTS rather than typed as a string, so
     // the published numbers can never drift out of sync with the engine.
     weights: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatWeightPct(k)}`).join("  ·  "),
+    // What those weights actually DO, measured rather than asserted. Published
+    // because the weight table alone overstates Monetary Conditions and
+    // understates External & Commodities -- see PILLAR_EFFECTIVE_INFLUENCE.
+    influence: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatInfluencePct(k)}`).join("  ·  "),
+    influenceNote:
+      `A pillar's real influence is its weight multiplied by how much it actually moves. Measured across all six markets since 2019 (as of ${PILLAR_INFLUENCE_MEASURED}), Monetary Conditions is weighted 18.75% but does 9.2% of the work, because policy rates change only a few times a year. External & Commodities is weighted 12.5% and does 15% — more than Monetary Conditions.`,
+    ecNote:
+      "One caveat worth knowing when comparing countries: External & Commodities uses a single global Brent oil price, so every market receives an identical score for it. It moves all six scores together over time, but it cannot make one market look better than another. Remove it entirely and the ranking of the six markets does not change at all.",
     impact: "You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. \"Supportive\" and \"Challenging\" describe conditions for an average household and business in that economy — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government's policy performance. MMAI is not investment advice.",
   },
 ];
@@ -147,6 +161,64 @@ export default function LearnPage() {
                   }}
                 >
                   <span style={{ color: "var(--slate)" }}>where weight =</span> {t.weights}
+                </div>
+              )}
+
+              {/* What those weights actually DO. A pillar's influence is its
+                  weight times how much it moves, so the weight table above
+                  describes intent and this describes behaviour. Measured, not
+                  asserted -- see PILLAR_EFFECTIVE_INFLUENCE in lib/scoring.ts. */}
+              {"influence" in t && t.influence && (
+                <div
+                  style={{
+                    border: "1px dashed var(--hair)",
+                    borderRadius: 10,
+                    padding: "13px 16px",
+                    marginBottom: 14,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "IBM Plex Mono, monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color: "var(--slate)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    What the weights actually do
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: 12.5,
+                      color: "var(--ink-soft)",
+                      lineHeight: 1.8,
+                      marginBottom: 10,
+                    }}
+                  >
+                    {t.influence}
+                  </div>
+                  {"influenceNote" in t && t.influenceNote && (
+                    <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>
+                      {t.influenceNote}
+                    </p>
+                  )}
+                  {"ecNote" in t && t.ecNote && (
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "var(--slate)",
+                        margin: "10px 0 0",
+                        paddingTop: 10,
+                        borderTop: "1px dashed var(--hair)",
+                        lineHeight: 1.7,
+                      }}
+                    >
+                      {t.ecNote}
+                    </p>
+                  )}
                 </div>
               )}
               <div

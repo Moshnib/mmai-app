@@ -61,6 +61,46 @@ export function formatWeightPct(key: PillarKey): string {
   return `${(PILLAR_WEIGHTS[key] * 100).toFixed(2).replace(/\.?0+$/, "")}%`;
 }
 
+/** MEASURED influence of each pillar on the composite, as a percentage.
+ *
+ *  A pillar's real influence is not its weight. It is its weight TIMES how
+ *  much that pillar actually varies: a heavily weighted pillar that barely
+ *  moves does little work, and a lightly weighted one that swings widely
+ *  does more than its share. This is a standard property of composite
+ *  indicators, covered in the OECD/JRC Handbook -- not a defect -- but it
+ *  means PILLAR_WEIGHTS alone describes intent rather than behaviour.
+ *
+ *  Measured 31 August 2026 across MMAI's full stored panel (48 market-years,
+ *  six markets, 2019-2026) as weight x pillar standard deviation, normalised
+ *  to 100. Two results are worth stating plainly:
+ *
+ *    - Monetary Conditions is weighted 18.75% and operates at 9.2%. The
+ *      policy rate does not vary enough, once passed through its equation,
+ *      to earn its stated share.
+ *    - External & Commodities is weighted 12.5% and operates at 15.0% --
+ *      MORE than Monetary Conditions.
+ *
+ *  These are OBSERVATIONS about the current panel, not parameters. Nothing
+ *  reads them to compute a score; they exist so the Learn page can publish
+ *  what the weights actually do. They will drift as history accumulates and
+ *  should be re-measured, not trusted indefinitely. */
+export const PILLAR_EFFECTIVE_INFLUENCE: Record<PillarKey, number> = {
+  PS: 30.6,
+  GM: 29.4,
+  LM: 15.8,
+  MC: 9.2,
+  EC: 15.0,
+};
+
+/** Date the figures above were measured, shown wherever they are published
+ *  so a reader can tell how stale they are. */
+export const PILLAR_INFLUENCE_MEASURED = "31 August 2026";
+
+/** Renders a measured influence figure the same way everywhere. */
+export function formatInfluencePct(key: PillarKey): string {
+  return `${PILLAR_EFFECTIVE_INFLUENCE[key].toFixed(1)}%`;
+}
+
 /** Which raw indicator each pillar is derived from, plus display info.
  *  Shared by the Trends page (single-market detail view) and the Compare
  *  page (cross-market view), so both stay in sync automatically. */
