@@ -85,7 +85,7 @@ export default function ComparePageInner() {
         name: marketNames[code],
         color: MARKET_COLORS[code] ?? "#9296AB",
         data: history.map((h) => {
-          const pillars = computePillarScores(h.indicators);
+          const pillars = computePillarScores(h.indicators, code);
           return { year: h.year, value: valueFn(pillars, h.indicators) };
         }),
       };
@@ -149,18 +149,61 @@ export default function ComparePageInner() {
 
     if (latest.length < 2) return [];
 
+    // Markets within this many points are reported as LEVEL, not ranked.
+    //
+    // Not an arbitrary round number. The MMAI evidence audit (31 Aug 2026)
+    // re-scored every market under equal 20% pillar weights -- the neutral
+    // reference case named in the methodology charter -- holding the pillar
+    // scores themselves identical. Every composite moved by less than one
+    // point, yet the top three REORDERED, because they sat only 0.71 points
+    // apart. A gap smaller than the movement an equally defensible weighting
+    // choice produces is not a gap the data supports naming a leader from.
+    // 1.0 is that measured largest shift, rounded up.
+    //
+    // This is a DISPLAY rule. It changes no score and no equation.
+    const LEVEL_TOLERANCE = 1.0;
+
+    const fmtNames = (xs: { name: string }[]) =>
+      xs.length === 2
+        ? `${xs[0].name} and ${xs[1].name}`
+        : xs.slice(0, -1).map((x) => x.name).join(", ") + ` and ${xs[xs.length - 1].name}`;
+    const fmtVals = (xs: { value: number }[]) => xs.map((x) => x.value.toFixed(1)).join(", ");
+
     const top = latest[0];
     const bottom = latest[latest.length - 1];
+    const leaders = latest.filter((m) => top.value - m.value <= LEVEL_TOLERANCE);
+    const trailers = latest.filter((m) => m.value - bottom.value <= LEVEL_TOLERANCE);
     const supportive = latest.filter((m) => m.value >= 65).length;
 
-    return [
-      { text: `${top.name} leads at ${top.value.toFixed(1)}.`, color: top.color },
-      { text: `${bottom.name} is lowest at ${bottom.value.toFixed(1)}.`, color: bottom.color },
-      {
-        text: `${supportive} of ${latest.length} selected markets score 65 or above.`,
-        color: "var(--gold-deep)",
-      },
-    ];
+    const rows: { text: string; color: string }[] = [];
+
+    rows.push(
+      leaders.length > 1
+        ? {
+            text: `${fmtNames(leaders)} are level at the top (${fmtVals(leaders)}) — too close to separate.`,
+            color: top.color,
+          }
+        : { text: `${top.name} leads at ${top.value.toFixed(1)}.`, color: top.color }
+    );
+
+    // Only report the bottom separately if it is not already in the top group.
+    if (trailers.length < latest.length) {
+      rows.push(
+        trailers.length > 1
+          ? {
+              text: `${fmtNames(trailers)} are level at the bottom (${fmtVals(trailers)}).`,
+              color: bottom.color,
+            }
+          : { text: `${bottom.name} is lowest at ${bottom.value.toFixed(1)}.`, color: bottom.color }
+      );
+    }
+
+    rows.push({
+      text: `${supportive} of ${latest.length} selected markets score 65 or above.`,
+      color: "var(--gold-deep)",
+    });
+
+    return rows;
   }, [compositeSeries]);
 
   return (

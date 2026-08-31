@@ -16,9 +16,14 @@
 
 ---
 
-## 0. STATE VERIFICATION (run 2026-08-24)
+## 0. STATE VERIFICATION (run 2026-08-24 — **superseded, see §15**)
 
-Everything below was checked directly, not assumed:
+> **This block is a dated snapshot from 24 August and is no longer current.**
+> The cron claim in particular is now WRONG: Vercel Hobby crons proved
+> unreliable on 28–29 August and the primary trigger moved to GitHub
+> Actions. See §15 for verified current state.
+
+Everything below was checked directly at the time, not assumed:
 
 | Check | Result |
 |---|---|
@@ -236,7 +241,7 @@ Norway's technical notes, preserved for when it returns:
 ```
 PILLAR_WEIGHTS = { PS: 0.25, GM: 0.25, LM: 0.1875, MC: 0.1875, EC: 0.125 }
 
-S_PS = clip(100 − 15 × |inflation − 2|, 0, 100)      -- Price Stability, target τ=2%
+S_PS = clip(100 − 15 × |inflation − τ(market)|, 0, 100)  -- Price Stability, τ is PER-MARKET
 S_GM = clip(50 + 10 × gdpGrowth, 0, 100)             -- Growth Momentum
 S_LM = clip(100 − 10 × (unemployment − 2), 0, 100)   -- Labour Market
 S_MC = clip(100 − 12 × |policyRate − 2.5|, 0, 100)   -- Monetary Conditions, neutral=2.5%
@@ -245,6 +250,9 @@ S_EC = clip(100 − 1.2 × |brentYoY|, 0, 100)          -- External & Commoditie
 MMAI = (Σ weight × pillar_score) / (Σ active weights)  -- reweights around any missing pillar
 ```
 
+- **τ (inflation target) is per-market since 2026-08-31**, from `INFLATION_TARGET` in `lib/scoring.ts`. US/EA/UK/CA/JP = **2.0%**; **Australia = 2.5%**. Australia is the only one of the six whose central bank targets a *range* (2–3%); the RBA's own explainer states policy is set so inflation returns to the **midpoint**. Every value was read from the issuing institution on 2026-08-31 — do not change one without doing the same.
+- **`computePillarScores(raw, market)` takes market as a REQUIRED argument.** Deliberately not optional-with-default: an optional one lets a call site silently score Australia against 2.0 while the refresh route uses 2.5, so stored and displayed scores disagree.
+- **The US scores on headline PCE, not CPI** (`fetchUsPceInflation` in `lib/fetchers/bea.ts`), because the Fed defines its 2% objective on the PCE index. BLS CPI remains an automatic fallback. Measured 2026-08-31: PCE 3.70% vs CPI 3.36% — PCE was *above* CPI, the reverse of the long-run relationship, so never approximate one from the other.
 - **Publication threshold:** coverage (populated pillars ÷ 5) must be ≥ **70%** (at least 4 of 5 pillars). Below that the composite is `null` and the site shows "N/A" rather than a misleading partial score.
 - **Interpretation bands** (label only): 80+ "Strongly Supportive" · 65+ "Supportive" · 45+ "Balanced" · 30+ "Challenging" · <30 "Highly Challenging"
 - **Color is continuous, NOT banded** — see §6.
@@ -563,3 +571,62 @@ Built: `lib/fetchers/bis.ts` → `fetchBisPolicyRate("SA" | "KW")`. Saudi = SAMA
 
 ---
 *End of handover document.*
+
+---
+
+## 15. Methodology charter, V1 freeze, and the evidence audit (2026-08-29 → 2026-08-31)
+
+The largest change in the project's direction so far. Read this section before touching `lib/scoring.ts`.
+
+### 15.1 The name changed
+**Moshnib MACRO Analysis Index**, not "Market Analysis Index". Charter §17 marks this Concluded. The rename took two commits because the first pass used a case-sensitive search and missed `MOSHNIB MARKET ANALYSIS INDEX` in capitals on the homepage — and the verification grep was blind the same way the fix was. **Search case-insensitively when verifying a rename.**
+
+The charter also specifies the descriptor **"Measuring the Pulse of the Economy"**. It is still not on the site. Open item.
+
+### 15.2 V1 is a frozen benchmark
+`MMAI_V1_FROZEN_BENCHMARK.md`, git tag `v1-benchmark`. Charter §14 requires a dated copy of equations, schema and known outputs before methodology research begins. It reproduces production to **0.0000267**.
+
+**Do not edit that file to reflect later changes.** A snapshot that gets updated is not a benchmark. Changes go in `MMAI_CHANGE_LOG.md` instead.
+
+### 15.3 Research is on a separate branch
+`research/v2-scoring` holds `research/v2-candidate.ts` and `research/compare.ts`. Nothing the site renders imports them. Charter §14 forbids editing production equations in place during testing.
+
+Findings so far: under equal 20% weights the top three markets **reorder**, and 10 of 48 historical points change band. The sixth-pillar (bond yields) test **cannot currently be run** — the policy rate did not vary across the window the two series overlap, so correlation is undefined for four of six markets. It needs multiple rate *cycles*; bond collection began 2025-08-29.
+
+### 15.4 The evidence audit and the five changes it produced
+Full record in `MMAI_CHANGE_LOG.md`, each entry to charter §14's required structure and each independently revertable.
+
+| Date | Change | Effect |
+|---|---|---|
+| 31 Aug | US scored on **PCE**, not CPI | US 78.48 → **77.21** |
+| 31 Aug | Compare page stops naming a leader within **1.0 points** | display only |
+| 31 Aug | Learn page publishes **measured** pillar influence | disclosure only |
+| 31 Aug | Refresh cannot overwrite a published score with a failed fetch | guard only |
+| 31 Aug | **Per-market inflation targets**; AU = 2.5% | AU 73.97 → **75.85** |
+
+Measured facts worth not rediscovering:
+- **Effective ≠ nominal weight.** Monetary Conditions is weighted 18.75% and operates at **9.2%**; External & Commodities is weighted 12.5% and operates at **15.0%**. Stored in `PILLAR_EFFECTIVE_INFLUENCE`, read by nothing in the scoring path.
+- **External & Commodities has zero cross-market variance** (sd exactly 0.0000) — one global Brent price for all six. Remove it and the ranking is unchanged. It is also the *only* daily-updating input, so all six scores move in lockstep day to day.
+- **The pillars are NOT redundant.** Strongest cross-pillar correlation |r| = 0.32; Growth vs Labour only 0.17. This is genuine evidence for the five-pillar structure — record it in the IP file.
+
+### 15.5 The refresh pipeline (this replaces §0's cron claim)
+Vercel Hobby crons are **best-effort** — they may be delayed hours or skipped entirely. Observed directly on 28–29 August, which is what caused the repeated "last updated Aug 28" complaints. Three layers now:
+
+1. **GitHub Actions** (`.github/workflows/refresh.yml`) — primary, 06:10 / 12:00 / 18:00 UTC, fails loudly on non-200.
+2. **Freshness guard** — markets already stamped today are skipped, so the later runs are cheap no-ops.
+3. **Vercel crons** — left in place as a third layer.
+
+`workflow_dispatch` has a **force** checkbox (added 31 Aug) for re-running after a *source* change, which the freshness guard would otherwise block until the next day. Force is deliberately unavailable on the schedule.
+
+**Trap, learned the hard way.** The first forced run overwrote Canada's good 76.4952 with *Not Publishable*: both Statistics Canada calls (inflation and unemployment share one source) failed together, coverage fell to 0.6. A retry 60 seconds later restored it. The **publication-regression guard** in `app/api/refresh/route.ts` now prevents this — a run yielding nothing publishable is skipped when a good score under 3 days old exists.
+
+### 15.6 What is open
+- **Historical calibration dataset** (charter §18). The blocker for everything: the §13 backtest needs the 2007–09 crisis and MMAI's history starts 2019. Every research question so far has ended here.
+- **Neutral rates per market.** The 2.5% applied to both Japan and the US is the least defensible number in V1.
+- Nine unsourced coefficients, and the band thresholds (charter §15 requires they be researched).
+- **Buy a domain** — unblocks IMF permission (UAE/Kuwait/Oman inflation are still on year-old figures), Gulf debt, and Resend email.
+
+### 15.7 Rules this period added
+- **Verify, do not recall.** Two reasonable assumptions were wrong in the same session: that CPI runs above PCE (it did not), and that 2.5% for Australia was MMAI's design choice (it is the RBA's). Both were caught only by reading the source.
+- **Multi-line string replacement is unreliable on this repo's files.** Prefer line-indexed edits when scripting changes.
+- `tsx` does **not** load `.env.local` the way `next` does. Source it explicitly or fetchers fail with "KEY is not configured".

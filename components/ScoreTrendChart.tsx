@@ -36,7 +36,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
 
   const points = history
     .map((h) => {
-      const { composite } = computeComposite(computePillarScores(h.indicators));
+      const { composite } = computeComposite(computePillarScores(h.indicators, marketCode));
       return { year: h.year, value: composite };
     })
     .filter((p): p is { year: string; value: number } => p.value !== null);

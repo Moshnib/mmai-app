@@ -1,5 +1,25 @@
 import type { Metadata } from "next";
-import { PILLAR_NAMES, formatWeightPct, type PillarKey } from "@/lib/scoring";
+import {
+  PILLAR_NAMES,
+  formatWeightPct,
+  formatInfluencePct,
+  PILLAR_INFLUENCE_MEASURED,
+  INFLATION_TARGET,
+  type PillarKey,
+} from "@/lib/scoring";
+import { FALLBACK_MARKETS } from "@/lib/markets";
+import { formulaLine } from "@/lib/publishedFormulas";
+
+// Rendered FROM INFLATION_TARGET rather than typed out as prose.
+//
+// On 2026-08-31 Australia's target moved to 2.5% and this page still read
+// "|inflation - 2%|" for every market, which silently broke the promise at
+// the bottom of this page that a reader can reproduce any published score
+// by hand. A formula written out by hand WILL drift from the engine; one
+// generated from the engine cannot.
+const TARGET_LIST = FALLBACK_MARKETS
+  .map((m) => `${m.name} ${INFLATION_TARGET[m.code] ?? 2}%`)
+  .join("  ·  ");
 
 export const metadata: Metadata = {
   title: "Learn More",
@@ -14,35 +34,38 @@ const TOPICS = [
     id: "cpi",
     title: "Inflation & CPI — the price of everything you buy",
     def: "The Consumer Price Index (CPI) tracks the price of a representative basket of everyday goods and services. Inflation is how fast that basket's total cost is rising year over year.",
-    formula: "Price Stability Score = clamp(100 − 15 × |inflation − 2%|, 0, 100)",
+    formula: formulaLine("PS"),
+    targets: TARGET_LIST,
+    targetNote:
+      "The target is each central bank's own published objective, not one number applied to everyone. Five of the six aim at 2%. Australia is the exception: the Reserve Bank targets a 2–3% range and sets policy so inflation returns to the midpoint, so MMAI scores Australia against 2.5%. The United States is measured on the PCE price index rather than CPI, because that is the index the Federal Reserve defines its 2% target on.",
     impact: "When CPI rises faster than your income, your money buys less. This is why inflation directly shapes wage negotiations and why central banks raise interest rates specifically to slow it down.",
   },
   {
     id: "gdp",
     title: "GDP Growth — is the economy actually expanding?",
     def: "Gross Domestic Product (GDP) is the total value of everything a country produces. GDP growth measures whether that total is expanding or shrinking.",
-    formula: "Growth Momentum Score = clamp(50 + 10 × (GDP growth %), 0, 100)",
+    formula: formulaLine("GM"),
     impact: "When growth is strong, businesses hire more and wages tend to rise. When it shrinks for two consecutive quarters, that's a recession.",
   },
   {
     id: "unemployment",
     title: "Unemployment Rate — how easy is it to find or keep work?",
     def: "The share of people actively looking for work who can't find it, as a percentage of the labour force.",
-    formula: "Labour Market Score = clamp(100 − 10 × (unemployment% − 2%), 0, 100)",
+    formula: formulaLine("LM"),
     impact: "Low unemployment means workers have leverage — more job offers, easier to negotiate a raise. High unemployment flips that.",
   },
   {
     id: "rate",
     title: "Policy Interest Rate — the cost of borrowing money",
     def: "The benchmark rate set by a central bank. It ripples out to set the tone for every other interest rate in the economy.",
-    formula: "Monetary Conditions Score = clamp(100 − 12 × |policy rate − 2.5%|, 0, 100)",
+    formula: formulaLine("MC"),
     impact: "This number sets the floor for mortgage rates, car loans, and credit card APRs — when it rises, borrowing gets more expensive.",
   },
   {
     id: "oil",
     title: "Brent Crude Oil — the hidden cost inside everything",
     def: "The global benchmark oil price. Even if you never buy gasoline directly, oil is embedded in shipping, manufacturing, and heating costs.",
-    formula: "External & Commodities Score = clamp(100 − 1.2 × |Brent YoY % change|, 0, 100)",
+    formula: formulaLine("EC"),
     impact: "Oil spikes show up weeks later as higher prices at the pump, higher heating bills, and higher shipping costs baked into everything you buy.",
   },
   {
@@ -53,6 +76,14 @@ const TOPICS = [
     // Weights are read from PILLAR_WEIGHTS rather than typed as a string, so
     // the published numbers can never drift out of sync with the engine.
     weights: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatWeightPct(k)}`).join("  ·  "),
+    // What those weights actually DO, measured rather than asserted. Published
+    // because the weight table alone overstates Monetary Conditions and
+    // understates External & Commodities -- see PILLAR_EFFECTIVE_INFLUENCE.
+    influence: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatInfluencePct(k)}`).join("  ·  "),
+    influenceNote:
+      `A pillar's real influence is its weight multiplied by how much it actually moves. Measured across all six markets since 2019 (as of ${PILLAR_INFLUENCE_MEASURED}), Monetary Conditions is weighted 18.75% but does 9.2% of the work, because policy rates change only a few times a year. External & Commodities is weighted 12.5% and does 15% — more than Monetary Conditions.`,
+    ecNote:
+      "One caveat worth knowing when comparing countries: External & Commodities uses a single global Brent oil price, so every market receives an identical score for it. It moves all six scores together over time, but it cannot make one market look better than another. Remove it entirely and the ranking of the six markets does not change at all.",
     impact: "You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. \"Supportive\" and \"Challenging\" describe conditions for an average household and business in that economy — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government's policy performance. MMAI is not investment advice.",
   },
 ];
@@ -147,6 +178,80 @@ export default function LearnPage() {
                   }}
                 >
                   <span style={{ color: "var(--slate)" }}>where weight =</span> {t.weights}
+                </div>
+              )}
+
+              {/* Per-market targets, rendered from INFLATION_TARGET so the
+                  published formula cannot drift from the scoring engine. */}
+              {"targets" in t && t.targets && (
+                <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
+                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 8 }}>
+                    Each market’s own target
+                  </div>
+                  <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8, marginBottom: 10 }}>
+                    {t.targets}
+                  </div>
+                  {"targetNote" in t && t.targetNote && (
+                    <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>{t.targetNote}</p>
+                  )}
+                </div>
+              )}
+
+              {/* What those weights actually DO. A pillar's influence is its
+                  weight times how much it moves, so the weight table above
+                  describes intent and this describes behaviour. Measured, not
+                  asserted -- see PILLAR_EFFECTIVE_INFLUENCE in lib/scoring.ts. */}
+              {"influence" in t && t.influence && (
+                <div
+                  style={{
+                    border: "1px dashed var(--hair)",
+                    borderRadius: 10,
+                    padding: "13px 16px",
+                    marginBottom: 14,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "IBM Plex Mono, monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color: "var(--slate)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    What the weights actually do
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: 12.5,
+                      color: "var(--ink-soft)",
+                      lineHeight: 1.8,
+                      marginBottom: 10,
+                    }}
+                  >
+                    {t.influence}
+                  </div>
+                  {"influenceNote" in t && t.influenceNote && (
+                    <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>
+                      {t.influenceNote}
+                    </p>
+                  )}
+                  {"ecNote" in t && t.ecNote && (
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "var(--slate)",
+                        margin: "10px 0 0",
+                        paddingTop: 10,
+                        borderTop: "1px dashed var(--hair)",
+                        lineHeight: 1.7,
+                      }}
+                    >
+                      {t.ecNote}
+                    </p>
+                  )}
                 </div>
               )}
               <div

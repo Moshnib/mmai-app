@@ -34,6 +34,11 @@ on:
   # Adds a "Run workflow" button in the Actions tab, so a missed day can
   # be fixed in one click without waiting or touching a terminal.
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-fetch markets that already have a reading today (use after fixing or changing a source)"
+        type: boolean
+        default: false
 
 concurrency:
   # Never let two refreshes overlap.
@@ -47,10 +52,20 @@ jobs:
     steps:
       - name: Refresh scored markets
         run: |
-          echo "Calling /api/refresh …"
+          echo "Calling /api/refresh (force=${{ inputs.force }}) …"
+          # The freshness guard skips any market already stamped today, which
+          # is what makes three runs a day safe. That same guard blocks a
+          # deliberate re-run after a SOURCE CHANGE -- the readings exist, they
+          # were just produced by the old source. force=1 overrides it, and is
+          # only ever set by hand from the Actions tab, never on a schedule.
+          URL="https://mmai-app.vercel.app/api/refresh"
+          if [ "${{ inputs.force }}" = "true" ]; then
+            URL="$URL?force=1"
+            echo "FORCE: re-fetching markets that already have a reading today"
+          fi
           code=$(curl -sS -o /tmp/main.json -w "%{http_code}" --max-time 120 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://mmai-app.vercel.app/api/refresh")
+            "$URL")
           echo "HTTP $code"
           head -c 800 /tmp/main.json; echo
           # Fail the run on a non-200 so the failure is visible in the

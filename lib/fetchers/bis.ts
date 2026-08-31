@@ -61,7 +61,7 @@ export type BisPolicyRateArea = "SA" | "KW";
 // newlines BEFORE this runs, so a newline inside a quoted field can
 // never merge two records -- it fragments the row and trips the
 // exactly-one-data-row guard instead.
-function parseCsvLine(line: string): string[] {
+export function parseCsvLine(line: string): string[] {
   const fields: string[] = [];
   let current = "";
   let inQuotes = false;

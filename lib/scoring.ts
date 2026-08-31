@@ -61,6 +61,46 @@ export function formatWeightPct(key: PillarKey): string {
   return `${(PILLAR_WEIGHTS[key] * 100).toFixed(2).replace(/\.?0+$/, "")}%`;
 }
 
+/** MEASURED influence of each pillar on the composite, as a percentage.
+ *
+ *  A pillar's real influence is not its weight. It is its weight TIMES how
+ *  much that pillar actually varies: a heavily weighted pillar that barely
+ *  moves does little work, and a lightly weighted one that swings widely
+ *  does more than its share. This is a standard property of composite
+ *  indicators, covered in the OECD/JRC Handbook -- not a defect -- but it
+ *  means PILLAR_WEIGHTS alone describes intent rather than behaviour.
+ *
+ *  Measured 31 August 2026 across MMAI's full stored panel (48 market-years,
+ *  six markets, 2019-2026) as weight x pillar standard deviation, normalised
+ *  to 100. Two results are worth stating plainly:
+ *
+ *    - Monetary Conditions is weighted 18.75% and operates at 9.2%. The
+ *      policy rate does not vary enough, once passed through its equation,
+ *      to earn its stated share.
+ *    - External & Commodities is weighted 12.5% and operates at 15.0% --
+ *      MORE than Monetary Conditions.
+ *
+ *  These are OBSERVATIONS about the current panel, not parameters. Nothing
+ *  reads them to compute a score; they exist so the Learn page can publish
+ *  what the weights actually do. They will drift as history accumulates and
+ *  should be re-measured, not trusted indefinitely. */
+export const PILLAR_EFFECTIVE_INFLUENCE: Record<PillarKey, number> = {
+  PS: 30.6,
+  GM: 29.4,
+  LM: 15.8,
+  MC: 9.2,
+  EC: 15.0,
+};
+
+/** Date the figures above were measured, shown wherever they are published
+ *  so a reader can tell how stale they are. */
+export const PILLAR_INFLUENCE_MEASURED = "31 August 2026";
+
+/** Renders a measured influence figure the same way everywhere. */
+export function formatInfluencePct(key: PillarKey): string {
+  return `${PILLAR_EFFECTIVE_INFLUENCE[key].toFixed(1)}%`;
+}
+
 /** Which raw indicator each pillar is derived from, plus display info.
  *  Shared by the Trends page (single-market detail view) and the Compare
  *  page (cross-market view), so both stay in sync automatically. */
@@ -76,7 +116,58 @@ function clip(x: number, lo = 0, hi = 100): number {
   return Math.max(lo, Math.min(hi, x));
 }
 
-/** Equation 1 — Price Stability. Default target tau = 2%. */
+/** The official price-stability benchmark each central bank actually
+ *  states, per market.
+ *
+ *  Every value below was read from the issuing institution's own page on
+ *  31 August 2026, not from memory:
+ *
+ *   US 2.0  Federal Reserve. Stated on the PCE price index -- which is why
+ *           lib/fetchers/bea.ts fetches PCE rather than CPI.
+ *   EA 2.0  ECB, symmetric 2% medium-term target on HICP.
+ *   UK 2.0  Bank of England: "The Government has set us a target of
+ *           keeping inflation at 2%."
+ *   CA 2.0  Bank of Canada: "the inflation-control target, which is the
+ *           2% midpoint of the 1%-3% control range." The 2% is the
+ *           TARGET; the range is a control band around it.
+ *   JP 2.0  Bank of Japan, the "Price Stability Target" of 2 per cent.
+ *   AU 2.5  Reserve Bank of Australia. Australia is the ONLY one of the
+ *           six whose target is a RANGE -- "keep annual consumer price
+ *           inflation between 2 and 3 per cent". 2.5 is not MMAI rounding
+ *           that band to a convenient midpoint: the RBA's own explainer
+ *           states that "the Statement on the Conduct of Monetary Policy
+ *           specifies that the Reserve Bank sets monetary policy such
+ *           that inflation is expected to return to the MIDPOINT of the
+ *           target". The midpoint of 2-3% is 2.5%.
+ *
+ *  Australia was previously scored against 2.0 like everyone else, which
+ *  penalised it for inflation its own central bank considers on target.
+ *
+ *  The charter (section 10) requires exactly this shape: "common scoring
+ *  function, economy-appropriate official measure and benchmark". The
+ *  FUNCTION is identical for all six; only the benchmark differs, and
+ *  only where the issuing central bank differs. */
+export const INFLATION_TARGET: Record<string, number> = {
+  US: 2.0,
+  EA: 2.0,
+  UK: 2.0,
+  CA: 2.0,
+  JP: 2.0,
+  AU: 2.5,
+};
+
+/** Falls back to 2.0 for any market not listed above.
+ *
+ *  Deliberately a soft fallback rather than a throw: Gulf Watch markets
+ *  are unscored, and Norway's row is dormant. But a market that becomes
+ *  SCORED must be added to INFLATION_TARGET with a verified source --
+ *  inheriting 2.0 silently is the exact error this map exists to fix. */
+export function inflationTargetFor(market: string): number {
+  return INFLATION_TARGET[market] ?? 2.0;
+}
+
+/** Equation 1 — Price Stability. Target is the market's own official
+ *  benchmark; see INFLATION_TARGET. */
 export function priceStabilityScore(inflation: number, target = 2.0): number {
   return clip(100 - 15 * Math.abs(inflation - target));
 }
@@ -102,9 +193,16 @@ export function externalCommoditiesScore(brentYoY: number): number {
 }
 
 /** Runs all five pillar transformations. */
-export function computePillarScores(raw: RawIndicators): PillarScores {
+/** `market` is REQUIRED, not optional with a default.
+ *
+ *  An optional parameter would let a call site silently score Australia
+ *  against 2.0 while the refresh route scored it against 2.5 -- the stored
+ *  score and the displayed score would then disagree, which is a class of
+ *  bug this project has already been bitten by. Making it required turns
+ *  the compiler into the guard: every call site had to be visited. */
+export function computePillarScores(raw: RawIndicators, market: string): PillarScores {
   return {
-    PS: raw.inflation != null ? priceStabilityScore(raw.inflation) : null,
+    PS: raw.inflation != null ? priceStabilityScore(raw.inflation, inflationTargetFor(market)) : null,
     GM: raw.gdpGrowth != null ? growthMomentumScore(raw.gdpGrowth) : null,
     LM: raw.unemployment != null ? labourMarketScore(raw.unemployment) : null,
     MC: raw.policyRate != null ? monetaryConditionsScore(raw.policyRate) : null,

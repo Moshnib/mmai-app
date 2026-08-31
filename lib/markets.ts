@@ -37,7 +37,7 @@ export const FALLBACK_MARKETS: MarketData[] = [
 ];
 
 export function scoreMarket(market: MarketData): { pillars: PillarScores; composite: number | null; coverage: number; coveragePillars: number } {
-  const pillars = computePillarScores(market.raw);
+  const pillars = computePillarScores(market.raw, market.code);
   const { composite, coverage, coveragePillars } = computeComposite(pillars);
   return { pillars, composite, coverage, coveragePillars };
 }

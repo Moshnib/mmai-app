@@ -104,21 +104,21 @@ export default function TrendsPageInner({
   // Two pillars/markets scoring the same land on the same color.
   const compositeCurrentScore = useMemo(() => {
     if (!latestPoint) return null;
-    const { composite } = computeComposite(computePillarScores(latestPoint.indicators));
+    const { composite } = computeComposite(computePillarScores(latestPoint.indicators, current));
     return composite;
-  }, [latestPoint]);
+  }, [latestPoint, current]);
 
   const pillarCurrentScores: Record<PillarKey, number | null> = useMemo(() => {
     if (!latestPoint) return { PS: null, GM: null, LM: null, MC: null, EC: null };
-    return computePillarScores(latestPoint.indicators);
-  }, [latestPoint]);
+    return computePillarScores(latestPoint.indicators, current);
+  }, [latestPoint, current]);
 
   const compositeSeries: Series[] = useMemo(() => [{
     key: "composite",
     name: marketNames[current],
     color: bandFor(compositeCurrentScore).color,
     data: history.map((h) => {
-      const pillars = computePillarScores(h.indicators);
+      const pillars = computePillarScores(h.indicators, current);
       const { composite } = computeComposite(pillars);
       return { year: h.year, value: composite };
     }),
@@ -130,7 +130,7 @@ export default function TrendsPageInner({
   const changes = useMemo(() => {
     if (history.length < 2) return null;
     const prev = history[history.length - 2];
-    const prevPillars = computePillarScores(prev.indicators);
+    const prevPillars = computePillarScores(prev.indicators, current);
     const compPrev = computeComposite(prevPillars).composite;
     const compNow = compositeCurrentScore;
 
@@ -164,17 +164,17 @@ export default function TrendsPageInner({
       smallest: moved && separated ? smallest : null,
       missing,
     };
-  }, [history, latestPoint, compositeCurrentScore, pillarCurrentScores]);
+  }, [history, latestPoint, compositeCurrentScore, pillarCurrentScores, current]);
 
   const focusSeries: Series[] = useMemo(() => [{
     key: focusPillar,
     name: PILLAR_NAMES[focusPillar],
     color: bandFor(pillarCurrentScores[focusPillar]).color,
     data: history.map((h) => {
-      const pillars = computePillarScores(h.indicators);
+      const pillars = computePillarScores(h.indicators, current);
       return { year: h.year, value: pillars[focusPillar] };
     }),
-  }], [focusPillar, history, pillarCurrentScores]);
+  }], [focusPillar, history, pillarCurrentScores, current]);
 
   // MONTHLY where the sources publish monthly, annual only as a
   // fallback. Inflation, unemployment and the policy rate all have a
