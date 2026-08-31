@@ -8,6 +8,7 @@ import {
   type PillarKey,
 } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import { formulaLine } from "@/lib/publishedFormulas";
 
 // Rendered FROM INFLATION_TARGET rather than typed out as prose.
 //
@@ -33,7 +34,7 @@ const TOPICS = [
     id: "cpi",
     title: "Inflation & CPI — the price of everything you buy",
     def: "The Consumer Price Index (CPI) tracks the price of a representative basket of everyday goods and services. Inflation is how fast that basket's total cost is rising year over year.",
-    formula: "Price Stability Score = clamp(100 − 15 × |inflation − target|, 0, 100)",
+    formula: formulaLine("PS"),
     targets: TARGET_LIST,
     targetNote:
       "The target is each central bank's own published objective, not one number applied to everyone. Five of the six aim at 2%. Australia is the exception: the Reserve Bank targets a 2–3% range and sets policy so inflation returns to the midpoint, so MMAI scores Australia against 2.5%. The United States is measured on the PCE price index rather than CPI, because that is the index the Federal Reserve defines its 2% target on.",
@@ -43,28 +44,28 @@ const TOPICS = [
     id: "gdp",
     title: "GDP Growth — is the economy actually expanding?",
     def: "Gross Domestic Product (GDP) is the total value of everything a country produces. GDP growth measures whether that total is expanding or shrinking.",
-    formula: "Growth Momentum Score = clamp(50 + 10 × (GDP growth %), 0, 100)",
+    formula: formulaLine("GM"),
     impact: "When growth is strong, businesses hire more and wages tend to rise. When it shrinks for two consecutive quarters, that's a recession.",
   },
   {
     id: "unemployment",
     title: "Unemployment Rate — how easy is it to find or keep work?",
     def: "The share of people actively looking for work who can't find it, as a percentage of the labour force.",
-    formula: "Labour Market Score = clamp(100 − 10 × (unemployment% − 2%), 0, 100)",
+    formula: formulaLine("LM"),
     impact: "Low unemployment means workers have leverage — more job offers, easier to negotiate a raise. High unemployment flips that.",
   },
   {
     id: "rate",
     title: "Policy Interest Rate — the cost of borrowing money",
     def: "The benchmark rate set by a central bank. It ripples out to set the tone for every other interest rate in the economy.",
-    formula: "Monetary Conditions Score = clamp(100 − 12 × |policy rate − 2.5%|, 0, 100)",
+    formula: formulaLine("MC"),
     impact: "This number sets the floor for mortgage rates, car loans, and credit card APRs — when it rises, borrowing gets more expensive.",
   },
   {
     id: "oil",
     title: "Brent Crude Oil — the hidden cost inside everything",
     def: "The global benchmark oil price. Even if you never buy gasoline directly, oil is embedded in shipping, manufacturing, and heating costs.",
-    formula: "External & Commodities Score = clamp(100 − 1.2 × |Brent YoY % change|, 0, 100)",
+    formula: formulaLine("EC"),
     impact: "Oil spikes show up weeks later as higher prices at the pump, higher heating bills, and higher shipping costs baked into everything you buy.",
   },
   {

@@ -1,0 +1,110 @@
+# ============================================================
+# Continuous checks. Runs on every push and every pull request.
+#
+# WHY THIS EXISTS
+# Until 31 August 2026 this project had exactly ONE automated job -- the
+# daily data refresh. Nothing checked the code. The verification scripts
+# below existed and passed, but only when somebody remembered to run them.
+#
+# That gap had a cost the same day: Australia's inflation target changed
+# to 2.5% and the Learn page kept publishing "|inflation - 2%|" for two
+# hours, directly beneath a promise that a reader can reproduce any score
+# by hand. It was found by accident during an audit.
+#
+# These jobs run in parallel because they are independent, and each fails
+# loudly on its own rather than hiding behind an earlier failure.
+# ============================================================
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # One run per branch; a new push cancels the previous, still-running one.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Types
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      # --max-warnings is deliberately NOT zero. Four warnings pre-date
+      # this workflow and are unrelated to it:
+      #   3x react-hooks/exhaustive-deps  (ComparePageInner, 'buildSeries')
+      #   1x @next/next/no-page-custom-font  (layout.tsx)
+      # The number is a RATCHET: lower it as these are fixed, and never
+      # raise it to let a new warning through.
+      - run: npx eslint . --max-warnings 4
+
+  scoring:
+    name: Scoring correctness
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+
+      # Pinned expected composites. Catches any change to the equations,
+      # weights, coverage rule or bands that moves a known result.
+      - name: Scoring produces the expected known results
+        run: npx tsx scripts/verify-scoring.ts
+
+      # The stored history still reproduces under the current spec.
+      - name: Stored history still reproduces
+        run: npx tsx scripts/verify-history.ts
+
+      # THE ONE THAT WOULD HAVE CAUGHT 31 AUGUST.
+      # Parses the formulas the site publishes to readers, executes them,
+      # and asserts they reproduce lib/scoring.ts across ~9,600
+      # comparisons -- plus that every inflation target still matches the
+      # central-bank source it was verified against.
+      - name: Published formulas match the engine
+        run: npx tsx scripts/verify-published-formulas.ts
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      # Placeholders, not secrets. next build only needs these to exist so
+      # module-level client construction does not throw during prerender;
+      # no request is made at build time. Real values live in Vercel.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
