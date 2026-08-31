@@ -51,6 +51,12 @@ export const maxDuration = 60;
  * same day (no licensed equity source) — its weight was redistributed
  * into the remaining five pillars in lib/scoring.ts.
  */
+// Set by fetchRawIndicators when Japan falls back to the World Bank, and
+// read when composing that row source note. Safe as module state only
+// because the refresh loop runs markets strictly sequentially, one await
+// at a time -- there is no interleaving to race with.
+let jpUnemploymentFellBack = false;
+
 async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> {
   try {
     return await promise;
@@ -91,10 +97,35 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
       settle("JP GDP growth", fetchGdpGrowth("JPN")),
       settle("JP policy rate", fetchJapanPolicyRate()),
     ]);
+
+    // FALLBACK, added 2026-08-31 after this broke in production.
+    // OECD answers instantly from a laptop and from GitHub's runners and
+    // fails from Vercel -- the same shape as the Saudi central bank being
+    // unreachable from Vercel while fine locally (handover 11.2).
+    //
+    // The symptom was not a missing number, it was a MOVED SCORE. With
+    // the Labour Market pillar null, computeComposite reweights across
+    // the remaining four and Japan published 75.35 instead of ~79.1 for
+    // two days -- a 3.8 point drop caused by a fetcher, not by Japan.
+    //
+    // So: prefer OECD's monthly figure, fall back to the World Bank
+    // annual series that served Japan reliably for months. A slightly
+    // staler number beats silently dropping a whole pillar. Which source
+    // was used is recorded in the row's source note.
+    let jpUnemployment = unemp?.unemployment ?? null;
+    let jpFellBack = false;
+    if (jpUnemployment == null) {
+      const fb = await settle("JP unemployment (World Bank fallback)", fetchUnemployment("JPN"));
+      if (fb?.unemployment != null) {
+        jpUnemployment = fb.unemployment;
+        jpFellBack = true;
+      }
+    }
+    jpUnemploymentFellBack = jpFellBack;
     return {
       inflation: infl?.inflation ?? null,
       gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: unemp?.unemployment ?? null,
+      unemployment: jpUnemployment,
       policyRate: rate?.policyRate ?? null,
       brentYoY,
     };
@@ -322,7 +353,13 @@ export async function GET(request: Request) {
       // of claiming "(live)" for data that didn't actually arrive.
       const partial = [raw.inflation, raw.gdpGrowth, raw.unemployment, raw.policyRate, raw.brentYoY].some((v) => v == null);
       const baseNote = SOURCE_NOTES[market] ?? "manual fallback — fetcher not yet wired";
-      const sourceNote = partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote;
+      // Records WHICH source produced Japan unemployment on this run, so
+      // a reader of the stored row can tell a monthly OECD figure from an
+      // annual World Bank one rather than having to guess.
+      const fallbackNote = market === "JP" && jpUnemploymentFellBack
+        ? " — JP unemployment via World Bank annual (OECD unavailable)"
+        : "";
+      const sourceNote = (partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote) + fallbackNote;
 
       // Supabase's client doesn't throw on a failed write -- it returns
       // {error}. Run both inserts, then check both errors together (not
