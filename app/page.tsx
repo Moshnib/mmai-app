@@ -172,7 +172,7 @@ export default function OverviewPage() {
               score panel below keeps its left-aligned reading order. */}
           <div className="hero-centered">
           <p className="eyebrow">
-            MOSHNIB MACRO ANALYSIS INDEX · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
+            MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
           </p>
           {dataSource === "live" && lastUpdated && (
             <p style={{ fontSize: 11.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>

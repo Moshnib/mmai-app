@@ -98,7 +98,7 @@ export default function SiteFooter() {
   return (
     <footer>
       <div className="wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <span>© 2026 MMAI — Moshnib Macro Analysis Index. An analytical communication tool, not investment advice.</span>
+        <span>© 2026 MMAI — Moshnib Macro Analysis Index. Measuring the Pulse of the Economy. An analytical communication tool, not investment advice.</span>
         {lastUpdated && (
           <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11 }}>
             Data last updated {formatStamp(lastUpdated)}

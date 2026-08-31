@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
@@ -77,34 +77,41 @@ export default function ComparePageInner() {
     return allYears.slice(Math.min(fromIdx, toIdx), Math.max(fromIdx, toIdx) + 1);
   }, [allYears, effectiveFromYear, effectiveToYear]);
 
-  function buildSeries(valueFn: (pillars: PillarScores, raw: RawIndicators) => number | null): Series[] {
-    return selectedMarkets.map((code) => {
-      const history = (liveHistory[code] ?? []).filter((h) => yearsInRange.includes(h.year));
-      return {
-        key: code,
-        name: marketNames[code],
-        color: MARKET_COLORS[code] ?? "#9296AB",
-        data: history.map((h) => {
-          const pillars = computePillarScores(h.indicators, code);
-          return { year: h.year, value: valueFn(pillars, h.indicators) };
-        }),
-      };
-    });
-  }
+  // useCallback, not a bare function: this closes over liveHistory and
+  // marketNames, and the three useMemos below depend on it. Previously it
+  // was omitted from their dependency arrays and the charts recomputed
+  // only because yearsInRange happens to change when live data arrives --
+  // true today, but nothing enforces it. Now the dependency is explicit.
+  const buildSeries = useCallback(
+    (valueFn: (pillars: PillarScores, raw: RawIndicators) => number | null): Series[] =>
+      selectedMarkets.map((code) => {
+        const history = (liveHistory[code] ?? []).filter((h) => yearsInRange.includes(h.year));
+        return {
+          key: code,
+          name: marketNames[code],
+          color: MARKET_COLORS[code] ?? "#9296AB",
+          data: history.map((h) => {
+            const pillars = computePillarScores(h.indicators, code);
+            return { year: h.year, value: valueFn(pillars, h.indicators) };
+          }),
+        };
+      }),
+    [selectedMarkets, liveHistory, yearsInRange, marketNames]
+  );
 
   const compositeSeries = useMemo(
     () => buildSeries((pillars) => computeComposite(pillars).composite),
-    [yearsInRange, selectedMarkets]
+    [buildSeries]
   );
 
   const pillarScoreSeries = useMemo(
     () => buildSeries((pillars) => pillars[selectedPillar]),
-    [yearsInRange, selectedPillar, selectedMarkets]
+    [buildSeries, selectedPillar]
   );
 
   const rawIndicatorSeries = useMemo(
     () => buildSeries((_pillars, raw) => raw[RAW_FIELD[selectedPillar].key] ?? null),
-    [yearsInRange, selectedPillar, selectedMarkets]
+    [buildSeries, selectedPillar]
   );
 
   // Inflation and policy rate come from live Supabase data now (via

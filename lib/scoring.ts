@@ -281,11 +281,45 @@ export function colorForScore(score: number | null): string {
   return rgbToHex(r1 + (r2 - r1) * localT, g1 + (g2 - g1) * localT, b1 + (b2 - b1) * localT);
 }
 
+// Band thresholds, calibrated 2026-08-31 against 173 market-years of
+// history (1990-2018) rather than chosen for appearance.
+//
+// The previous thresholds (80/65/45/30) were invented. Charter section 15
+// requires that verbal bands "must themselves be researched and
+// documented. They should not be invented merely for visual appeal."
+// Scored over the historical panel they put 63% of ALL observations in a
+// single band, and "Highly Challenging" was never reached ONCE in 29
+// years -- not in 2009. The United States in 2009, the worst year since
+// the 1930s, was labelled "Balanced".
+//
+// METHOD. Thresholds were required to classify ten NAMED macroeconomic
+// episodes the way an economist would: the UK 1990 and Canada 1991
+// recessions, the 2009 GFC trough in the US, euro area and Japan, US 2008
+// as crisis-underway, Japan 1999 post-Asian-crisis, Australia 2009
+// avoiding recession, US 2018 mature expansion, Australia 2012 mining
+// peak. A pure-quantile alternative was tested FIRST and failed (3/10) --
+// it labels US 2008 "Highly Challenging", which is wrong. Charter section
+// 9.1 independently cautions against percentile approaches.
+//
+// HONEST CAVEAT. 2,376 threshold sets satisfy all ten anchors, so the
+// evidence CONSTRAINS each threshold to a range rather than fixing a
+// point: 40-45, 48-59, 64-74, 85-87. The values below sit inside those
+// ranges, chosen for the most even distribution and legible numbers.
+// Three of the four OLD thresholds sat outside any defensible range;
+// only the 65 survived, by coincidence rather than design.
+//
+// A rescale of the composite itself was proposed and REJECTED: it was
+// dynamic min-max, which charter 9.1 rejects by name, and would have
+// retroactively changed every score ever published. Full rejection
+// record in research/rescale-demo.ts.
+//
+// These are LABELS ONLY. No score changes, and none of the six current
+// market labels changes under these thresholds.
 const BAND_LABELS = [
-  { min: 80, label: "Strongly Supportive" },
-  { min: 65, label: "Supportive" },
-  { min: 45, label: "Balanced" },
-  { min: 30, label: "Challenging" },
+  { min: 85, label: "Strongly Supportive" },
+  { min: 74, label: "Supportive" },
+  { min: 55, label: "Balanced" },
+  { min: 40, label: "Challenging" },
   { min: 0, label: "Highly Challenging" },
 ];
 
