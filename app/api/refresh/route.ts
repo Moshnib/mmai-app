@@ -17,7 +17,7 @@ import { fetchUkInflation, fetchUkUnemployment } from "@/lib/fetchers/ons";
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
-import { fetchUsGdpGrowth } from "@/lib/fetchers/bea";
+import { fetchUsGdpGrowth, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -57,6 +57,13 @@ export const maxDuration = 60;
 // at a time -- there is no interleaving to race with.
 let jpUnemploymentFellBack = false;
 
+// Same mechanism for the United States: PCE is the series the Fed's 2%
+// target is defined on, so it is what MMAI scores. CPI is kept as a
+// fallback rather than letting the pillar drop out -- losing PS entirely
+// would take US coverage to 0.80 and move the composite far more than
+// the wedge between the two series does.
+let usInflationFellBack = false;
+
 async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> {
   try {
     return await promise;
@@ -68,14 +75,33 @@ async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> 
 
 async function fetchRawIndicators(market: string, brentYoY: number | null): Promise<RawIndicators> {
   if (market === "US") {
+    // Price Stability scores a deviation from a 2% target. For the US
+    // that target is the Fed's, and the Fed defines it on the PCE price
+    // index -- not CPI. Scoring CPI against a PCE-defined target measures
+    // the country against a benchmark it does not use. Charter section 10
+    // reached this conclusion independently. CPI is no longer stored for
+    // the US -- it is fetched only if BEA is unavailable, and the row's
+    // source_note records it when that happens.
     const [infl, unemp, rate, gdp] = await Promise.all([
-      settle("US inflation", fetchUsInflation()),
+      settle("US inflation (PCE)", fetchUsPceInflation()),
       settle("US unemployment", fetchUsUnemployment()),
       settle("US policy rate", fetchUsPolicyRate()),
       settle("US GDP growth", fetchUsGdpGrowth()),
     ]);
+
+    let usInflation = infl?.inflation ?? null;
+    let fellBack = false;
+    if (usInflation == null) {
+      const fb = await settle("US inflation (CPI fallback)", fetchUsInflation());
+      if (fb?.inflation != null) {
+        usInflation = fb.inflation;
+        fellBack = true;
+      }
+    }
+    usInflationFellBack = fellBack;
+
     return {
-      inflation: infl?.inflation ?? null,
+      inflation: usInflation,
       gdpGrowth: gdp?.gdpGrowth ?? null,
       unemployment: unemp?.unemployment ?? null,
       policyRate: rate?.policyRate ?? null,
@@ -245,7 +271,7 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
 const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
 
 const SOURCE_NOTES: Record<string, string> = {
-  US: "BLS + BEA + New York Fed + EIA (live)",
+  US: "BEA (PCE + GDP) + BLS + New York Fed + EIA (live)",
   JP: "World Bank + OECD + BOJ + EIA (live)",
   AU: "ABS + World Bank + RBA + EIA (live)",
   EA: "Eurostat + ECB + EIA (live)",
@@ -356,9 +382,13 @@ export async function GET(request: Request) {
       // Records WHICH source produced Japan unemployment on this run, so
       // a reader of the stored row can tell a monthly OECD figure from an
       // annual World Bank one rather than having to guess.
-      const fallbackNote = market === "JP" && jpUnemploymentFellBack
-        ? " — JP unemployment via World Bank annual (OECD unavailable)"
-        : "";
+      const fallbackNote =
+        (market === "JP" && jpUnemploymentFellBack
+          ? " — JP unemployment via World Bank annual (OECD unavailable)"
+          : "") +
+        (market === "US" && usInflationFellBack
+          ? " — US inflation via BLS CPI (BEA PCE unavailable); PCE is the scored series"
+          : "");
       const sourceNote = (partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote) + fallbackNote;
 
       // Supabase's client doesn't throw on a failed write -- it returns
