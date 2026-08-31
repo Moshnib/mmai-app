@@ -247,3 +247,73 @@ Implemented and verified. Committed to `main`.
 
 ### Rollback method
 `git revert <commit>`. To keep the per-market structure but restore uniform 2.0, set `AU: 2.0` in `INFLATION_TARGET`.
+
+---
+
+## 2026-08-31 — Band thresholds recalibrated against 173 market-years
+
+**Category:** Interpretation labels. **No score, equation, weight or source changed.**
+
+### Old rule
+`80 / 65 / 45 / 30` — invented, never researched.
+
+### New rule
+`85 / 74 / 55 / 40`, calibrated against ten named macroeconomic episodes.
+
+### Reason
+Charter §15: verbal bands "must themselves be researched and documented. They should not be invented merely for visual appeal." They had not been. Scored over the newly-built 1990–2018 panel, the old thresholds:
+
+- put **63% of all 173 market-years into a single band**;
+- **never once reached "Highly Challenging"** in 29 years — not in 2009;
+- labelled the **United States in 2009, the worst year since the 1930s, "Balanced."**
+
+That last point is the defect. A reader seeing "Balanced" during a global financial collapse would be badly misled, which is the one thing this project exists to avoid.
+
+### Reference
+Charter §15 (bands must be researched), §9.1 (cautions against percentile approaches), §13 (test across regimes including the GFC). Panel built by `research/build-historical-panel.ts` from World Bank, BIS and EIA.
+
+### Data used
+173 scored market-years, six markets, 1990–2018.
+
+### Test results
+Thresholds were required to classify **ten named episodes** the way an economist would. A pure-quantile scheme was run first as the baseline to beat and **failed at 3/10** — it labels US 2008 "Highly Challenging", which is wrong.
+
+| Episode | Score | Old label | New label |
+|---|---|---|---|
+| UK 1990 recession | 30.5 | Challenging | **Highly Challenging** |
+| Canada 1991 recession | 39.1 | Challenging | **Highly Challenging** |
+| Japan 2009 | 45.8 | Balanced | **Challenging** |
+| Euro Area 2009 | 47.7 | Balanced | **Challenging** |
+| **US 2009** | 47.8 | **Balanced** | **Challenging** |
+| US 2008 crisis onset | 63.4 | Balanced | Balanced |
+| Australia 2009 | 74.7 | Supportive | Supportive |
+| Australia 2012 mining peak | 87.4 | Strongly Supportive | Strongly Supportive |
+
+**"Highly Challenging" goes from used 0 times in 173 years to 3.**
+
+**Honest caveat, recorded deliberately:** an episode-anchored search satisfies 10/10 — precisely the result to distrust, since the search was built to maximise anchor hits. Uniqueness was therefore tested: **2,376 threshold sets satisfy all ten anchors.** The evidence **constrains** each threshold to a range rather than fixing a point — `40–45`, `48–59`, `64–74`, `85–87`. The chosen values sit inside those ranges, selected for the most even distribution and legible numbers.
+
+**Three of the four old thresholds sat outside any defensible range.** Only the 65 survived, by coincidence rather than design.
+
+`tsc`, `eslint`, `npm run build` clean. All three verification scripts pass.
+
+### Impact
+**Zero effect on any published score.** Verified: **none of the six current market labels changes** — all six sit in Supportive under both schemes.
+
+One pinned test expectation changed: `verify-scoring.ts`'s Canada case, composite unchanged at 83.4, label moves Strongly Supportive → Supportive because that band now begins at 85. Intended, documented in the file.
+
+### A rejected alternative, preserved per charter §4
+Rescaling the composite so the historical floor mapped to 10 and the ceiling to 90 was proposed and **rejected**, for four reasons, any one sufficient:
+
+1. **It is dynamic min-max, which charter §9.1 rejects by name** — twice.
+2. **The entire scale would hang on one observation** (UK 1990). A single worse year would move the anchor and **retroactively change every score MMAI has ever published.**
+3. **It breaks reproducibility by hand,** adding two magic numbers from a dataset readers do not have — trading away the project's strongest claim for a cosmetic gain.
+4. **It adds two unsourced parameters,** moving the audit from 2-of-12 sourced to 2-of-14.
+
+Full record in `research/rescale-demo.ts`.
+
+### Approval status
+Implemented and verified. Committed to `main`.
+
+### Rollback method
+`git revert <commit>`, or restore `80/65/45/30` in `BAND_LABELS`. No stored data depends on the thresholds — bands are computed at read time, so a revert is complete and immediate.

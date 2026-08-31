@@ -254,7 +254,7 @@ MMAI = (Σ weight × pillar_score) / (Σ active weights)  -- reweights around an
 - **`computePillarScores(raw, market)` takes market as a REQUIRED argument.** Deliberately not optional-with-default: an optional one lets a call site silently score Australia against 2.0 while the refresh route uses 2.5, so stored and displayed scores disagree.
 - **The US scores on headline PCE, not CPI** (`fetchUsPceInflation` in `lib/fetchers/bea.ts`), because the Fed defines its 2% objective on the PCE index. BLS CPI remains an automatic fallback. Measured 2026-08-31: PCE 3.70% vs CPI 3.36% — PCE was *above* CPI, the reverse of the long-run relationship, so never approximate one from the other.
 - **Publication threshold:** coverage (populated pillars ÷ 5) must be ≥ **70%** (at least 4 of 5 pillars). Below that the composite is `null` and the site shows "N/A" rather than a misleading partial score.
-- **Interpretation bands** (label only): 80+ "Strongly Supportive" · 65+ "Supportive" · 45+ "Balanced" · 30+ "Challenging" · <30 "Highly Challenging"
+- **Interpretation bands** (label only, **recalibrated 2026-08-31**): 85+ "Strongly Supportive" · 74+ "Supportive" · 55+ "Balanced" · 40+ "Challenging" · <40 "Highly Challenging". Was 80/65/45/30, which were invented: those put 63% of 173 historical market-years in one band and never once reached the bottom label, labelling US 2009 "Balanced". Calibrated against ten named episodes — see the change log.
 - **Color is continuous, NOT banded** — see §6.
 - The pillar weights and the 0–100 cap are now **published on the Learn page** (they were missing, which broke the "verify our math yourself" promise).
 
