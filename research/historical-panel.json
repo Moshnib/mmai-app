@@ -1,0 +1,1457 @@
+{
+  "_README": "Historical calibration panel for MMAI research. REVISED data as published today, NOT vintage: supports full-information backtests only, never a claim about real-time signalling. Euro-area rows before 1999 have policyRate null and preRegime true. Rebuild with: npx tsx research/build-historical-panel.ts",
+  "generatedFor": "1990-2018",
+  "sources": {
+    "inflation": "World Bank FP.CPI.TOTL.ZG (CC BY 4.0)",
+    "gdpGrowth": "World Bank NY.GDP.MKTP.KD.ZG (CC BY 4.0)",
+    "unemployment": "World Bank SL.UEM.TOTL.ZS (CC BY 4.0)",
+    "policyRate": "BIS WS_CBPOL, monthly end-of-period, December value (unrestricted use with citation)",
+    "brentYoY": "US EIA RBRTE, monthly, annual mean, year-over-year (public domain)"
+  },
+  "limitations": [
+    "Revised data, not vintage. Full-information backtests only.",
+    "Euro area monetary policy begins 1999; earlier aggregates are backcast.",
+    "Japan has NO policy rate for 1999, 2001-2005 and 2013-2015: the BoJ targeted the monetary base, not a rate. Verified absent at source. Those years score on four pillars (coverage 0.80). Exclude Japan when calibrating the Monetary Conditions coefficient."
+  ],
+  "markets": [
+    {
+      "code": "US",
+      "name": "United States"
+    },
+    {
+      "code": "EA",
+      "name": "Euro Area"
+    },
+    {
+      "code": "CA",
+      "name": "Canada"
+    },
+    {
+      "code": "UK",
+      "name": "United Kingdom"
+    },
+    {
+      "code": "JP",
+      "name": "Japan"
+    },
+    {
+      "code": "AU",
+      "name": "Australia"
+    }
+  ],
+  "panel": {
+    "US": [
+      {
+        "year": 1990,
+        "inflation": 5.39795643990325,
+        "gdpGrowth": 1.88596557755378,
+        "unemployment": null,
+        "policyRate": 7,
+        "brentYoY": 29.7
+      },
+      {
+        "year": 1991,
+        "inflation": 4.23496396453849,
+        "gdpGrowth": -0.108312873733027,
+        "unemployment": 6.8,
+        "policyRate": 4,
+        "brentYoY": -15.5
+      },
+      {
+        "year": 1992,
+        "inflation": 3.02881967814969,
+        "gdpGrowth": 3.52249717254271,
+        "unemployment": 7.5,
+        "policyRate": 3,
+        "brentYoY": -3.5
+      },
+      {
+        "year": 1993,
+        "inflation": 2.95165696638559,
+        "gdpGrowth": 2.75179586314481,
+        "unemployment": 6.9,
+        "policyRate": 3,
+        "brentYoY": -11.7
+      },
+      {
+        "year": 1994,
+        "inflation": 2.60744159215453,
+        "gdpGrowth": 4.02902272637739,
+        "unemployment": 6.119,
+        "policyRate": 5.5,
+        "brentYoY": -7.1
+      },
+      {
+        "year": 1995,
+        "inflation": 2.80541968853662,
+        "gdpGrowth": 2.68443073970295,
+        "unemployment": 5.65,
+        "policyRate": 5.5,
+        "brentYoY": 7.6
+      },
+      {
+        "year": 1996,
+        "inflation": 2.93120419993441,
+        "gdpGrowth": 3.77277269047364,
+        "unemployment": 5.451,
+        "policyRate": 5.25,
+        "brentYoY": 21.1
+      },
+      {
+        "year": 1997,
+        "inflation": 2.33768993730735,
+        "gdpGrowth": 4.44712793442667,
+        "unemployment": 5,
+        "policyRate": 5.5,
+        "brentYoY": -7.3
+      },
+      {
+        "year": 1998,
+        "inflation": 1.55227909874364,
+        "gdpGrowth": 4.48313335499124,
+        "unemployment": 4.511,
+        "policyRate": 4.75,
+        "brentYoY": -33.2
+      },
+      {
+        "year": 1999,
+        "inflation": 2.18802719697358,
+        "gdpGrowth": 4.78842504836746,
+        "unemployment": 4.219,
+        "policyRate": 5.5,
+        "brentYoY": 39.7
+      },
+      {
+        "year": 2000,
+        "inflation": 3.37685727149929,
+        "gdpGrowth": 4.07758575997799,
+        "unemployment": 3.992,
+        "policyRate": 6.5,
+        "brentYoY": 59.8
+      },
+      {
+        "year": 2001,
+        "inflation": 2.82617111885407,
+        "gdpGrowth": 0.955538337599847,
+        "unemployment": 4.731,
+        "policyRate": 1.75,
+        "brentYoY": -14.3
+      },
+      {
+        "year": 2002,
+        "inflation": 1.58603162650601,
+        "gdpGrowth": 1.70044733078285,
+        "unemployment": 5.783,
+        "policyRate": 1.25,
+        "brentYoY": 2.1
+      },
+      {
+        "year": 2003,
+        "inflation": 2.27009497336115,
+        "gdpGrowth": 2.79560596378604,
+        "unemployment": 5.989,
+        "policyRate": 1,
+        "brentYoY": 15.7
+      },
+      {
+        "year": 2004,
+        "inflation": 2.67723669309172,
+        "gdpGrowth": 3.84777169267127,
+        "unemployment": 5.529,
+        "policyRate": 2.25,
+        "brentYoY": 32.4
+      },
+      {
+        "year": 2005,
+        "inflation": 3.3927468454955,
+        "gdpGrowth": 3.48354993710312,
+        "unemployment": 5.084,
+        "policyRate": 4.25,
+        "brentYoY": 42.3
+      },
+      {
+        "year": 2006,
+        "inflation": 3.22594410070404,
+        "gdpGrowth": 2.78453963674239,
+        "unemployment": 4.623,
+        "policyRate": 5.25,
+        "brentYoY": 19.7
+      },
+      {
+        "year": 2007,
+        "inflation": 2.85267248150138,
+        "gdpGrowth": 2.0038583039496,
+        "unemployment": 4.622,
+        "policyRate": 4.25,
+        "brentYoY": 11.2
+      },
+      {
+        "year": 2008,
+        "inflation": 3.839100296651,
+        "gdpGrowth": 0.113587247501258,
+        "unemployment": 5.784,
+        "policyRate": 0.125,
+        "brentYoY": 33.6
+      },
+      {
+        "year": 2009,
+        "inflation": -0.355546266299747,
+        "gdpGrowth": -2.5765002366652,
+        "unemployment": 9.254,
+        "policyRate": 0.125,
+        "brentYoY": -36.5
+      },
+      {
+        "year": 2010,
+        "inflation": 1.6400434423899,
+        "gdpGrowth": 2.69519258673525,
+        "unemployment": 9.633,
+        "policyRate": 0.125,
+        "brentYoY": 29.3
+      },
+      {
+        "year": 2011,
+        "inflation": 3.156841568622,
+        "gdpGrowth": 1.56440685205419,
+        "unemployment": 8.949,
+        "policyRate": 0.125,
+        "brentYoY": 39.9
+      },
+      {
+        "year": 2012,
+        "inflation": 2.06933726526067,
+        "gdpGrowth": 2.28911339009767,
+        "unemployment": 8.069,
+        "policyRate": 0.125,
+        "brentYoY": 0.3
+      },
+      {
+        "year": 2013,
+        "inflation": 1.46483265562717,
+        "gdpGrowth": 2.11783009443471,
+        "unemployment": 7.375,
+        "policyRate": 0.125,
+        "brentYoY": -2.7
+      },
+      {
+        "year": 2014,
+        "inflation": 1.62222297740817,
+        "gdpGrowth": 2.52381981757846,
+        "unemployment": 6.168,
+        "policyRate": 0.125,
+        "brentYoY": -8.8
+      },
+      {
+        "year": 2015,
+        "inflation": 0.118627135552451,
+        "gdpGrowth": 2.94555045227337,
+        "unemployment": 5.28,
+        "policyRate": 0.375,
+        "brentYoY": -47.1
+      },
+      {
+        "year": 2016,
+        "inflation": 1.26158320570536,
+        "gdpGrowth": 1.81945147909089,
+        "unemployment": 4.869,
+        "policyRate": 0.625,
+        "brentYoY": -16.8
+      },
+      {
+        "year": 2017,
+        "inflation": 2.13011000365961,
+        "gdpGrowth": 2.45762230126449,
+        "unemployment": 4.355,
+        "policyRate": 1.375,
+        "brentYoY": 24.6
+      },
+      {
+        "year": 2018,
+        "inflation": 2.44258329692817,
+        "gdpGrowth": 2.96650506701943,
+        "unemployment": 3.896,
+        "policyRate": 2.375,
+        "brentYoY": 31
+      }
+    ],
+    "EA": [
+      {
+        "year": 1990,
+        "inflation": 4.5020546289584,
+        "gdpGrowth": 3.52081468589162,
+        "unemployment": null,
+        "policyRate": null,
+        "brentYoY": 29.7,
+        "preRegime": true
+      },
+      {
+        "year": 1991,
+        "inflation": 4.31021289843461,
+        "gdpGrowth": 2.31199775321149,
+        "unemployment": 8.38151659365943,
+        "policyRate": null,
+        "brentYoY": -15.5,
+        "preRegime": true
+      },
+      {
+        "year": 1992,
+        "inflation": 5.59756062410709,
+        "gdpGrowth": 1.08636971676552,
+        "unemployment": 9.07940377823132,
+        "policyRate": null,
+        "brentYoY": -3.5,
+        "preRegime": true
+      },
+      {
+        "year": 1993,
+        "inflation": 4.62673468331298,
+        "gdpGrowth": -0.685794729393407,
+        "unemployment": 10.824111215694,
+        "policyRate": null,
+        "brentYoY": -11.7,
+        "preRegime": true
+      },
+      {
+        "year": 1994,
+        "inflation": 4.6985893105498,
+        "gdpGrowth": 2.51257216412849,
+        "unemployment": 11.7623069320318,
+        "policyRate": null,
+        "brentYoY": -7.1,
+        "preRegime": true
+      },
+      {
+        "year": 1995,
+        "inflation": 4.22281614099488,
+        "gdpGrowth": 2.47104932313979,
+        "unemployment": 11.4116470422155,
+        "policyRate": null,
+        "brentYoY": 7.6,
+        "preRegime": true
+      },
+      {
+        "year": 1996,
+        "inflation": 3.06897732509786,
+        "gdpGrowth": 1.75618481429734,
+        "unemployment": 11.6458051517727,
+        "policyRate": null,
+        "brentYoY": 21.1,
+        "preRegime": true
+      },
+      {
+        "year": 1997,
+        "inflation": 2.33686298314114,
+        "gdpGrowth": 2.6964567975082,
+        "unemployment": 11.6700563091428,
+        "policyRate": null,
+        "brentYoY": -7.3,
+        "preRegime": true
+      },
+      {
+        "year": 1998,
+        "inflation": 2.38525135417661,
+        "gdpGrowth": 3.00309976675726,
+        "unemployment": 11.2281731488537,
+        "policyRate": null,
+        "brentYoY": -33.2,
+        "preRegime": true
+      },
+      {
+        "year": 1999,
+        "inflation": 2.13476888806386,
+        "gdpGrowth": 2.97156201295246,
+        "unemployment": 10.5366850850791,
+        "policyRate": 3,
+        "brentYoY": 39.7
+      },
+      {
+        "year": 2000,
+        "inflation": 3.04210080667792,
+        "gdpGrowth": 3.90347314568078,
+        "unemployment": 9.62410987839098,
+        "policyRate": 4.75,
+        "brentYoY": 59.8
+      },
+      {
+        "year": 2001,
+        "inflation": 2.92949244324104,
+        "gdpGrowth": 2.19003494343926,
+        "unemployment": 8.68043359773922,
+        "policyRate": 3.25,
+        "brentYoY": -14.3
+      },
+      {
+        "year": 2002,
+        "inflation": 2.46532319171165,
+        "gdpGrowth": 0.961839553423374,
+        "unemployment": 8.88672719145059,
+        "policyRate": 2.75,
+        "brentYoY": 2.1
+      },
+      {
+        "year": 2003,
+        "inflation": 2.09847219146919,
+        "gdpGrowth": 0.767586747443971,
+        "unemployment": 9.12146121246139,
+        "policyRate": 2,
+        "brentYoY": 15.7
+      },
+      {
+        "year": 2004,
+        "inflation": 2.22567916428894,
+        "gdpGrowth": 2.32594393008132,
+        "unemployment": 9.348951357228,
+        "policyRate": 2,
+        "brentYoY": 32.4
+      },
+      {
+        "year": 2005,
+        "inflation": 2.56016132330235,
+        "gdpGrowth": 1.79011534612007,
+        "unemployment": 9.16921983218386,
+        "policyRate": 2.25,
+        "brentYoY": 42.3
+      },
+      {
+        "year": 2006,
+        "inflation": 2.77378006481472,
+        "gdpGrowth": 3.33733486627055,
+        "unemployment": 8.4404790481661,
+        "policyRate": 3.5,
+        "brentYoY": 19.7
+      },
+      {
+        "year": 2007,
+        "inflation": 2.5106656524034,
+        "gdpGrowth": 3.02499371345013,
+        "unemployment": 7.52316793797376,
+        "policyRate": 4,
+        "brentYoY": 11.2
+      },
+      {
+        "year": 2008,
+        "inflation": 4.15279708110293,
+        "gdpGrowth": 0.432969401075084,
+        "unemployment": 7.50283392231425,
+        "policyRate": 2.5,
+        "brentYoY": 33.6
+      },
+      {
+        "year": 2009,
+        "inflation": 0.506308827696504,
+        "gdpGrowth": -4.47805035961746,
+        "unemployment": 9.57439638727687,
+        "policyRate": 1,
+        "brentYoY": -36.5
+      },
+      {
+        "year": 2010,
+        "inflation": 1.52551602118248,
+        "gdpGrowth": 2.1158694775215,
+        "unemployment": 10.1761738210052,
+        "policyRate": 1,
+        "brentYoY": 29.3
+      },
+      {
+        "year": 2011,
+        "inflation": 3.2894493956421,
+        "gdpGrowth": 1.77884441456963,
+        "unemployment": 10.2805136631252,
+        "policyRate": 1,
+        "brentYoY": 39.9
+      },
+      {
+        "year": 2012,
+        "inflation": 2.59741386039003,
+        "gdpGrowth": -0.913859085753131,
+        "unemployment": 11.4328240980269,
+        "policyRate": 0.75,
+        "brentYoY": 0.3
+      },
+      {
+        "year": 2013,
+        "inflation": 1.21999342274306,
+        "gdpGrowth": -0.168322337087545,
+        "unemployment": 12.0184063277941,
+        "policyRate": 0.25,
+        "brentYoY": -2.7
+      },
+      {
+        "year": 2014,
+        "inflation": 0.199343826570844,
+        "gdpGrowth": 1.45371535311074,
+        "unemployment": 11.6207304139349,
+        "policyRate": 0.05,
+        "brentYoY": -8.8
+      },
+      {
+        "year": 2015,
+        "inflation": -0.104633261008479,
+        "gdpGrowth": 2.14894477032594,
+        "unemployment": 10.8477448563899,
+        "policyRate": 0.05,
+        "brentYoY": -47.1
+      },
+      {
+        "year": 2016,
+        "inflation": 0.148684907627373,
+        "gdpGrowth": 1.80681433573471,
+        "unemployment": 9.98608545604403,
+        "policyRate": 0,
+        "brentYoY": -16.8
+      },
+      {
+        "year": 2017,
+        "inflation": 1.38145871407216,
+        "gdpGrowth": 2.62315671239708,
+        "unemployment": 9.01311660134066,
+        "policyRate": 0,
+        "brentYoY": 24.6
+      },
+      {
+        "year": 2018,
+        "inflation": 1.70349794744479,
+        "gdpGrowth": 1.78229304985051,
+        "unemployment": 8.089323082041,
+        "policyRate": 0,
+        "brentYoY": 31
+      }
+    ],
+    "CA": [
+      {
+        "year": 1990,
+        "inflation": 4.78047693336304,
+        "gdpGrowth": 0.202947848289654,
+        "unemployment": null,
+        "policyRate": 11.72,
+        "brentYoY": 29.7
+      },
+      {
+        "year": 1991,
+        "inflation": 5.62586408593005,
+        "gdpGrowth": -2.09105516498515,
+        "unemployment": 10.316,
+        "policyRate": 7.67,
+        "brentYoY": -15.5
+      },
+      {
+        "year": 1992,
+        "inflation": 1.49013290374545,
+        "gdpGrowth": 0.890466243956382,
+        "unemployment": 11.197,
+        "policyRate": 7.36,
+        "brentYoY": -3.5
+      },
+      {
+        "year": 1993,
+        "inflation": 1.86507936507939,
+        "gdpGrowth": 2.65770683842972,
+        "unemployment": 11.377,
+        "policyRate": 4.11,
+        "brentYoY": -11.7
+      },
+      {
+        "year": 1994,
+        "inflation": 0.165562913907291,
+        "gdpGrowth": 4.49404933882288,
+        "unemployment": 10.395,
+        "policyRate": 5.69,
+        "brentYoY": -7.1
+      },
+      {
+        "year": 1995,
+        "inflation": 2.14876033057849,
+        "gdpGrowth": 2.68232826962129,
+        "unemployment": 9.489,
+        "policyRate": 5.78,
+        "brentYoY": 7.6
+      },
+      {
+        "year": 1996,
+        "inflation": 1.57053112507138,
+        "gdpGrowth": 1.68896122145787,
+        "unemployment": 9.62,
+        "policyRate": 3,
+        "brentYoY": 21.1
+      },
+      {
+        "year": 1997,
+        "inflation": 1.62121638084531,
+        "gdpGrowth": 4.28016680422402,
+        "unemployment": 9.1,
+        "policyRate": 4.25,
+        "brentYoY": -7.3
+      },
+      {
+        "year": 1998,
+        "inflation": 0.99594245665802,
+        "gdpGrowth": 3.89288658501088,
+        "unemployment": 8.278,
+        "policyRate": 5,
+        "brentYoY": -33.2
+      },
+      {
+        "year": 1999,
+        "inflation": 1.73484295105918,
+        "gdpGrowth": 5.14100348449622,
+        "unemployment": 7.583,
+        "policyRate": 4.75,
+        "brentYoY": 39.7
+      },
+      {
+        "year": 2000,
+        "inflation": 2.71943995691976,
+        "gdpGrowth": 5.13853918994158,
+        "unemployment": 6.829,
+        "policyRate": 5.75,
+        "brentYoY": 59.8
+      },
+      {
+        "year": 2001,
+        "inflation": 2.52512013979906,
+        "gdpGrowth": 1.87509813099847,
+        "unemployment": 7.219,
+        "policyRate": 2.25,
+        "brentYoY": -14.3
+      },
+      {
+        "year": 2002,
+        "inflation": 2.25839440940855,
+        "gdpGrowth": 2.99925533832644,
+        "unemployment": 7.665,
+        "policyRate": 2.75,
+        "brentYoY": 2.1
+      },
+      {
+        "year": 2003,
+        "inflation": 2.75856321360112,
+        "gdpGrowth": 1.8063851195103,
+        "unemployment": 7.574,
+        "policyRate": 2.75,
+        "brentYoY": 15.7
+      },
+      {
+        "year": 2004,
+        "inflation": 1.85725871857256,
+        "gdpGrowth": 3.09236381038156,
+        "unemployment": 7.185,
+        "policyRate": 2.5,
+        "brentYoY": 32.4
+      },
+      {
+        "year": 2005,
+        "inflation": 2.21355203439767,
+        "gdpGrowth": 3.21045441502793,
+        "unemployment": 6.758,
+        "policyRate": 3.25,
+        "brentYoY": 42.3
+      },
+      {
+        "year": 2006,
+        "inflation": 2.00202539534161,
+        "gdpGrowth": 2.63794375302722,
+        "unemployment": 6.484,
+        "policyRate": 4.25,
+        "brentYoY": 19.7
+      },
+      {
+        "year": 2007,
+        "inflation": 2.13838399266837,
+        "gdpGrowth": 2.04990459443619,
+        "unemployment": 6.156,
+        "policyRate": 4.25,
+        "brentYoY": 11.2
+      },
+      {
+        "year": 2008,
+        "inflation": 2.37027067444299,
+        "gdpGrowth": 0.995406371264522,
+        "unemployment": 6.284,
+        "policyRate": 1.5,
+        "brentYoY": 33.6
+      },
+      {
+        "year": 2009,
+        "inflation": 0.299466803009299,
+        "gdpGrowth": -2.91508627059555,
+        "unemployment": 8.46,
+        "policyRate": 0.25,
+        "brentYoY": -36.5
+      },
+      {
+        "year": 2010,
+        "inflation": 1.77687154092627,
+        "gdpGrowth": 3.09080633744851,
+        "unemployment": 8.178,
+        "policyRate": 1,
+        "brentYoY": 29.3
+      },
+      {
+        "year": 2011,
+        "inflation": 2.91213508872351,
+        "gdpGrowth": 3.1371944343876,
+        "unemployment": 7.637,
+        "policyRate": 1,
+        "brentYoY": 39.9
+      },
+      {
+        "year": 2012,
+        "inflation": 1.51567823124517,
+        "gdpGrowth": 1.75566133205234,
+        "unemployment": 7.392,
+        "policyRate": 1,
+        "brentYoY": 0.3
+      },
+      {
+        "year": 2013,
+        "inflation": 0.938291897815317,
+        "gdpGrowth": 2.32581356612762,
+        "unemployment": 7.143,
+        "policyRate": 1,
+        "brentYoY": -2.7
+      },
+      {
+        "year": 2014,
+        "inflation": 1.90663590717861,
+        "gdpGrowth": 2.87346675579731,
+        "unemployment": 7.023,
+        "policyRate": 1,
+        "brentYoY": -8.8
+      },
+      {
+        "year": 2015,
+        "inflation": 1.12524136094277,
+        "gdpGrowth": 0.64997101491096,
+        "unemployment": 6.945,
+        "policyRate": 0.5,
+        "brentYoY": -47.1
+      },
+      {
+        "year": 2016,
+        "inflation": 1.42875954701085,
+        "gdpGrowth": 1.03855091989323,
+        "unemployment": 7.038,
+        "policyRate": 0.5,
+        "brentYoY": -16.8
+      },
+      {
+        "year": 2017,
+        "inflation": 1.59688412852977,
+        "gdpGrowth": 3.03383491841392,
+        "unemployment": 6.426,
+        "policyRate": 1,
+        "brentYoY": 24.6
+      },
+      {
+        "year": 2018,
+        "inflation": 2.26822567248103,
+        "gdpGrowth": 2.74296341402246,
+        "unemployment": 5.837,
+        "policyRate": 1.75,
+        "brentYoY": 31
+      }
+    ],
+    "UK": [
+      {
+        "year": 1990,
+        "inflation": 8.06346090938833,
+        "gdpGrowth": 0.779266119883417,
+        "unemployment": null,
+        "policyRate": 13.875,
+        "brentYoY": 29.7
+      },
+      {
+        "year": 1991,
+        "inflation": 7.46178295746934,
+        "gdpGrowth": -1.29243974751705,
+        "unemployment": 8.55,
+        "policyRate": 10.375,
+        "brentYoY": -15.5
+      },
+      {
+        "year": 1992,
+        "inflation": 4.59154929577461,
+        "gdpGrowth": 1.29472849604493,
+        "unemployment": 9.772,
+        "policyRate": 6.875,
+        "brentYoY": -3.5
+      },
+      {
+        "year": 1993,
+        "inflation": 2.55857796929705,
+        "gdpGrowth": 3.49048744653493,
+        "unemployment": 10.346,
+        "policyRate": 5.375,
+        "brentYoY": -11.7
+      },
+      {
+        "year": 1994,
+        "inflation": 2.21901260504205,
+        "gdpGrowth": 4.95341092800692,
+        "unemployment": 9.648,
+        "policyRate": 6.125,
+        "brentYoY": -7.1
+      },
+      {
+        "year": 1995,
+        "inflation": 2.69749518304432,
+        "gdpGrowth": 3.53339096338078,
+        "unemployment": 8.694,
+        "policyRate": 6.375,
+        "brentYoY": 7.6
+      },
+      {
+        "year": 1996,
+        "inflation": 2.85178236397749,
+        "gdpGrowth": 2.61491606949487,
+        "unemployment": 8.189,
+        "policyRate": 5.9375,
+        "brentYoY": 21.1
+      },
+      {
+        "year": 1997,
+        "inflation": 2.20114313510882,
+        "gdpGrowth": 4.8799853038024,
+        "unemployment": 7.072,
+        "policyRate": 7.25,
+        "brentYoY": -7.3
+      },
+      {
+        "year": 1998,
+        "inflation": 1.82056163731557,
+        "gdpGrowth": 3.24631482881618,
+        "unemployment": 6.198,
+        "policyRate": 6.25,
+        "brentYoY": -33.2
+      },
+      {
+        "year": 1999,
+        "inflation": 1.7529508005142,
+        "gdpGrowth": 2.94445869854798,
+        "unemployment": 6.042,
+        "policyRate": 5.5,
+        "brentYoY": 39.7
+      },
+      {
+        "year": 2000,
+        "inflation": 1.18295624210408,
+        "gdpGrowth": 4.52438074810904,
+        "unemployment": 5.558,
+        "policyRate": 6,
+        "brentYoY": 59.8
+      },
+      {
+        "year": 2001,
+        "inflation": 1.53234960272418,
+        "gdpGrowth": 2.39102229602824,
+        "unemployment": 4.696,
+        "policyRate": 4,
+        "brentYoY": -14.3
+      },
+      {
+        "year": 2002,
+        "inflation": 1.52040245947455,
+        "gdpGrowth": 1.70902736258567,
+        "unemployment": 5.037,
+        "policyRate": 4,
+        "brentYoY": 2.1
+      },
+      {
+        "year": 2003,
+        "inflation": 1.37650038542013,
+        "gdpGrowth": 3.21851612669614,
+        "unemployment": 4.807,
+        "policyRate": 3.75,
+        "brentYoY": 15.7
+      },
+      {
+        "year": 2004,
+        "inflation": 1.39039756680422,
+        "gdpGrowth": 2.32601853325993,
+        "unemployment": 4.594,
+        "policyRate": 4.75,
+        "brentYoY": 32.4
+      },
+      {
+        "year": 2005,
+        "inflation": 2.0891364902507,
+        "gdpGrowth": 2.7906547174688,
+        "unemployment": 4.884,
+        "policyRate": 4.5,
+        "brentYoY": 42.3
+      },
+      {
+        "year": 2006,
+        "inflation": 2.4556616643929,
+        "gdpGrowth": 2.18982132415704,
+        "unemployment": 5.472,
+        "policyRate": 5,
+        "brentYoY": 19.7
+      },
+      {
+        "year": 2007,
+        "inflation": 2.38656150773327,
+        "gdpGrowth": 2.93091133582351,
+        "unemployment": 5.399,
+        "policyRate": 5.5,
+        "brentYoY": 11.2
+      },
+      {
+        "year": 2008,
+        "inflation": 3.52140856342539,
+        "gdpGrowth": -0.0494116727402769,
+        "unemployment": 5.748,
+        "policyRate": 2,
+        "brentYoY": 33.6
+      },
+      {
+        "year": 2009,
+        "inflation": 1.96173173560109,
+        "gdpGrowth": -4.58740819226323,
+        "unemployment": 7.683,
+        "policyRate": 0.5,
+        "brentYoY": -36.5
+      },
+      {
+        "year": 2010,
+        "inflation": 2.49265472467065,
+        "gdpGrowth": 2.26054460931586,
+        "unemployment": 7.973,
+        "policyRate": 0.5,
+        "brentYoY": 29.3
+      },
+      {
+        "year": 2011,
+        "inflation": 3.8561124468282,
+        "gdpGrowth": 0.851437739020326,
+        "unemployment": 8.195,
+        "policyRate": 0.5,
+        "brentYoY": 39.9
+      },
+      {
+        "year": 2012,
+        "inflation": 2.5732347965453,
+        "gdpGrowth": 1.52826034721852,
+        "unemployment": 8.279,
+        "policyRate": 0.5,
+        "brentYoY": 0.3
+      },
+      {
+        "year": 2013,
+        "inflation": 2.29166666666659,
+        "gdpGrowth": 1.71846961308464,
+        "unemployment": 7.752,
+        "policyRate": 0.5,
+        "brentYoY": -2.7
+      },
+      {
+        "year": 2014,
+        "inflation": 1.45112016293279,
+        "gdpGrowth": 3.16017351468152,
+        "unemployment": 6.398,
+        "policyRate": 0.5,
+        "brentYoY": -8.8
+      },
+      {
+        "year": 2015,
+        "inflation": 0.36804684232536,
+        "gdpGrowth": 2.14040560033371,
+        "unemployment": 5.552,
+        "policyRate": 0.5,
+        "brentYoY": -47.1
+      },
+      {
+        "year": 2016,
+        "inflation": 1.0084173681141,
+        "gdpGrowth": 2.20652020635357,
+        "unemployment": 4.909,
+        "policyRate": 0.25,
+        "brentYoY": -16.8
+      },
+      {
+        "year": 2017,
+        "inflation": 2.55775577557747,
+        "gdpGrowth": 3.02322219840339,
+        "unemployment": 4.501,
+        "policyRate": 0.5,
+        "brentYoY": 24.6
+      },
+      {
+        "year": 2018,
+        "inflation": 2.29283990345938,
+        "gdpGrowth": 1.55133095078786,
+        "unemployment": 4.145,
+        "policyRate": 0.75,
+        "brentYoY": 31
+      }
+    ],
+    "JP": [
+      {
+        "year": 1990,
+        "inflation": 3.0785162869516,
+        "gdpGrowth": 4.89271306574565,
+        "unemployment": null,
+        "policyRate": 6,
+        "brentYoY": 29.7
+      },
+      {
+        "year": 1991,
+        "inflation": 3.25143848753308,
+        "gdpGrowth": 3.41749676183089,
+        "unemployment": 2.059,
+        "policyRate": 4.5,
+        "brentYoY": -15.5
+      },
+      {
+        "year": 1992,
+        "inflation": 1.7602830605927,
+        "gdpGrowth": 0.848069581218368,
+        "unemployment": 2.158,
+        "policyRate": 3.25,
+        "brentYoY": -3.5
+      },
+      {
+        "year": 1993,
+        "inflation": 1.24304589707924,
+        "gdpGrowth": -0.517919847117952,
+        "unemployment": 2.539,
+        "policyRate": 1.75,
+        "brentYoY": -11.7
+      },
+      {
+        "year": 1994,
+        "inflation": 0.695458057869004,
+        "gdpGrowth": 0.99306636322622,
+        "unemployment": 2.89,
+        "policyRate": 1.75,
+        "brentYoY": -7.1
+      },
+      {
+        "year": 1995,
+        "inflation": -0.127899045020446,
+        "gdpGrowth": 2.34205546196849,
+        "unemployment": 3.15,
+        "policyRate": 0.5,
+        "brentYoY": 7.6
+      },
+      {
+        "year": 1996,
+        "inflation": 0.136600358575909,
+        "gdpGrowth": 3.07546731409349,
+        "unemployment": 3.383,
+        "policyRate": 0.5,
+        "brentYoY": 21.1
+      },
+      {
+        "year": 1997,
+        "inflation": 1.74780458692133,
+        "gdpGrowth": 1.36297109407448,
+        "unemployment": 3.374,
+        "policyRate": 0.5,
+        "brentYoY": -7.3
+      },
+      {
+        "year": 1998,
+        "inflation": 0.661974191385911,
+        "gdpGrowth": -1.77264091037956,
+        "unemployment": 4.078,
+        "policyRate": 0.25,
+        "brentYoY": -33.2
+      },
+      {
+        "year": 1999,
+        "inflation": -0.341296928327554,
+        "gdpGrowth": -0.347600398675738,
+        "unemployment": 4.677,
+        "policyRate": null,
+        "brentYoY": 39.7
+      },
+      {
+        "year": 2000,
+        "inflation": -0.676578683595175,
+        "gdpGrowth": 2.97832688768516,
+        "unemployment": 4.748,
+        "policyRate": 0.25,
+        "brentYoY": 59.8
+      },
+      {
+        "year": 2001,
+        "inflation": -0.740055504162738,
+        "gdpGrowth": 0.284608556379041,
+        "unemployment": 5.02,
+        "policyRate": null,
+        "brentYoY": -14.3
+      },
+      {
+        "year": 2002,
+        "inflation": -0.923494026942321,
+        "gdpGrowth": 0.0849888050363319,
+        "unemployment": 5.386,
+        "policyRate": null,
+        "brentYoY": 2.1
+      },
+      {
+        "year": 2003,
+        "inflation": -0.256541816316025,
+        "gdpGrowth": 1.38010935830795,
+        "unemployment": 5.251,
+        "policyRate": null,
+        "brentYoY": 15.7
+      },
+      {
+        "year": 2004,
+        "inflation": -0.00857338820310272,
+        "gdpGrowth": 2.11294823723127,
+        "unemployment": 4.734,
+        "policyRate": null,
+        "brentYoY": 32.4
+      },
+      {
+        "year": 2005,
+        "inflation": -0.282946068764391,
+        "gdpGrowth": 1.8482813374834,
+        "unemployment": 4.446,
+        "policyRate": null,
+        "brentYoY": 42.3
+      },
+      {
+        "year": 2006,
+        "inflation": 0.249355116079085,
+        "gdpGrowth": 1.54630843078741,
+        "unemployment": 4.192,
+        "policyRate": 0.25,
+        "brentYoY": 19.7
+      },
+      {
+        "year": 2007,
+        "inflation": 0.060039454498669,
+        "gdpGrowth": 1.72837912865577,
+        "unemployment": 3.888,
+        "policyRate": 0.5,
+        "brentYoY": 11.2
+      },
+      {
+        "year": 2008,
+        "inflation": 1.3800788616492,
+        "gdpGrowth": -1.16662209355141,
+        "unemployment": 4.002,
+        "policyRate": 0.1,
+        "brentYoY": 33.6
+      },
+      {
+        "year": 2009,
+        "inflation": -1.35283672951719,
+        "gdpGrowth": -5.9359411383964,
+        "unemployment": 5.068,
+        "policyRate": 0.1,
+        "brentYoY": -36.5
+      },
+      {
+        "year": 2010,
+        "inflation": -0.728243207517779,
+        "gdpGrowth": 4.13645589222239,
+        "unemployment": 5.102,
+        "policyRate": 0.05,
+        "brentYoY": 29.3
+      },
+      {
+        "year": 2011,
+        "inflation": -0.27245561610124,
+        "gdpGrowth": -0.20035785332982,
+        "unemployment": 4.55,
+        "policyRate": 0.05,
+        "brentYoY": 39.9
+      },
+      {
+        "year": 2012,
+        "inflation": -0.0440645104432602,
+        "gdpGrowth": 1.64893452981225,
+        "unemployment": 4.358,
+        "policyRate": 0.05,
+        "brentYoY": 0.3
+      },
+      {
+        "year": 2013,
+        "inflation": 0.335037912184741,
+        "gdpGrowth": 1.99727653399265,
+        "unemployment": 4.038,
+        "policyRate": null,
+        "brentYoY": -2.7
+      },
+      {
+        "year": 2014,
+        "inflation": 2.75922671353253,
+        "gdpGrowth": 0.905915486065865,
+        "unemployment": 3.589,
+        "policyRate": null,
+        "brentYoY": -8.8
+      },
+      {
+        "year": 2015,
+        "inflation": 0.795279630579839,
+        "gdpGrowth": 1.79997735783475,
+        "unemployment": 3.385,
+        "policyRate": null,
+        "brentYoY": -47.1
+      },
+      {
+        "year": 2016,
+        "inflation": -0.127258844489754,
+        "gdpGrowth": 0.704986495111257,
+        "unemployment": 3.132,
+        "policyRate": -0.1,
+        "brentYoY": -16.8
+      },
+      {
+        "year": 2017,
+        "inflation": 0.484199796126385,
+        "gdpGrowth": 1.62345062245441,
+        "unemployment": 2.822,
+        "policyRate": -0.1,
+        "brentYoY": 24.6
+      },
+      {
+        "year": 2018,
+        "inflation": 0.989094598021848,
+        "gdpGrowth": 0.834143845965585,
+        "unemployment": 2.467,
+        "policyRate": -0.1,
+        "brentYoY": 31
+      }
+    ],
+    "AU": [
+      {
+        "year": 1990,
+        "inflation": 7.33302368375269,
+        "gdpGrowth": 3.57297569098456,
+        "unemployment": null,
+        "policyRate": 12,
+        "brentYoY": 29.7
+      },
+      {
+        "year": 1991,
+        "inflation": 3.17666872277308,
+        "gdpGrowth": -0.384631357046658,
+        "unemployment": 9.586,
+        "policyRate": 8.5,
+        "brentYoY": -15.5
+      },
+      {
+        "year": 1992,
+        "inflation": 1.01222824105977,
+        "gdpGrowth": 0.433065864126704,
+        "unemployment": 10.733,
+        "policyRate": 5.75,
+        "brentYoY": -3.5
+      },
+      {
+        "year": 1993,
+        "inflation": 1.75365751770527,
+        "gdpGrowth": 4.04583374101011,
+        "unemployment": 10.879,
+        "policyRate": 4.75,
+        "brentYoY": -11.7
+      },
+      {
+        "year": 1994,
+        "inflation": 1.96963507094102,
+        "gdpGrowth": 3.97884434177331,
+        "unemployment": 9.724,
+        "policyRate": 7.5,
+        "brentYoY": -7.1
+      },
+      {
+        "year": 1995,
+        "inflation": 4.62776445368168,
+        "gdpGrowth": 3.89017188961647,
+        "unemployment": 8.473,
+        "policyRate": 7.5,
+        "brentYoY": 7.6
+      },
+      {
+        "year": 1996,
+        "inflation": 2.61537902431631,
+        "gdpGrowth": 3.86567479160071,
+        "unemployment": 8.509,
+        "policyRate": 6,
+        "brentYoY": 21.1
+      },
+      {
+        "year": 1997,
+        "inflation": 0.224895027032537,
+        "gdpGrowth": 3.91795814771731,
+        "unemployment": 8.367,
+        "policyRate": 5,
+        "brentYoY": -7.3
+      },
+      {
+        "year": 1998,
+        "inflation": 0.860129922016289,
+        "gdpGrowth": 4.67681373479508,
+        "unemployment": 7.684,
+        "policyRate": 4.75,
+        "brentYoY": -33.2
+      },
+      {
+        "year": 1999,
+        "inflation": 1.48313946657267,
+        "gdpGrowth": 5.02822035850596,
+        "unemployment": 6.876,
+        "policyRate": 5,
+        "brentYoY": 39.7
+      },
+      {
+        "year": 2000,
+        "inflation": 4.45743705920869,
+        "gdpGrowth": 3.9160574881715,
+        "unemployment": 6.288,
+        "policyRate": 6.25,
+        "brentYoY": 59.8
+      },
+      {
+        "year": 2001,
+        "inflation": 4.40712998561533,
+        "gdpGrowth": 2.03145880248898,
+        "unemployment": 6.747,
+        "policyRate": 4.25,
+        "brentYoY": -14.3
+      },
+      {
+        "year": 2002,
+        "inflation": 2.98157117047457,
+        "gdpGrowth": 3.94980535772942,
+        "unemployment": 6.375,
+        "policyRate": 4.75,
+        "brentYoY": 2.1
+      },
+      {
+        "year": 2003,
+        "inflation": 2.73259754838937,
+        "gdpGrowth": 3.0912800997751,
+        "unemployment": 5.933,
+        "policyRate": 5.25,
+        "brentYoY": 15.7
+      },
+      {
+        "year": 2004,
+        "inflation": 2.34325687131265,
+        "gdpGrowth": 4.21894147547516,
+        "unemployment": 5.399,
+        "policyRate": 5.25,
+        "brentYoY": 32.4
+      },
+      {
+        "year": 2005,
+        "inflation": 2.69182949622197,
+        "gdpGrowth": 3.15548121323168,
+        "unemployment": 5.036,
+        "policyRate": 5.5,
+        "brentYoY": 42.3
+      },
+      {
+        "year": 2006,
+        "inflation": 3.55528696972984,
+        "gdpGrowth": 2.7709261737475,
+        "unemployment": 4.785,
+        "policyRate": 6.25,
+        "brentYoY": 19.7
+      },
+      {
+        "year": 2007,
+        "inflation": 2.32761442623159,
+        "gdpGrowth": 3.78947119882653,
+        "unemployment": 4.381,
+        "policyRate": 6.75,
+        "brentYoY": 11.2
+      },
+      {
+        "year": 2008,
+        "inflation": 4.35029726664093,
+        "gdpGrowth": 3.62398503565633,
+        "unemployment": 4.242,
+        "policyRate": 4.25,
+        "brentYoY": 33.6
+      },
+      {
+        "year": 2009,
+        "inflation": 1.77112025681656,
+        "gdpGrowth": 1.95484826298522,
+        "unemployment": 5.565,
+        "policyRate": 3.75,
+        "brentYoY": -36.5
+      },
+      {
+        "year": 2010,
+        "inflation": 2.9183370211222,
+        "gdpGrowth": 2.21004795300735,
+        "unemployment": 5.214,
+        "policyRate": 4.75,
+        "brentYoY": 29.3
+      },
+      {
+        "year": 2011,
+        "inflation": 3.30384784681081,
+        "gdpGrowth": 2.39473494330615,
+        "unemployment": 5.083,
+        "policyRate": 4.25,
+        "brentYoY": 39.9
+      },
+      {
+        "year": 2012,
+        "inflation": 1.76278299052228,
+        "gdpGrowth": 3.95247138119184,
+        "unemployment": 5.225,
+        "policyRate": 3,
+        "brentYoY": 0.3
+      },
+      {
+        "year": 2013,
+        "inflation": 2.44988248109259,
+        "gdpGrowth": 2.65445302592404,
+        "unemployment": 5.663,
+        "policyRate": 2.5,
+        "brentYoY": -2.7
+      },
+      {
+        "year": 2014,
+        "inflation": 2.48792932080492,
+        "gdpGrowth": 2.60118978187332,
+        "unemployment": 6.078,
+        "policyRate": 2.5,
+        "brentYoY": -8.8
+      },
+      {
+        "year": 2015,
+        "inflation": 1.50836803138463,
+        "gdpGrowth": 2.16434780647852,
+        "unemployment": 6.055,
+        "policyRate": 2,
+        "brentYoY": -47.1
+      },
+      {
+        "year": 2016,
+        "inflation": 1.27699365720306,
+        "gdpGrowth": 2.75564065529868,
+        "unemployment": 5.711,
+        "policyRate": 1.5,
+        "brentYoY": -16.8
+      },
+      {
+        "year": 2017,
+        "inflation": 1.94864309065653,
+        "gdpGrowth": 2.29331030192918,
+        "unemployment": 5.592,
+        "policyRate": 1.5,
+        "brentYoY": 24.6
+      },
+      {
+        "year": 2018,
+        "inflation": 1.91140002818579,
+        "gdpGrowth": 2.87417039499501,
+        "unemployment": 5.345,
+        "policyRate": 1.5,
+        "brentYoY": 31
+      }
+    ]
+  }
+}

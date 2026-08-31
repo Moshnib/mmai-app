@@ -53,7 +53,7 @@ for (const code of MARKETS) {
   if (!hist?.length) continue;
   const raw = hist[hist.length - 1].indicators;
 
-  const v1 = computeComposite(computePillarScores(raw));
+  const v1 = computeComposite(computePillarScores(raw, code));
   const v2 = computeCompositeV2(computePillarScoresV2(raw, code));
   if (v1.composite == null || v2.composite == null) continue;
 
@@ -88,7 +88,7 @@ for (const code of MARKETS) {
   const hist = HISTORY[code];
   if (!hist?.length) continue;
   const raw = hist[hist.length - 1].indicators;
-  const p1 = computePillarScores(raw);
+  const p1 = computePillarScores(raw, code);
   const p2 = computePillarScoresV2(raw, code);
   const cells = PILLARS.map((k) => {
     const a = p1[k];
@@ -115,7 +115,7 @@ for (const code of MARKETS) {
   const ds: number[] = [];
   let flips = 0;
   for (const point of hist) {
-    const v1 = computeComposite(computePillarScores(point.indicators));
+    const v1 = computeComposite(computePillarScores(point.indicators, code));
     const v2 = computeCompositeV2(computePillarScoresV2(point.indicators, code));
     if (v1.composite == null || v2.composite == null) continue;
     ds.push(v2.composite - v1.composite);

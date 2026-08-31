@@ -122,3 +122,67 @@ Reserve Bank content is not automatically public domain the way BLS and BEA
 federal works are. **The licence must be checked before this enters
 production**, per charter §12: free access is not automatic redistribution
 rights.
+
+---
+
+## The historical calibration panel (charter §18) — BUILT
+
+`npx tsx research/build-historical-panel.ts` rebuilds it; `historical-panel.json`
+is the output. **1990–2018, six markets, five indicators, 96.6% coverage.**
+
+Only sources already cleared for this project were used, so the panel adds
+no new licensing question: World Bank (CC BY 4.0), BIS (unrestricted with
+citation), EIA (public domain).
+
+It is a **script, not a spreadsheet**. A hand-assembled file cannot be
+audited or rebuilt when a source revises, and is worth little as an
+intellectual asset.
+
+### Three limits that travel with the data
+1. **Revised, not vintage.** Supports full-information backtests only. It can
+   never support a claim that MMAI "would have signalled" anything live.
+2. **The euro area has no policy rate before 1999.** Flagged `preRegime`.
+3. **Japan has no policy rate for 1999, 2001–2005 and 2013–2015.** Verified
+   absent at BIS. The BoJ was targeting the monetary base, not a rate — the
+   instrument MMAI scores did not exist. Those years score on four pillars
+   (coverage 0.80). **Exclude Japan when calibrating the MC coefficient.**
+
+## First results — the GFC test the charter has been blocked on
+
+`npx tsx research/score-historical-panel.ts`
+
+**MMAI detects the Global Financial Crisis, unambiguously.**
+
+| Market | 2007 | 2008/09 low | Change |
+|---|---|---|---|
+| United States | 78.8 | 47.8 | **−31.0** |
+| Euro Area | 77.7 | 47.7 | −30.1 |
+| Japan | 74.8 | 45.8 | −29.0 |
+| Canada | 78.7 | 51.2 | −27.5 |
+| United Kingdom | 78.6 | 55.3 | −23.3 |
+| **Australia** | 80.6 | 74.7 | **−5.9** |
+
+Every market falls from *Supportive* to *Balanced* — **except Australia**,
+which barely moves. That is the correct answer: Australia avoided a technical
+recession in 2008–09 on Chinese commodity demand. **The index reproduces both
+the crisis and its most famous exception without being told about either.**
+
+This is the strongest evidence for MMAI produced so far.
+
+### But the bands are badly calibrated
+
+Across 173 market-years including the GFC:
+
+```
+min 30.5   p25 66.3   median 73.5   p75 77.9   max 87.4
+Supportive 109 · Balanced 34 · Strongly Supportive 25 · Challenging 5
+```
+
+- **63% of all observations fall in one band.** The label is nearly constant.
+- **Nothing ever reached "Highly Challenging"** — not in the worst financial
+  crisis since 1929.
+- The index **never used the bottom 30% of its scale** in 29 years.
+
+Charter §15 requires that verbal bands "must themselves be researched and
+documented. They should not be invented merely for visual appeal." This is
+the evidence that they were not, and now the data exists to fix them.
