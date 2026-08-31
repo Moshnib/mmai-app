@@ -1,4 +1,4 @@
-import { RAW_FIELD, type PillarKey, type RawIndicators } from "@/lib/scoring";
+import { RAW_FIELD, type PillarKey, type RawIndicators, inflationTargetFor } from "@/lib/scoring";
 
 // Same three colors used on the Trends page's "How They Move Together"
 // chart (app/trends/TrendsPageInner.tsx) -- kept identical here so a
@@ -37,11 +37,15 @@ const STATS: Array<{ pillar: PillarKey; color: string }> = [
 // thresholds MMAI already publishes (Equation 1's 2% target, Equation
 // 4's 2.5% neutral) -- never a direction like "easing" or "trending",
 // which would need a previous reading this component doesn't have.
-function descriptorFor(pillar: PillarKey, value: number): string {
+function descriptorFor(pillar: PillarKey, value: number, market: string): string {
   if (pillar === "PS") {
-    const gap = value - 2.0;
-    if (Math.abs(gap) <= 0.5) return "Near the 2% target";
-    return gap > 0 ? "Above the 2% target" : "Below the 2% target";
+    // Per-market since 2026-08-31. Australia's target is 2.5 (the midpoint
+    // of the RBA's 2-3% band), so a hardcoded 2.0 here reported both the
+    // wrong number and the wrong word for one of the six markets.
+    const target = inflationTargetFor(market);
+    const gap = value - target;
+    if (Math.abs(gap) <= 0.5) return `Near the ${target}% target`;
+    return gap > 0 ? `Above the ${target}% target` : `Below the ${target}% target`;
   }
   if (pillar === "MC") {
     const gap = value - 2.5;
@@ -52,7 +56,7 @@ function descriptorFor(pillar: PillarKey, value: number): string {
   return value <= 6 ? "Steady labour market" : "Loose labour market";
 }
 
-export default function KeyRatesRow({ raw }: { raw: RawIndicators }) {
+export default function KeyRatesRow({ raw, market }: { raw: RawIndicators; market: string }) {
   return (
     <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, margin: "20px 0 10px" }}>
       {STATS.map(({ pillar, color }) => {
@@ -79,7 +83,7 @@ export default function KeyRatesRow({ raw }: { raw: RawIndicators }) {
             </dd>
             {value != null && (
               <div style={{ marginTop: 5, fontSize: 11, color: "var(--slate)" }}>
-                {descriptorFor(pillar, value)}
+                {descriptorFor(pillar, value, market)}
               </div>
             )}
           </div>
