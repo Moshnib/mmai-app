@@ -286,3 +286,41 @@ real defect while touching nothing else:
 - **No score changes. No parameter is added. Hand-reproducibility intact.**
 
 Strictly better than the rescale on every dimension.
+
+---
+
+## HLW licence: CLEARED (checked 31 Aug 2026)
+
+Charter §12 — *free API access is not automatic commercial redistribution
+rights* — required this be settled before the New York Fed's r\* estimates
+could enter production. Now settled, and favourably.
+
+From the New York Fed **Terms of Use** (last updated 9 June 2023), read directly:
+
+> "The New York Fed grants you a non-exclusive license, subject to the Terms,
+> to use, copy, and distribute Content for your personal or **business**
+> purposes. You may: Access the Content, manually or through an **automated
+> process or device** …; **Download, store, and use Content in any format or
+> media**; **Copy and distribute** the Content …; and **Modify and create
+> derivative works** from the Content."
+
+| Need | Permitted |
+|---|---|
+| Commercial use | ✅ "business purposes" |
+| Automated retrieval | ✅ "automated process or device" |
+| **Store in a database** | ✅ **"Download, store, and use"** |
+| Redistribute / publish | ✅ "copy and distribute" |
+| Derive a score from it | ✅ "modify and create derivative works" |
+
+The database-storage clause is the exact permission FRED refused, which
+forced FRED's removal from this project. **The New York Fed grants it
+explicitly.**
+
+**Condition:** attribution — carry copyright notices and source identifiers,
+and use the citation form where one is given. The r\* page gives one:
+*Federal Reserve Bank of New York, Measuring the Natural Rate of Interest,
+newyorkfed.org/research/policy/rstar/overview*.
+
+**This removes the last non-data blocker on the neutral-rate work.** What
+still blocks it: HLW covers three of six markets — the UK, Japan and
+Australia have no published estimate.
