@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   // custom domain.
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "MMAI — Moshnib Macro Analysis Index",
+    // The charter (§17) records "Measuring the Pulse of the Economy" as a
+    // CONCLUDED decision with the next requirement "use as
+    // descriptor/tagline". It appeared nowhere until 2026-08-31.
+    default: "MMAI — Measuring the Pulse of the Economy",
     // Child pages set just their own name; this appends the brand.
     template: "%s — MMAI",
   },
@@ -22,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "MMAI",
-    title: "MMAI — Moshnib Macro Analysis Index",
+    title: "MMAI — Measuring the Pulse of the Economy",
     description: DESCRIPTION,
     url: SITE_URL,
     locale: "en",
@@ -39,6 +42,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font --
+            This rule targets the Pages Router, where a font added outside
+            pages/_document.js loads for one page only. This is the App
+            Router ROOT layout, which wraps every route, so the font does
+            load site-wide. False positive. */}
         <link
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"

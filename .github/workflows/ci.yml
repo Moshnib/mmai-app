@@ -52,13 +52,15 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      # --max-warnings is deliberately NOT zero. Four warnings pre-date
-      # this workflow and are unrelated to it:
-      #   3x react-hooks/exhaustive-deps  (ComparePageInner, 'buildSeries')
-      #   1x @next/next/no-page-custom-font  (layout.tsx)
-      # The number is a RATCHET: lower it as these are fixed, and never
-      # raise it to let a new warning through.
-      - run: npx eslint . --max-warnings 4
+      # Zero, as of 2026-08-31. The four warnings this workflow launched
+      # with are fixed: buildSeries is now a useCallback with real
+      # dependencies, and the font rule is disabled inline with the reason
+      # it is a false positive under the App Router.
+      #
+      # Do NOT raise this to let a new warning through. If a warning is a
+      # genuine false positive, disable that rule at the line with a comment
+      # explaining why -- the way layout.tsx does.
+      - run: npx eslint . --max-warnings 0
 
   scoring:
     name: Scoring correctness
