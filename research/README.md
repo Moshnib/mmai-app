@@ -70,3 +70,55 @@ only began 2025-08-29.
 history begins in **2019**. Until a historical calibration dataset exists
 (§18 lists it as a required deliverable), the validation plan cannot run
 at all.
+
+## Neutral rates: sourced for three of six, and why that blocks release
+
+Charter §9.4 records the 2.5% neutral policy rate as unjustified. The
+recognised source is the **Holston-Laubach-Williams** model, published free
+by the New York Fed and updated quarterly (latest release 27 Aug 2026).
+
+Read from `Holston_Laubach_Williams_current_estimates.xlsx`, 2026Q2:
+
+| Market | HLW r* (real) | Nominal neutral (r* + 2%) | MMAI uses |
+|---|---|---|---|
+| United States | 1.009 | **3.01%** | 2.50% |
+| Canada | 1.759 | **3.76%** | 2.50% |
+| Euro Area | 0.086 | **2.09%** | 2.50% |
+| United Kingdom | — | not covered | 2.50% |
+| Japan | — | not covered | 2.50% |
+| Australia | — | not covered | 2.50% |
+
+**HLW covers three of MMAI's six markets, not four.** An earlier note in
+this session said four; that was wrong, corrected on reading the file.
+
+Measured effect (`npx tsx research/rstar-impact.ts`):
+
+```
+United States   77.21 -> 78.35   +1.15
+Euro Area       79.19 -> 79.38   +0.19
+Canada          76.50 -> 73.66   -2.83
+rank now  : EA > JP > US > UK > CA > AU
+rank after: EA > JP > US > UK > AU > CA
+```
+
+### Why this is NOT ready to ship
+
+Applying researched neutral rates to three markets while the other three
+keep an unsourced 2.5% makes the index **internally inconsistent**. Canada
+would be measured properly and Japan by guess, and the cross-country
+comparison — the entire purpose of the index — stops meaning the same thing
+for each row.
+
+That is arguably worse than being uniformly wrong: a uniform error is at
+least a *comparable* error.
+
+**This needs all six or none.** UK, Japan and Australia need either a
+documented alternative estimate or an explicit, disclosed design choice
+before any of it ships.
+
+### Also unresolved
+The NY Fed publishes HLW freely and states how to cite it, but Federal
+Reserve Bank content is not automatically public domain the way BLS and BEA
+federal works are. **The licence must be checked before this enters
+production**, per charter §12: free access is not automatic redistribution
+rights.
