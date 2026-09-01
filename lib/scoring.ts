@@ -240,6 +240,71 @@ export function computeComposite(pillars: PillarScores): CompositeResult {
   return { composite, coverage, coveragePillars, publishable };
 }
 
+/** MINIMUM-PILLAR RULE — audit finding H-1.
+ *
+ *  MMAI aggregates linearly, which is FULLY COMPENSATORY: a collapse in
+ *  one pillar can be offset entirely by strength in the others, without
+ *  limit. That is a real property of the chosen aggregation, not a bug,
+ *  but left undisclosed it lets the headline conceal a total failure.
+ *
+ *  It is not hypothetical. Measured over 1990-2018:
+ *
+ *    EA 2013  Labour Market = 0.0  -> composite published 59.9 'Balanced'
+ *    JP 2009  Growth        = 0.0  -> composite published 45.8
+ *    AU 1990  Monetary      = 0.0  -> composite published 44.7
+ *    CA 1990  Monetary      = 0.0  -> composite published 43.8
+ *
+ *  Euro-area unemployment reached 12.02% in 2013, the pillar registered
+ *  EXACTLY ZERO, and the index said Balanced.
+ *
+ *  The UNDP changed the Human Development Index from arithmetic to
+ *  geometric aggregation in 2010 for precisely this reason. Changing
+ *  MMAI's aggregation would move every historical score and needs its own
+ *  evidence; DISCLOSING the masking costs nothing and is owed to a reader
+ *  now.
+ *
+ *  THRESHOLDS ARE CALIBRATED, NOT CHOSEN. A weak pillar is not itself a
+ *  problem -- a weak pillar the composite CONCEALS is. So the rule
+ *  measures the concealment directly: the gap between the headline and
+ *  its worst component. Tested across 173 market-years:
+ *
+ *    gap > 40 AND weakest < 30   fires on 21% of history
+ *                                and catches all four total failures above
+ *
+ *  A wider gap threshold (45) would fire less often but MISS Canada 1990,
+ *  whose gap is 43.8. 40 is the loosest value that catches every case of
+ *  a pillar at zero. See research/audit-floor-rule.ts.
+ */
+export const MASK_GAP_THRESHOLD = 40;
+export const MASK_PILLAR_THRESHOLD = 30;
+
+export interface MaskedPillar {
+  pillar: PillarKey;
+  score: number;
+  composite: number;
+  gap: number;
+}
+
+/** Returns the pillar the composite is masking, or null when none is.
+ *  Callers should surface this next to the score -- it is the honest
+ *  counterpart to a compensatory aggregation rule. */
+export function maskedPillar(
+  pillars: PillarScores,
+  composite: number | null
+): MaskedPillar | null {
+  if (composite == null) return null;
+  let worst: { key: PillarKey; value: number } | null = null;
+  for (const key of Object.keys(PILLAR_WEIGHTS) as PillarKey[]) {
+    const v = pillars[key];
+    if (v == null) continue;
+    if (worst === null || v < worst.value) worst = { key, value: v };
+  }
+  if (worst === null) return null;
+  const gap = composite - worst.value;
+  if (gap <= MASK_GAP_THRESHOLD || worst.value >= MASK_PILLAR_THRESHOLD) return null;
+  return { pillar: worst.key, score: worst.value, composite, gap };
+}
+
 export interface Band {
   label: string;
   color: string;

@@ -14,7 +14,7 @@ import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
 import CountryGlyph from "@/components/CountryGlyph";
-import { narrativeDrivers, bandFor, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators , inflationTargetFor } from "@/lib/scoring";
+import { narrativeDrivers, bandFor, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators , inflationTargetFor , maskedPillar, colorForScore } from "@/lib/scoring";
 import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
@@ -165,6 +165,10 @@ export default function OverviewPage() {
 
   const market = markets.find((m) => m.code === current)!;
   const { pillars, composite, coveragePillars } = scoreMarket(market);
+  // Audit finding H-1: MMAI aggregates linearly, so a collapsed pillar can
+  // be masked by the other four. When that is happening, say so next to the
+  // score rather than leaving a reader to discover it in the pillar grid.
+  const masked = maskedPillar(pillars, composite);
   const rateNarrative = rateNarrativeFor(market.raw, market.code);
 
   return (
@@ -235,6 +239,25 @@ export default function OverviewPage() {
             <div className="score-right">
               <h2>{market.name}</h2>
               <p className="score-narrative">{narrativeFor(market)}</p>
+              {masked && (
+                <p
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    margin: "10px 0 0",
+                    padding: "11px 14px",
+                    borderLeft: `3px solid ${colorForScore(masked.score)}`,
+                    background: "var(--glass)",
+                    borderRadius: "0 8px 8px 0",
+                    color: "var(--ink-soft)",
+                  }}
+                >
+                  <b>Read this score with care.</b> {PILLAR_NAMES[masked.pillar]} is at{" "}
+                  <b>{masked.score.toFixed(1)}</b> — {masked.gap.toFixed(0)} points below the composite. MMAI
+                  averages its five pillars, so strength elsewhere is offsetting a weak one here. The
+                  headline alone understates this.
+                </p>
+              )}
               <ScoreTrendChart marketCode={current} currentScore={composite} />
               <div className="meta-row" style={{ marginTop: 14 }}>
                 <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>

@@ -317,3 +317,58 @@ Implemented and verified. Committed to `main`.
 
 ### Rollback method
 `git revert <commit>`, or restore `80/65/45/30` in `BAND_LABELS`. No stored data depends on the thresholds — bands are computed at read time, so a revert is complete and immediate.
+
+---
+
+## 2026-09-01 — Minimum-pillar disclosure (audit finding H-1)
+
+**Category:** Disclosure. **No score, equation, weight or band changed.**
+
+### Old rule
+None. The composite was published without reference to its weakest component.
+
+### New rule
+When the weakest pillar is **more than 40 points below the composite AND itself below 30**, the site states so beside the score.
+
+### Reason
+MMAI aggregates linearly, which is **fully compensatory**: a collapse in one pillar can be offset entirely by strength in the others, without limit. That is a property of the chosen aggregation, not a defect — but undisclosed, it lets the headline conceal a total failure.
+
+Measured over 1990–2018, this is not hypothetical:
+
+| | Weakest pillar | MMAI published |
+|---|---|---|
+| **Euro Area 2013** | **Labour Market = 0.0** | **59.9 — "Balanced"** |
+| Japan 2009 | Growth = 0.0 | 45.8 |
+| Australia 1990 | Monetary = 0.0 | 44.7 |
+| Canada 1990 | Monetary = 0.0 | 43.8 |
+
+Euro-area unemployment reached 12.02% in 2013, the pillar registered **exactly zero**, and the index reported *Balanced*.
+
+### Reference
+OECD/JRC Handbook — compensability is a decision requiring explicit justification. UNDP *Human Development Report 2010* — the HDI moved from arithmetic to geometric aggregation specifically to stop one weak dimension being masked. Munda & Nardo on non-compensatory aggregation.
+
+### Data used
+173 scored market-years, 1990–2018.
+
+### Test results
+Thresholds are calibrated, not chosen. A weak pillar is not itself the problem; a weak pillar the composite **conceals** is. The rule therefore measures the concealment directly — the gap between headline and worst component:
+
+| Gap | Pillar floor | Fires | Catches all four total failures? |
+|---|---|---|---|
+| 30 | 40 | 33.5% | yes |
+| **40** | **30** | **21.4%** | **yes** |
+| 45 | 30 | 15.0% | **no** — misses Canada 1990 (gap 43.8) |
+
+**40 is the loosest gap that still catches every case of a pillar at zero.** Calibration in `research/audit-floor-rule.ts`.
+
+### Impact
+**No published score changes.** Verified: **no current market triggers the notice** — every pillar across the six is well above 30 today. The rule is dormant until conditions genuinely warrant it.
+
+### Approval status
+Implemented and verified. Committed to `main`.
+
+### Rollback method
+`git revert <commit>`, or set `MASK_GAP_THRESHOLD = 999` to disable while keeping the function.
+
+### Not done, deliberately
+Changing to geometric aggregation would alter **21% of historical bands** and every published score. That needs its own evidence, comparison and decision; it is not bundled into a disclosure fix.
