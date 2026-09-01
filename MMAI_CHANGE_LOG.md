@@ -417,3 +417,58 @@ Implemented and verified. Committed to `main`.
 
 ### Follow-up
 The Gulf registry should carry cadence too — its staleness is far more material (UAE, Kuwait and Oman inflation at 607 days; three current-account figures at 973). Not done here to keep this change to one registry.
+
+---
+
+## 2026-09-01 — US and Euro Area GDP moved to quarterly, year-over-year
+
+**Category:** Data freshness. **No equation, weight, band or threshold changed.**
+
+### Old rule
+Growth Momentum read an **annual** GDP figure for every market — BEA `Frequency=A` for the US, Eurostat `tec00115` for the euro area — stamped January of the following year.
+
+### New rule
+US and euro-area GDP are now **quarterly, year-over-year**. The other four remain annual World Bank, and are still year-over-year.
+
+### Reason
+Growth Momentum carries **25% of the score — its joint-largest weight — and was being fed a figure up to twenty months old.** The per-indicator observation dates added earlier the same day made this visible for the first time: every market's GDP was stamped January 2025.
+
+Both replacements come from sources already in use and already licensed.
+
+### The trap this had to avoid
+BEA's widely-quoted quarterly growth rate is **annualised quarter-on-quarter** — a different quantity from year-over-year, and far more volatile (2025Q3: 4.4% annualised against 2.34% year-over-year). Eurostat offers both `CLV_PCH_PRE` (previous period) and `CLV_PCH_SM` (same period, previous year).
+
+Taking "whatever quarterly number each source headlines" would have made the six markets **non-comparable while looking entirely reasonable** — the exact failure this project keeps finding.
+
+**The rule adopted:** every market's Growth Momentum must be **year-over-year real GDP growth**. Frequency may differ between markets, and the stored observation date now discloses which is which, but the *concept* may not.
+
+US year-over-year is therefore computed from quarterly real GDP **levels** (BEA table T10106, chained dollars) rather than taking BEA's headline rate. Euro area uses `CLV_PCH_SM`, not `CLV_PCH_PRE`.
+
+### Test results
+
+| | Value | Observation date |
+|---|---|---|
+| US, old | 2.1% | 2025-01-01 |
+| **US, new** | **2.1%** | **2026-06-01** |
+| EA, old | 1.2% | 2025-01-01 |
+| **EA, new** | **1.0%** | **2026-06-01** |
+
+Both fetchers tested standalone against the live APIs before wiring, per this project's rule. `tsc` clean, eslint zero, build clean, all three verification scripts pass.
+
+### Impact
+
+| Market | Before | After |
+|---|---|---|
+| United States | 77.21 | **77.21** (unchanged) |
+| Euro Area | 79.19 | **78.69** |
+
+The US value is coincidentally identical, so its score does not move at all — but the figure behind it is **seventeen months fresher**. No band changes; no ranking changes.
+
+### Approval status
+Implemented and verified. Committed to `main`.
+
+### Rollback method
+`git revert <commit>`. `fetchUsGdpGrowth` and `fetchEuroAreaGdpGrowth` are unchanged and still present.
+
+### Remaining
+Canada, the UK, Japan and Australia still take annual World Bank GDP. Each has a national quarterly source, and each needs its own fetcher. They stay **conceptually comparable** in the meantime because all six are year-over-year.

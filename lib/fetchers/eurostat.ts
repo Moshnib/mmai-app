@@ -71,3 +71,53 @@ export async function fetchEuroAreaUnemployment(): Promise<{ unemployment: numbe
   if (!obs) throw new Error("Eurostat unemployment: no observation returned");
   return { unemployment: obs.value, observationDate: `${obs.period}-01` };
 }
+
+// ============================================================
+// Euro-area real GDP growth, QUARTERLY, year-over-year.
+//
+// Replaces fetchEuroAreaGdpGrowth(), which reads tec00115 -- an ANNUAL
+// dataset returning a calendar-year figure stamped January. Growth
+// Momentum carries 25% of the MMAI score and was being fed a number up
+// to twenty months old.
+//
+// unit=CLV_PCH_SM is chain-linked volumes, percentage change against the
+// SAME PERIOD of the previous year -- i.e. year-over-year, matching the
+// concept every other MMAI market uses. CLV_PCH_PRE (change on the
+// PREVIOUS period) is deliberately NOT used: it is a different quantity,
+// and mixing the two across markets would break the cross-country
+// comparison while looking entirely reasonable.
+//
+// s_adj=SCA is seasonally and calendar adjusted, which is the right
+// basis for a quarterly series.
+// ============================================================
+
+export async function fetchEuroAreaGdpGrowthQuarterly(): Promise<{ gdpGrowth: number; observationDate: string }> {
+  const url =
+    `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/namq_10_gdp` +
+    `?format=JSON&geo=${EA_GEO_FIXED}&unit=CLV_PCH_SM&na_item=B1GQ&s_adj=SCA&lastTimePeriod=4`;
+  const res = await fetch(url, { next: { revalidate: 0 } });
+  if (!res.ok) throw new Error(`Eurostat quarterly GDP request failed: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  const index: Record<string, number> = json?.dimension?.time?.category?.index ?? {};
+  const values: Record<string, number> = json?.value ?? {};
+  const periods = Object.keys(index);
+  if (periods.length === 0) throw new Error("Eurostat quarterly GDP: no periods returned");
+
+  // Walk back from the newest period to the first one that actually has a
+  // value -- Eurostat returns the period slots before it publishes them.
+  let period: string | null = null;
+  let value: number | null = null;
+  for (const p of [...periods].sort().reverse()) {
+    const v = values[String(index[p])];
+    if (typeof v === "number" && Number.isFinite(v)) { period = p; value = v; break; }
+  }
+  if (period == null || value == null) throw new Error("Eurostat quarterly GDP: no populated observation");
+
+  // "2026-Q2" -> stamp at the end of the quarter it describes.
+  const m = period.match(/^(\d{4})-Q([1-4])$/);
+  if (!m) throw new Error(`Eurostat quarterly GDP: unexpected period "${period}"`);
+  const endMonth = ["03", "06", "09", "12"][Number(m[2]) - 1];
+
+  return { gdpGrowth: value, observationDate: `${m[1]}-${endMonth}-01` };
+}

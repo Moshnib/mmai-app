@@ -9,7 +9,7 @@ import { fetchAustraliaInflation, fetchAustraliaUnemployment } from "@/lib/fetch
 import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
 import { fetchAllBondYieldSeries, BOND_YIELD_SOURCE } from "@/lib/fetchers/bondYields";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
-import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowth, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
+import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowthQuarterly, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
 import { fetchEuroAreaPolicyRate } from "@/lib/fetchers/ecb";
 import { fetchCanadaInflation, fetchCanadaUnemployment } from "@/lib/fetchers/statcan";
 import { fetchCanadaPolicyRate } from "@/lib/fetchers/boc";
@@ -17,7 +17,7 @@ import { fetchUkInflation, fetchUkUnemployment } from "@/lib/fetchers/ons";
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
-import { fetchUsGdpGrowth, fetchUsPceInflation } from "@/lib/fetchers/bea";
+import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -116,7 +116,7 @@ async function fetchRawIndicators(
       settle("US inflation (PCE)", fetchUsPceInflation()),
       settle("US unemployment", fetchUsUnemployment()),
       settle("US policy rate", fetchUsPolicyRate()),
-      settle("US GDP growth", fetchUsGdpGrowth()),
+      settle("US GDP growth (quarterly YoY)", fetchUsGdpGrowthQuarterly()),
     ]);
 
     let usInflation = infl?.inflation ?? null;
@@ -246,7 +246,7 @@ async function fetchRawIndicators(
     // previously flagged as broken).
     const [infl, gdp, unemp, rate] = await Promise.all([
       settle("EA inflation", fetchEuroAreaInflation()),
-      settle("EA GDP growth", fetchEuroAreaGdpGrowth()),
+      settle("EA GDP growth (quarterly YoY)", fetchEuroAreaGdpGrowthQuarterly()),
       settle("EA unemployment", fetchEuroAreaUnemployment()),
       settle("EA policy rate", fetchEuroAreaPolicyRate()),
     ]);

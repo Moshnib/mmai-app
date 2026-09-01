@@ -125,3 +125,82 @@ export async function fetchUsPceInflation(): Promise<{ inflation: number; observ
     observationDate: `${y}-${m}-01`,
   };
 }
+
+// ============================================================
+// U.S. real GDP growth, QUARTERLY, year-over-year.
+//
+// WHY THIS REPLACES fetchUsGdpGrowth()
+// That function requests Frequency=A, so it returned a CALENDAR-YEAR
+// figure stamped January. Growth Momentum carries 25% of the MMAI score
+// -- its joint-largest weight -- and was being fed a number up to twenty
+// months old. BEA publishes quarterly.
+//
+// WHY YEAR-OVER-YEAR AND NOT BEA'S HEADLINE NUMBER
+// BEA's widely-quoted quarterly growth rate (table T10101) is
+// ANNUALISED QUARTER-ON-QUARTER -- the pace the economy would grow at if
+// one quarter's rate persisted for a year. It is a different quantity
+// from the year-over-year growth every other MMAI market reports, and it
+// is far more volatile: 2025Q3 printed 4.4% annualised against 2.34%
+// year-over-year.
+//
+// Mixing the two across markets would make the cross-country comparison
+// meaningless while looking perfectly reasonable, which is the failure
+// mode this project keeps finding. So this computes YEAR-OVER-YEAR from
+// quarterly real GDP LEVELS (table T10106, chained dollars), matching
+// the concept used everywhere else.
+//
+// THE RULE: every market's Growth Momentum must be year-over-year real
+// GDP growth. Frequency may differ between markets -- and the stored
+// observation date now discloses which is which -- but the CONCEPT may
+// not.
+// ============================================================
+
+export async function fetchUsGdpGrowthQuarterly(): Promise<{ gdpGrowth: number; observationDate: string }> {
+  const key = process.env.BEA_API_KEY;
+  if (!key) throw new Error("BEA_API_KEY is not configured");
+
+  // Three calendar years so the same quarter one year back always exists.
+  const now = new Date().getFullYear();
+  const url =
+    `https://apps.bea.gov/api/data/?UserID=${key}&method=GetData&datasetname=NIPA` +
+    `&TableName=T10106&Frequency=Q&Year=${now - 2},${now - 1},${now}&ResultFormat=JSON`;
+
+  const res = await fetch(url, { next: { revalidate: 0 } });
+  if (!res.ok) throw new Error(`BEA quarterly GDP request failed: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  // BEA answers 200 with the error in the body -- see the note at the top.
+  const apiError = json?.BEAAPI?.Error ?? json?.BEAAPI?.Results?.Error;
+  if (apiError) throw new Error(`BEA quarterly GDP returned an error: ${JSON.stringify(apiError)}`);
+
+  const rows: Array<BeaDataRow & { LineDescription?: string }> = json?.BEAAPI?.Results?.Data ?? [];
+  const gdp = rows.filter((r) => r.LineNumber === "1");
+  if (gdp.length < 5) throw new Error(`BEA quarterly GDP: need 5+ quarters, got ${gdp.length}`);
+
+  // Guard against BEA reordering the table, as fetchUsPceInflation does.
+  const desc = gdp[0].LineDescription ?? "";
+  if (!/gross domestic product/i.test(desc)) {
+    throw new Error(`BEA quarterly GDP: line 1 is "${desc}" — table may have been restructured`);
+  }
+
+  const byQuarter = new Map(gdp.map((r) => [r.TimePeriod, parseFloat(r.DataValue.replace(/,/g, ""))]));
+  const latest = [...byQuarter.keys()].sort().pop()!;          // "2026Q2"
+  const year = Number(latest.slice(0, 4));
+  const quarter = latest.slice(4);                              // "Q2"
+  const prior = byQuarter.get(`${year - 1}${quarter}`);
+  const current = byQuarter.get(latest);
+
+  if (current == null || prior == null || !Number.isFinite(current) || !Number.isFinite(prior) || prior === 0) {
+    throw new Error(`BEA quarterly GDP: cannot compute YoY for ${latest} (need ${year - 1}${quarter})`);
+  }
+
+  // Stamp the observation at the END of the quarter it describes, which is
+  // what the figure actually refers to.
+  const endMonth = { Q1: "03", Q2: "06", Q3: "09", Q4: "12" }[quarter];
+  if (!endMonth) throw new Error(`BEA quarterly GDP: unrecognised quarter "${quarter}"`);
+
+  return {
+    gdpGrowth: Math.round(((current - prior) / prior) * 10000) / 100,
+    observationDate: `${year}-${endMonth}-01`,
+  };
+}
