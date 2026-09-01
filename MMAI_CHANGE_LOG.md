@@ -634,3 +634,31 @@ Investigated directly this session:
 - **e-Stat** (Japan's official portal) returns *"authentication failed — check application ID"*: it needs a free registered key, which only the site owner can obtain.
 
 Japan's unemployment was fixed separately today. Its inflation and GDP remain annual, and the observation dates on its card say so.
+
+---
+
+## 2026-09-01 — CORRECTION: the Japan/OECD fix did not work
+
+**Correcting the entry above titled "Japan's unemployment is current again (one word)".**
+
+The `csvfile` change is real and worth keeping — it is **40× faster** and returns the same data — but **it did not fix Japan.** After deploying it and forcing a refresh, Japan still fell back:
+
+```
+source_note: "... — JP unemployment via World Bank annual (OECD unavailable)"
+unemployment: 2.451,  observation date: 2025-01-01
+```
+
+The deploy definitely landed: the Australia GDP fetcher shipped in the same window and worked on that run.
+
+### What I got wrong
+I measured OECD at 11–40s with `csvfilewithlabels`, found `csvfile` at 0.1s, and concluded the 8-second timeout was the cause. **The latency was real and is now fixed. It was not the reason Japan fails from Vercel.**
+
+The original diagnosis — *"OECD works locally and from GitHub, fails from Vercel"* — appears to have been right after all. From this machine the request completes in 1.9–3.7 seconds, comfortably inside the timeout, and it still fails in production. That points to OECD refusing or throttling Vercel's egress rather than to slowness.
+
+### What stands
+- The `csvfile` change is **kept**: strictly faster, identical data, and it removes latency as a confounding variable for any future attempt.
+- **Japan's unemployment remains on the World Bank annual fallback, dated January 2025.** The observation date on Japan's card says so.
+- The fallback itself is working exactly as designed — Japan publishes rather than failing.
+
+### What would actually fix it
+Fetching OECD from the **GitHub Actions runner**, which can reach it, and writing to Supabase directly — rather than routing the request through a Vercel function. That is an architectural change, not a parameter change, and is not being made on the strength of one afternoon's diagnosis.
