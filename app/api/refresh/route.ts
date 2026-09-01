@@ -73,7 +73,37 @@ async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> 
   }
 }
 
-async function fetchRawIndicators(market: string, brentYoY: number | null): Promise<RawIndicators> {
+/** WHEN each figure refers to, as distinct from when it was fetched.
+ *
+ *  Audit finding M-6. gulf_indicators has carried a date per indicator
+ *  for a while; raw_indicators -- which drives the actual score -- had
+ *  ONE date for all five, and it recorded the FETCH date. So the scored
+ *  half of the site could not tell a reader that the US GDP figure in a
+ *  row stamped today is a full-year annual number.
+ *
+ *  Every fetcher already returns its observation period. Until now the
+ *  refresh route threw all five away. Null means the source did not
+ *  supply one, or that indicator failed this run -- never a guess.
+ */
+interface ObservationDates {
+  inflation: string | null;
+  gdpGrowth: string | null;
+  unemployment: string | null;
+  policyRate: string | null;
+  brent: string | null;
+}
+
+interface FetchedIndicators {
+  raw: RawIndicators;
+  dates: ObservationDates;
+}
+
+async function fetchRawIndicators(
+  market: string,
+  brent: { brentYoY: number; observationDate: string } | null
+): Promise<FetchedIndicators> {
+  const brentYoY = brent?.brentYoY ?? null;
+  const brentDate = brent?.observationDate ?? null;
   if (market === "US") {
     // Price Stability scores a deviation from a 2% target. For the US
     // that target is the Fed's, and the Fed defines it on the PCE price
@@ -101,11 +131,20 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
     usInflationFellBack = fellBack;
 
     return {
-      inflation: usInflation,
-      gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: unemp?.unemployment ?? null,
-      policyRate: rate?.policyRate ?? null,
-      brentYoY,
+      raw: {
+        inflation: usInflation,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: unemp?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: unemp?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
     };
   }
 
@@ -139,21 +178,34 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
     // staler number beats silently dropping a whole pillar. Which source
     // was used is recorded in the row's source note.
     let jpUnemployment = unemp?.unemployment ?? null;
+    // The fallback carries its own observation period. Without this, a run
+    // that fell back would report a NULL date for a figure that has one.
+    let jpUnemploymentDate = unemp?.observationDate ?? null;
     let jpFellBack = false;
     if (jpUnemployment == null) {
       const fb = await settle("JP unemployment (World Bank fallback)", fetchUnemployment("JPN"));
       if (fb?.unemployment != null) {
         jpUnemployment = fb.unemployment;
+        jpUnemploymentDate = fb.observationDate ?? null;
         jpFellBack = true;
       }
     }
     jpUnemploymentFellBack = jpFellBack;
     return {
-      inflation: infl?.inflation ?? null,
-      gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: jpUnemployment,
-      policyRate: rate?.policyRate ?? null,
-      brentYoY,
+      raw: {
+        inflation: infl?.inflation ?? null,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: jpUnemployment,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: jpUnemploymentDate,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
     };
   }
 
@@ -169,11 +221,20 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
       settle("AU policy rate", fetchAustraliaPolicyRate()),
     ]);
     return {
-      inflation: infl?.inflation ?? null,
-      gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: unemp?.unemployment ?? null,
-      policyRate: rate?.policyRate ?? null,
-      brentYoY,
+      raw: {
+        inflation: infl?.inflation ?? null,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: unemp?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: unemp?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
     };
   }
 
@@ -190,11 +251,20 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
       settle("EA policy rate", fetchEuroAreaPolicyRate()),
     ]);
     return {
-      inflation: infl?.inflation ?? null,
-      gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: unemp?.unemployment ?? null,
-      policyRate: rate?.policyRate ?? null,
-      brentYoY,
+      raw: {
+        inflation: infl?.inflation ?? null,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: unemp?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: unemp?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
     };
   }
 
@@ -213,11 +283,20 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
       settle("CA policy rate", fetchCanadaPolicyRate()),
     ]);
     return {
-      inflation: infl?.inflation ?? null,
-      gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: unemp?.unemployment ?? null,
-      policyRate: rate?.policyRate ?? null,
-      brentYoY,
+      raw: {
+        inflation: infl?.inflation ?? null,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: unemp?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: unemp?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
     };
   }
 
@@ -234,11 +313,20 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
       settle("UK policy rate", fetchUkPolicyRate()),
     ]);
     return {
-      inflation: infl?.inflation ?? null,
-      gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: unemp?.unemployment ?? null,
-      policyRate: rate?.policyRate ?? null,
-      brentYoY,
+      raw: {
+        inflation: infl?.inflation ?? null,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: unemp?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: unemp?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
     };
   }
 
@@ -254,11 +342,20 @@ async function fetchRawIndicators(market: string, brentYoY: number | null): Prom
       settle("NO policy rate", fetchNorwayPolicyRate()),
     ]);
     return {
-      inflation: infl?.inflation ?? null,
-      gdpGrowth: gdp?.gdpGrowth ?? null,
-      unemployment: unemp?.unemployment ?? null,
-      policyRate: rate?.policyRate ?? null,
-      brentYoY,
+      raw: {
+        inflation: infl?.inflation ?? null,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: unemp?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: unemp?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
     };
   }
 
@@ -329,11 +426,10 @@ export async function GET(request: Request) {
   // fetchRawIndicators(). Outside the per-market try/catch below so one
   // market's Supabase error can't re-trigger a redundant EIA call.
   const brentResult = await settle("Brent Crude YoY", fetchBrentYoY());
-  const brentYoY = brentResult?.brentYoY ?? null;
 
   for (const market of pending) {
     try {
-      const raw = await fetchRawIndicators(market, brentYoY);
+      const { raw, dates } = await fetchRawIndicators(market, brentResult);
       const pillars = computePillarScores(raw, market);
       const { composite, coverage } = computeComposite(pillars);
       const band = bandFor(composite);
@@ -452,6 +548,12 @@ export async function GET(request: Request) {
           policy_rate: raw.policyRate,
           brent_yoy: raw.brentYoY,
           observation_date: observationDate,
+          // WHEN each figure refers to, not when it was fetched (audit M-6).
+          inflation_observation_date: dates.inflation,
+          gdp_observation_date: dates.gdpGrowth,
+          unemployment_observation_date: dates.unemployment,
+          policy_rate_observation_date: dates.policyRate,
+          brent_observation_date: dates.brent,
           source_note: sourceNote,
           status: "current",
         }),
