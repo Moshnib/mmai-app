@@ -114,6 +114,73 @@ export default function TrendChart({
   const years = Array.from(orderOf.keys()).sort((a, b) =>
     String(orderOf.get(a)).localeCompare(String(orderOf.get(b)))
   );
+
+  // ---------- Smart time axis ----------
+  //
+  // Recharts is drawing a CATEGORY axis: it treats 131 dates as 131
+  // unrelated labels and picks ticks by counting them, which is why a
+  // daily series produced a wall of crammed, arbitrary dates.
+  //
+  // When every point carries an ISO sortKey we know these are DATES, and
+  // can do what a time axis would: put ticks on natural boundaries and
+  // label them at a resolution that suits the span.
+  //
+  // Year-based callers pass no sortKey and are untouched -- eight annual
+  // points need none of this.
+  const isoOf = new Map<string, string>();
+  for (const [label, key] of orderOf) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(key)) isoOf.set(label, key);
+  }
+  const isDateAxis = isoOf.size === years.length && years.length > 0;
+
+  // Span in days decides the resolution: a fortnight wants day labels, a
+  // year wants months. Picking by span rather than by point count means
+  // a sparse series and a dense one over the same period label alike.
+  const spanDays = isDateAxis
+    ? Math.round(
+        (Date.parse(isoOf.get(years[years.length - 1])!) - Date.parse(isoOf.get(years[0])!)) / 86_400_000
+      )
+    : 0;
+
+  const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Ticks land on the FIRST trading day of each month (or of each quarter
+  // over a long span). Markets close at weekends, so 'the 1st' often does
+  // not exist -- taking the first point whose month differs from the
+  // previous one puts the tick on a real observation every time.
+  const smartTicks: string[] | undefined = (() => {
+    if (!isDateAxis || years.length < 8) return undefined;
+    const everyNthMonth = spanDays > 400 ? 3 : 1;
+    const picked: string[] = [];
+    let lastMonth = -1;
+    for (const label of years) {
+      const iso = isoOf.get(label)!;
+      const month = Number(iso.slice(5, 7)) - 1;
+      if (month === lastMonth) continue;
+      lastMonth = month;
+      if (everyNthMonth === 1 || month % everyNthMonth === 0) picked.push(label);
+    }
+    // Never crowd the axis. Thin evenly if a narrow chart would still
+    // overlap, and always keep the newest point so the axis ends on the
+    // most recent reading rather than a stray boundary.
+    const MAX = 8;
+    if (picked.length <= MAX) return picked;
+    const step = Math.ceil(picked.length / MAX);
+    const thinned = picked.filter((_, i) => i % step === 0);
+    const newest = years[years.length - 1];
+    if (!thinned.includes(newest)) thinned.push(newest);
+    return thinned;
+  })();
+
+  // Short span -> "3 Jun". Long span -> "Jun 26". The year is dropped on
+  // short spans because every tick would repeat it.
+  const formatTick = (label: string): string => {
+    const iso = isoOf.get(label);
+    if (!iso) return label;
+    const [yy, mm, dd] = iso.split("-");
+    const mon = MONTHS_SHORT[Number(mm) - 1];
+    return spanDays > 180 ? `${mon} ${yy.slice(2)}` : `${Number(dd)} ${mon}`;
+  };
   const merged = years.map((year) => {
     const row: Record<string, string | number | null> = { year };
     series.forEach((s) => {
@@ -127,7 +194,11 @@ export default function TrendChart({
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={merged} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
-        <XAxis dataKey="year" tick={{ fontSize: 11.5, fill: "#9296AB" }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
+        <XAxis
+          dataKey="year"
+          ticks={smartTicks}
+          tickFormatter={isDateAxis ? formatTick : undefined}
+          minTickGap={isDateAxis ? 24 : 5} tick={{ fontSize: 11.5, fill: "#9296AB" }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
         <YAxis
           domain={yDomain ?? ["auto", "auto"]}
           tick={{ fontSize: 11, fill: "#9296AB" }}
