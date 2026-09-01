@@ -11,9 +11,9 @@ import { fetchAllBondYieldSeries, BOND_YIELD_SOURCE } from "@/lib/fetchers/bondY
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
 import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowthQuarterly, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
 import { fetchEuroAreaPolicyRate } from "@/lib/fetchers/ecb";
-import { fetchCanadaInflation, fetchCanadaUnemployment } from "@/lib/fetchers/statcan";
+import { fetchCanadaInflation, fetchCanadaUnemployment, fetchCanadaGdpGrowthQuarterly } from "@/lib/fetchers/statcan";
 import { fetchCanadaPolicyRate } from "@/lib/fetchers/boc";
-import { fetchUkInflation, fetchUkUnemployment } from "@/lib/fetchers/ons";
+import { fetchUkInflation, fetchUkUnemployment, fetchUkGdpGrowthQuarterly } from "@/lib/fetchers/ons";
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
@@ -279,7 +279,7 @@ async function fetchRawIndicators(
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("CA inflation", fetchCanadaInflation()),
       settle("CA unemployment", fetchCanadaUnemployment()),
-      settle("CA GDP growth", fetchGdpGrowth("CAN")),
+      settle("CA GDP growth (quarterly YoY)", fetchCanadaGdpGrowthQuarterly()),
       settle("CA policy rate", fetchCanadaPolicyRate()),
     ]);
     return {
@@ -309,7 +309,7 @@ async function fetchRawIndicators(
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("UK inflation", fetchUkInflation()),
       settle("UK unemployment", fetchUkUnemployment()),
-      settle("UK GDP growth", fetchGdpGrowth("GBR")),
+      settle("UK GDP growth (quarterly YoY)", fetchUkGdpGrowthQuarterly()),
       settle("UK policy rate", fetchUkPolicyRate()),
     ]);
     return {

@@ -72,3 +72,55 @@ export async function fetchUkUnemployment(): Promise<{ unemployment: number; obs
 
   return { unemployment: value, observationDate: `${latest.year}-${String(monthNum).padStart(2, "0")}-01` };
 }
+
+// ============================================================
+// UK real GDP growth, QUARTERLY, year-over-year.
+//
+// Replaces the World Bank ANNUAL figure, which was stamped January and
+// up to twenty months old while carrying 25% of the MMAI score.
+//
+// Series IHYR is titled by the ONS itself as "Gross Domestic Product:
+// q-on-q4 growth rate CVM SA %" -- growth against the quarter four
+// quarters earlier, i.e. YEAR-OVER-YEAR. That is the concept every MMAI
+// market must use.
+//
+// IHYQ is deliberately NOT used: it is quarter-on-PREVIOUS-quarter, a
+// different quantity. Picking it would break comparability with the
+// other five markets while looking perfectly reasonable.
+//
+// CVM = chained volume measure (real, not nominal). SA = seasonally
+// adjusted.
+// ============================================================
+
+interface OnsQuarter {
+  date: string;   // "2026 Q1"
+  value: string;
+}
+
+export async function fetchUkGdpGrowthQuarterly(): Promise<{ gdpGrowth: number; observationDate: string }> {
+  const url = "https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ihyr/qna/data";
+  const res = await fetch(url, { next: { revalidate: 0 } });
+  if (!res.ok) throw new Error(`ONS quarterly GDP request failed: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+
+  // Guard: if the ONS ever repoints this series id, fail loudly rather
+  // than silently scoring the UK on quarter-on-quarter growth.
+  const title: string = json?.description?.title ?? "";
+  if (!/q-on-q4/i.test(title)) {
+    throw new Error(`ONS IHYR is now "${title}" — expected a q-on-q4 (year-over-year) series`);
+  }
+
+  const quarters: OnsQuarter[] = json?.quarters ?? [];
+  if (quarters.length === 0) throw new Error("ONS quarterly GDP: no quarters returned");
+
+  const latest = quarters[quarters.length - 1];
+  const value = parseFloat(latest.value);
+  if (!Number.isFinite(value)) throw new Error(`ONS quarterly GDP: unparseable value "${latest.value}"`);
+
+  const m = latest.date.match(/^(\d{4})\s*Q([1-4])$/);
+  if (!m) throw new Error(`ONS quarterly GDP: unexpected period "${latest.date}"`);
+  const endMonth = ["03", "06", "09", "12"][Number(m[2]) - 1];
+
+  return { gdpGrowth: value, observationDate: `${m[1]}-${endMonth}-01` };
+}

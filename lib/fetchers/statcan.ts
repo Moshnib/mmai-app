@@ -101,3 +101,59 @@ function shiftMonth(period: string, months: number): string {
   const date = new Date(y, m - 1 + months, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
+
+// ============================================================
+// Canada real GDP growth, QUARTERLY, year-over-year.
+//
+// Replaces the World Bank ANNUAL figure, which was stamped January and
+// up to twenty months old while carrying 25% of the MMAI score.
+//
+// Vector 62305752 is quarterly real GDP in chained dollars -- LEVELS,
+// not a growth rate. Year-over-year is computed here from those levels
+// so the concept matches every other MMAI market.
+//
+// Statistics Canada's own headline quarterly number is annualised
+// quarter-on-quarter, which is a DIFFERENT quantity and far more
+// volatile. Using it would break comparability while looking reasonable.
+// ============================================================
+
+export async function fetchCanadaGdpGrowthQuarterly(): Promise<{ gdpGrowth: number; observationDate: string }> {
+  const res = await fetch("https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify([{ vectorId: 62305752, latestN: 9 }]),
+    next: { revalidate: 0 },
+  });
+  if (!res.ok) throw new Error(`Statistics Canada GDP request failed: ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  if (json?.[0]?.status !== "SUCCESS") {
+    throw new Error(`Statistics Canada GDP: status ${json?.[0]?.status ?? "unknown"}`);
+  }
+  const points: VectorDataPoint[] = json?.[0]?.object?.vectorDataPoint ?? [];
+  if (points.length < 5) throw new Error(`Statistics Canada GDP: need 5+ quarters, got ${points.length}`);
+
+  const rows = points
+    .map((p) => ({ period: p.refPer.slice(0, 10), value: p.value }))
+    .sort((a, b) => a.period.localeCompare(b.period));
+
+  const latest = rows[rows.length - 1];
+  // Same quarter one year earlier: refPer is the quarter's FIRST month
+  // (01, 04, 07, 10), so the match is an exact date one year back.
+  const y = Number(latest.period.slice(0, 4));
+  const monthDay = latest.period.slice(4);              // "-04-01"
+  const prior = rows.find((r) => r.period === `${y - 1}${monthDay}`);
+  if (!prior || !Number.isFinite(prior.value) || prior.value === 0) {
+    throw new Error(`Statistics Canada GDP: no comparable quarter for ${latest.period}`);
+  }
+
+  // Stamp at the END of the quarter the figure describes.
+  const endByStart: Record<string, string> = { "-01-01": "03", "-04-01": "06", "-07-01": "09", "-10-01": "12" };
+  const endMonth = endByStart[monthDay];
+  if (!endMonth) throw new Error(`Statistics Canada GDP: unexpected quarter start "${latest.period}"`);
+
+  return {
+    gdpGrowth: Math.round(((latest.value - prior.value) / prior.value) * 10000) / 100,
+    observationDate: `${y}-${endMonth}-01`,
+  };
+}

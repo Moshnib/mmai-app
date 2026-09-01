@@ -472,3 +472,48 @@ Implemented and verified. Committed to `main`.
 
 ### Remaining
 Canada, the UK, Japan and Australia still take annual World Bank GDP. Each has a national quarterly source, and each needs its own fetcher. They stay **conceptually comparable** in the meantime because all six are year-over-year.
+
+---
+
+## 2026-09-01 — UK and Canada GDP moved to quarterly, year-over-year
+
+**Category:** Data freshness. **No equation, weight, band or threshold changed.**
+
+Extends the same-day US/Euro Area change to two more markets, on the identical rule: **year-over-year is mandatory; frequency may differ.**
+
+| Market | Old (World Bank annual) | New | Source |
+|---|---|---|---|
+| United Kingdom | 1.39%, Jan 2025 | **0.9%, Mar 2026** | ONS series `IHYR` |
+| Canada | 1.74%, Jan 2025 | **1.13%, Jun 2026** | StatCan vector `62305752` |
+
+### Series selection — the part that matters
+- **ONS `IHYR`** is titled by the ONS as *"q-on-q4 growth rate"* — growth against the quarter four quarters earlier, i.e. year-over-year. `IHYQ` (quarter-on-previous-quarter) was **deliberately rejected**: different quantity, would silently break comparability.
+- **StatCan `62305752`** is quarterly real GDP in chained dollars — **levels**. Year-over-year is computed here. Statistics Canada's headline quarterly figure is annualised quarter-on-quarter and was **not** used, for the same reason.
+
+Both fetchers guard against the source repointing: the ONS one throws if the series title stops saying `q-on-q4`, rather than silently scoring the UK on the wrong concept.
+
+### Impact
+
+| Market | Before | After |
+|---|---|---|
+| United Kingdom | 76.66 | **75.44** |
+| Canada | 76.50 | **74.97** |
+
+No band changes. Both fall because the older annual figures were flattering — 2024 growth was stronger than the most recent four quarters.
+
+### Status of all six
+
+| Market | GDP source | Frequency |
+|---|---|---|
+| United States | BEA T10106 | quarterly |
+| Euro Area | Eurostat `namq_10_gdp` | quarterly |
+| United Kingdom | ONS `IHYR` | quarterly |
+| Canada | StatCan `62305752` | quarterly |
+| Japan | World Bank | annual |
+| Australia | World Bank | annual |
+
+**Four of six now quarterly.** All six remain year-over-year, so they stay comparable.
+
+### Remaining
+- **Australia** — ABS publishes national accounts (`ANA_AGG`), but the series key was not identified in this session. Tractable, not done.
+- **Japan** — no accessible quarterly source identified. The OECD route is already known unreliable from Vercel, and Japan's own e-Stat requires a registered key.
