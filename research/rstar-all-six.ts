@@ -19,7 +19,7 @@
 //
 //   npx tsx research/rstar-all-six.ts
 // ============================================================
-import { monetaryConditionsScore, bandFor, inflationTargetFor } from "../lib/scoring";
+import { monetaryConditionsScore, bandFor } from "../lib/scoring";
 
 interface Est { code:string; name:string; real:number|null; nominal:number; source:string; auto:boolean; note?:string }
 
