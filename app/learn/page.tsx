@@ -103,6 +103,16 @@ const TOPICS = [
           "MMAI's pillars correlate weakly with each other, which is usually read as evidence they measure different things. Part of that is a measurement choice: Growth is a rate of change while Labour is a level, and the well-established relationship between them only appears when both are expressed the same way. The pillars are distinct, but less so than the raw correlations suggest.",
       },
       {
+        head: "Full employment is treated as the same number everywhere",
+        body:
+          "The Labour Market pillar scores unemployment against a single 2% benchmark for all six markets. Economies differ in what full employment actually means for them -- Japan and the euro area do not plausibly share one -- so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Using each country own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
+      },
+      {
+        head: "Inflation above and below target are treated the same",
+        body:
+          "MMAI subtracts the same number of points whether inflation is one point above target or one point below. Central banks do not see it that way: the US framework is explicitly asymmetric, and when interest rates are near zero, inflation falling too low is harder to fix than inflation running slightly high. MMAI also penalises a large miss in a straight line, where the economic literature generally treats big misses as disproportionately worse than small ones.",
+      },
+      {
         head: "It measures conditions, it does not forecast",
         body:
           "Every figure describes what has already been published by an official source. MMAI contains no prediction, no model and no view about what happens next.",

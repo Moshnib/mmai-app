@@ -714,3 +714,39 @@ No band change — Japan remains *Supportive* — but it moves clearly to the to
 - **Unemployment** — still the World Bank fallback, because OECD is unreachable from Vercel (see the correction entry above).
 
 Two of Japan's four indicators are now current. The observation dates on its card show which.
+
+---
+
+## 2026-09-01 — Remaining audit items closed (M-2, M-3, M-5 Gulf, L-2, L-3)
+
+**Category:** Disclosure and hygiene. **No score, equation, weight or band changed.**
+
+Clears the last of the audit findings that did not require a decision.
+
+### M-2 and M-3 — two limitations now stated on the Learn page
+- **"Full employment is treated as the same number everywhere."** The Labour Market pillar scores unemployment against a single 2% benchmark for all six markets, though equilibrium unemployment differs. The page also explains why using per-country estimates would trade one problem for another: those estimates are uncertain and frequently revised.
+- **"Inflation above and below target are treated the same."** MMAI subtracts equally either side, where the US framework is explicitly asymmetric and the effective lower bound makes undershooting harder to fix. It also notes the penalty is linear where the literature generally treats large misses as disproportionately worse.
+
+### M-5 (Gulf half) — cadence added to all 21 live Gulf entries
+Assigned **by rule, not entry-by-entry guesswork**:
+
+| Institution | Cadence |
+|---|---|
+| World Bank | annual |
+| BIS | daily |
+| National sources (`data.gov.bh`, `data.gov.qa`, Data Saudi, Ministry of Justice) | monthly |
+
+The rule matches observed staleness exactly: Saudi and Bahrain inflation at 61 days are monthly national sources; UAE, Kuwait and Oman at **607 days** are World Bank annual.
+
+**Cadence is what the publisher should produce; the observation date is what we actually have.** Both together are honest; neither alone is.
+
+### L-2 — bond panel shows each market's history depth
+Every card now states *"N trading days of history"*. Japan began 2026-08-03 and Australia 2025-08-29 — **19 days against 251** — and one shared chart hid that completely.
+
+### L-3 — Norway marked dormant rather than deleted
+Norway is wired end to end (fetchers, a refresh branch, four source entries) but is not in `FALLBACK_MARKETS`, so it renders nowhere and **no false claim reaches a reader**.
+
+Deleting it would touch eight files for a low-severity finding. Instead its status moved from `"live"` to `"manual"` with a `DORMANT` note, so **the data stops asserting something untrue**: if someone later widens the market list, Norway cannot silently appear as live.
+
+### Test results
+`tsc` clean, eslint zero, build clean, all three verification scripts pass. The Learn page additions were verified present in the **build output**, not just assumed from a green build.

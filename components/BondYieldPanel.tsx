@@ -83,6 +83,11 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
           code,
           y10: last.y10,
           date: last.date,
+          // Audit L-2: histories differ enormously -- Japan began
+          // 2026-08-03, Australia 2025-08-29 -- and one shared chart hid
+          // that completely. A reader comparing the lines deserves to know
+          // one of them is a month long and another a year.
+          days: arr.length,
           change: prev ? last.y10 - prev.y10 : null,
           spread: last.y2 != null ? last.y10 - last.y2 : null,
         };
@@ -150,6 +155,9 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
                 }}
               >
                 {m.change == null ? "—" : `${m.change >= 0 ? "+" : ""}${m.change.toFixed(3)} vs prev. day`}
+              </div>
+              <div style={{ fontSize: 10.5, color: "var(--slate)", marginTop: 2, fontFamily: "IBM Plex Mono, monospace" }}>
+                {m.days} trading {m.days === 1 ? "day" : "days"} of history
               </div>
               {m.spread != null && (
                 <div
