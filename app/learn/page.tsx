@@ -84,6 +84,30 @@ const TOPICS = [
       `A pillar's real influence is its weight multiplied by how much it actually moves. Measured across all six markets since 2019 (as of ${PILLAR_INFLUENCE_MEASURED}), Monetary Conditions is weighted 18.75% but does 9.2% of the work, because policy rates change only a few times a year. External & Commodities is weighted 12.5% and does 15% — more than Monetary Conditions.`,
     ecNote:
       "One caveat worth knowing when comparing countries: External & Commodities uses a single global Brent oil price, so every market receives an identical score for it. It moves all six scores together over time, but it cannot make one market look better than another. Remove it entirely and the ranking of the six markets does not change at all.",
+    // Audit findings H-1, H-2 and M-1. Stated on the page a reader
+    // actually reads, not only in an internal document.
+    limitations: [
+      {
+        head: "A strong pillar can hide a weak one",
+        body:
+          "MMAI averages its five pillars, so a very low score in one can be offset by high scores in the others. In 2013 the Euro Area's Labour Market pillar fell to zero — unemployment above 12% — and the composite still read 59.9, \"Balanced\". Where that is happening now, the site says so beside the score. It is a property of averaging, disclosed rather than hidden.",
+      },
+      {
+        head: "One neutral interest rate is used for all six markets",
+        body:
+          "Monetary Conditions measures the policy rate against an assumed neutral level of 2.5% everywhere. The rate that is genuinely neutral differs by economy — published Federal Reserve estimates imply roughly 3.0% for the United States, 3.8% for Canada and 2.1% for the Euro Area, and no published estimate exists for the UK, Japan or Australia. Correcting three of six would make the comparison between countries incoherent, so the single assumption stands and is stated here instead.",
+      },
+      {
+        head: "The five pillars are less independent than they look",
+        body:
+          "MMAI's pillars correlate weakly with each other, which is usually read as evidence they measure different things. Part of that is a measurement choice: Growth is a rate of change while Labour is a level, and the well-established relationship between them only appears when both are expressed the same way. The pillars are distinct, but less so than the raw correlations suggest.",
+      },
+      {
+        head: "It measures conditions, it does not forecast",
+        body:
+          "Every figure describes what has already been published by an official source. MMAI contains no prediction, no model and no view about what happens next.",
+      },
+    ],
     impact: "You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. \"Supportive\" and \"Challenging\" describe conditions for an average household and business in that economy — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government's policy performance. MMAI is not investment advice.",
   },
 ];
@@ -194,6 +218,23 @@ export default function LearnPage() {
                   {"targetNote" in t && t.targetNote && (
                     <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>{t.targetNote}</p>
                   )}
+
+              {/* Known limitations, stated to the reader. Audit findings
+                  H-1 (compensatory averaging), H-2 (one neutral rate for
+                  six economies) and M-1 (independence overstated). */}
+              {(() => { const lims = (t as { limitations?: Array<{ head: string; body: string }> }).limitations; return lims ? (
+                <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
+                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 10 }}>
+                    What this score does not tell you
+                  </div>
+                  {lims.map((lim: { head: string; body: string }) => (
+                    <div key={lim.head} style={{ marginBottom: 11 }}>
+                      <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 2 }}>{lim.head}</div>
+                      <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.65 }}>{lim.body}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null; })()}
                 </div>
               )}
 
