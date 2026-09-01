@@ -6,7 +6,7 @@ export interface Series {
   key: string;
   name: string;
   color: string;
-  data: Array<{ year: string; value: number | null }>;
+  data: Array<{ year: string; value: number | null; sortKey?: string }>;
 }
 
 // Recharts hands the dot render-function every point's pixel x/y AND the
@@ -92,7 +92,28 @@ export default function TrendChart({
   connectNulls?: boolean;
 }) {
   // Recharts wants one array of objects keyed by series name, not separate arrays.
-  const years = Array.from(new Set(series.flatMap((s) => s.data.map((d) => d.year)))).sort();
+  // The x-axis is a CATEGORY axis, so the order of this array is the order
+  // the chart draws in. Sorting the LABELS worked only because every caller
+  // used to pass four-digit years, where alphabetical and chronological
+  // happen to agree.
+  //
+  // The bond panel passes formatted dates -- "1 Jun 26", "11 Aug 26",
+  // "12 Nov 25" -- and a plain string sort orders those by leading digit:
+  // 1, 11, 12, 14, ... 3, 31, 5. Consecutive points on the line were then
+  // months apart in arbitrary order, which rendered a year of gilt yields
+  // as meaningless noise. It looked like volatility. It was sorting.
+  //
+  // Callers that have a sortable key (an ISO date) pass sortKey; anything
+  // without one keeps the old behaviour, which is correct for years.
+  const orderOf = new Map<string, string>();
+  for (const s of series) {
+    for (const d of s.data) {
+      if (!orderOf.has(d.year)) orderOf.set(d.year, d.sortKey ?? d.year);
+    }
+  }
+  const years = Array.from(orderOf.keys()).sort((a, b) =>
+    String(orderOf.get(a)).localeCompare(String(orderOf.get(b)))
+  );
   const merged = years.map((year) => {
     const row: Record<string, string | number | null> = { year };
     series.forEach((s) => {

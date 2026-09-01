@@ -67,7 +67,9 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
             color: COLORS[code] ?? "#9296AB",
             // Every date any market reported, so a market that missed a
             // day renders as a gap rather than being bridged across it.
-            data: allDates.map((d) => ({ year: fmtDay(d), value: byDate.get(d) ?? null })),
+            // sortKey is the ISO date. Without it the chart sorts on the DISPLAY
+            // label and scrambles a year of daily data into noise.
+            data: allDates.map((d) => ({ year: fmtDay(d), value: byDate.get(d) ?? null, sortKey: d })),
           };
         }),
     [markets, hidden, byMarket, allDates]
