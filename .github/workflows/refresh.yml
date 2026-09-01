@@ -50,6 +50,44 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # ---------------------------------------------------------------
+      # Japan's unemployment, fetched HERE rather than by the Vercel
+      # function that does every other indicator.
+      #
+      # OECD is reachable from this runner and NOT from Vercel. That was
+      # verified the hard way: the request completes in ~2s from a laptop
+      # and from here, and still fails in production, so it is OECD
+      # refusing Vercel's egress rather than slowness. Japan therefore
+      # fell back to a World Bank ANNUAL figure dated January 2025 -- the
+      # last stale input in the index.
+      #
+      # This step relays the value to the refresh route as a parameter.
+      # It deliberately does NOT write to Supabase directly: that would
+      # need the service-role key as a GitHub secret, widening the blast
+      # radius of this workflow for one indicator.
+      #
+      # continue-on-error: a failure here must not stop the refresh. The
+      # route falls back exactly as it does today.
+      - name: Fetch Japan unemployment from OECD
+        id: jp
+        continue-on-error: true
+        run: |
+          URL='https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0/JPN.UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M?lastNObservations=1&format=csvfile'
+          # format=csvfile, never csvfilewithlabels -- the label expansion
+          # takes 11-40s against ~0.1s. See lib/fetchers/oecd.ts.
+          curl -sS --max-time 60 "$URL" -o /tmp/jp.csv || exit 0
+          head -2 /tmp/jp.csv
+          # Columns BY HEADER NAME. This dataflow carries 16 columns and
+          # OECD reorders them; positional indexing would silently read the
+          # wrong field.
+          VAL=$(awk -F, 'NR==1{for(i=1;i<=NF;i++){if($i=="OBS_VALUE")v=i;if($i=="TIME_PERIOD")t=i}} NR==2{print $v}' /tmp/jp.csv)
+          PER=$(awk -F, 'NR==1{for(i=1;i<=NF;i++){if($i=="TIME_PERIOD")t=i}} NR==2{print $t}' /tmp/jp.csv)
+          echo "parsed value=$VAL period=$PER"
+          if [ -n "$VAL" ] && [ -n "$PER" ]; then
+            echo "jpUnemployment=$VAL" >> "$GITHUB_OUTPUT"
+            echo "jpUnemploymentDate=$PER-01" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Refresh scored markets
         run: |
           echo "Calling /api/refresh (force=${{ inputs.force }}) …"
@@ -62,6 +100,15 @@ jobs:
           if [ "${{ inputs.force }}" = "true" ]; then
             URL="$URL?force=1"
             echo "FORCE: re-fetching markets that already have a reading today"
+          fi
+          # Relay Japan unemployment if the step above got it. Absent, the
+          # route behaves exactly as before and falls back.
+          JP="${{ steps.jp.outputs.jpUnemployment }}"
+          JPD="${{ steps.jp.outputs.jpUnemploymentDate }}"
+          if [ -n "$JP" ] && [ -n "$JPD" ]; then
+            SEP=$([ "${URL#*\?}" != "$URL" ] && echo "&" || echo "?")
+            URL="${URL}${SEP}jp_unemployment=${JP}&jp_unemployment_date=${JPD}"
+            echo "relaying Japan unemployment ${JP} (${JPD})"
           fi
           code=$(curl -sS -o /tmp/main.json -w "%{http_code}" --max-time 120 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \

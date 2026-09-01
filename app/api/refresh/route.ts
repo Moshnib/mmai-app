@@ -58,6 +58,12 @@ export const maxDuration = 60;
 // at a time -- there is no interleaving to race with.
 let jpUnemploymentFellBack = false;
 
+// Set when Japan's unemployment came from the workflow relay rather than
+// this app's own OECD call. Recorded on the stored row so a reader can
+// tell which path produced the figure -- the same reason the World Bank
+// fallback is recorded.
+let jpUnemploymentViaRelay = false;
+
 // Same mechanism for the United States: PCE is the series the Fed's 2%
 // target is defined on, so it is what MMAI scores. CPI is kept as a
 // fallback rather than letting the pillar drop out -- losing PS entirely
@@ -72,6 +78,51 @@ async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> 
     console.error(`Fetch failed [${label}]:`, (err as Error).message);
     return null;
   }
+}
+
+/** Japan's unemployment, relayed by the GitHub Actions workflow.
+ *
+ *  OECD is reachable from the Actions runner and NOT from Vercel --
+ *  verified: ~2s from a laptop and from the runner, still failing in
+ *  production, so it is OECD refusing Vercel's egress rather than
+ *  slowness. The workflow fetches it there and passes it here.
+ *
+ *  THIS IS AN INPUT FROM OUTSIDE, so it is validated rather than
+ *  trusted. The endpoint is already behind CRON_SECRET, so the trust
+ *  boundary is the same as triggering a refresh at all -- but a value
+ *  that lands in a published score deserves a range check regardless.
+ *
+ *  Returns null on anything implausible, and the caller then falls back
+ *  exactly as it does today. Silently accepting a bad number would be
+ *  worse than the staleness this is fixing. */
+function parseRelayedJpUnemployment(request: Request): { value: number; observationDate: string } | null {
+  const params = new URL(request.url).searchParams;
+  const rawValue = params.get("jp_unemployment");
+  const rawDate = params.get("jp_unemployment_date");
+  if (!rawValue || !rawDate) return null;
+
+  const value = Number(rawValue);
+  // Japan's unemployment has not left roughly 2-6% in decades. A band of
+  // 0-30 rejects nonsense without pretending to know the right answer.
+  if (!Number.isFinite(value) || value <= 0 || value > 30) {
+    console.error(`Relayed JP unemployment rejected: implausible value "${rawValue}"`);
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+    console.error(`Relayed JP unemployment rejected: bad date "${rawDate}"`);
+    return null;
+  }
+  const when = Date.parse(rawDate);
+  const now = Date.now();
+  // Not in the future, and not older than two years -- either would mean
+  // the relay is broken rather than helping.
+  if (Number.isNaN(when) || when > now || now - when > 730 * 86_400_000) {
+    console.error(`Relayed JP unemployment rejected: date out of range "${rawDate}"`);
+    return null;
+  }
+
+  return { value, observationDate: rawDate };
 }
 
 /** WHEN each figure refers to, as distinct from when it was fetched.
@@ -101,7 +152,8 @@ interface FetchedIndicators {
 
 async function fetchRawIndicators(
   market: string,
-  brent: { brentYoY: number; observationDate: string } | null
+  brent: { brentYoY: number; observationDate: string } | null,
+  relayedJpUnemployment: { value: number; observationDate: string } | null
 ): Promise<FetchedIndicators> {
   const brentYoY = brent?.brentYoY ?? null;
   const brentDate = brent?.observationDate ?? null;
@@ -182,6 +234,17 @@ async function fetchRawIndicators(
     // The fallback carries its own observation period. Without this, a run
     // that fell back would report a NULL date for a figure that has one.
     let jpUnemploymentDate = unemp?.observationDate ?? null;
+
+    // Preference order: this app's own OECD call (in case it ever starts
+    // working from Vercel), then the relay -- which is the SAME OECD
+    // series fetched from somewhere that can reach it -- then the World
+    // Bank annual figure as a last resort.
+    jpUnemploymentViaRelay = false;
+    if (jpUnemployment == null && relayedJpUnemployment) {
+      jpUnemployment = relayedJpUnemployment.value;
+      jpUnemploymentDate = relayedJpUnemployment.observationDate;
+      jpUnemploymentViaRelay = true;
+    }
     let jpFellBack = false;
     if (jpUnemployment == null) {
       const fb = await settle("JP unemployment (World Bank fallback)", fetchUnemployment("JPN"));
@@ -426,11 +489,20 @@ export async function GET(request: Request) {
   // Fetched once, shared by every market -- see the comment above
   // fetchRawIndicators(). Outside the per-market try/catch below so one
   // market's Supabase error can't re-trigger a redundant EIA call.
+  // Parsed once, outside the loop: it is the same value for every market
+  // and only Japan reads it.
+  const relayedJp = parseRelayedJpUnemployment(request);
+  if (relayedJp) {
+    console.log(
+      `JP unemployment relayed by the workflow: ${relayedJp.value}% (${relayedJp.observationDate})`
+    );
+  }
+
   const brentResult = await settle("Brent Crude YoY", fetchBrentYoY());
 
   for (const market of pending) {
     try {
-      const { raw, dates } = await fetchRawIndicators(market, brentResult);
+      const { raw, dates } = await fetchRawIndicators(market, brentResult, relayedJp);
       const pillars = computePillarScores(raw, market);
       const { composite, coverage } = computeComposite(pillars);
       const band = bandFor(composite);
@@ -482,6 +554,8 @@ export async function GET(request: Request) {
       const fallbackNote =
         (market === "JP" && jpUnemploymentFellBack
           ? " — JP unemployment via World Bank annual (OECD unavailable)"
+          : market === "JP" && jpUnemploymentViaRelay
+            ? " — JP unemployment via OECD, relayed by the refresh workflow (Vercel cannot reach OECD)"
           : "") +
         (market === "US" && usInflationFellBack
           ? " — US inflation via BLS CPI (BEA PCE unavailable); PCE is the scored series"

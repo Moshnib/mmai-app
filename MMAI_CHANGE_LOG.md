@@ -796,3 +796,39 @@ Japan's growth has slowed materially; the annual figure was overstating it by mo
 
 ### What remains stale
 **Japan's unemployment only**, still on the World Bank annual fallback because OECD is unreachable from Vercel. Fixing it needs the pipeline change (fetch from GitHub Actions, write to Supabase directly), not another fetcher.
+
+---
+
+## 2026-09-01 — Japan's unemployment fixed via a workflow relay
+
+**Category:** Pipeline change. **No equation, weight, band or threshold changed.**
+
+### Old rule
+`/api/refresh` called OECD directly from Vercel. It failed every time, so Japan fell back to a World Bank **annual** figure dated **January 2025** — the last stale input in the index.
+
+### New rule
+The **GitHub Actions runner** fetches Japan's unemployment from OECD and relays it to the refresh route as a parameter. The route validates it and uses it in preference to the World Bank fallback.
+
+### Reason
+OECD is reachable from the Actions runner and from a laptop (~2s), and **not** from Vercel. This was misdiagnosed earlier today as a timeout; correcting the request to `format=csvfile` made it 40× faster and it still failed in production, which is what established that Vercel's egress is the problem rather than latency.
+
+### Design choices worth stating
+**It relays to the route rather than writing to Supabase directly.** Writing from Actions would require the **service-role key** as a GitHub secret, widening this workflow's blast radius considerably for the sake of one indicator. The relay needs no new credential.
+
+**The OECD step is `continue-on-error`.** A failure there must not stop the refresh; the route simply falls back exactly as it does today.
+
+**The value is validated, not trusted.** It arrives as a URL parameter, so the route range-checks it:
+- must be a finite number in `(0, 30]` — Japan's unemployment has not left roughly 2–6% in decades
+- date must match `YYYY-MM-DD`, not be in the future, and not be older than two years
+
+Anything else is **rejected and logged**, and the fallback runs. The endpoint is already behind `CRON_SECRET`, so the trust boundary is unchanged — but a value that lands in a published score deserves a range check regardless.
+
+**Preference order:** this app's own OECD call → the relay → World Bank annual. The first is kept in case OECD ever becomes reachable from Vercel.
+
+**The path is recorded.** When the relay is used, the stored row's `source_note` says so — the same discipline already applied to the World Bank fallback.
+
+### Test results
+`tsc` clean, eslint zero, build clean, verification scripts pass. The workflow's `awk` parse selects columns **by header name**, matching `lib/fetchers/oecd.ts` — the dataflow carries 16 columns and OECD reorders them.
+
+### Expected impact
+Japan unemployment **2.451% (Jan 2025) → ~2.5% (Jun 2026)**. A negligible value change; the point is currency, and that **no input in the index will be older than June 2026**.
