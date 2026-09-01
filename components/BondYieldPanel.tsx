@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import TimeRangeFilter, { DAILY_RANGES, withinRange } from "@/components/TimeRangeFilter";
 import type { BondYieldPoint } from "@/lib/bondYieldsRead";
 
 // ============================================================
@@ -52,8 +53,15 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
 
   const markets = useMemo(() => ORDER.filter((c) => (byMarket.get(c)?.length ?? 0) > 0), [byMarket]);
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
+  // Default 6 months. A full year of daily points is 250+ categories on a
+  // category axis -- readable as a shape, not as individual days.
+  const [rangeDays, setRangeDays] = useState<number | null>(183);
 
-  const allDates = useMemo(() => [...new Set(points.map((p) => p.date))].sort(), [points]);
+  // Every date any market reported, narrowed to the chosen range.
+  const allDates = useMemo(
+    () => withinRange([...new Set(points.map((p) => p.date))].sort(), (d) => d, rangeDays),
+    [points, rangeDays]
+  );
 
   const series: Series[] = useMemo(
     () =>
@@ -182,6 +190,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
           ))}
         </div>
 
+        <TimeRangeFilter options={DAILY_RANGES} selected={rangeDays} onChange={setRangeDays} />
         <div className="country-filter">
           {markets.map((code) => {
             const on = !hidden.has(code);

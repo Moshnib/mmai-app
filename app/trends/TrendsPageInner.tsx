@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
+import TimeRangeFilter, { ANNUAL_RANGES } from "@/components/TimeRangeFilter";
 import Flag from "@/components/Flag";
 import { PILLAR_DESC, PILLAR_ICONS } from "@/components/PillarGrid";
 import { RAW_DECIMALS } from "@/components/KeyRatesRow";
@@ -49,6 +50,10 @@ export default function TrendsPageInner({
   initialPillar?: PillarKey | null;
 }) {
   const [current, setCurrent] = useState(initialMarket);
+  // Annual points, so the presets are years. Default to the full record --
+  // eight points is readable, and narrowing is the exception here rather
+  // than the rule it is for daily bond data.
+  const [rangeDays, setRangeDays] = useState<number | null>(null);
   // Always a pillar selected, never null: the page's shape is now
   // "five cards driving one chart" (brief §26), so an empty selection
   // would leave two sections rendering nothing at all.
@@ -95,7 +100,15 @@ export default function TrendsPageInner({
   const { history: liveHistory } = useLiveHistory();
   // Memoised because `?? []` builds a fresh array on every render, which
   // would otherwise invalidate every useMemo below it each time.
-  const history = useMemo(() => liveHistory[current] ?? [], [liveHistory, current]);
+  const history = useMemo(() => {
+    const all = liveHistory[current] ?? [];
+    if (rangeDays == null || all.length === 0) return all;
+    // Years are plain strings here, so count back from the newest year
+    // present rather than from today.
+    const newest = Math.max(...all.map((h) => Number(h.year)));
+    const cutoff = newest - Math.floor(rangeDays / 366) + 1;
+    return all.filter((h) => Number(h.year) >= cutoff);
+  }, [liveHistory, current, rangeDays]);
   const latestPoint = history[history.length - 1];
   const hasTrend = history.length > 1;
 
@@ -380,6 +393,12 @@ export default function TrendsPageInner({
         <div className="wrap">
           <div className="chart-card">
             {sectionLabel(1, `MMAI composite score over time — ${marketNames[current]}`)}
+            {/* Range control. Placed on the first chart because every chart
+                on this page reads the same filtered history -- one control,
+                not one per card. */}
+            <div style={{ marginBottom: 10 }}>
+              <TimeRangeFilter options={ANNUAL_RANGES} selected={rangeDays} onChange={setRangeDays} />
+            </div>
             {hasTrend ? <TrendChart series={compositeSeries} height={320} yDomain={[0, 100]} /> : notEnough}
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 10.5, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
               <span>
