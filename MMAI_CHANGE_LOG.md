@@ -372,3 +372,48 @@ Implemented and verified. Committed to `main`.
 
 ### Not done, deliberately
 Changing to geometric aggregation would alter **21% of historical bands** and every published score. That needs its own evidence, comparison and decision; it is not bundled into a disclosure fix.
+
+---
+
+## 2026-09-01 — Source registry separates "working" from "current" (audit M-5)
+
+**Category:** Disclosure. **No score, equation, weight or source changed.**
+
+### Old rule
+Every entry carried `status: "live"` and nothing else. A reader reasonably takes "live" to mean *current*.
+
+### New rule
+Each scored-market entry additionally declares a **publishing cadence**, shown beside the status: *LIVE · updates monthly*, *LIVE · updates annually*, *LIVE · updates per rate decision*.
+
+### Reason
+"Live" means the fetcher succeeded. It does not mean the figure is new. A World Bank annual series retrieved successfully today is **working, not current**, and both were reported with the same word. Measured against the database, "live" spanned figures 61 days old to **973 days** old.
+
+### Data used
+Cadence was **verified from each fetcher's own request**, not assumed:
+
+| Source | Evidence |
+|---|---|
+| BEA PCE / GDP | `Frequency=M` / `Frequency=A` in the request |
+| Eurostat GDP | dataset `tec00115` — annual |
+| Eurostat unemployment | dataset `une_rt_m` — monthly |
+| ABS CPI | series id ends `.M` |
+| World Bank | annual by construction |
+
+Result: 29 of 29 entries populated, with a script that **fails** rather than defaulting if any entry lacks a mapping.
+
+### Test results
+`tsc` clean, eslint zero, build clean.
+
+**One bug caught during implementation.** `cadence` is optional on the shared display type, because the Gulf registry uses the same shape and does not carry it. The first version would therefore have rendered **"updates undefined"** on every Gulf row. Guarded before commit; verified no `undefined` string reaches the build output.
+
+### Impact
+Display only. Java­script cadence values are read by nothing in the scoring path.
+
+### Approval status
+Implemented and verified. Committed to `main`.
+
+### Rollback method
+`git revert <commit>`. Nothing depends on the field.
+
+### Follow-up
+The Gulf registry should carry cadence too — its staleness is far more material (UAE, Kuwait and Oman inflation at 607 days; three current-account figures at 973). Not done here to keep this change to one registry.
