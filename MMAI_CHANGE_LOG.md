@@ -662,3 +662,55 @@ The original diagnosis — *"OECD works locally and from GitHub, fails from Verc
 
 ### What would actually fix it
 Fetching OECD from the **GitHub Actions runner**, which can reach it, and writing to Supabase directly — rather than routing the request through a Vercel function. That is an architectural change, not a parameter change, and is not being made on the strength of one afternoon's diagnosis.
+
+---
+
+## 2026-09-01 — Japan's inflation is current: e-Stat replaces a 20-month-old figure
+
+**Category:** Data freshness. **No equation, weight, band or threshold changed.**
+
+### Old rule
+Japan's Price Stability read a World Bank **annual** CPI figure of **3.17%**, dated **January 2025**.
+
+### New rule
+Japan reads monthly CPI from **e-Stat**, Japan's official statistics portal: **2.0%, July 2026**.
+
+### Reason
+Japan sat at the top of the table on three figures from twenty months earlier. Every other route was verified closed first:
+- **OECD's Japanese CPI series ends June 2021** — `NoRecordsFound` for 2026 on any methodology value.
+- **Statistics Bureau's English pages** link back to e-Stat rather than publishing a machine-readable file.
+
+e-Stat requires a free registered application ID, which is why this was blocked until the site owner obtained one.
+
+### The query, and why each part
+```
+statsDataId=0003427113   2020-base Consumer Price Index, table 1
+cdTab=3                  前年同月比 — change from same month, previous year
+cdCat01=0001             総合 — All items (headline, not core)
+cdArea=00000             全国 — All Japan (not the Tokyo ku-area series)
+```
+
+`cdTab=3` is the critical one. e-Stat also offers `tab=1` (index **level**) and `tab=2` (mixed month/year comparisons). **Only `tab=3` is year-over-year** — the same concept rule that governs the GDP fetchers.
+
+`cdArea=00000` matters too: the Tokyo ku-area series publishes earlier each month and covers a different population.
+
+### Test results
+Live fetch: **2,593 ms**, returning 2.0% for 2026-07. `tsc` clean, eslint zero, build clean, all three verification scripts pass.
+
+### Impact
+
+| | Before | After |
+|---|---|---|
+| Japan inflation | 3.17%, Jan 2025 | **2.0%, Jul 2026** |
+| Japan Price Stability | 82.41 | **100.00** |
+| **Japan composite** | **79.13** | **83.52** |
+
+**Japan's inflation is now exactly at the Bank of Japan's 2% target**, so Price Stability scores a perfect 100. The old figure overstated Japanese inflation by more than a full percentage point.
+
+No band change — Japan remains *Supportive* — but it moves clearly to the top of the table rather than being level with the Euro Area.
+
+### What remains for Japan
+- **GDP** — still World Bank annual, Jan 2025.
+- **Unemployment** — still the World Bank fallback, because OECD is unreachable from Vercel (see the correction entry above).
+
+Two of Japan's four indicators are now current. The observation dates on its card show which.

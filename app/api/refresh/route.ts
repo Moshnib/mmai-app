@@ -4,8 +4,9 @@ import { computePillarScores, computeComposite, bandFor, type RawIndicators } fr
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
-import { fetchGdpGrowth, fetchUnemployment, fetchInflation } from "@/lib/fetchers/worldbank";
+import { fetchGdpGrowth, fetchUnemployment } from "@/lib/fetchers/worldbank";
 import { fetchAustraliaInflation, fetchAustraliaUnemployment, fetchAustraliaGdpGrowthQuarterly } from "@/lib/fetchers/abs";
+import { fetchJapanInflation } from "@/lib/fetchers/estat";
 import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
 import { fetchAllBondYieldSeries, BOND_YIELD_SOURCE } from "@/lib/fetchers/bondYields";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
@@ -157,7 +158,7 @@ async function fetchRawIndicators(
     // BOJ's official API (DB=FM01, series STRDCLUCON — confirmed live
     // in-browser 2026-08-21, after this server's own fetch was blocked).
     const [infl, unemp, gdp, rate] = await Promise.all([
-      settle("JP inflation", fetchInflation("JPN")),
+      settle("JP inflation (e-Stat monthly)", fetchJapanInflation()),
       settle("JP unemployment", fetchJapanUnemployment()),
       settle("JP GDP growth", fetchGdpGrowth("JPN")),
       settle("JP policy rate", fetchJapanPolicyRate()),
