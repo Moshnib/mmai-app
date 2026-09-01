@@ -548,3 +548,44 @@ Implemented and verified. Committed to `main`.
 
 ### Rollback method
 `git revert <commit>`. The stored columns are unaffected.
+
+---
+
+## 2026-09-01 — Japan's unemployment is current again (one word)
+
+**Category:** Data freshness / bug fix. **No equation, weight, band or threshold changed.**
+
+### Old rule
+`fetchJapanUnemployment` requested OECD with `format=csvfilewithlabels` and an 8-second timeout. It **timed out on every run**, so Japan silently fell through to a World Bank **annual** fallback — unemployment of 2.451% dated **January 2025**.
+
+### New rule
+Same dataflow, same key, `format=csvfile`. Japan now scores on **2.5%, June 2026**.
+
+### Reason — the diagnosis was wrong for a week
+This was recorded as *"OECD works locally and from GitHub, fails from Vercel"* and treated as a network block. **It was not.** It was latency:
+
+| Request | Response time |
+|---|---|
+| `csvfilewithlabels` | **11–40 seconds** (measured over repeated calls) |
+| `csvfile` | **0.08–2.0 seconds** |
+
+`withlabels` makes OECD expand every code in a 16-column dataflow into a human-readable label. The 8-second timeout then aborted it every time. Vercel Hobby caps functions at 10 seconds, so **raising the timeout could never have worked** — the fix had to make the request fast, not wait longer.
+
+**The parser selects columns by header name, so it never needed the labels at all.**
+
+### Test results
+Live fetch after the change: **684 ms**, returning 2.5% for 2026-06. `tsc` clean, eslint zero, build clean, all verification scripts pass.
+
+### Impact
+| | Before | After |
+|---|---|---|
+| Japan unemployment | 2.451%, **Jan 2025** | 2.5%, **Jun 2026** |
+| Japan Labour Market pillar | 95.49 | 95.00 |
+| Japan composite | 79.13 | ≈ 79.04 |
+
+Tiny value change; the point is the **seventeen-month** gain in currency, and that the World Bank fallback stops firing.
+
+### Wider lesson
+This was found only because per-indicator observation dates were shipped hours earlier, making "Jan 2025" visible on Japan's card. **The disclosure fix found the data bug.**
+
+Two of Japan's three stale figures remain: inflation and GDP.

@@ -46,7 +46,24 @@
 
 const OECD_UNEMPLOYMENT_URL =
   "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0/" +
-  "JPN.UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M?lastNObservations=1&format=csvfilewithlabels";
+  // format=csvfile, NOT csvfilewithlabels.
+//
+// This one word was the whole problem. "withlabels" makes OECD expand
+// every code in a 16-column dataflow into a human-readable label, and
+// the request went from ~0.1s to 11-40 SECONDS. The 8s timeout below
+// then aborted it every time, so Japan silently fell through to the
+// World Bank ANNUAL fallback -- which is why Japan was scoring on
+// unemployment from January 2025 while OECD had June 2026 all along.
+//
+// It was diagnosed as "OECD is unreachable from Vercel". It was not a
+// network block. It was latency, and Vercel Hobby's 10s function cap
+// made raising the timeout impossible -- so the real fix had to be
+// making the request fast, not waiting longer.
+//
+// The parser below selects columns BY HEADER NAME, so it never needed
+// the labels. Measured after the change: 0.08-2.0s across repeated
+// calls, comfortably inside the timeout.
+"JPN.UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M?lastNObservations=1&format=csvfile";
 
 // Observed 2026-08-28: one transient 500 during testing, then 8/8
 // clean on an immediate retry. Throwing is the right response -- the
