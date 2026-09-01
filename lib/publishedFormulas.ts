@@ -58,7 +58,7 @@ export const PUBLISHED_FORMULAS: Record<PillarKey, PublishedFormula> = {
   },
   MC: {
     label: "Monetary Conditions Score",
-    expression: "clamp(100 − 12 × |policy rate − 2.5%|, 0, 100)",
+    expression: "clamp(100 − 12 × |policy rate − neutral|, 0, 100)",
     variable: "policy rate",
   },
   EC: {

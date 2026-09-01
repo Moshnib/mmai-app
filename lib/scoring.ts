@@ -166,6 +166,64 @@ export function inflationTargetFor(market: string): number {
   return INFLATION_TARGET[market] ?? 2.0;
 }
 
+/** The neutral nominal policy rate each central bank's own economy is
+ *  judged against.
+ *
+ *  Until 2026-09-01 MMAI applied a single 2.5% to all six markets. That
+ *  was the least defensible number in the methodology: the natural rate
+ *  of interest is economy-specific and time-varying, and one constant
+ *  spanning Japan and the United States cannot be defended.
+ *
+ *  It was also WRONG, not merely unjustified -- published estimates put
+ *  Canada near 3.8% and the euro area near 2.1%.
+ *
+ *  NOMINAL = real r* + the market's inflation target. Every value below
+ *  traces to a published estimate:
+ *
+ *   US 3.01  NY Fed Holston-Laubach-Williams, 2026Q2: real r* 1.009
+ *   CA 3.76  NY Fed HLW, 2026Q2: real r* 1.759
+ *   EA 2.09  NY Fed HLW, 2026Q2: real r* 0.086
+ *   JP 1.64  Bank of Japan Review 2026-E-4, MEDIAN of the six models it
+ *            publishes for 2025Q3. They span -0.94 to +0.53 and the BoJ
+ *            says so explicitly; the median is a choice, not a reading.
+ *   UK 3.00  Bank of England: the Governor used ~3% as a starting point
+ *            for the nominal neutral rate, February 2026. Stated in
+ *            prose, not published as a series.
+ *   AU 3.50  RBA Bulletin, September 2017: ~1% real, plus the 2.5%
+ *            Australian target.
+ *
+ *            THIS IS THE WEAKEST OF THE SIX AND IS NINE YEARS OLD. The
+ *            RBA's March 2026 speech describes its current method but
+ *            publishes the estimates in charts rather than text. Global
+ *            r* estimates have generally RISEN post-COVID, so 3.50 most
+ *            likely UNDERSTATES Australia's neutral rate -- which makes
+ *            Australia look further from neutral than it is, and scores
+ *            it conservatively rather than flatteringly. Refresh this
+ *            first when a newer figure appears.
+ *
+ *  ALL SIX OR NONE. Correcting three markets and leaving three on 2.5%
+ *  would make the cross-country comparison incoherent -- one country
+ *  measured properly against another measured by assumption. A uniform
+ *  error is at least a COMPARABLE error. That is why this waited until
+ *  every market had a source.
+ */
+export const NEUTRAL_RATE: Record<string, number> = {
+  US: 3.01,
+  CA: 3.76,
+  EA: 2.09,
+  JP: 1.64,
+  UK: 3.00,
+  AU: 3.50,
+};
+
+/** Falls back to 2.5 for any market not listed -- the old universal
+ *  constant. Deliberately a soft fallback: Gulf markets are unscored and
+ *  Norway is dormant. A market that becomes SCORED must be added here
+ *  with a source, exactly as INFLATION_TARGET requires. */
+export function neutralRateFor(market: string): number {
+  return NEUTRAL_RATE[market] ?? 2.5;
+}
+
 /** Equation 1 — Price Stability. Target is the market's own official
  *  benchmark; see INFLATION_TARGET. */
 export function priceStabilityScore(inflation: number, target = 2.0): number {
@@ -183,7 +241,7 @@ export function labourMarketScore(unemployment: number): number {
 }
 
 /** Equation 4 — Monetary Conditions. Default neutral rate = 2.5%. */
-export function monetaryConditionsScore(policyRate: number, neutral = 2.5): number {
+export function monetaryConditionsScore(policyRate: number, neutral: number): number {
   return clip(100 - 12 * Math.abs(policyRate - neutral));
 }
 
@@ -205,7 +263,7 @@ export function computePillarScores(raw: RawIndicators, market: string): PillarS
     PS: raw.inflation != null ? priceStabilityScore(raw.inflation, inflationTargetFor(market)) : null,
     GM: raw.gdpGrowth != null ? growthMomentumScore(raw.gdpGrowth) : null,
     LM: raw.unemployment != null ? labourMarketScore(raw.unemployment) : null,
-    MC: raw.policyRate != null ? monetaryConditionsScore(raw.policyRate) : null,
+    MC: raw.policyRate != null ? monetaryConditionsScore(raw.policyRate, neutralRateFor(market)) : null,
     EC: raw.brentYoY != null ? externalCommoditiesScore(raw.brentYoY) : null,
   };
 }

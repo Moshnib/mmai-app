@@ -5,6 +5,7 @@ import {
   formatInfluencePct,
   PILLAR_INFLUENCE_MEASURED,
   INFLATION_TARGET,
+  NEUTRAL_RATE,
   type PillarKey,
 } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -19,6 +20,12 @@ import { formulaLine } from "@/lib/publishedFormulas";
 // generated from the engine cannot.
 const TARGET_LIST = FALLBACK_MARKETS
   .map((m) => `${m.name} ${INFLATION_TARGET[m.code] ?? 2}%`)
+  .join("  ·  ");
+
+// Same discipline as TARGET_LIST: rendered FROM the engine, so the
+// published neutral rate cannot drift from the one that scores.
+const NEUTRAL_LIST = FALLBACK_MARKETS
+  .map((m) => `${m.name} ${NEUTRAL_RATE[m.code] ?? 2.5}%`)
   .join("  ·  ");
 
 export const metadata: Metadata = {
@@ -59,6 +66,9 @@ const TOPICS = [
     title: "Policy Interest Rate — the cost of borrowing money",
     def: "The benchmark rate set by a central bank. It ripples out to set the tone for every other interest rate in the economy.",
     formula: formulaLine("MC"),
+    targets: NEUTRAL_LIST,
+    targetNote:
+      "The neutral rate is the interest rate that neither speeds up nor slows down an economy, and it differs by country. Until 1 September 2026 MMAI used a single 2.5% for all six, which was the least defensible number in the method. Each market now uses a published estimate: the New York Federal Reserve for the US, Canada and the euro area; the Bank of Japan for Japan; the Bank of England for the UK. Australia is the weakest of the six -- its figure comes from a 2017 Reserve Bank study, because the RBA publishes its current estimates in charts rather than text.",
     impact: "This number sets the floor for mortgage rates, car loans, and credit card APRs — when it rises, borrowing gets more expensive.",
   },
   {

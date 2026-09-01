@@ -7,16 +7,28 @@ const cases: Array<{
   expectedComposite: number | null;
   expectedBand: string;
 }> = [
-  { name: "US", code: "US", raw: { inflation: 3.4, gdpGrowth: 1.5, unemployment: 4.2, policyRate: 3.63, brentYoY: -5 }, expectedComposite: 78.6, expectedBand: "Supportive" },
-  { name: "Euro Area", code: "EA", raw: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: -5 }, expectedComposite: 77.3, expectedBand: "Supportive" },
-  { name: "Canada", code: "CA", raw: { inflation: 2.8, gdpGrowth: 3.4, unemployment: 6.4, policyRate: 2.25, brentYoY: -5 }, expectedComposite: 83.4, expectedBand: "Supportive" },
-  { name: "UK", code: "UK", raw: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 }, expectedComposite: 76.5, expectedBand: "Supportive" },
+  { name: "US", code: "US", raw: { inflation: 3.4, gdpGrowth: 1.5, unemployment: 4.2, policyRate: 3.63, brentYoY: -5 }, expectedComposite: 79.7, expectedBand: "Supportive" },
+  { name: "Euro Area", code: "EA", raw: { inflation: 2.9, gdpGrowth: 1.0, unemployment: 6.3, policyRate: 2.25, brentYoY: -5 }, expectedComposite: 77.5, expectedBand: "Supportive" },
+  { name: "Canada", code: "CA", raw: { inflation: 2.8, gdpGrowth: 3.4, unemployment: 6.4, policyRate: 2.25, brentYoY: -5 }, expectedComposite: 80.6, expectedBand: "Supportive" },
+  { name: "UK", code: "UK", raw: { inflation: 2.8, gdpGrowth: 0.4, unemployment: 4.9, policyRate: 3.75, brentYoY: -5 }, expectedComposite: 77.6, expectedBand: "Supportive" },
 ];
 // Note: expected values are UNCHANGED from the six-pillar specification.
 // Proportional weight redistribution (new_weight = old_weight / 0.80) is
 // mathematically identical to the runtime reweighting v1.0 already applied
 // whenever Market Momentum was missing — which was every market, every time.
 // UAE case removed 2026-08-19 (market discontinued — see lib/markets.ts).
+// All four expected composites changed on 2026-09-01 when the neutral
+// policy rate became PER-MARKET (audit H-2). MMAI had applied a single
+// 2.5% to every economy; each market now uses a published estimate --
+// US 3.01, Canada 3.76, Euro Area 2.09, UK 3.00.
+//
+// Canada moves the most (83.4 -> 80.6) because its policy rate of 2.25%
+// is 1.5 points BELOW a 3.76% neutral, where against 2.5% it looked
+// almost exactly neutral. Nothing about Canada changed; the benchmark
+// it is measured against became the right one.
+//
+// No BAND changed in these four cases.
+//
 // Canada's expected BAND changed on 2026-08-31 when the thresholds were
 // recalibrated against 173 market-years (85/74/55/40, was 80/65/45/30).
 // Its composite is UNCHANGED at 83.4 -- only the label moved, because

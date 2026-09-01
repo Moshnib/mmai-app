@@ -22,6 +22,8 @@ import {
   monetaryConditionsScore,
   externalCommoditiesScore,
   inflationTargetFor,
+  neutralRateFor,
+  NEUTRAL_RATE,
   INFLATION_TARGET,
   PILLAR_NAMES,
   type PillarKey,
@@ -42,7 +44,7 @@ const num = (s: string) => parseFloat(s.replace("%", ""));
  *  An unparseable formula THROWS rather than being skipped -- a formula
  *  the verifier cannot read is an unchecked formula, which is exactly the
  *  condition this script exists to prevent. */
-function compile(expression: string): (v: number, target: number) => number {
+function compile(expression: string): (v: number, target: number, neutral: number) => number {
   const norm = expression.replace(/\s+/g, " ").trim();
 
   const outer = norm.match(
@@ -55,9 +57,11 @@ function compile(expression: string): (v: number, target: number) => number {
   const coeff = num(outer[3]);
   const term = outer[4].trim();
 
-  const shapes: Array<[RegExp, (m: RegExpMatchArray) => (v: number, t: number) => number]> = [
+  const shapes: Array<[RegExp, (m: RegExpMatchArray) => (v: number, t: number, n: number) => number]> = [
     // |var − target|   deviation from the market's own benchmark
     [new RegExp(String.raw`^\|\s*${VAR}\s*−\s*target\s*\|$`), () => (v, t) => Math.abs(v - t)],
+    // |var − neutral|  deviation from the market's own neutral policy rate
+    [new RegExp(String.raw`^\|\s*${VAR}\s*−\s*neutral\s*\|$`), () => (v, _t, n) => Math.abs(v - n)],
     // |var − 2.5%|     deviation from a fixed constant
     [
       new RegExp(String.raw`^\|\s*${VAR}\s*−\s*(${NUM})\s*\|$`),
@@ -78,8 +82,8 @@ function compile(expression: string): (v: number, target: number) => number {
     const m = term.match(re);
     if (m) {
       const evalTerm = build(m);
-      return (v, target) => {
-        const raw = base + sign * coeff * evalTerm(v, target);
+      return (v, target, neutral) => {
+        const raw = base + sign * coeff * evalTerm(v, target, neutral);
         return Math.max(0, Math.min(100, raw));
       };
     }
@@ -88,11 +92,11 @@ function compile(expression: string): (v: number, target: number) => number {
 }
 
 /** The engine, keyed the same way. `target` is used only by PS. */
-const ENGINE: Record<PillarKey, (v: number, target: number) => number> = {
+const ENGINE: Record<PillarKey, (v: number, target: number, neutral: number) => number> = {
   PS: (v, target) => priceStabilityScore(v, target),
   GM: (v) => growthMomentumScore(v),
   LM: (v) => labourMarketScore(v),
-  MC: (v) => monetaryConditionsScore(v),
+  MC: (v, _t, n) => monetaryConditionsScore(v, n),
   EC: (v) => externalCommoditiesScore(v),
 };
 
@@ -110,7 +114,7 @@ console.log("Checking the PUBLISHED formulas against the ENGINE\n");
 
 for (const key of Object.keys(PUBLISHED_FORMULAS) as PillarKey[]) {
   const published = PUBLISHED_FORMULAS[key];
-  let compiled: (v: number, target: number) => number;
+  let compiled: (v: number, target: number, neutral: number) => number;
   try {
     compiled = compile(published.expression);
   } catch (err) {
@@ -128,9 +132,10 @@ for (const key of Object.keys(PUBLISHED_FORMULAS) as PillarKey[]) {
   // market-dependent without the page saying so.
   for (const market of MARKETS) {
     const target = inflationTargetFor(market);
+    const neutral = neutralRateFor(market);
     for (const v of SWEEP) {
-      const a = compiled(v, target);
-      const b = engine(v, target);
+      const a = compiled(v, target, neutral);
+      const b = engine(v, target, neutral);
       comparisons++;
       const d = Math.abs(a - b);
       if (d > worst.diff) Object.assign(worst, { diff: d, v, market, pub: a, eng: b });
@@ -197,6 +202,46 @@ for (const m of FALLBACK_MARKETS) {
     continue;
   }
   console.log(`PASS  ${m.code.padEnd(3)} ${m.name.padEnd(18)} ${engineTarget.toFixed(1)}%   ${sourced.source}`);
+}
+
+// ---------- Neutral rates, pinned to their SOURCES ----------
+//
+// Same discipline as SOURCED_TARGETS above: changing a neutral rate now
+// requires changing this table too, and that second edit is where
+// someone has to state where the number came from.
+const SOURCED_NEUTRAL: Record<string, { rate: number; source: string }> = {
+  US: { rate: 3.01, source: "NY Fed HLW 2026Q2 — real r* 1.009 + 2% target" },
+  CA: { rate: 3.76, source: "NY Fed HLW 2026Q2 — real r* 1.759 + 2% target" },
+  EA: { rate: 2.09, source: "NY Fed HLW 2026Q2 — real r* 0.086 + 2% target" },
+  JP: { rate: 1.64, source: "BoJ Review 2026-E-4 — median of 6 models, 2025Q3, + 2% target" },
+  UK: { rate: 3.00, source: "BoE Governor, February 2026 — nominal, stated in prose" },
+  AU: { rate: 3.50, source: "RBA Bulletin Sep 2017 (~1% real) + 2.5% target — NINE YEARS OLD, weakest of the six" },
+};
+
+console.log("\nChecking neutral rates against their VERIFIED SOURCES\n");
+for (const m of FALLBACK_MARKETS) {
+  const engineRate = neutralRateFor(m.code);
+  const mapRate = NEUTRAL_RATE[m.code];
+  const sourced = SOURCED_NEUTRAL[m.code];
+  comparisons++;
+  if (mapRate === undefined) {
+    failures++;
+    console.log(`FAIL  ${m.code} (${m.name}) is SCORED but has no NEUTRAL_RATE entry —`);
+    console.log(`        it silently inherits the old universal 2.5%. Add it with a source.`);
+    continue;
+  }
+  if (!sourced) {
+    failures++;
+    console.log(`FAIL  ${m.code} (${m.name}) has a neutral rate of ${mapRate}% with NO recorded source.`);
+    continue;
+  }
+  if (Math.abs(engineRate - sourced.rate) > EPS) {
+    failures++;
+    console.log(`FAIL  ${m.code} (${m.name}) — engine uses ${engineRate}%, source says ${sourced.rate}%`);
+    console.log(`        ${sourced.source}`);
+    continue;
+  }
+  console.log(`PASS  ${m.code.padEnd(3)} ${m.name.padEnd(18)} ${engineRate.toFixed(2)}%   ${sourced.source}`);
 }
 
 console.log(`\n${comparisons.toLocaleString()} comparisons across ${MARKETS.length} markets.`);
