@@ -12,6 +12,13 @@ export interface RawIndicatorRow {
   policy_rate: number | null;
   brent_yoy: number | null;
   observation_date: string;
+  // Per-indicator observation dates (audit M-6). OPTIONAL because not every
+  // query selects them -- useLiveHistory does not need them, the homepage does.
+  inflation_observation_date?: string | null;
+  gdp_observation_date?: string | null;
+  unemployment_observation_date?: string | null;
+  policy_rate_observation_date?: string | null;
+  brent_observation_date?: string | null;
 }
 
 /** Shared by the Trends and Compare pages (Overview/page.tsx has its own

@@ -4,6 +4,15 @@ export interface MarketData {
   code: string;
   name: string;
   raw: RawIndicators;
+  /** WHEN each figure refers to, as distinct from when it was fetched.
+   *  Populated only from live data; the hardcoded fallbacks have no
+   *  meaningful observation date and deliberately leave this undefined. */
+  observationDates?: {
+    inflation: string | null;
+    gdpGrowth: string | null;
+    unemployment: string | null;
+    policyRate: string | null;
+  };
 }
 
 // Verified fallback values — matches lib/scoring.ts test cases exactly.

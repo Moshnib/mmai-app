@@ -65,7 +65,19 @@ export const PILLAR_ICONS: Record<PillarKey, React.ReactNode> = {
   ),
 };
 
-export default function PillarGrid({ pillars, market }: { pillars: PillarScores; market: string }) {
+/** Audit M-6: show how old each figure is, not just what it says.
+ *  A pillar carrying 25% of the score on a figure twenty months old is
+ *  something a reader is entitled to see, and until now only the Gulf
+ *  cards -- the UNSCORED half of the site -- showed it. */
+function observedLabel(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const [y, m] = iso.split("-");
+  const month = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(m) - 1];
+  if (!month) return null;
+  return `data from ${month} ${y}`;
+}
+
+export default function PillarGrid({ pillars, market, observationDates }: { pillars: PillarScores; market: string; observationDates?: Partial<Record<PillarKey, string | null>> }) {
   return (
     <div className="pillar-grid">
       {ORDER.map((key) => {
@@ -117,6 +129,11 @@ export default function PillarGrid({ pillars, market }: { pillars: PillarScores;
             <div className="pillar-name">{PILLAR_NAMES[key]}</div>
             <div className="pillar-desc">{PILLAR_DESC[key]}</div>
             <div className="pillar-weight" style={{ marginTop: 6 }}>{formatWeightPct(key)} weight</div>
+            {observedLabel(observationDates?.[key]) && (
+              <div style={{ marginTop: 3, fontSize: 10.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace" }}>
+                {observedLabel(observationDates?.[key])}
+              </div>
+            )}
             {!excluded && (
               <div className="pillar-cta">View trend →</div>
             )}

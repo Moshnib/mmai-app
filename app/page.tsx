@@ -104,7 +104,7 @@ export default function OverviewPage() {
         const supabase = getPublicSupabaseClient();
         const { data, error } = await supabase
           .from("raw_indicators")
-          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date, fetched_at")
+          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date, fetched_at, inflation_observation_date, gdp_observation_date, unemployment_observation_date, policy_rate_observation_date")
           .order("observation_date", { ascending: false })
           .order("fetched_at", { ascending: false }) // tiebreak same-day reruns -- deterministic "latest", not arbitrary
           .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
@@ -151,6 +151,13 @@ export default function OverviewPage() {
               unemployment: row.unemployment,
               policyRate: row.policy_rate,
               brentYoY: row.brent_yoy,
+            },
+            // Audit M-6: show a reader how old each figure actually is.
+            observationDates: {
+              inflation: row.inflation_observation_date ?? null,
+              gdpGrowth: row.gdp_observation_date ?? null,
+              unemployment: row.unemployment_observation_date ?? null,
+              policyRate: row.policy_rate_observation_date ?? null,
             },
           };
         });
@@ -315,7 +322,16 @@ export default function OverviewPage() {
             <h2>Five pillars, weighted and shown in full</h2>
             <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it. Click one to see its history.</p>
           </div>
-          <PillarGrid pillars={pillars} market={current} />
+          <PillarGrid
+            pillars={pillars}
+            market={current}
+            observationDates={{
+              PS: market.observationDates?.inflation,
+              GM: market.observationDates?.gdpGrowth,
+              LM: market.observationDates?.unemployment,
+              MC: market.observationDates?.policyRate,
+            }}
+          />
         </div>
       </div>
 

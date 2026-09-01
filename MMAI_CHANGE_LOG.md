@@ -517,3 +517,34 @@ No band changes. Both fall because the older annual figures were flattering — 
 ### Remaining
 - **Australia** — ABS publishes national accounts (`ANA_AGG`), but the series key was not identified in this session. Tractable, not done.
 - **Japan** — no accessible quarterly source identified. The OECD route is already known unreliable from Vercel, and Japan's own e-Stat requires a registered key.
+
+---
+
+## 2026-09-01 — Observation dates shown to readers (audit M-6, second half)
+
+**Category:** Disclosure. **No score, equation, weight or band changed.**
+
+### Old rule
+The per-indicator observation dates were stored earlier the same day but shown nowhere. Collected and invisible.
+
+### New rule
+Each pillar card on the homepage carries the period its figure refers to — *"data from Jun 2026"*, *"data from Jan 2025"*.
+
+### Reason
+The point of M-6 was never the storage; it was that a reader could not tell how old any figure was. Until today only **Gulf Watch — the unscored half of the site — showed this.** The scored half, which is what the index is actually for, did not.
+
+Growth Momentum is the case that matters: it carries **25% of the score**, the joint-largest weight, and for Japan and Australia the figure is still from January 2025.
+
+### Test results
+`tsc` clean, eslint zero, build clean.
+
+### Impact
+Display only. `observationDates` is optional on `MarketData` and is populated only from live data — the hardcoded fallbacks have no meaningful observation date and deliberately leave it undefined, so demo mode shows nothing rather than a fabricated date.
+
+External & Commodities shows no date: it is a single global Brent figure, identical for every market, and its period is not market-specific.
+
+### Approval status
+Implemented and verified. Committed to `main`.
+
+### Rollback method
+`git revert <commit>`. The stored columns are unaffected.
