@@ -589,3 +589,48 @@ Tiny value change; the point is the **seventeen-month** gain in currency, and th
 This was found only because per-indicator observation dates were shipped hours earlier, making "Jan 2025" visible on Japan's card. **The disclosure fix found the data bug.**
 
 Two of Japan's three stale figures remain: inflation and GDP.
+
+---
+
+## 2026-09-01 — Australia GDP moved to quarterly, year-over-year
+
+**Category:** Data freshness. **No equation, weight, band or threshold changed.**
+
+Completes the quarterly-GDP work for five of six markets.
+
+| | Old (World Bank annual) | New (ABS) |
+|---|---|---|
+| Value | 1.35% | **2.52%** |
+| Date | Jan 2025 | **Mar 2026** |
+
+### Series
+ABS `ANA_AGG` key `M1.GPM.20.AUS.Q` — chain volume measures, gross domestic product, seasonally adjusted, Australia, quarterly. **Levels**, so year-over-year is computed here.
+
+The ABS also publishes MEASURE `M4`, "Current prices – Percentage Changes". **Not used:** current prices is *nominal*, and would not be comparable with the real growth every other market uses.
+
+`format=csvfile`, not `csvfilewithlabels` — the label expansion is what made the OECD Japan fetcher time out. Columns are selected by header name, so labels are never needed.
+
+### Impact
+**Australia: 75.85 → 78.77.** No band change, but Australia moves from 4th to 3rd.
+
+The old annual figure was badly understating Australia: **1.35% against an actual 2.52%.** Where the UK and Canada fell on fresher data, Australia rises — which is the point. The direction was never predictable; it was simply unknown.
+
+### Status of all six
+
+| Market | GDP source | Frequency |
+|---|---|---|
+| United States | BEA `T10106` | quarterly |
+| Euro Area | Eurostat `namq_10_gdp` | quarterly |
+| United Kingdom | ONS `IHYR` | quarterly |
+| Canada | StatCan `62305752` | quarterly |
+| **Australia** | **ABS `ANA_AGG`** | **quarterly** |
+| Japan | World Bank | **annual — still Jan 2025** |
+
+**Five of six.** All six remain year-over-year.
+
+### Japan remains the exception, and it is a genuine source gap
+Investigated directly this session:
+- **OECD CPI for Japan ends June 2021.** `NoRecordsFound` for 2026 on any methodology.
+- **e-Stat** (Japan's official portal) returns *"authentication failed — check application ID"*: it needs a free registered key, which only the site owner can obtain.
+
+Japan's unemployment was fixed separately today. Its inflation and GDP remain annual, and the observation dates on its card say so.
