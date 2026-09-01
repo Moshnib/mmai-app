@@ -161,7 +161,9 @@ Root: next.config.ts, package.json, vercel.json, .env.local.example,
 
 ---
 
-## 4. DATA SOURCES (current — 30 entries in `lib/sources.ts`, all `status: "live"`)
+## 4. DATA SOURCES (29 entries in `lib/sources.ts`)
+
+> **Not all `live`.** Norway's four entries are `manual` and marked `DORMANT`: wired end to end but absent from `FALLBACK_MARKETS`, so nothing reaches a reader. Every live entry also carries a **`cadence`** (daily / monthly / quarterly / annual / per decision), because "live" means the fetcher succeeded, **not** that the figure is current. See §16.
 
 ### ⚠️ FRED WAS REMOVED ENTIRELY (2026-08-22, commit `67442e2`)
 **This is the single biggest change since the previous handover.** FRED's Terms of Service **prohibit storing or caching FRED Content in a database**, which directly conflicts with this app's whole architecture (every indicator is persisted to Supabase for historical charts). FRED was removed rather than accept the legal risk. `lib/fetchers/fred.ts` is **deleted**. Replacements:
@@ -244,7 +246,7 @@ PILLAR_WEIGHTS = { PS: 0.25, GM: 0.25, LM: 0.1875, MC: 0.1875, EC: 0.125 }
 S_PS = clip(100 − 15 × |inflation − τ(market)|, 0, 100)  -- Price Stability, τ is PER-MARKET
 S_GM = clip(50 + 10 × gdpGrowth, 0, 100)             -- Growth Momentum
 S_LM = clip(100 − 10 × (unemployment − 2), 0, 100)   -- Labour Market
-S_MC = clip(100 − 12 × |policyRate − 2.5|, 0, 100)   -- Monetary Conditions, neutral=2.5%
+S_MC = clip(100 − 12 × |policyRate − rN(market)|, 0, 100)  -- Monetary Conditions, rN is PER-MARKET
 S_EC = clip(100 − 1.2 × |brentYoY|, 0, 100)          -- External & Commodities
 
 MMAI = (Σ weight × pillar_score) / (Σ active weights)  -- reweights around any missing pillar
@@ -252,6 +254,7 @@ MMAI = (Σ weight × pillar_score) / (Σ active weights)  -- reweights around an
 
 - **τ (inflation target) is per-market since 2026-08-31**, from `INFLATION_TARGET` in `lib/scoring.ts`. US/EA/UK/CA/JP = **2.0%**; **Australia = 2.5%**. Australia is the only one of the six whose central bank targets a *range* (2–3%); the RBA's own explainer states policy is set so inflation returns to the **midpoint**. Every value was read from the issuing institution on 2026-08-31 — do not change one without doing the same.
 - **`computePillarScores(raw, market)` takes market as a REQUIRED argument.** Deliberately not optional-with-default: an optional one lets a call site silently score Australia against 2.0 while the refresh route uses 2.5, so stored and displayed scores disagree.
+- **rN (neutral rate) is per-market since 2026-09-01**, from `NEUTRAL_RATE` in `lib/scoring.ts`. US 3.01 · CA 3.76 · EA 2.09 · JP 1.64 · UK 3.00 · AU 3.50. Nominal = published real r\* + that market's inflation target. This was the least defensible number in the method and was not merely unjustified but **wrong** — one 2.5% spanning Japan and the United States. **Australia's is the weakest: it derives from a 2017 RBA Bulletin, nine years old.** Refresh that first.
 - **The US scores on headline PCE, not CPI** (`fetchUsPceInflation` in `lib/fetchers/bea.ts`), because the Fed defines its 2% objective on the PCE index. BLS CPI remains an automatic fallback. Measured 2026-08-31: PCE 3.70% vs CPI 3.36% — PCE was *above* CPI, the reverse of the long-run relationship, so never approximate one from the other.
 - **Publication threshold:** coverage (populated pillars ÷ 5) must be ≥ **70%** (at least 4 of 5 pillars). Below that the composite is `null` and the site shows "N/A" rather than a misleading partial score.
 - **Interpretation bands** (label only, **recalibrated 2026-08-31**): 85+ "Strongly Supportive" · 74+ "Supportive" · 55+ "Balanced" · 40+ "Challenging" · <40 "Highly Challenging". Was 80/65/45/30, which were invented: those put 63% of 173 historical market-years in one band and never once reached the bottom label, labelling US 2009 "Balanced". Calibrated against ten named episodes — see the change log.
@@ -630,3 +633,106 @@ Vercel Hobby crons are **best-effort** — they may be delayed hours or skipped 
 - **Verify, do not recall.** Two reasonable assumptions were wrong in the same session: that CPI runs above PCE (it did not), and that 2.5% for Australia was MMAI's design choice (it is the RBA's). Both were caught only by reading the source.
 - **Multi-line string replacement is unreliable on this repo's files.** Prefer line-indexed edits when scripting changes.
 - `tsx` does **not** load `.env.local` the way `next` does. Source it explicitly or fetchers fail with "KEY is not configured".
+
+---
+
+## 16. Data freshness, the external audit, and the chart rebuild (2026-09-01)
+
+The largest single day of change in the project. **21 commits.** Read this before touching fetchers, `lib/scoring.ts`, or `components/TrendChart.tsx`.
+
+### 16.1 The whole index was running on stale data, and nobody could see it
+
+Per-indicator observation dates were added to `raw_indicators` (five nullable columns, migration in `supabase/migrations/`) and are now shown on every pillar card.
+
+**That disclosure immediately exposed the real problem:** Growth Momentum carries 25% of the score — its joint-largest weight — and **every market's GDP was dated January 2025.** One fetch-date standing in for five observation dates had hidden it.
+
+**All six markets are now on quarterly, year-over-year GDP:**
+
+| Market | Source |
+|---|---|
+| US | BEA `T10106`, levels → YoY computed |
+| Euro Area | Eurostat `namq_10_gdp`, `CLV_PCH_SM` |
+| UK | ONS `IHYR` ("q-on-q4") |
+| Canada | StatCan vector `62305752`, levels → YoY |
+| Australia | ABS `ANA_AGG` `M1.GPM.20.AUS.Q` |
+| Japan | e-Stat `0003109750` (real, seasonally adjusted) |
+
+### 16.2 THE RULE THAT GOVERNS EVERY GDP FETCHER
+
+**Year-over-year is mandatory. Frequency may differ; the concept may not.**
+
+Each source headlines a *different* quarterly concept, and taking whichever number each publishes would make the six markets **non-comparable while looking entirely reasonable**:
+
+- BEA's headline is **annualised quarter-on-quarter** — 2025Q3 printed 4.4% annualised against 2.34% YoY. Rejected; YoY computed from levels.
+- ONS `IHYQ` is quarter-on-**previous**-quarter. Rejected in favour of `IHYR`.
+- StatCan's headline is annualised. Rejected; computed from levels.
+- ABS `M4` is **current prices** — nominal. Rejected in favour of `M1` chain volume.
+
+Every market's series is also **seasonally adjusted**, which is why Japan uses 実質季節調整系列 rather than 原系列.
+
+### 16.3 Japan: all four indicators fixed, three different ways
+
+Japan was top of the table on three figures from January 2025.
+
+- **Inflation** — e-Stat `0003427113`, `cdTab=3` (前年同月比 = YoY), `cdCat01=0001` (総合, all items), `cdArea=00000` (全国, **not** the Tokyo ku-area series). Needs `ESTAT_APP_ID`, a free registered key. **3.17% → 2.0%.**
+- **GDP** — e-Stat, above. **1.19% → 0.55%.**
+- **Unemployment** — **fixed by a pipeline change, not a fetcher.** See §16.4.
+
+**Dead ends, verified so nobody repeats them:** OECD's Japanese CPI series **ends June 2021**. The Statistics Bureau's English pages link back to e-Stat. The nominal archive table `0003365113` looks plausible and is neither current nor real.
+
+### 16.4 OECD is unreachable from Vercel — and the workflow now works around it
+
+Japan's unemployment fell back to World Bank annual for weeks. It was first diagnosed as a timeout: `format=csvfilewithlabels` takes **11–40s** against **~0.1s** for `format=csvfile`, and the fetcher aborts at 8s.
+
+**That fix was real but was not the cause.** Corrected to `csvfile`, it still failed in production. From a laptop and from the GitHub runner it completes in ~2s. **It is OECD refusing Vercel's egress.**
+
+So `.github/workflows/refresh.yml` fetches it on the **runner** and relays it to `/api/refresh` as a query parameter. The route **validates** it — finite, 0–30, ISO date not future and under two years — and records the path in `source_note`.
+
+It deliberately does **not** write to Supabase from Actions: that needs the **service-role key** as a GitHub secret, which is far too wide a blast radius for one indicator.
+
+### 16.5 Independent audit — 12 findings, 10 closed
+
+Published as an artifact. Graded against the OECD/JRC composite-indicator framework and central-bank practice. **Opinion: qualified.**
+
+Two findings were new analysis rather than restatement:
+
+- **H-1, compensatory aggregation.** Linear aggregation lets a *collapsed* pillar be masked. **Euro Area 2013: Labour Market = 0.0 and MMAI published 59.9, "Balanced".** The site now flags this when the weakest pillar is >40 below the composite *and* under 30 — thresholds calibrated so all four historical zero-pillar cases are caught. Full fix (geometric aggregation) is **open by choice**.
+- **M-1, the independence claim is partly an artefact.** Growth vs unemployment **level** correlates −0.047; growth vs the **change** in unemployment correlates **−0.666**. Okun's law is in the data; MMAI cannot see it because it compares a rate of change against a level. Disclosed on the Learn page.
+
+**H-2 (neutral rates) closed the same day** — see §16.6.
+
+### 16.6 Neutral rates, and an error of mine worth not repeating
+
+I recorded H-2 as *blocked* because HLW covers three of six markets, and stated repeatedly that "no estimate exists" for the UK, Japan and Australia. **That was wrong and I never checked it.** All three publish estimates; what differs is machine-readability.
+
+Now per-market (§5). **Canada moved Supportive → Balanced** — its 2.25% rate sits 1.5 points *below* a 3.76% neutral where against 2.5% it looked almost exactly neutral.
+
+### 16.7 The bond chart was drawing nonsense
+
+Spotted by the site owner. **Not volatility — sorting.** `TrendChart` sorted its category axis on the display **label**, which worked only while every caller passed four-digit years. Formatted dates sort by leading digit: `1 Jun 26 | 11 Aug 26 | 12 Nov 25 | 14 Jul 26`. Consecutive points were months apart in arbitrary order.
+
+Three things followed:
+1. Points may carry a `sortKey` (the ISO date); callers without one are unaffected.
+2. **Smart time axis** — ticks land on the first *trading day* of each month (weekends mean "the 1st" often does not exist), resolution follows the **span** not the point count, capped at eight ticks, newest always kept.
+3. **`components/TimeRangeFilter.tsx`** — one shared control. Bonds default to 6 months; Trends to the full record. `withinRange()` measures back from the **newest date present**, not today, so a stalled source shows data rather than an empty chart.
+
+Every time-series chart renders through `TrendChart`, so this fixed all of them at once.
+
+### 16.8 Traps this day earned
+
+- **CI runs on every branch and `research/` is linted like production.** A new research script needs `eslint`, not just `tsx`.
+- **A green pipeline proves the code compiles, not that a reader can see it.** Three bugs shipped past `tsc`, lint and build in one day: a block nested where it could never render, `updates undefined`, and `updates annual`. All three were found by **opening the site**.
+- **Multi-line string replacement is unreliable against these files.** Use line-indexed edits.
+- **The shell eats `${...}` in template literals.** Write patch scripts to a file; never inline them in `node -e`.
+- **PowerShell `Add-Content` defaults to UTF-16** and corrupted `.env.local`. Always pass `-Encoding utf8`.
+- **`verify-scoring` and `verify-history` pin values that a methodology change WILL move.** Update both, and record why in the file.
+
+### 16.9 Open
+
+| Item | Owner |
+|---|---|
+| **Rec 8** — replace External & Commodities (cross-market variance is exactly 0.0000) | decision |
+| **Rec 7** — geometric aggregation (21% of historical bands change) | decision |
+| **A domain** — email is impossible without it; also improves an IMF permission request | owner |
+| Refresh Australia's neutral rate (2017) | next session |
+| Historical calibration dataset extension | research branch |
