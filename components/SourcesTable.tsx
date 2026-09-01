@@ -22,6 +22,20 @@ interface DisplayableSource {
   url?: string;
 }
 
+/** Cadence values are adjectives ("annual"), so interpolating them raw
+ *  produced "updates annual". Mapped to adverbs here rather than storing
+ *  display strings in the registry, which should hold facts not prose. */
+function cadenceLabel(c: string | undefined): string | null {
+  switch (c) {
+    case "daily": return "updates daily";
+    case "monthly": return "updates monthly";
+    case "quarterly": return "updates quarterly";
+    case "annual": return "updates once a year";
+    case "per decision": return "updates per rate decision";
+    default: return null;
+  }
+}
+
 // The Sources table, with a live "last refreshed" column.
 //
 // It deliberately does NOT surface SourceEntry.lastVerified (the date a human
@@ -177,7 +191,7 @@ export default function SourcesTable({
                       today is working, not new. Cadence separates the two. */}
                   {e.status === "live" && e.cadence && (
                     <span style={{ fontFamily: "monospace", fontSize: 10.5, color: "var(--slate)", marginLeft: 7 }}>
-                      {e.cadence === "per decision" ? "updates per rate decision" : `updates ${e.cadence}`}
+                      {cadenceLabel(e.cadence)}
                     </span>
                   )}
                 </span>
