@@ -15,8 +15,25 @@ interface DisplayableSource {
   institution: string;
   license: string;
   status: FetchStatus;
+  /** Publishing cadence of the issuing institution. Optional because the
+   *  Gulf registry shares this shape and does not carry it yet. */
+  cadence?: string;
   note?: string;
   url?: string;
+}
+
+/** Cadence values are adjectives ("annual"), so interpolating them raw
+ *  produced "updates annual". Mapped to adverbs here rather than storing
+ *  display strings in the registry, which should hold facts not prose. */
+function cadenceLabel(c: string | undefined): string | null {
+  switch (c) {
+    case "daily": return "updates daily";
+    case "monthly": return "updates monthly";
+    case "quarterly": return "updates quarterly";
+    case "annual": return "updates once a year";
+    case "per decision": return "updates per rate decision";
+    default: return null;
+  }
 }
 
 // The Sources table, with a live "last refreshed" column.
@@ -169,6 +186,14 @@ export default function SourcesTable({
                   >
                     {e.status === "live" ? "LIVE" : e.status === "manual" ? "MANUAL" : "UNAVAILABLE"}
                   </span>
+                  {/* Audit M-5: "live" says the FETCHER works, not that the
+                      figure is current. A World Bank annual series fetched
+                      today is working, not new. Cadence separates the two. */}
+                  {e.status === "live" && e.cadence && (
+                    <span style={{ fontFamily: "monospace", fontSize: 10.5, color: "var(--slate)", marginLeft: 7 }}>
+                      {cadenceLabel(e.cadence)}
+                    </span>
+                  )}
                 </span>
                 <span data-label="Last refreshed" style={{ fontFamily: "monospace", fontSize: 11, color: "var(--slate)" }}>
                   {refreshedFor(group.name, e)}

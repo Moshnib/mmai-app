@@ -218,6 +218,8 @@ export default function LearnPage() {
                   {"targetNote" in t && t.targetNote && (
                     <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>{t.targetNote}</p>
                   )}
+                </div>
+              )}
 
               {/* Known limitations, stated to the reader. Audit findings
                   H-1 (compensatory averaging), H-2 (one neutral rate for
@@ -235,8 +237,6 @@ export default function LearnPage() {
                   ))}
                 </div>
               ) : null; })()}
-                </div>
-              )}
 
               {/* What those weights actually DO. A pillar's influence is its
                   weight times how much it moves, so the weight table above
