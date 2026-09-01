@@ -6,7 +6,7 @@ import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
 import { fetchGdpGrowth, fetchUnemployment } from "@/lib/fetchers/worldbank";
 import { fetchAustraliaInflation, fetchAustraliaUnemployment, fetchAustraliaGdpGrowthQuarterly } from "@/lib/fetchers/abs";
-import { fetchJapanInflation } from "@/lib/fetchers/estat";
+import { fetchJapanInflation, fetchJapanGdpGrowthQuarterly } from "@/lib/fetchers/estat";
 import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
 import { fetchAllBondYieldSeries, BOND_YIELD_SOURCE } from "@/lib/fetchers/bondYields";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
@@ -160,7 +160,7 @@ async function fetchRawIndicators(
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("JP inflation (e-Stat monthly)", fetchJapanInflation()),
       settle("JP unemployment", fetchJapanUnemployment()),
-      settle("JP GDP growth", fetchGdpGrowth("JPN")),
+      settle("JP GDP growth (quarterly YoY)", fetchJapanGdpGrowthQuarterly()),
       settle("JP policy rate", fetchJapanPolicyRate()),
     ]);
 

@@ -750,3 +750,49 @@ Deleting it would touch eight files for a low-severity finding. Instead its stat
 
 ### Test results
 `tsc` clean, eslint zero, build clean, all three verification scripts pass. The Learn page additions were verified present in the **build output**, not just assumed from a green build.
+
+---
+
+## 2026-09-01 — Japan GDP quarterly: all six markets now on current GDP
+
+**Category:** Data freshness. **No equation, weight, band or threshold changed.**
+
+### Old rule
+Japan's Growth Momentum read a World Bank **annual** figure of **1.19%**, dated **January 2025** — the last badly stale input in the index.
+
+### New rule
+e-Stat table **`0003109750`** — 四半期別GDP速報, 国内総生産（支出側）, 実質季節調整系列, 2020 base. Real, seasonally adjusted, quarterly **levels**; year-over-year computed here. **0.55%, June 2026.**
+
+### Finding the table
+The obvious candidates were traps. Searching returned 16,000+ tables under the Cabinet Office code, and the first matches were **過去の値** (archive) and **名目** (nominal) — one of which, `0003365113`, looks plausible but is nominal and its series ended years ago.
+
+The working table was found by filtering for 実質季節調整系列 and **excluding archives**, which left exactly two candidates, both updated 2026-08-17.
+
+### Why seasonally adjusted
+e-Stat also publishes 原系列 (original, unadjusted). Seasonally adjusted was chosen because **every other market already uses one**:
+
+| Market | Series |
+|---|---|
+| US | BEA `T10106` — seasonally adjusted |
+| Euro Area | Eurostat `s_adj=SCA` |
+| UK | ONS `IHYR` — CVM SA |
+| Canada | StatCan `62305752` |
+| Australia | ABS `TSEST=20` |
+
+Consistency across the six matters more than the small difference between the two Japanese variants — the same rule that governs which growth *concept* each market uses.
+
+### Impact
+
+| | Before | After |
+|---|---|---|
+| Japan GDP | 1.19%, Jan 2025 | **0.55%, Jun 2026** |
+| Japan Growth Momentum | 61.93 | **55.50** |
+| **Japan composite** | **83.52** | **81.92** |
+
+Japan's growth has slowed materially; the annual figure was overstating it by more than half a point. No band change; Japan remains top.
+
+### Milestone
+**All six markets now use quarterly, year-over-year GDP.** Growth Momentum — 25% of the score and its joint-largest weight — was running on figures up to twenty months old across the entire index this morning.
+
+### What remains stale
+**Japan's unemployment only**, still on the World Bank annual fallback because OECD is unreachable from Vercel. Fixing it needs the pipeline change (fetch from GitHub Actions, write to Supabase directly), not another fetcher.
