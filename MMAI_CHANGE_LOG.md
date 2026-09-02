@@ -6,6 +6,87 @@ Entries are newest first. The frozen V1 record is in [`MMAI_V1_FROZEN_BENCHMARK.
 
 ---
 
+## 2026-09-02 — Observation-age checking: a source can no longer die quietly
+
+**Category:** Control. No equation, weight, band, threshold or published score changed.
+
+Closes **H-1** from the operational audit of 2 September 2026 — the finding that mattered more than the Euro Area failure it explained.
+
+### Old rule
+
+One staleness check existed in the entire project:
+
+```
+isStale = now − row.fetched_at > 72 hours
+```
+
+`fetched_at` records **when MMAI last asked**. Nothing anywhere compared a figure's own **observation date** against how old it ought to be.
+
+### New rule
+
+`lib/freshness.ts` compares every figure's observation date against how often its source actually publishes, using the `cadence` already recorded per source. Applied by the refresh route on every run, to every indicator, for every market.
+
+| Cadence | Limit | Why |
+|---|---:|---|
+| daily | 10d | A long weekend plus a few days of outage |
+| monthly | 100d | About three missed releases |
+| quarterly | 240d | The ONS lags two quarters legitimately |
+| annual | 800d | World Bank data runs 1–2 years behind by design |
+| per decision | **not checked** | A rate that has not moved is not stale |
+
+A source may override the default via `maxAgeDays`, and **an override without a `note` explaining it fails the test.**
+
+### Reason
+
+Eurostat retired the euro area HICP dataset on 4 February 2026. It never returned an error — it stopped gaining months, kept answering instantly, and kept handing back December 2025. Every check stayed green for nine months while MMAI published inflation as 2.0% against a real 3.3%, and the Euro Area was published **a full band too high**.
+
+The information needed to catch it was already on the page: per-indicator observation dates shipped on 1 September for audit finding M-6. They **showed** a reader the figure was from December 2025. Nothing **tested** it.
+
+### Why "per decision" is exempt
+
+A policy rate is a **level that persists**. When a central bank holds rates for two years, the two-year-old decision is still the current rate — the figure is not stale, the world simply did not move. Japan held near zero for over a decade; an age check would have screamed every day while the data was perfectly correct.
+
+Those sources fail loudly by another route: every policy-rate fetcher throws on a bad response rather than returning a previous value, so a dead one appears as a null pillar, not a stale number.
+
+### Test results
+
+`scripts/verify-freshness.ts`, now in CI. No network, no keys, no database — it tests the rules and asserts that **no scored source can fall outside them unnoticed**.
+
+**It caught two false positives before this shipped, which is the point of writing the test first:**
+
+1. **BIS government debt.** The BIS publishes credit statistics about three quarters in arrears, so 2025-Q4 was still the newest on 2 September — 245 days old against the 240-day quarterly default. Loosening *all* quarterly checks to accommodate the slowest source would have let a dead ONS series run for over a year, so the allowance was attached to the seven BIS rows instead (`maxAgeDays: 420`).
+2. **UK unemployment.** Dated May 2026 and 124 days old against a 100-day monthly default. Verified directly against the ONS: series `MGSX` genuinely ends at 2026 MAY. The check was wrong, not the ONS. Allowance set to 170 on that row alone.
+
+**Replayed against live data:** all six markets clean, `staleMarkets = 0`, workflow green. **Replayed against the pre-fix Euro Area:** `Inflation (YoY) is 275d old (limit 100d)` — caught.
+
+Had this existed, the Eurostat failure would have fired on **12 March 2026** rather than being found by hand on 2 September — **175 days earlier.**
+
+`tsc`, `eslint --max-warnings 0`, `build` and all five verification scripts clean.
+
+### Failing is the feature
+
+The refresh workflow now **fails the run** when any market reports a stale figure. The data is already written by then and nothing is rolled back — failing exists to make a human look. A warning in a log nobody reads is precisely what let this happen; a red run sends an email.
+
+The limits are deliberately generous — roughly two to three missed publications each. **An alarm that cries wolf gets muted**, and a muted alarm is worse than none, because it is mistaken for coverage.
+
+### Also corrected
+
+**Six rows on the public Sources page still carried the World Bank's note and link** after their fetchers moved to national quarterly sources on 1 September: Euro Area, Canada, UK, Japan (×2) and Australia. Each said *"Annual figure, updates once a year"* and four linked to `data.worldbank.org`. On the one page whose entire purpose is letting a reader check the work, they sent them to the wrong institution. Replaced with the actual series identifiers and the institutions' own pages.
+
+### Approval status
+
+Implemented and verified. No published score changed.
+
+### Rollback method
+
+```bash
+git revert <commit>
+```
+
+Reverting removes the check. Nothing depends on it to compute a score.
+
+---
+
 ## 2026-09-02 — Euro Area inflation moved from Eurostat to the ECB after the Eurostat series was found dead
 
 **Category:** Data source replacement, forced by an upstream discontinuation. No equation, weight, band or threshold was modified.

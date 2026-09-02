@@ -119,6 +119,32 @@ jobs:
           # Actions tab and by email, rather than silently doing nothing.
           [ "$code" = "200" ] || exit 1
 
+          # ---------- A SOURCE CAN DIE WITHOUT FAILING ----------
+          # Eurostat retired the euro area HICP dataset on 2026-02-04. It
+          # kept answering instantly, kept returning December 2025, and
+          # every run above stayed green for nine months while MMAI
+          # published a stale inflation figure and the wrong band for the
+          # Euro Area.
+          #
+          # The route now compares each figure's own observation date
+          # against how often its source actually publishes, and reports
+          # the count here. Failing the run is the whole point: a warning
+          # in a log nobody reads is what let this happen. A red run sends
+          # an email.
+          #
+          # THE DATA IS ALREADY WRITTEN by the time this fires. Failing
+          # does not roll anything back and is not meant to -- it exists
+          # to make a human look.
+          stale=$(node -e 'try{const j=require("/tmp/main.json");process.stdout.write(String(j.staleMarkets??0))}catch(e){process.stdout.write("0")}')
+          if [ "$stale" != "0" ]; then
+            echo
+            echo "::error::$stale market(s) reported a figure older than its source's publication rhythm allows."
+            echo "A source has probably been retired or moved. Check the 'stale' field per market above,"
+            echo "then confirm against the institution directly before changing any limit in lib/freshness.ts."
+            exit 1
+          fi
+          echo "Freshness: no indicator is older than its source's cadence allows."
+
       - name: Refresh Gulf Watch
         run: |
           echo "Calling /api/refresh-gulf …"

@@ -26,6 +26,9 @@ import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import { sourceForPillar } from "@/lib/sources";
+import { stalenessOf, quarterToDate, describeStale } from "@/lib/freshness";
+import { RAW_FIELD, type PillarKey } from "@/lib/scoring";
 
 const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
@@ -449,6 +452,51 @@ const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
 //
 // KEEP IN STEP WITH THE ACTUAL settle() CALLS ABOVE. There is no test
 // binding these strings to the fetchers; they drifted for weeks unnoticed.
+/** Every figure this run wrote, checked against how often its source
+ *  actually publishes.
+ *
+ *  This exists because a source can DIE WITHOUT FAILING. Eurostat retired
+ *  the euro area HICP dataset on 2026-02-04; it kept answering instantly
+ *  and kept handing back December 2025, and MMAI published a nine-month-old
+ *  inflation figure as live until a human went looking. Every check the
+ *  project had measured `fetched_at` -- when we last ASKED.
+ *
+ *  Cadence comes from lib/sources.ts, which already records how often each
+ *  institution publishes, so the limits live with the source rather than
+ *  being duplicated here.
+ *
+ *  Returns one line per suspect figure. Empty means nothing looked dead --
+ *  NOT that everything is current. */
+function stalenessWarnings(
+  market: string,
+  dates: ObservationDates,
+  debtPeriod: string | null
+): string[] {
+  const marketName = MARKET_NAMES[market];
+  if (!marketName) return [];
+
+  // Pillar -> the observation date this run recorded for it. Fiscal
+  // Resilience is the odd one: BIS publishes a QUARTER, not a day.
+  const dateFor: Record<PillarKey, string | null> = {
+    PS: dates.inflation,
+    GM: dates.gdpGrowth,
+    LM: dates.unemployment,
+    MC: dates.policyRate,
+    FR: debtPeriod ? quarterToDate(debtPeriod) : null,
+  };
+
+  const warnings: string[] = [];
+  for (const key of Object.keys(dateFor) as PillarKey[]) {
+    const source = sourceForPillar(marketName, key);
+    if (!source) continue;
+    const verdict = stalenessOf(source, dateFor[key]);
+    if (verdict?.stale) {
+      warnings.push(describeStale(RAW_FIELD[key].label, verdict));
+    }
+  }
+  return warnings;
+}
+
 const SOURCE_NOTES: Record<string, string> = {
   US: "BEA (PCE + GDP) + BLS + New York Fed + EIA (live)",
   JP: "e-Stat + OECD + Bank of Japan + EIA (live)",
@@ -599,7 +647,18 @@ export async function GET(request: Request) {
         (market === "US" && usInflationFellBack
           ? " — US inflation via BLS CPI (BEA PCE unavailable); PCE is the scored series"
           : "");
-      const sourceNote = (partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote) + fallbackNote;
+      // A figure older than its source's publication rhythm allows is a
+      // dead source, not a slow one. Recorded on the row AND surfaced in
+      // the response so the workflow can fail on it -- a warning nobody
+      // is shown is the same as no warning, which is how the Eurostat
+      // series survived nine months.
+      const staleWarnings = stalenessWarnings(market, dates, debt?.period ?? null);
+      if (staleWarnings.length > 0) {
+        console.warn(`${market} STALE: ${staleWarnings.join("; ")}`);
+      }
+      const staleNote = staleWarnings.length > 0 ? ` — STALE: ${staleWarnings.join("; ")}` : "";
+
+      const sourceNote = (partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote) + fallbackNote + staleNote;
 
       // ---------- Publication-regression guard ----------
       // A transient source outage must not replace a PUBLISHED score
@@ -733,7 +792,12 @@ export async function GET(request: Request) {
         }
       }
 
-      results.push({ market, status: "ok", composite });
+      results.push({
+        market,
+        status: "ok",
+        composite,
+        ...(staleWarnings.length > 0 ? { stale: staleWarnings } : {}),
+      });
     } catch (err) {
       console.error(`Refresh failed for ${market}:`, err);
       results.push({ market, status: `error: ${(err as Error).message}`, composite: null });
@@ -784,5 +848,15 @@ export async function GET(request: Request) {
     bondResult = { inserted: 0, markets: 0, error: message };
   }
 
-  return NextResponse.json({ refreshedAt: new Date().toISOString(), results, bondYields: bondResult });
+  // Hoisted to the top of the response, not buried per market: the
+  // refresh workflow fails the run on this field, which turns a silent
+  // rot into an email. See .github/workflows/refresh.yml.
+  const staleCount = results.filter((r) => "stale" in r && Array.isArray(r.stale) && r.stale.length > 0).length;
+
+  return NextResponse.json({
+    refreshedAt: new Date().toISOString(),
+    staleMarkets: staleCount,
+    results,
+    bondYields: bondResult,
+  });
 }

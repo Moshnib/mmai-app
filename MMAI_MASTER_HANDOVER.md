@@ -883,3 +883,70 @@ The new ECB fetcher carries a local guard — it throws if the newest observatio
 ### 18.6 Still healthy, verified the same day
 
 All routes 200, no console errors, CI green, cron running, Gulf Watch fully correct (including Saudi/Kuwait BIS policy rates), subscriber and feedback tables correctly locked to the service role, scores written for all six markets. UK GDP (6mo) and unemployment (4mo) are genuine ONS lag — checked against ONS directly, not assumed.
+
+---
+
+## 19. Observation-age checking (2026-09-02) — H-1 closed
+
+The control that §18 said was missing. **Read §18 first**; this is the fix for the hole it describes.
+
+### 19.1 The rule
+
+`lib/freshness.ts`. Every figure's own observation date is compared against how often its source publishes — `cadence`, already in `lib/sources.ts`.
+
+| Cadence | Limit | Reasoning |
+|---|---:|---|
+| daily | 10d | Long weekend + a few days of outage |
+| monthly | 100d | ~3 missed releases |
+| quarterly | 240d | ONS lags two quarters legitimately |
+| annual | 800d | World Bank runs 1–2 years behind by design |
+| **per decision** | **not checked** | See 19.2 |
+
+Applied by `app/api/refresh/route.ts` on every run, recorded in `source_note`, and surfaced as `staleMarkets` at the top of the response.
+
+### 19.2 WHY POLICY RATES ARE EXEMPT — do not "fix" this
+
+A policy rate is a **level that persists**. A central bank holding rates for two years means the two-year-old decision **is** the current rate. Japan held near zero for over a decade; an age check would have screamed daily while the data was perfectly correct.
+
+They fail loudly by another route: every policy-rate fetcher **throws** rather than returning a previous value, so a dead one is a null pillar, not a stale number.
+
+### 19.3 THE WORKFLOW FAILS ON IT, AND THAT IS THE POINT
+
+`.github/workflows/refresh.yml` exits non-zero when `staleMarkets > 0`.
+
+The data is **already written** by then; failing rolls nothing back and is not meant to. **It exists to make a human look.** A warning in a log nobody reads is exactly what let the Eurostat series survive nine months.
+
+Corollary, and it matters: **the limits are deliberately generous.** An alarm that cries wolf gets muted, and a muted alarm is worse than none because it is mistaken for coverage. If this fires, check the institution directly before touching a limit.
+
+### 19.4 maxAgeDays — cadence is not lag
+
+`cadence` says how often an institution publishes. It says nothing about **how far behind**, and those differ enormously. Any source may set `maxAgeDays` to override its default. **An override without a `note` explaining it fails CI.**
+
+Two exist, both found by the test before shipping:
+
+| Source | Limit | Why |
+|---|---:|---|
+| BIS government debt (×7) | 420d | BIS publishes credit stats ~3 quarters in arrears; 2025-Q4 was newest on 2026-09-02 (245d) |
+| UK unemployment | 170d | ONS `MGSX` genuinely ended at 2026 MAY (124d), verified directly |
+
+**Neither was a loosening of the general rule** — that would have let a dead ONS series run over a year. Attach the allowance to the row, never to the cadence.
+
+### 19.5 What it would have done
+
+| | |
+|---|---|
+| Eurostat HICP, found by hand | 2026-09-02 |
+| **Would have fired** | **2026-03-12** |
+| Earlier | **175 days** |
+
+Replayed against live data: all six markets clean, `staleMarkets = 0`.
+
+### 19.6 Also fixed: six Sources rows still pointed at the World Bank
+
+Euro Area, Canada, UK, Japan (×2) and Australia still said *"Annual figure, updates once a year"* and four linked to `data.worldbank.org`, months after their fetchers moved to national quarterly sources. On the page whose whole purpose is "check our work". Replaced with real series identifiers and the institutions' own pages.
+
+**There is still no test binding `SOURCE_NOTES` and the registry to the actual `settle()` calls.** Both drifted for weeks. Keep them in step by hand until something enforces it.
+
+### 19.7 Noticed, not acted on
+
+The ONS publishes unemployment **quarterly** as well as monthly, and the quarterly series was a month fresher (2026 Q2 vs 2026 MAY). Not changed — swapping the concept mid-audit is how comparability breaks. Worth considering deliberately.

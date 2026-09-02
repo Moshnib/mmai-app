@@ -101,6 +101,18 @@ jobs:
       - name: Published pillar influence still matches the panel
         run: npx tsx scripts/measure-pillar-influence.ts
 
+      # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
+      # Eurostat retired the euro area HICP dataset that day. It kept
+      # answering and kept returning December 2025, so every check the
+      # project had -- all of which measured when we last ASKED -- stayed
+      # green for nine months while the Euro Area was published a full
+      # band too high.
+      #
+      # No network and no keys: this tests the RULES, and asserts that no
+      # scored source can quietly fall outside them.
+      - name: Freshness rules hold, and nothing is silently unchecked
+        run: npx tsx scripts/verify-freshness.ts
+
   build:
     name: Build
     runs-on: ubuntu-latest
