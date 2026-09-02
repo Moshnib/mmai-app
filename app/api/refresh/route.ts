@@ -573,6 +573,11 @@ export async function GET(request: Request) {
   // Unlike Brent, the six values are DIFFERENT. That is the whole point
   // of the pillar that replaced External & Commodities: an indicator
   // that gives every market the same number cannot separate them.
+  // Set when every notification for a market fails, which points at the
+  // sender rather than the addresses. Surfaced in the response so the
+  // refresh workflow fails on it.
+  let notificationsBroken = false;
+
   const debtResult = await settle("Government debt (BIS)", fetchGovernmentDebt());
   const debtByMarket = new Map((debtResult ?? []).map((d) => [d.market, d]));
   if (debtResult == null) {
@@ -778,6 +783,26 @@ export async function GET(request: Request) {
           .select("email, unsubscribe_token, markets");
         const watchers = (subscribers ?? []).filter((s) => (s.markets as string[]).includes(market));
 
+        // ONE BAD ADDRESS AND A BROKEN SENDER LOOK IDENTICAL FROM HERE.
+        //
+        // This loop used to swallow every failure into console.error and
+        // carry on, which is right for a single bounced address and very
+        // wrong for a sender that cannot send at all. Nobody reads Vercel
+        // logs, so a systemic failure would be invisible until a
+        // subscriber complained -- and band crossings are rare enough
+        // that "invisible" could mean months.
+        //
+        // The distinction that matters: SOME failing is bad addresses,
+        // ALL failing is the sender being broken. Only the second is
+        // escalated, so a genuinely dead mailbox cannot cry wolf.
+        //
+        // Worth checking when this fires: emails send from
+        // alerts@mmai-app.vercel.app, and a vercel.app address CANNOT be
+        // verified as a sending domain in Resend -- verification needs
+        // DNS records on a domain you own. If that is the cause, no
+        // amount of retrying fixes it; it needs a real domain.
+        let sent = 0;
+        let failed = 0;
         for (const sub of watchers) {
           try {
             await sendBandCrossingEmail(
@@ -785,10 +810,19 @@ export async function GET(request: Request) {
               { marketCode: market, marketName: MARKET_NAMES[market] ?? market, oldBand: previousBand, newBand: band.label, score: composite },
               sub.unsubscribe_token as string
             );
+            sent += 1;
           } catch (emailErr) {
+            failed += 1;
             // One subscriber's bad/bounced address shouldn't block the rest.
             console.error(`Notification failed for ${sub.email}:`, emailErr);
           }
+        }
+        if (failed > 0 && sent === 0) {
+          notificationsBroken = true;
+          console.error(
+            `ALL ${failed} notification(s) for ${market} failed. This is the sender, not the recipients. ` +
+              `Check that the Resend sending domain is verified — alerts@mmai-app.vercel.app cannot be.`
+          );
         }
       }
 
@@ -856,6 +890,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     refreshedAt: new Date().toISOString(),
     staleMarkets: staleCount,
+    notificationsBroken,
     results,
     bondYields: bondResult,
   });

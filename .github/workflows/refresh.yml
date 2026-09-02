@@ -145,6 +145,21 @@ jobs:
           fi
           echo "Freshness: no indicator is older than its source's cadence allows."
 
+          # ---------- SUBSCRIBER ALERTS ----------
+          # Set only when EVERY notification for a market failed, which
+          # points at the sender rather than the addresses. Real people
+          # signed up for these; a silent failure is a broken promise
+          # nobody finds out about, because band crossings are rare enough
+          # that months could pass before anyone complains.
+          broken=$(node -e 'try{const j=require("/tmp/main.json");process.stdout.write(String(j.notificationsBroken===true))}catch(e){process.stdout.write("false")}')
+          if [ "$broken" = "true" ]; then
+            echo
+            echo "::error::Every subscriber notification failed. This is the sender, not the addresses."
+            echo "Emails send from alerts@mmai-app.vercel.app, and a vercel.app address CANNOT be verified"
+            echo "as a Resend sending domain — verification needs DNS records on a domain you own."
+            exit 1
+          fi
+
       - name: Refresh Gulf Watch
         run: |
           echo "Calling /api/refresh-gulf …"

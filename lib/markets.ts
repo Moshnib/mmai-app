@@ -31,18 +31,37 @@ export interface MarketData {
 // is actually permitted (their own site's terms don't say, see lib/sources.ts).
 // All of Norway's code, fetchers, and historical data are untouched — this is
 // a one-line re-add once that's resolved, not a rebuild.
-// Synced to the live database on 2026-08-24 (observation date 2026-08-23).
+// RESYNCED TO LIVE 2026-09-02. This is the THIRD time these have drifted,
+// and the drift is never cosmetic:
+//
+//   2026-08-24  Canada carried GDP growth of 3.4% against a real 1.74%,
+//               which alone ranked Canada first in demo mode.
+//   2026-09-02  Euro Area still carried inflation of 2.0 -- the figure from
+//               Eurostat's DEAD dataset -- and Japan 3.17 from the World
+//               Bank series replaced by e-Stat on 1 September.
+//
+// The second one had teeth beyond demo mode: lib/history.ts's final point
+// is this same snapshot, and scripts/measure-pillar-influence.ts measures
+// the PUBLISHED influence figures from it. Stale numbers here became wrong
+// numbers on the Learn page, and a claim about which pillar separates the
+// markets least was published backwards.
+//
+// lib/history.ts now DERIVES its last point from this array rather than
+// repeating it, so there is one place to update instead of two. There is
+// still nothing that notices when THIS drifts from the database -- that
+// needs a live query, which CI cannot make. Re-sync it whenever a source
+// or a pillar changes.
 // These had drifted badly: Canada carried a 3.4% GDP growth figure against a
 // real World Bank value of 1.74%, which alone was enough to rank Canada first
 // in demo mode, and every market still carried the retired brentYoY: -5
 // placeholder from before the EIA feed was wired up.
 export const FALLBACK_MARKETS: MarketData[] = [
-  { code: "US", name: "United States", raw: { inflation: 3.36, gdpGrowth: 2.1, unemployment: 4.1, policyRate: 3.63, brentYoY: 17.91, debtPctGdp: 111.0 } },
-  { code: "EA", name: "Euro Area", raw: { inflation: 2.0, gdpGrowth: 1.2, unemployment: 6.3, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 85.3 } },
-  { code: "CA", name: "Canada", raw: { inflation: 3.03, gdpGrowth: 1.74, unemployment: 6.91, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 96.1 } },
-  { code: "UK", name: "United Kingdom", raw: { inflation: 2.9, gdpGrowth: 1.39, unemployment: 4.75, policyRate: 3.75, brentYoY: 17.91, debtPctGdp: 88.8 } },
-  { code: "JP", name: "Japan", raw: { inflation: 3.17, gdpGrowth: 1.19, unemployment: 2.45, policyRate: 0.98, brentYoY: 17.91, debtPctGdp: 178.8 } },
-  { code: "AU", name: "Australia", raw: { inflation: 3.75, gdpGrowth: 1.35, unemployment: 4.09, policyRate: 4.35, brentYoY: 17.91, debtPctGdp: 50.7 } },
+  { code: "US", name: "United States", raw: { inflation: 3.7, gdpGrowth: 2.1, unemployment: 4.1, policyRate: 3.63, brentYoY: 17.91, debtPctGdp: 111 } },
+  { code: "EA", name: "Euro Area", raw: { inflation: 3.3, gdpGrowth: 1, unemployment: 6.4, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 85.3 } },
+  { code: "CA", name: "Canada", raw: { inflation: 3.03, gdpGrowth: 1.13, unemployment: 6.4, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 96.1 } },
+  { code: "UK", name: "United Kingdom", raw: { inflation: 2.9, gdpGrowth: 0.9, unemployment: 4.9, policyRate: 3.75, brentYoY: 17.91, debtPctGdp: 88.8 } },
+  { code: "JP", name: "Japan", raw: { inflation: 2, gdpGrowth: 0.55, unemployment: 2.4, policyRate: 0.977, brentYoY: 17.91, debtPctGdp: 178.8 } },
+  { code: "AU", name: "Australia", raw: { inflation: 3.45, gdpGrowth: 2.14, unemployment: 4.46, policyRate: 4.35, brentYoY: 17.91, debtPctGdp: 50.7 } },
 ];
 
 export function scoreMarket(market: MarketData): { pillars: PillarScores; composite: number | null; coverage: number; coveragePillars: number } {

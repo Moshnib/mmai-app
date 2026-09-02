@@ -119,15 +119,15 @@ export function formatWeightPct(key: PillarKey): string {
  *  should be re-measured, not trusted indefinitely. */
 export const PILLAR_EFFECTIVE_INFLUENCE: Record<PillarKey, number> = {
   PS: 32.1,
-  GM: 31.2,
-  LM: 16.7,
+  GM: 31.3,
+  LM: 16.6,
   MC: 11.0,
   FR: 9.0,
 };
 
 /** Date the figures above were measured, shown wherever they are published
  *  so a reader can tell how stale they are. */
-export const PILLAR_INFLUENCE_MEASURED = "1 September 2026";
+export const PILLAR_INFLUENCE_MEASURED = "2 September 2026";
 
 /** Cross-market standard deviation of each pillar on the live snapshot --
  *  how much a pillar separates one country from another RIGHT NOW.
@@ -143,19 +143,32 @@ export const PILLAR_INFLUENCE_MEASURED = "1 September 2026";
  *  construction rather than by coincidence. Any future pillar that
  *  measures near zero on this line is decoration.
  *
- *  ONE UNCOMFORTABLE RESULT, RECORDED RATHER THAN BURIED: Growth
- *  Momentum carries the joint-largest weight, 25%, and separates the six
- *  markets by an SD of just 3.3 -- the least of any pillar, less than a
- *  third of what Labour Market (18.75%) achieves at 14.8. On the current
- *  reading, the ranking is driven mostly by unemployment and debt, and
- *  barely at all by growth. This is not the same defect as the oil
- *  pillar -- GDP growth is genuinely market-specific and its spread will
- *  widen when the cycle diverges -- but it has not been investigated,
- *  and it should be before anyone claims the weights are calibrated. */
+ *  THE UNCOMFORTABLE RESULT, AND A CORRECTION TO IT.
+ *
+ *  Monetary Conditions is the pillar that separates the six markets
+ *  least: SD 4.8 against an 18.75% weight. Growth Momentum is next at
+ *  6.0, on the joint-largest weight of 25%. Labour Market does the most
+ *  work at 13.8, on a smaller weight than either. On the current
+ *  reading the ranking is driven mostly by unemployment and debt.
+ *
+ *  ON 1 SEPTEMBER THIS FILE SAID GROWTH MOMENTUM WAS THE LEAST
+ *  SEPARATING PILLAR, AT 3.3. That was wrong, and the way it was wrong
+ *  is worth keeping. These figures are measured from the final point of
+ *  lib/history.ts -- which was then a HARDCODED snapshot that had
+ *  drifted from live data, still carrying euro area inflation of 2.0
+ *  from Eurostat's retired dataset. A stale input produced a wrong
+ *  published statistic, and the Learn page repeated it in prose.
+ *  lib/history.ts now derives that point from FALLBACK_MARKETS so the
+ *  duplication cannot drift again.
+ *
+ *  Neither figure is the oil pillar's defect: growth and policy rates
+ *  are genuinely market-specific and will spread as cycles diverge.
+ *  But NEITHER HAS BEEN INVESTIGATED, and both should be before anyone
+ *  claims these weights are calibrated rather than merely chosen. */
 export const PILLAR_CROSS_MARKET_SD: Record<PillarKey, number> = {
-  PS: 6.8,
-  GM: 3.3,
-  LM: 14.8,
+  PS: 7.7,
+  GM: 6.0,
+  LM: 13.8,
   MC: 4.8,
   FR: 11.1,
 };

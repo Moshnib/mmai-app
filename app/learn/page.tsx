@@ -4,6 +4,7 @@ import {
   formatWeightPct,
   formatInfluencePct,
   PILLAR_INFLUENCE_MEASURED,
+  PILLAR_CROSS_MARKET_SD,
   INFLATION_TARGET,
   NEUTRAL_RATE,
   type PillarKey,
@@ -27,6 +28,24 @@ const TARGET_LIST = FALLBACK_MARKETS
 const NEUTRAL_LIST = FALLBACK_MARKETS
   .map((m) => `${m.name} ${NEUTRAL_RATE[m.code] ?? 2.5}%`)
   .join("  ·  ");
+
+// Which pillars actually separate one country from another, ranked.
+//
+// GENERATED, NOT WRITTEN, and that is the whole point. On 1 September
+// this page stated in prose that Growth Momentum separated the markets
+// least. It did not -- Monetary Conditions did -- and the sentence went
+// out backwards because the underlying measurement had been taken from a
+// stale snapshot. A hand-written ranking is a claim nobody re-checks when
+// the numbers move; a generated one cannot disagree with them.
+const SEPARATION_RANKED = (Object.keys(PILLAR_CROSS_MARKET_SD) as PillarKey[])
+  .sort((a, b) => PILLAR_CROSS_MARKET_SD[b] - PILLAR_CROSS_MARKET_SD[a]);
+
+const SEPARATION_LIST = SEPARATION_RANKED
+  .map((k) => `${PILLAR_NAMES[k]} ${PILLAR_CROSS_MARKET_SD[k].toFixed(1)}`)
+  .join("  ·  ");
+
+const MOST_SEPARATING = PILLAR_NAMES[SEPARATION_RANKED[0]];
+const LEAST_SEPARATING = PILLAR_NAMES[SEPARATION_RANKED[SEPARATION_RANKED.length - 1]];
 
 export const metadata: Metadata = {
   title: "Learn More",
@@ -103,7 +122,7 @@ const TOPICS = [
     influenceNote:
       `A pillar's real influence is its weight multiplied by how much it actually moves. Measured across all six markets since 2019 (as of ${PILLAR_INFLUENCE_MEASURED}), Monetary Conditions is weighted 18.75% but does 11% of the work, because policy rates change only a few times a year. Fiscal Resilience is weighted 12.5% and does 9%, because government debt moves slowly.`,
     ecNote:
-      "A caveat worth knowing when comparing countries, and it has changed. Until 1 September 2026 the fifth pillar was the global oil price, which gave every country an identical score and so could not separate them at all. It is now each country's own government debt, which does. But the same question is worth asking of every pillar, so here is the honest answer for the current six: unemployment separates the countries most, then debt, then inflation. Growth separates them least — it carries the joint-largest weight, 25%, and on today's readings the six are close enough on growth that it does little to distinguish them. That will change when the cycle diverges, but it is true right now and you should know it.",
+      `A caveat worth knowing when comparing countries, and it has changed. Until 1 September 2026 the fifth pillar was the global oil price, which gave every country an identical score and so could not separate them at all. It is now each country's own government debt, which does. The same question is worth asking of every pillar, so here is the honest answer for the current six — how far apart the pillar spreads the countries, highest first: ${SEPARATION_LIST}. ${MOST_SEPARATING} does the most to distinguish one country from another; ${LEAST_SEPARATING} does the least, despite carrying more weight. That will shift as economic cycles diverge, and these figures are re-measured rather than assumed.`,
     // Audit findings H-1, H-2 and M-1. Stated on the page a reader
     // actually reads, not only in an internal document.
     limitations: [

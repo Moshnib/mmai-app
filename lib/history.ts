@@ -1,4 +1,5 @@
 import type { RawIndicators } from "./scoring";
+import { FALLBACK_MARKETS } from "./markets";
 
 export interface HistoryPoint {
   year: string;       // "2019".."2025", verified/sourced; "2026" is the current live/fallback snapshot
@@ -26,7 +27,6 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2023", indicators: { inflation: 4.1, gdpGrowth: 2.5, unemployment: 3.6, policyRate: 5.0, brentYoY: -19, debtPctGdp: 105.4 } },
     { year: "2024", indicators: { inflation: 3.0, gdpGrowth: 2.8, unemployment: 4.0, policyRate: 5.3, brentYoY: -2, debtPctGdp: 106.2 } },
     { year: "2025", indicators: { inflation: 2.8, gdpGrowth: 1.7, unemployment: 4.5, policyRate: 3.75, brentYoY: -8, debtPctGdp: 111.0 } },
-    { year: "2026", indicators: { inflation: 3.36, gdpGrowth: 2.1, unemployment: 4.1, policyRate: 3.63, brentYoY: 17.91, debtPctGdp: 111.0 } },
   ],
   EA: [
     { year: "2019", indicators: { inflation: 1.2, gdpGrowth: 1.6, unemployment: 7.6, policyRate: -0.4, brentYoY: -10, debtPctGdp: 95.9 } },
@@ -36,7 +36,6 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2023", indicators: { inflation: 5.4, gdpGrowth: 0.4, unemployment: 6.5, policyRate: 3.9, brentYoY: -19, debtPctGdp: 85.7 } },
     { year: "2024", indicators: { inflation: 2.4, gdpGrowth: 0.8, unemployment: 6.4, policyRate: 3.5, brentYoY: -2, debtPctGdp: 85.5 } },
     { year: "2025", indicators: { inflation: 2.1, gdpGrowth: 1.4, unemployment: 6.2, policyRate: 2.0, brentYoY: -8, debtPctGdp: 85.3 } },
-    { year: "2026", indicators: { inflation: 2.0, gdpGrowth: 1.2, unemployment: 6.3, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 85.3 } },
   ],
   CA: [
     { year: "2019", indicators: { inflation: 1.9, gdpGrowth: 1.9, unemployment: 5.7, policyRate: 1.75, brentYoY: -10, debtPctGdp: 87.9 } },
@@ -46,7 +45,6 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2023", indicators: { inflation: 3.9, gdpGrowth: 1.2, unemployment: 5.4, policyRate: 5.0, brentYoY: -19, debtPctGdp: 89.2 } },
     { year: "2024", indicators: { inflation: 2.4, gdpGrowth: 1.3, unemployment: 6.4, policyRate: 4.0, brentYoY: -2, debtPctGdp: 93.5 } },
     { year: "2025", indicators: { inflation: 2.0, gdpGrowth: 1.0, unemployment: 6.6, policyRate: 2.75, brentYoY: -8, debtPctGdp: 96.1 } },
-    { year: "2026", indicators: { inflation: 3.03, gdpGrowth: 1.74, unemployment: 6.91, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 96.1 } },
   ],
   UK: [
     // Sourced from published UK statistics (ONS CPI/GDP/unemployment,
@@ -61,7 +59,6 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2023", indicators: { inflation: 7.3, gdpGrowth: 0.3, unemployment: 4.0, policyRate: 5.25, brentYoY: -19, debtPctGdp: 90.4 } },
     { year: "2024", indicators: { inflation: 2.5, gdpGrowth: 1.1, unemployment: 4.4, policyRate: 4.75, brentYoY: -2, debtPctGdp: 85.8 } },
     { year: "2025", indicators: { inflation: 3.4, gdpGrowth: 0.7, unemployment: 4.8, policyRate: 3.75, brentYoY: -8, debtPctGdp: 88.8 } },
-    { year: "2026", indicators: { inflation: 2.9, gdpGrowth: 1.39, unemployment: 4.75, policyRate: 3.75, brentYoY: 17.91, debtPctGdp: 88.8 } },
   ],
   // Japan (JP): sourced from published statistics (macrotrends CPI/unemployment,
   // European Commission spring forecast for 2023 GDP, IMF/BOJ for the negative-rate
@@ -75,7 +72,6 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2023", indicators: { inflation: 3.27, gdpGrowth: 1.9, unemployment: 2.6, policyRate: -0.1, brentYoY: -19, debtPctGdp: 209.4 } },
     { year: "2024", indicators: { inflation: 2.74, gdpGrowth: 0.2, unemployment: 2.5, policyRate: 0.25, brentYoY: -2, debtPctGdp: 197.0 } },
     { year: "2025", indicators: { inflation: 2.9, gdpGrowth: 0.9, unemployment: 2.4, policyRate: 0.75, brentYoY: -8, debtPctGdp: 178.8 } },
-    { year: "2026", indicators: { inflation: 3.17, gdpGrowth: 1.19, unemployment: 2.45, policyRate: 0.98, brentYoY: 17.91, debtPctGdp: 178.8 } },
   ],
   // Australia (AU): policy rate is REAL data, not estimated -- taken directly
   // from the RBA's own published F1.1 table (year-end values), which was
@@ -90,7 +86,6 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2023", indicators: { inflation: 5.60, gdpGrowth: 2.06, unemployment: 3.67, policyRate: 4.35, brentYoY: -19, debtPctGdp: 49.1 } },
     { year: "2024", indicators: { inflation: 3.17, gdpGrowth: 1.04, unemployment: 4.07, policyRate: 4.35, brentYoY: -2, debtPctGdp: 49.4 } },
     { year: "2025", indicators: { inflation: 3.6, gdpGrowth: 2.0, unemployment: 4.5, policyRate: 3.6, brentYoY: -8, debtPctGdp: 50.7 } },
-    { year: "2026", indicators: { inflation: 3.75, gdpGrowth: 1.35, unemployment: 4.09, policyRate: 4.35, brentYoY: 17.91, debtPctGdp: 50.7 } },
   ],
   // Norway (NO): added 2026-08-21 after a research pass comparing several
   // countries' data accessibility/licensing. Inflation from Statistics
@@ -115,3 +110,39 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
   // UAE (AE) removed 2026-08-19 — see lib/markets.ts for the reason.
   // Its historical series is preserved in git history if ever needed again.
 };
+
+// ============================================================
+// THE FINAL POINT IS DERIVED, NOT TYPED.
+//
+// Each series ends with a "2026" point representing conditions NOW, so a
+// trend line reaches the present instead of stopping at last year.
+//
+// It used to be written out by hand in this file AND in
+// lib/markets.ts. Both were supposed to hold the same numbers. They
+// drifted apart twice:
+//
+//   2026-08-24  Canada's demo GDP growth said 3.4% against a real 1.74%.
+//   2026-09-02  Euro Area inflation still said 2.0 -- the value from
+//               Eurostat's retired dataset -- and Japan 3.17, from the
+//               World Bank series e-Stat replaced on 1 September.
+//
+// The second one reached readers. scripts/measure-pillar-influence.ts
+// measures the influence figures PUBLISHED ON THE LEARN PAGE from this
+// final point, so a stale snapshot became a wrong published statistic --
+// and the claim about which pillar least separates the six markets went
+// out backwards.
+//
+// So it is computed from FALLBACK_MARKETS now. One place to update, and
+// the two can no longer disagree, because there is only one of them.
+//
+// Norway keeps its own hardcoded point: it is dormant and deliberately
+// absent from FALLBACK_MARKETS, so there is nothing to derive from.
+// ============================================================
+const NOW_YEAR = "2026";
+
+for (const market of FALLBACK_MARKETS) {
+  const series = HISTORY[market.code];
+  if (!series) continue;
+  series.push({ year: NOW_YEAR, indicators: market.raw });
+}
+

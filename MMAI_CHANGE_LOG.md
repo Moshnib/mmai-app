@@ -6,6 +6,81 @@ Entries are newest first. The frozen V1 record is in [`MMAI_V1_FROZEN_BENCHMARK.
 
 ---
 
+## 2026-09-02 — The "now" snapshot was stale, so a published statistic was wrong
+
+**Category:** Defect. Published statistics and one page claim corrected. No equation, weight, band or threshold changed; **no composite score changed.**
+
+### What was wrong
+
+`lib/history.ts` ended each series with a hardcoded `"2026"` point meant to mirror `lib/markets.ts`'s `FALLBACK_MARKETS`. The two were supposed to hold identical numbers. **They drifted apart twice:**
+
+| Date | Drift |
+|---|---|
+| 2026-08-24 | Canada's demo GDP growth read 3.4% against a real 1.74%, enough to rank Canada first in demo mode |
+| 2026-09-02 | Euro Area inflation still read **2.0** — the figure from Eurostat's *retired* dataset — and Japan **3.17**, from the World Bank series e-Stat replaced on 1 September |
+
+The second reached readers. `scripts/measure-pillar-influence.ts` measures the influence figures **published on the Learn page** from that final point, so a stale input became a wrong published statistic:
+
+| | published | correct |
+|---|---:|---:|
+| Growth Momentum, cross-market SD | 3.3 | **6.0** |
+| Price Stability | 6.8 | 7.7 |
+| Labour Market | 14.8 | 13.8 |
+
+And the Learn page stated in prose: *"Growth separates them least."* **It does not — Monetary Conditions does.** That sentence was live from 1 September until today.
+
+### Why the existing guard did not catch it
+
+`measure-pillar-influence.ts` shipped in CI on 1 September and enforces that `lib/scoring.ts` matches the panel. It did exactly that. **It cannot tell that the panel itself has gone stale** — it verifies consistency, not currency, and the two are different questions. Same shape as the Eurostat failure one level up.
+
+### The fix
+
+**Structural, not just a value update.** `lib/history.ts` no longer repeats the snapshot — it **derives** the final point from `FALLBACK_MARKETS`:
+
+```ts
+for (const market of FALLBACK_MARKETS) {
+  HISTORY[market.code]?.push({ year: NOW_YEAR, indicators: market.raw });
+}
+```
+
+One place to update instead of two, so the duplication cannot drift again. Norway keeps a hardcoded point: it is dormant and deliberately absent from `FALLBACK_MARKETS`, so there is nothing to derive from.
+
+`FALLBACK_MARKETS` was resynced to the live database, and the constants re-measured.
+
+**The Learn page ranking is now GENERATED from `PILLAR_CROSS_MARKET_SD` rather than written as prose** — the same discipline already applied to the inflation targets and neutral rates after they drifted in August. A hand-written ranking is a claim nobody re-checks when the numbers move; a generated one cannot disagree with them.
+
+### What remains unguarded, stated plainly
+
+**Nothing notices when `FALLBACK_MARKETS` itself drifts from the database.** That needs a live query, which CI cannot make. It has now drifted twice in nine days. Re-sync whenever a source or pillar changes — and treat it as a real task, not housekeeping, because it feeds published statistics.
+
+### Also in this change: subscriber alerts fail silently
+
+Four people have subscribed to band-change alerts. Every send failure was swallowed into `console.error` and the run carried on — correct for one bounced address, **very wrong for a sender that cannot send at all**, and the two were indistinguishable. Nobody reads Vercel logs, and band crossings are rare enough that months could pass before anyone complained.
+
+Now: **some** failing is still tolerated (bad addresses), **all** failing sets `notificationsBroken` and **fails the refresh workflow**.
+
+**The likely cause is not fixed and cannot be fixed in code.** Emails send from `alerts@mmai-app.vercel.app`, and a `vercel.app` address **cannot be verified as a Resend sending domain** — verification requires DNS records on a domain you own. This was not confirmed (the API key is not available locally), so no user-facing copy was changed on an assumption. The instrumentation will confirm or refute it at the next band crossing.
+
+### Test results
+
+`tsc`, `eslint --max-warnings 0`, `build` and all five verification scripts clean. `measure-pillar-influence` re-run against the corrected panel and now matches.
+
+Verified in the browser rather than only in CI, which is how the last three of these were caught: the Learn page renders the generated ranking correctly, the false sentence is gone, and the Trends page shows Euro Area Price Stability at **81/100** where it previously showed a perfect 100.
+
+### Approval status
+
+Implemented and verified. No published composite changed.
+
+### Rollback method
+
+```bash
+git revert <commit>
+```
+
+Reverting restores the hardcoded duplication and the wrong published figures.
+
+---
+
 ## 2026-09-02 — Observation-age checking: a source can no longer die quietly
 
 **Category:** Control. No equation, weight, band, threshold or published score changed.

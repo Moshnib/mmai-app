@@ -950,3 +950,54 @@ Euro Area, Canada, UK, Japan (×2) and Australia still said *"Annual figure, upd
 ### 19.7 Noticed, not acted on
 
 The ONS publishes unemployment **quarterly** as well as monthly, and the quarterly series was a month fresher (2026 Q2 vs 2026 MAY). Not changed — swapping the concept mid-audit is how comparability breaks. Worth considering deliberately.
+
+---
+
+## 20. The "now" snapshot, and why it keeps biting (2026-09-02)
+
+### 20.1 FALLBACK_MARKETS FEEDS PUBLISHED STATISTICS. Treat it accordingly.
+
+It looks like demo data. It is not only demo data:
+
+```
+lib/markets.ts  FALLBACK_MARKETS
+      |
+      +--> demo mode when Supabase is unreachable
+      +--> lib/history.ts's final "2026" point   <-- DERIVED since 2026-09-02
+                |
+                +--> scripts/measure-pillar-influence.ts
+                          |
+                          +--> PILLAR_EFFECTIVE_INFLUENCE  } PUBLISHED ON
+                          +--> PILLAR_CROSS_MARKET_SD      } THE LEARN PAGE
+```
+
+**A stale value here becomes a wrong published statistic.** On 2026-09-02 it still held euro area inflation of 2.0 — the figure from Eurostat's retired dataset — and the Learn page consequently told readers that *Growth Momentum* separates the six markets least. **Monetary Conditions does.** That sentence was live for a day.
+
+### 20.2 The duplication is gone; the drift is not
+
+`lib/history.ts` used to repeat the snapshot by hand. It now **derives** the final point from `FALLBACK_MARKETS`, so those two cannot disagree — there is only one of them.
+
+**But nothing notices when `FALLBACK_MARKETS` drifts from the DATABASE.** That needs a live query and CI cannot make one. It has drifted twice in nine days:
+
+- 2026-08-24 — Canada's GDP growth 3.4% vs a real 1.74%, enough to rank Canada first in demo mode
+- 2026-09-02 — Euro Area inflation 2.0 (dead source), Japan 3.17 (replaced source)
+
+**Re-sync it whenever a source or a pillar changes.** It is not housekeeping.
+
+### 20.3 A consistency check is not a currency check
+
+`measure-pillar-influence.ts` was already in CI and passing. It enforces that `lib/scoring.ts` matches the panel — and it did. **It cannot tell that the panel itself is stale.** Same shape as the Eurostat failure one level up: something verified faithfully against the wrong input.
+
+### 20.4 Published prose is now generated
+
+The Learn page's separation ranking is built from `PILLAR_CROSS_MARKET_SD`, not typed. Third time this discipline has been applied after a hand-written claim drifted — inflation targets and neutral rates were the first two.
+
+**Rule: if a sentence states a number or an ordering that the engine already knows, generate it.**
+
+### 20.5 Subscriber alerts now fail loudly
+
+Four people are subscribed. Every failure used to go to `console.error` and the run continued — right for one bounced address, wrong for a sender that cannot send, and indistinguishable. **Some** failing is still tolerated; **all** failing sets `notificationsBroken` and fails the workflow.
+
+**LIKELY ROOT CAUSE, NOT FIXED:** emails send from `alerts@mmai-app.vercel.app`. A `vercel.app` address **cannot** be verified as a Resend sending domain — that needs DNS records on a domain you own. **Unconfirmed** (no API key locally), so no user-facing copy was changed on an assumption.
+
+**To confirm in 30 seconds:** Resend dashboard → Domains. If none is verified, alerts have never been delivered and a real domain is the only fix.
