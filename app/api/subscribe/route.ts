@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { limitPublicWrite } from "@/lib/rateLimit";
 import { randomUUID } from "crypto";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -11,6 +12,17 @@ function isValidEmail(email: string): boolean {
 }
 
 export async function POST(request: Request) {
+  // Volume limit. Input validation below stops BAD submissions; this
+  // stops TOO MANY of them. See lib/rateLimit.ts for what it does and
+  // does not protect against.
+  const limit = limitPublicWrite(request);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many submissions. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   let body: { email?: string; markets?: string[] };
   try {
     body = await request.json();

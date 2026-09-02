@@ -1042,3 +1042,53 @@ When it fires:
 `verify-scoring` · `verify-history` · `verify-published-formulas` · `measure-pillar-influence` · `verify-freshness` · `verify-sources`
 
 Plus, on the daily refresh: observation-age checking, published-statistic drift, and failed-notification detection. **CI proves the code is self-consistent; the refresh job is the only thing that can prove it is still TRUE.** Put checks that need live data there.
+
+---
+
+## 22. Security and accessibility audit (2026-09-02)
+
+First audit of the areas nobody had looked at: code hygiene, dependencies, accessibility, mobile, endpoint security.
+
+### 22.1 THE REFRESH ENDPOINTS FAILED OPEN
+
+```
+if (process.env.CRON_SECRET && authHeader !== `Bearer ${...}`)
+```
+
+A **missing** secret was read as "no protection configured, let everyone through" instead of "misconfigured, let nobody through". One deleted environment variable — a typo, a new Vercel environment — would have made both refresh endpoints **public**: anyone could burn the BEA, BLS, e-Stat and EIA quotas, write to Supabase through the service role, and fire subscriber emails. None of it loud enough to notice.
+
+`lib/cronAuth.ts` now fails **closed**. The local-development exception is explicit and can never apply in production, because `NODE_ENV` is `production` there.
+
+### 22.2 The public write endpoints had no volume limit
+
+`/api/subscribe` and `/api/feedback` validated input carefully — so *bad* submissions were refused, and nothing refused *ten thousand good ones*. Filling `subscribers` with fake addresses is worse than noise: those get emailed, and bounce complaints damage a sending domain permanently.
+
+`lib/rateLimit.ts`: 10 writes per 10 minutes per address.
+
+**Be honest about what it is.** An in-memory counter inside one serverless instance. Vercel runs several and recycles them, so an attacker spreading requests gets more through than the number suggests, and a cold start forgets everything. It costs nothing and turns "unlimited" into "awkward". **If real abuse ever appears, replace it with a shared store — do not tune it.**
+
+Limits are generous on purpose: a limit that catches real users gets removed, and then there is no limit at all.
+
+`scripts/verify-security.ts` pins both in CI, setting and restoring `NODE_ENV`/`CRON_SECRET` around each case so it tests the LOGIC, not the machine's configuration.
+
+### 22.3 The charts were silent to screen readers
+
+Recharts renders an SVG of `<path>` elements. To a screen reader that is **nothing** — and the charts *are* the content on Trends and Compare, so the site's main feature did not exist for those users.
+
+Every chart now carries a description generated from the same `series` it draws:
+
+> "Line chart. Government Debt (% of GDP) (Japan): falling from 211.8% at 2019 to 178.8% at 2026."
+
+**Rounded to one decimal deliberately** — the first version read out *"seventy point five one seven five"*. Caught by opening the page and reading the label, not by a test.
+
+Also fixed: `h1 → h3` skips on Trends and Gulf Watch (CSS now styles h2 and h3 identically so the tag can be chosen for **structure**, not looks); `scope="col"` on every `<th>`; `aria-hidden` on the five pillar rings, which made a screen reader read each score twice.
+
+### 22.4 What was already right — do not regress it
+
+`lang`, one `h1` per page, skip link, `main`/`nav` landmarks, alt text on every image, accessible names on every control, `aria-pressed` on every filter chip, `rel="noopener"` everywhere, and `Flag`/`CountryGlyph`/`WorldMap` already handling keyboard and ARIA correctly. **Mobile at 375px has zero horizontal overflow on every page.**
+
+The CSV export is the best-built thing in the repo: quote/comma/newline escaping, a UTF-8 BOM for Excel, and pagination with a unique tiebreaker that survives Supabase's Max Rows setting.
+
+### 22.5 Clean
+
+0 dependency vulnerabilities. No real `any` (the one match is the word in a comment). All 28 `@ts-ignore` are in Next.js generated files, none in ours.

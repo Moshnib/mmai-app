@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { computePillarScores, computeComposite, bandFor, type RawIndicators, type PillarScores } from "@/lib/scoring";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
@@ -504,9 +505,12 @@ export async function GET(request: Request) {
   // Protect this endpoint so only Vercel Cron (or you, manually, with the
   // secret) can trigger a refresh — prevents random internet traffic from
   // spamming your data sources on your behalf.
-  const authHeader = request.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Fails CLOSED: a missing CRON_SECRET refuses everyone rather than
+  // admitting everyone. See lib/cronAuth.ts for what the old fail-open
+  // version would have cost.
+  const auth = checkCronAuth(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.reason }, { status: 401 });
   }
 
   const supabase = getServiceSupabaseClient();

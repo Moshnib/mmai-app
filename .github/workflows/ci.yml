@@ -122,6 +122,15 @@ jobs:
       - name: Source registry is complete, and no pillar is unattributed
         run: npx tsx scripts/verify-sources.ts
 
+      # Both found by audit on 2026-09-02. The refresh endpoints FAILED
+      # OPEN — a missing CRON_SECRET admitted everyone rather than nobody,
+      # so one deleted environment variable would have let strangers burn
+      # the BEA/BLS/e-Stat quotas, write through the service role, and
+      # fire subscriber emails. The public write endpoints had no volume
+      # limit at all.
+      - name: Refresh fails closed, and public writes are bounded
+        run: npx tsx scripts/verify-security.ts
+
   build:
     name: Build
     runs-on: ubuntu-latest

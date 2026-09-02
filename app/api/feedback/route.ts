@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { limitPublicWrite } from "@/lib/rateLimit";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 
 const VALID_SENDER_TYPES = ["investor", "company", "individual", "student", "other", "prefer_not_to_say"];
@@ -10,6 +11,17 @@ function isValidEmail(email: string): boolean {
 }
 
 export async function POST(request: Request) {
+  // Volume limit. Input validation below stops BAD submissions; this
+  // stops TOO MANY of them. See lib/rateLimit.ts for what it does and
+  // does not protect against.
+  const limit = limitPublicWrite(request);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many submissions. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   let body: { senderType?: string; topic?: string; name?: string; email?: string; message?: string; website?: string };
   try {
     body = await request.json();
