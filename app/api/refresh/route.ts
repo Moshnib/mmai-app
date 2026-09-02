@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabaseClient } from "@/lib/supabase";
-import { computePillarScores, computeComposite, bandFor, type RawIndicators } from "@/lib/scoring";
+import { computePillarScores, computeComposite, bandFor, type RawIndicators, type PillarScores } from "@/lib/scoring";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
@@ -26,9 +26,9 @@ import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { sourceForPillar } from "@/lib/sources";
+import { sourceForPillar, sourceNoteFor } from "@/lib/sources";
 import { stalenessOf, quarterToDate, describeStale } from "@/lib/freshness";
-import { RAW_FIELD, type PillarKey } from "@/lib/scoring";
+import { RAW_FIELD, PILLAR_CROSS_MARKET_SD, type PillarKey } from "@/lib/scoring";
 
 const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
@@ -438,20 +438,6 @@ async function fetchRawIndicators(
 // branch below is left in place, ready to reactivate with a one-line change.
 const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
 
-// CORRECTED 2026-09-02. These strings are stored on every row and shown
-// to readers as provenance, and four of the seven credited the WORLD BANK
-// for data it did not supply -- left behind as each fetcher was replaced
-// by a national source. Canada reads Statistics Canada, the UK reads the
-// ONS, Australia reads the ABS, and Japan reads e-Stat. The World Bank is
-// now used ONLY as Japan unemployment fallback and for dormant Norway.
-//
-// This is not cosmetic. The site asks readers to check its work and
-// tracks a licence per institution, so naming the wrong institution is a
-// false statement about where a number came from -- and it made the data
-// look worse than it is, since the World Bank publishes annually.
-//
-// KEEP IN STEP WITH THE ACTUAL settle() CALLS ABOVE. There is no test
-// binding these strings to the fetchers; they drifted for weeks unnoticed.
 /** Every figure this run wrote, checked against how often its source
  *  actually publishes.
  *
@@ -497,15 +483,22 @@ function stalenessWarnings(
   return warnings;
 }
 
-const SOURCE_NOTES: Record<string, string> = {
-  US: "BEA (PCE + GDP) + BLS + New York Fed + EIA (live)",
-  JP: "e-Stat + OECD + Bank of Japan + EIA (live)",
-  AU: "ABS + RBA + EIA (live)",
-  EA: "ECB (HICP + policy rate) + Eurostat + EIA (live)",
-  CA: "Statistics Canada + Bank of Canada + EIA (live)",
-  UK: "ONS + Bank of England + EIA (live)",
-  NO: "Statistics Norway + World Bank + Norges Bank + EIA (live)",
-};
+// The provenance line stored on every row is GENERATED from
+// lib/sources.ts -- see sourceNoteFor(). It used to be a hand-maintained
+// table right here, and it drifted three separate ways before anyone
+// noticed:
+//
+//   - Four markets credited the WORLD BANK for figures that came from
+//     Statistics Canada, the ONS, the ABS and e-Stat.
+//   - Every market still credited the EIA, which stopped scoring
+//     anything when the oil pillar was retired on 2026-09-01.
+//   - No market credited the BIS, which had started scoring Fiscal
+//     Resilience on that same day.
+//
+// The registry already knew all of this. The table was a second copy of
+// an answer that existed elsewhere, and second copies drift. Deleted
+// rather than corrected: correcting it would have left the same trap for
+// whoever changes a source next.
 
 export async function GET(request: Request) {
   // Protect this endpoint so only Vercel Cron (or you, manually, with the
@@ -578,6 +571,10 @@ export async function GET(request: Request) {
   // refresh workflow fails on it.
   let notificationsBroken = false;
 
+  // Every market's live pillar scores, used after the loop to check the
+  // statistics this project PUBLISHES about itself. See below.
+  const livePillars: PillarScores[] = [];
+
   const debtResult = await settle("Government debt (BIS)", fetchGovernmentDebt());
   const debtByMarket = new Map((debtResult ?? []).map((d) => [d.market, d]));
   if (debtResult == null) {
@@ -596,6 +593,7 @@ export async function GET(request: Request) {
       raw.debtPctGdp = debt?.debtPctGdp ?? null;
 
       const pillars = computePillarScores(raw, market);
+      livePillars.push(pillars);
       const { composite, coverage } = computeComposite(pillars);
       const band = bandFor(composite);
       const observationDate = new Date().toISOString().slice(0, 10);
@@ -639,7 +637,8 @@ export async function GET(request: Request) {
       // was temporarily down/rate-limited/changed shape), say so instead
       // of claiming "(live)" for data that didn't actually arrive.
       const partial = [raw.inflation, raw.gdpGrowth, raw.unemployment, raw.policyRate, raw.brentYoY].some((v) => v == null);
-      const baseNote = SOURCE_NOTES[market] ?? "manual fallback — fetcher not yet wired";
+      const marketName = MARKET_NAMES[market];
+      const baseNote = marketName ? sourceNoteFor(marketName) : "manual fallback — fetcher not yet wired";
       // Records WHICH source produced Japan unemployment on this run, so
       // a reader of the stored row can tell a monthly OECD figure from an
       // annual World Bank one rather than having to guess.
@@ -882,6 +881,48 @@ export async function GET(request: Request) {
     bondResult = { inserted: 0, markets: 0, error: message };
   }
 
+  // ---------- ARE THE PUBLISHED STATISTICS STILL TRUE? ----------
+  //
+  // PILLAR_CROSS_MARKET_SD is printed on the Learn page as a measured
+  // fact about how far each pillar spreads the six markets. It is
+  // measured offline from lib/history.ts, whose final point comes from
+  // FALLBACK_MARKETS -- a snapshot a human keeps in sync by hand.
+  //
+  // On 2026-09-02 that snapshot was found still holding euro area
+  // inflation of 2.0, the figure from Eurostat's retired dataset. The
+  // published spread for Growth Momentum was 3.3 when the truth was 6.0,
+  // and the page told readers growth separated the markets least when
+  // monetary conditions did.
+  //
+  // scripts/measure-pillar-influence.ts already runs in CI and passed
+  // throughout, because it checks that the constants match the PANEL. It
+  // cannot tell that the panel is stale. Only a live run can, which is
+  // why this check lives here and not in CI.
+  //
+  // Tolerance is 1.0 SD points. These figures are published to one
+  // decimal and move as real economies move; failing on every small
+  // drift would train everyone to ignore the alarm. 1.0 is roughly the
+  // point at which the published ordering starts to change, which is
+  // when a reader would be told something untrue.
+  const publishedDrift: string[] = [];
+  if (livePillars.length >= 4) {
+    for (const key of Object.keys(PILLAR_CROSS_MARKET_SD) as PillarKey[]) {
+      const vals = livePillars.map((p) => p[key]).filter((v): v is number => v != null);
+      if (vals.length < 4) continue;
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const liveSd = Math.sqrt(vals.reduce((acc, v) => acc + (v - mean) ** 2, 0) / vals.length);
+      const gap = Math.abs(liveSd - PILLAR_CROSS_MARKET_SD[key]);
+      if (gap > 1.0) {
+        publishedDrift.push(
+          `${key}: Learn page publishes ${PILLAR_CROSS_MARKET_SD[key].toFixed(1)}, live is ${liveSd.toFixed(1)}`
+        );
+      }
+    }
+  }
+  if (publishedDrift.length > 0) {
+    console.warn(`PUBLISHED STATISTICS HAVE DRIFTED: ${publishedDrift.join("; ")}`);
+  }
+
   // Hoisted to the top of the response, not buried per market: the
   // refresh workflow fails the run on this field, which turns a silent
   // rot into an email. See .github/workflows/refresh.yml.
@@ -891,6 +932,7 @@ export async function GET(request: Request) {
     refreshedAt: new Date().toISOString(),
     staleMarkets: staleCount,
     notificationsBroken,
+    publishedDrift,
     results,
     bondYields: bondResult,
   });

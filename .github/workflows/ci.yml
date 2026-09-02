@@ -113,6 +113,15 @@ jobs:
       - name: Freshness rules hold, and nothing is silently unchecked
         run: npx tsx scripts/verify-freshness.ts
 
+      # The source registry became load-bearing on 2026-09-02: it now
+      # GENERATES the provenance line stored on every scored row. Before
+      # that the line was hand-maintained and drifted three ways at once
+      # — four markets credited the World Bank for data from Statistics
+      # Canada, the ONS, the ABS and e-Stat; every market credited the
+      # EIA, which scores nothing; and none credited the BIS, which does.
+      - name: Source registry is complete, and no pillar is unattributed
+        run: npx tsx scripts/verify-sources.ts
+
   build:
     name: Build
     runs-on: ubuntu-latest

@@ -1001,3 +1001,44 @@ Four people are subscribed. Every failure used to go to `console.error` and the 
 **LIKELY ROOT CAUSE, NOT FIXED:** emails send from `alerts@mmai-app.vercel.app`. A `vercel.app` address **cannot** be verified as a Resend sending domain — that needs DNS records on a domain you own. **Unconfirmed** (no API key locally), so no user-facing copy was changed on an assumption.
 
 **To confirm in 30 seconds:** Resend dashboard → Domains. If none is verified, alerts have never been delivered and a real domain is the only fix.
+
+---
+
+## 21. Two more second copies removed (2026-09-02)
+
+Both holes here had already caused a real, published error. The pattern is the same one §20 named: **a second copy of an answer that already exists somewhere else.**
+
+### 21.1 The provenance line is GENERATED. Do not hand-write it again.
+
+`SOURCE_NOTES` was a table in `app/api/refresh/route.ts` naming each market's institutions. It is stored on every row and shown to readers, and **nothing bound it to the fetchers that ran.** It had drifted three ways:
+
+- Four markets credited the **World Bank** for data from Statistics Canada, the ONS, the ABS and e-Stat
+- Every market credited the **EIA**, which stopped scoring anything when the oil pillar retired
+- **No** market credited the **BIS**, which started scoring Fiscal Resilience the same day
+
+Only the first was found by hand. **The other two surfaced the moment the generator was written.**
+
+`sourceNoteFor(market)` in `lib/sources.ts` builds it now; each source carries a `shortName`. The table was **deleted, not corrected** — correcting it leaves the same trap for the next person who changes a source.
+
+**`scripts/verify-sources.ts` guards the registry** (CI): every live scored source needs a `shortName` and a URL, every scored pillar of every published market must resolve to a live source, and no published market may credit the World Bank or the EIA.
+
+### 21.2 The Learn page's statistics now check themselves against live data
+
+`PILLAR_CROSS_MARKET_SD` is published as a measured fact, measured offline from a snapshot a human syncs by hand. It drifted twice in nine days and put a false claim on the page.
+
+**`measure-pillar-influence.ts` ran in CI throughout and passed.** It checks the constants against the panel — it cannot tell the panel is stale. That distinction is the whole lesson: **a consistency check is not a currency check.**
+
+So the check lives in the **refresh route**, where live data exists. It computes each pillar's live spread, compares it to the published constant, and **fails the daily workflow past 1.0 SD points.**
+
+Tolerance is loose on purpose, same argument as the freshness limits: **an alarm that cries wolf gets muted.** 1.0 is about where the published ordering changes, which is when a reader is told something untrue.
+
+When it fires:
+1. Re-sync `FALLBACK_MARKETS` in `lib/markets.ts` to the database
+2. `npx tsx scripts/measure-pillar-influence.ts`
+3. Update `PILLAR_CROSS_MARKET_SD` / `PILLAR_EFFECTIVE_INFLUENCE` in `lib/scoring.ts`
+
+### 21.3 Six verifiers now run in CI
+
+`verify-scoring` · `verify-history` · `verify-published-formulas` · `measure-pillar-influence` · `verify-freshness` · `verify-sources`
+
+Plus, on the daily refresh: observation-age checking, published-statistic drift, and failed-notification detection. **CI proves the code is self-consistent; the refresh job is the only thing that can prove it is still TRUE.** Put checks that need live data there.

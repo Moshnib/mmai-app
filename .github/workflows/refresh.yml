@@ -145,6 +145,29 @@ jobs:
           fi
           echo "Freshness: no indicator is older than its source's cadence allows."
 
+          # ---------- ARE THE PUBLISHED STATISTICS STILL TRUE? ----------
+          # The Learn page prints how far each pillar spreads the six
+          # markets, as a measured fact. Those numbers are measured
+          # offline from a snapshot a human keeps in sync BY HAND, and on
+          # 2026-09-02 that snapshot was found nine months stale: the page
+          # told readers growth separated the markets least when monetary
+          # conditions did.
+          #
+          # CI cannot catch this. scripts/measure-pillar-influence.ts runs
+          # there and passed the whole time, because it checks the
+          # constants against the panel -- it cannot tell the panel itself
+          # is stale. Only a run with live data can, which is this one.
+          drift=$(node -e 'try{const j=require("/tmp/main.json");const d=j.publishedDrift||[];process.stdout.write(d.join(" | "))}catch(e){process.stdout.write("")}')
+          if [ -n "$drift" ]; then
+            echo
+            echo "::error::The Learn page is publishing statistics that no longer match live data: $drift"
+            echo "Re-sync FALLBACK_MARKETS in lib/markets.ts to the database, then run"
+            echo "  npx tsx scripts/measure-pillar-influence.ts"
+            echo "and update PILLAR_CROSS_MARKET_SD / PILLAR_EFFECTIVE_INFLUENCE in lib/scoring.ts."
+            exit 1
+          fi
+          echo "Published statistics still match live data."
+
           # ---------- SUBSCRIBER ALERTS ----------
           # Set only when EVERY notification for a market failed, which
           # points at the sender rather than the addresses. Real people

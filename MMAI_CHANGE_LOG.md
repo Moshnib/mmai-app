@@ -6,6 +6,67 @@ Entries are newest first. The frozen V1 record is in [`MMAI_V1_FROZEN_BENCHMARK.
 
 ---
 
+## 2026-09-02 — Provenance is generated, and the published statistics guard themselves
+
+**Category:** Control. Two holes closed that had each already caused a real error. No equation, weight, band or threshold changed; **no composite score changed.**
+
+### 1. The provenance line is generated, not written
+
+`SOURCE_NOTES` was a hand-maintained table in `app/api/refresh/route.ts` describing which institutions supplied each market's figures. It is stored on every row and shown to readers. **Nothing bound it to the fetchers that actually ran**, and it had drifted three ways at once:
+
+| Drift | Consequence |
+|---|---|
+| Four markets credited the **World Bank** | Figures from Statistics Canada, the ONS, the ABS and e-Stat attributed to the wrong institution — and made to look a year older than they are |
+| Every market credited the **EIA** | Brent stopped scoring anything when the oil pillar was retired on 1 September |
+| No market credited the **BIS** | Which began scoring Fiscal Resilience that same day |
+
+Only the first was caught by hand yesterday. **The other two were found by writing the generator** — which is the argument for generating rather than checking.
+
+`sourceNoteFor(market)` now builds the line from `lib/sources.ts`. The table is deleted rather than corrected: correcting it would have left the same trap for whoever changes a source next. Each source carries a `shortName` so the generated line stays readable.
+
+Generated output:
+
+```
+United States    BEA + BLS + New York Fed + BIS (live)
+Euro Area        ECB + Eurostat + BIS (live)
+Canada           Statistics Canada + Bank of Canada + BIS (live)
+United Kingdom   ONS + Bank of England + BIS (live)
+Japan            e-Stat + OECD + Bank of Japan + BIS (live)
+Australia        ABS + RBA + BIS (live)
+```
+
+`scripts/verify-sources.ts` (new, in CI) guards the registry the generator now depends on: every live scored source has a `shortName` and a link, every scored pillar of every published market resolves to a live source, no published market credits the World Bank or the EIA, and no duplicate rows.
+
+### 2. The published statistics now check themselves against live data
+
+`PILLAR_CROSS_MARKET_SD` is printed on the Learn page as a measured fact. It is measured offline from `lib/history.ts`, whose final point comes from `FALLBACK_MARKETS` — **a snapshot a human keeps in sync by hand**, which had drifted twice in nine days and put a false claim on the page.
+
+`scripts/measure-pillar-influence.ts` runs in CI and passed throughout. **It checks the constants against the panel; it cannot tell the panel is stale.** Only a run with live data can — so the check lives in the refresh route, not CI.
+
+The route now computes each pillar's live cross-market spread and compares it to what the site publishes. Drift beyond **1.0 SD points** fails the daily workflow.
+
+**Tolerance reasoning:** these figures are published to one decimal and move as real economies move. Failing on every small drift would train everyone to ignore the alarm — the same argument made for the freshness limits. 1.0 is roughly where the published *ordering* starts to change, which is when a reader is told something untrue.
+
+**Verified both ways:** silent against today's data; against yesterday's stale constants it reports `GM: Learn page publishes 3.3, live is 6.0` — the exact drift that produced the false claim.
+
+### Test results
+
+`tsc`, `eslint --max-warnings 0`, `build`, and all **six** verification scripts clean. Sources page checked in the browser: six debt rows render, the only remaining World Bank links belong to Gulf Watch, which genuinely uses it.
+
+### Approval status
+
+Implemented and verified. No published score changed.
+
+### Rollback method
+
+```bash
+git revert <commit>
+```
+
+Reverting restores a hand-maintained provenance table and removes the drift guard. The registry's `shortName` fields become unused but harmless.
+
+---
+
 ## 2026-09-02 — The "now" snapshot was stale, so a published statistic was wrong
 
 **Category:** Defect. Published statistics and one page claim corrected. No equation, weight, band or threshold changed; **no composite score changed.**
