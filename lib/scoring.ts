@@ -7,20 +7,39 @@
 // identical to the reweighting v1.0 already performed at runtime for any
 // market missing that pillar — so every historical score computed under
 // v1.0 is numerically unchanged under this specification.
+// External & Commodities was replaced by Fiscal Resilience on
+// 2026-09-01, closing audit finding M-4 / recommendation 8. The old
+// pillar scored Brent crude, which is a SINGLE GLOBAL PRICE: the
+// refresh route wrote the identical figure to all six markets, so the
+// pillar's cross-market standard deviation was exactly 0.0000. It
+// carried 12.5% of the published weight and could not, arithmetically,
+// affect the ranking of one country against another. It moved all six
+// composites up and down together and nothing else.
+// The key is FR, not EC, deliberately: renaming forced the compiler
+// through every call site rather than letting a redefined "EC" pass
+// silently.
 // Direct implementation of Equations 1-7 from
 // "MMAI — Methodology, Statistical Properties, and Empirical Validation"
 // (v1.0 document; Equations 1-5 and 7 unchanged, Equation 6's six-term
 // sum is now a five-term sum with the weights below).
 // ============================================================
 
-export type PillarKey = "PS" | "GM" | "LM" | "MC" | "EC";
+export type PillarKey = "PS" | "GM" | "LM" | "MC" | "FR";
 
 export interface RawIndicators {
   inflation?: number | null; // % YoY
   gdpGrowth?: number | null; // % (convention varies by market — see notes)
   unemployment?: number | null; // %
   policyRate?: number | null; // %
+  /** NO LONGER SCORED as of 2026-09-01. Still fetched and still shown
+   *  in the weekly feed, because the oil price is genuine information --
+   *  it is just not a valid basis for comparing one country with
+   *  another, which is what a pillar has to do. */
   brentYoY?: number | null; // % YoY change, shared across markets
+  /** Credit to general government from all sectors at market value, as a
+   *  % of GDP. BIS dataflow WS_TC, quarterly. Market-specific, which is
+   *  the whole point of the change. */
+  debtPctGdp?: number | null;
 }
 
 export interface PillarScores {
@@ -28,7 +47,7 @@ export interface PillarScores {
   GM: number | null;
   LM: number | null;
   MC: number | null;
-  EC: number | null;
+  FR: number | null;
 }
 
 export const TOTAL_PILLARS = 5;
@@ -38,7 +57,7 @@ export const PILLAR_WEIGHTS: Record<PillarKey, number> = {
   GM: 0.25,
   LM: 0.1875,
   MC: 0.1875,
-  EC: 0.125,
+  FR: 0.125,
 };
 
 export const PILLAR_NAMES: Record<PillarKey, string> = {
@@ -46,7 +65,7 @@ export const PILLAR_NAMES: Record<PillarKey, string> = {
   GM: "Growth Momentum",
   LM: "Labour Market",
   MC: "Monetary Conditions",
-  EC: "External & Commodities",
+  FR: "Fiscal Resilience",
 };
 
 /** The one way pillar weights are ever rendered as text, used by the Overview
@@ -77,24 +96,69 @@ export function formatWeightPct(key: PillarKey): string {
  *    - Monetary Conditions is weighted 18.75% and operates at 9.2%. The
  *      policy rate does not vary enough, once passed through its equation,
  *      to earn its stated share.
- *    - External & Commodities is weighted 12.5% and operates at 15.0% --
- *      MORE than Monetary Conditions.
+ *    - Fiscal Resilience is weighted 12.5% and operates at 9.0%.
+ *
+ *  RE-MEASURED 1 September 2026 after Fiscal Resilience replaced External
+ *  & Commodities, by scripts/measure-pillar-influence.ts, which now runs
+ *  in CI and fails if these constants drift from the panel.
+ *
+ *  THE NEW PILLAR SCORES WORSE HERE THAN THE OLD ONE, AND THAT IS THE
+ *  POINT. External & Commodities measured 15.0% -- third of five, more
+ *  than its weight -- and was arithmetically incapable of changing any
+ *  ranking. All 15.0% was TIME variance: a single global oil price
+ *  moving six markets in lockstep. Fiscal Resilience measures 9.0%, less
+ *  than its 12.5% weight, but its variance is the kind that separates
+ *  one country from another.
+ *
+ *  So this figure alone is not a quality measure, and treating it as one
+ *  is what let the defect hide. Read it with PILLAR_CROSS_MARKET_SD.
  *
  *  These are OBSERVATIONS about the current panel, not parameters. Nothing
  *  reads them to compute a score; they exist so the Learn page can publish
  *  what the weights actually do. They will drift as history accumulates and
  *  should be re-measured, not trusted indefinitely. */
 export const PILLAR_EFFECTIVE_INFLUENCE: Record<PillarKey, number> = {
-  PS: 30.6,
-  GM: 29.4,
-  LM: 15.8,
-  MC: 9.2,
-  EC: 15.0,
+  PS: 32.1,
+  GM: 31.2,
+  LM: 16.7,
+  MC: 11.0,
+  FR: 9.0,
 };
 
 /** Date the figures above were measured, shown wherever they are published
  *  so a reader can tell how stale they are. */
-export const PILLAR_INFLUENCE_MEASURED = "31 August 2026";
+export const PILLAR_INFLUENCE_MEASURED = "1 September 2026";
+
+/** Cross-market standard deviation of each pillar on the live snapshot --
+ *  how much a pillar separates one country from another RIGHT NOW.
+ *
+ *  This exists because PILLAR_EFFECTIVE_INFLUENCE alone hid a real defect
+ *  for months. A pillar fed by a single global price varies a great deal
+ *  over TIME and not at all ACROSS markets, and an influence figure that
+ *  blends the two reported it as the third most influential pillar while
+ *  it was incapable of changing any ranking.
+ *
+ *  Measured 1 September 2026 on the latest six-market reading. The old
+ *  External & Commodities pillar scored 0.0000 here, exactly, by
+ *  construction rather than by coincidence. Any future pillar that
+ *  measures near zero on this line is decoration.
+ *
+ *  ONE UNCOMFORTABLE RESULT, RECORDED RATHER THAN BURIED: Growth
+ *  Momentum carries the joint-largest weight, 25%, and separates the six
+ *  markets by an SD of just 3.3 -- the least of any pillar, less than a
+ *  third of what Labour Market (18.75%) achieves at 14.8. On the current
+ *  reading, the ranking is driven mostly by unemployment and debt, and
+ *  barely at all by growth. This is not the same defect as the oil
+ *  pillar -- GDP growth is genuinely market-specific and its spread will
+ *  widen when the cycle diverges -- but it has not been investigated,
+ *  and it should be before anyone claims the weights are calibrated. */
+export const PILLAR_CROSS_MARKET_SD: Record<PillarKey, number> = {
+  PS: 6.8,
+  GM: 3.3,
+  LM: 14.8,
+  MC: 4.8,
+  FR: 11.1,
+};
 
 /** Renders a measured influence figure the same way everywhere. */
 export function formatInfluencePct(key: PillarKey): string {
@@ -109,7 +173,7 @@ export const RAW_FIELD: Record<PillarKey, { key: keyof RawIndicators; label: str
   GM: { key: "gdpGrowth", label: "GDP Growth", unit: "%" },
   LM: { key: "unemployment", label: "Unemployment Rate", unit: "%" },
   MC: { key: "policyRate", label: "Policy Interest Rate", unit: "%" },
-  EC: { key: "brentYoY", label: "Brent Crude, Year-over-Year Change", unit: "%" },
+  FR: { key: "debtPctGdp", label: "Government Debt (% of GDP)", unit: "%" },
 };
 
 function clip(x: number, lo = 0, hi = 100): number {
@@ -240,14 +304,43 @@ export function labourMarketScore(unemployment: number): number {
   return clip(100 - 10 * (unemployment - 2));
 }
 
-/** Equation 4 — Monetary Conditions. Default neutral rate = 2.5%. */
+/** Equation 4 — Monetary Conditions. `neutral` is per-market and
+ *  required; see NEUTRAL_RATE. */
 export function monetaryConditionsScore(policyRate: number, neutral: number): number {
   return clip(100 - 12 * Math.abs(policyRate - neutral));
 }
 
-/** Equation 5 — External & Commodities. */
-export function externalCommoditiesScore(brentYoY: number): number {
-  return clip(100 - 1.2 * Math.abs(brentYoY));
+/** Equation 5 — Fiscal Resilience.
+ *
+ *  Scores general government debt as a share of GDP against the
+ *  MAASTRICHT 60% REFERENCE VALUE (Treaty on the Functioning of the
+ *  European Union, Protocol No 12, Article 1). 60 is used because it is
+ *  a PUBLISHED threshold that already governs six of the economies
+ *  scored here through the euro area, not because it is the level at
+ *  which debt becomes dangerous -- no such universal level exists in the
+ *  literature, and claiming one would repeat the mistake this project
+ *  made with a single 2.5% neutral rate.
+ *
+ *  THE SLOPE IS A CHOICE AND IS DELIBERATELY GENTLE. At 0.3 the pillar
+ *  reaches zero only at 393% of GDP, which no scored market approaches,
+ *  so it grades rather than cliffs. Steeper slopes were tested and
+ *  rejected: at 0.8 or above, this one indicator alone decides the
+ *  headline ranking, and Japan -- whose debt is overwhelmingly held
+ *  domestically, in its own currency, at near-zero rates -- is pushed
+ *  from first to fifth on a ratio that means something different there
+ *  than it does elsewhere. The sensitivity across slopes 0.3 to 1.0 is
+ *  recorded in the change log. Australia ranks first and Canada last
+ *  under EVERY slope tested; only Japan's position moves.
+ *
+ *  Debt at or below 60% scores 100. This compresses the top -- four of
+ *  six markets currently sit between 89 and 100 -- and that is accepted
+ *  rather than tuned away: a threshold means nothing if the score keeps
+ *  improving below it. */
+export const FISCAL_REFERENCE_PCT_GDP = 60;
+export const FISCAL_SLOPE = 0.3;
+
+export function fiscalResilienceScore(debtPctGdp: number): number {
+  return clip(100 - FISCAL_SLOPE * Math.max(0, debtPctGdp - FISCAL_REFERENCE_PCT_GDP));
 }
 
 /** Runs all five pillar transformations. */
@@ -264,7 +357,7 @@ export function computePillarScores(raw: RawIndicators, market: string): PillarS
     GM: raw.gdpGrowth != null ? growthMomentumScore(raw.gdpGrowth) : null,
     LM: raw.unemployment != null ? labourMarketScore(raw.unemployment) : null,
     MC: raw.policyRate != null ? monetaryConditionsScore(raw.policyRate, neutralRateFor(market)) : null,
-    EC: raw.brentYoY != null ? externalCommoditiesScore(raw.brentYoY) : null,
+    FR: raw.debtPctGdp != null ? fiscalResilienceScore(raw.debtPctGdp) : null,
   };
 }
 

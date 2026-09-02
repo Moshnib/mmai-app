@@ -104,7 +104,7 @@ export default function OverviewPage() {
         const supabase = getPublicSupabaseClient();
         const { data, error } = await supabase
           .from("raw_indicators")
-          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date, fetched_at, inflation_observation_date, gdp_observation_date, unemployment_observation_date, policy_rate_observation_date")
+          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, debt_pct_gdp, observation_date, fetched_at, inflation_observation_date, gdp_observation_date, unemployment_observation_date, policy_rate_observation_date, debt_observation_period")
           .order("observation_date", { ascending: false })
           .order("fetched_at", { ascending: false }) // tiebreak same-day reruns -- deterministic "latest", not arbitrary
           .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
@@ -141,7 +141,7 @@ export default function OverviewPage() {
             // rather than silently falling back to hardcoded demo numbers
             // displayed under the "LIVE DATA" banner every other market
             // earns by actually being live.
-            return { ...m, raw: { inflation: null, gdpGrowth: null, unemployment: null, policyRate: null, brentYoY: null } };
+            return { ...m, raw: { inflation: null, gdpGrowth: null, unemployment: null, policyRate: null, brentYoY: null, debtPctGdp: null } };
           }
           return {
             ...m,
@@ -151,6 +151,7 @@ export default function OverviewPage() {
               unemployment: row.unemployment,
               policyRate: row.policy_rate,
               brentYoY: row.brent_yoy,
+              debtPctGdp: row.debt_pct_gdp,
             },
             // Audit M-6: show a reader how old each figure actually is.
             observationDates: {

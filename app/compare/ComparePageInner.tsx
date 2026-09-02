@@ -8,7 +8,7 @@ import { useLiveHistory } from "@/lib/useLiveHistory";
 import { PILLAR_NAMES, RAW_FIELD, computePillarScores, computeComposite, type PillarKey, type PillarScores, type RawIndicators } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
+const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
 
 // Fixed, distinct colors per market -- unlike the pillar/score coloring
 // elsewhere in the app (which is deliberately score-based, not identity-based),

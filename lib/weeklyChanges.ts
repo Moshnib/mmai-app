@@ -139,6 +139,7 @@ interface RawIndicatorRow {
   unemployment: number | null;
   policy_rate: number | null;
   brent_yoy: number | null;
+  debt_pct_gdp: number | null;
   fetched_at: string;
 }
 
@@ -166,6 +167,7 @@ function toRawIndicators(row: RawIndicatorRow): RawIndicators {
     unemployment: row.unemployment,
     policyRate: row.policy_rate,
     brentYoY: row.brent_yoy,
+    debtPctGdp: row.debt_pct_gdp,
   };
 }
 
@@ -247,7 +249,7 @@ export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyCh
         .limit(60),
       supabase
         .from("raw_indicators")
-        .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, fetched_at")
+        .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, debt_pct_gdp, fetched_at")
         .in("market", marketCodes)
         .gte("fetched_at", new Date(EARLIEST_FLOOR).toISOString())
         .not("inflation", "is", null)

@@ -61,10 +61,10 @@ export const PUBLISHED_FORMULAS: Record<PillarKey, PublishedFormula> = {
     expression: "clamp(100 − 12 × |policy rate − neutral|, 0, 100)",
     variable: "policy rate",
   },
-  EC: {
-    label: "External & Commodities Score",
-    expression: "clamp(100 − 1.2 × |Brent YoY % change|, 0, 100)",
-    variable: "Brent YoY",
+  FR: {
+    label: "Fiscal Resilience Score",
+    expression: "clamp(100 − 0.3 × max(0, debt % of GDP − 60), 0, 100)",
+    variable: "government debt",
   },
 };
 

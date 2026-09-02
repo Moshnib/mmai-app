@@ -6,6 +6,222 @@ Entries are newest first. The frozen V1 record is in [`MMAI_V1_FROZEN_BENCHMARK.
 
 ---
 
+## 2026-09-02 — Euro Area inflation moved from Eurostat to the ECB after the Eurostat series was found dead
+
+**Category:** Data source replacement, forced by an upstream discontinuation. No equation, weight, band or threshold was modified.
+
+Found by the operational audit of 2 September 2026, not by any automated check — which is itself the more important finding, recorded below.
+
+### Old rule
+
+Euro Area Price Stability read Eurostat `prc_hicp_manr` (`geo=EA`, `coicop=CP00`, `unit=RCH_A`) and scored it against the ECB's 2% target.
+
+### New rule
+
+Euro Area Price Stability reads the **ECB Data Portal**, dataflow `HICP`, series `M.U2.N.000000.4D0.ANR` — euro area, all items, annual rate of change — against the same 2% target. The fetcher now **throws if the newest observation is more than 100 days old.**
+
+### Reason
+
+**The Eurostat series had been dead for nine months and MMAI could not tell.**
+
+Eurostat retired `prc_hicp_manr` on **4 February 2026**, when the euro area HICP underwent a methodology change. The ECB's matching `ICP` dataflow was discontinued the same day; the ECB's own commentary attached to the final observations says so.
+
+Neither began returning errors. They simply stopped gaining new months. The fetcher asked for the newest observation, was handed **December 2025**, and returned success — every morning, for nine months.
+
+### Data used
+
+Verified live on 2026-09-02:
+
+| Query | Newest observation |
+|---|---|
+| Eurostat `prc_hicp_manr`, `geo=EA` | 2025-12 |
+| Eurostat, `geo=EA19` / `EA20` | 2025-12 |
+| Eurostat, `sinceTimePeriod=2026-01` | **empty set** |
+| ECB `ICP` (old dataflow) | 2025-12 |
+| **ECB `HICP` (replacement)** | **2026-08 → 3.3%** |
+
+**The key changed shape, not just name:** the data-provider dimension went from `4` to `4D0`. The old key still resolves against the old dataflow and still returns 2025 data, so a half-migration looks like it works.
+
+### Impact
+
+| Euro Area | Published (wrong) | Correct |
+|---|---:|---:|
+| Inflation | 2.0% (Dec 2025) | **3.3%** (Aug 2026) |
+| Price Stability | 100.0 | 80.5 |
+
+Price Stability carries 25% of the score, so the composite effect is **−4.87**:
+
+| Shipped as… | Composite | Band |
+|---|---:|---|
+| Live today | 78.70 | Supportive |
+| Inflation fix alone | 73.83 | **Balanced** |
+| **With Fiscal Resilience, same deploy** | **75.57** | **Supportive** |
+
+**MMAI published the Euro Area as "Supportive" while the correct verdict was "Balanced".** This is the first known instance of a wrong published band traced to a source failure rather than a methodology choice.
+
+**Deploy both changes together.** Alone, the inflation correction moves the Euro Area down a band; combined with Fiscal Resilience — which removes the retired oil pillar that was docking every market for oil being up 17.9% — no market changes band. Shipping them separately would move the Euro Area twice in a week for reasons unconnected to the euro area.
+
+### Test results
+
+- Standalone fetcher test against the live ECB API **before wiring**, per this project's rule that no fetcher is wired unproven: returned 3.3% for 2026-08, 32 days old.
+- **The new maximum-age guard was tested against the dead series**, not merely written: pointed at the retired `ICP` dataflow it fires (275 days), pointed at the replacement it passes (32 days).
+- End-to-end recomputation from live sources: Euro Area PS 80.5 · GM 60.0 · LM 56.0 · MC 98.1 · FR 92.4 → **75.57, Supportive**, coverage 100%.
+- `npx tsc --noEmit`, `npx eslint . --max-warnings 0`, and all four verification scripts clean.
+
+### The guard, and why it throws rather than warns
+
+`settle()` turns a throw into a null, so the row is written **PARTIAL** with a note and the score is withheld under the coverage gate rather than published from a dead source. **A confident wrong number is worse than a visible gap** — that is exactly the failure this change is correcting.
+
+100 days is deliberately generous: the longest normal gap between HICP releases is about seven weeks, so a genuinely late publication passes, while a source that has stopped entirely is caught inside a quarter instead of after a year.
+
+### This guard covers one fetcher. The gap is system-wide.
+
+The only staleness check anywhere in MMAI measures `fetched_at` — **when we last asked**, not the age of what came back. A frozen source answers instantly every morning and reads as perfectly live. The per-indicator observation dates added for audit M-6 *display* the age to a reader; nothing *tests* it.
+
+Fourteen other live series could fail the same way tomorrow. **An observation-age check across every indicator, in CI, remains open** and is the highest-value item outstanding.
+
+### Also corrected in the same change
+
+- **Four of seven source notes credited the wrong institution.** `SOURCE_NOTES` named the World Bank for Canada, the UK, Australia and Japan; those read Statistics Canada, the ONS, the ABS and e-Stat respectively. The World Bank is now used only as Japan's unemployment fallback and for dormant Norway. These strings are stored on every row and shown to readers as provenance, so this was a false statement about where each number came from — and it made the data look *older* than it is, since the World Bank publishes annually.
+- **Brent's cadence was labelled `daily`; the EIA series it reads is monthly** and the stored reading is routinely two months old. The `cadence` field was added on 1 September for audit finding M-5 specifically to stop "live" being read as "current", and its most visible entry was wrong in exactly that direction. MMAI has no daily-updating input at all.
+- `fetchEuroAreaInflation` was **deleted** from `lib/fetchers/eurostat.ts`, not deprecated, and replaced with a comment explaining the retirement. A function left exported "just in case" is one somebody imports by autocomplete.
+
+### Approval status
+
+Implemented and verified. Not yet deployed — must ship together with the Fiscal Resilience change, which requires its migration to run first.
+
+### Rollback method
+
+```bash
+git revert <commit>
+```
+
+Reverting restores the Eurostat call, which will resume publishing a December 2025 figure. **Do not revert this to fix an unrelated problem.**
+
+---
+
+## 2026-09-01 — Fiscal Resilience replaces External & Commodities as the fifth pillar
+
+**Category:** Pillar replacement. New indicator, new equation, new data source. Weights, bands, coverage rule and the other four pillars are unchanged.
+
+Closes audit finding **M-4** and **recommendation 8**, the second of the two findings left open after 1 September's first round of remediation.
+
+### Old rule
+
+```
+S_EC = clip(100 − 1.2 × |Brent crude, YoY % change|, 0, 100)      weight 0.125
+```
+
+Brent crude year-over-year from the U.S. Energy Information Administration.
+
+### New rule
+
+```
+S_FR = clip(100 − 0.3 × max(0, debt% of GDP − 60), 0, 100)        weight 0.125
+```
+
+Credit to general government from all sectors at market value, as a share of GDP, from the Bank for International Settlements (dataflow `WS_TC`, quarterly). The pillar key was renamed `EC` → `FR` deliberately, to force the compiler through all seventeen call sites rather than let a redefined `EC` pass silently.
+
+### Reason
+
+**The old pillar was arithmetically incapable of doing the job a pillar exists to do.**
+
+Brent is a *single global price*. `app/api/refresh/route.ts` fetched one figure and wrote it, unchanged, into all six market rows — verified in the live database on 1 September 2026, where every market carried `brent_yoy = 17.91`. Its cross-market standard deviation was therefore **exactly 0.0000**, not approximately. It held 12.5% of the published weight, contributed an identical 9.81 points to every composite, and could never make one country rank above another.
+
+Two further problems, both visible once the data was examined:
+
+1. **It scored absolute change, so a crash and a boom counted the same.** Oil fell 34% in 2020 and rose 69% in 2021; the pillar read the 2021 recovery as instability worth 17.2/100 and dragged all three re-pinned markets down together by roughly 8 points in a year when their actual positions were diverging.
+2. **Its published "effective influence" figure flattered it.** The Learn page reported External & Commodities at 15.0% — third of five, more than its weight. That figure blends variation over time with variation across markets, and all 15.0% of it was the former. The metric that would have exposed the defect did not exist, so the site published a number that made a decorative pillar look like a working one.
+
+Government debt was chosen because it is genuinely market-specific, already licensed, and already fetched: `lib/fetchers/bis.ts` shipped on 29 August for the Compare page, so no new source, licence review or key was required.
+
+### Reference
+
+- OECD / JRC (2008), *Handbook on Constructing Composite Indicators*, §on weighting and aggregation — a component that does not vary across units under comparison contributes nothing to the comparison.
+- **Treaty on the Functioning of the European Union, Protocol No 12, Article 1** — the 60% of GDP reference value. Chosen because it is a *published* threshold that already governs six of the scored economies through the euro area, not because 60% is where debt becomes dangerous. No such universal level exists in the literature, and asserting one would repeat the error corrected in H-2.
+- BIS Statistical Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers.
+- MMAI Independent Audit, finding M-4 and recommendation 8.
+
+### Data used
+
+BIS `WS_TC`, key `Q.{area}.G.A.M.770.A`, fetched live 1 September 2026. Latest observation 2025-Q4 for all six:
+
+| Market | Debt % GDP | Old EC score | New FR score |
+|---|---:|---:|---:|
+| Japan | 178.8 | 78.5 | 64.4 |
+| United States | 111.0 | 78.5 | 84.7 |
+| Canada | 96.1 | 78.5 | 89.2 |
+| United Kingdom | 88.8 | 78.5 | 91.4 |
+| Euro Area | 85.3 | 78.5 | 92.4 |
+| Australia | 50.7 | 78.5 | 100.0 |
+
+Seven years of Q4 history (2019–2025) were fetched for all seven markets including dormant Norway and written into `lib/history.ts` — **56 sourced points, none estimated.** That file's own header records that a previous gap was "deliberately left unfilled rather than fabricated"; the same standard applies here.
+
+### Slope selection, and why it is gentle
+
+The 60% reference is published. **The slope is not — it is a choice, and it decides Japan's rank.** Sensitivity across the full range, live snapshot:
+
+| Slope | Zero at | Ranking |
+|---|---|---|
+| 0.30 | 393% | **AU > JP > EA > US > UK > CA** ← adopted |
+| 0.45 | 282% | AU > EA > JP > US > UK > CA |
+| 0.60 | 227% | AU > EA > JP > US > UK > CA |
+| 0.80 | 185% | AU > EA > UK > US > JP > CA |
+| 1.00 | 160% | AU > EA > UK > US > JP > CA |
+
+Australia ranks first and Canada last under **every** slope tested; only Japan's position moves. 0.30 was adopted on the site owner's decision, for a reason that is economic rather than cosmetic: Japan's debt is overwhelmingly held domestically, in its own currency, at near-zero rates, which is a materially different condition from the same ratio elsewhere. A steep slope would let one indicator decide the headline ranking and would apply a single threshold across six economies — precisely the error H-2 corrected.
+
+### Test results
+
+- **Standalone fetcher test against the live BIS API before wiring**, per this project's rule that no fetcher is wired unproven. All seven markets returned 2025-Q4.
+- `npx tsc --noEmit` clean; `npx eslint . --max-warnings 0` clean; `npm run build` clean.
+- `verify-scoring`, `verify-history`, `verify-published-formulas`, `measure-pillar-influence` all pass.
+- **`scripts/measure-pillar-influence.ts` is new and now runs in CI.** It recomputes both published influence figures from the panel and fails if `lib/scoring.ts` disagrees. It caught four wrong values on its first run — placeholders written before the panel was measured.
+- **The formula verifier's sweep was too narrow to test this pillar and was widened.** It sampled −40 to 40, which never reaches a government debt ratio: every sampled value sat below the 60% threshold, so Fiscal Resilience would have been reported as verified without the sweep once touching its slope. Raised to 260. 36,042 comparisons pass.
+
+### Impact
+
+Live snapshot, six markets:
+
+| Market | Before | After | Change |
+|---|---:|---:|---:|
+| Australia | 81.02 | **83.71** | +2.69 |
+| Japan | 83.76 | 81.99 | −1.77 |
+| Euro Area | 78.70 | 80.44 | +1.74 |
+| United States | 78.36 | 79.13 | +0.77 |
+| United Kingdom | 76.56 | 78.17 | +1.61 |
+| Canada | 72.13 | 73.46 | +1.33 |
+
+- **The ranking changes: Australia replaces Japan at the top.** Japan falls to second, by 1.77 points. This is the intended effect — Japan's fiscal position is the single most distinctive macro fact about Japan and the index previously could not see it at all.
+- **Five of six markets rise**, because the old pillar was scoring an oil price up 17.9% year-over-year and penalising all six for it. Only Japan falls. This is not the index becoming more generous: it is one indicator's noise being removed from six scores at once.
+- **No band changed** for any market. Canada remains *Balanced*, the other five *Supportive*.
+- Cross-market spread of the fifth pillar: **0.0000 → 11.10**.
+- Measured effective influence of the fifth pillar **falls**, 15.0% → 9.0%, below its 12.5% weight. That is not a regression: the old figure was time variance from a global price, the new one is variance that separates countries.
+- Eighteen pinned historical composites moved and were re-pinned. Every year rose; 2021 rose most, by roughly 8 points for all three markets at once, which is the clearest available demonstration of what the old pillar was doing.
+
+### Also corrected in the same change
+
+- **A false statement was live on the Learn page.** It still told readers "Monetary Conditions measures the policy rate against an assumed neutral level of 2.5% everywhere" and that "no published estimate exists for the UK, Japan or Australia". Both stopped being true when H-2 closed earlier the same day. Replaced with the real remaining limitation: Australia's neutral rate is nine years old.
+- **A block of Learn-page copy could never render.** `targetNote` was nested inside the `targets` conditional, so a section with a note but no per-market target table displayed nothing — the new Government Debt and Brent explanations were written, compiled, linted, built and shown to nobody. Same shape of bug as the limitations block on 31 August, found the same way: by opening the page.
+- **Two Supabase queries omitted the new column**, so `weeklyChanges.ts` and `useLiveHistory.ts` computed four-pillar composites that disagreed with the homepage rings. Passed `tsc`, `eslint` and `build`; caught by reading the rendered page and noticing US showed 80.4 in one place and 78.3 in another.
+- `lib/sources.ts`: `pillar` became optional. Brent is still fetched and still shown in the weekly feed but scores nothing, and neither deleting a source the app uses nor filing it under a pillar it does not feed would have been honest.
+
+### Approval status
+
+Slope selected by the site owner from four costed options. Implemented and verified.
+
+**Requires a schema migration before deploy** — `supabase/migrations/2026-09-01-fiscal-resilience-pillar.sql`. The refresh route inserts `debt_pct_gdp` and `pillar_fr`; if those columns do not exist the whole insert fails for every market. `mmai_scores.pillar_ec` is deliberately kept, not renamed: rows written before this date hold genuine External & Commodities scores and are part of the downloadable record.
+
+### Rollback method
+
+```bash
+git revert <commit>
+```
+
+The migration does not need reverting — every column it adds is nullable and nothing was dropped or rewritten. Reverting the code stops writing to the new columns and restores the Brent equation; historical `pillar_ec` values were never touched.
+
+---
+
 ## 2026-08-31 — US Price Stability switched from CPI to headline PCE
 
 **Category:** Data source change. No equation, weight, band or threshold was modified.

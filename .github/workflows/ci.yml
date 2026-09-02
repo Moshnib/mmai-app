@@ -91,6 +91,16 @@ jobs:
       - name: Published formulas match the engine
         run: npx tsx scripts/verify-published-formulas.ts
 
+      # The Learn page publishes what each weight ACTUALLY does, measured
+      # rather than asserted. Those figures were computed by hand and
+      # pasted in, so nothing noticed when they went stale -- and one of
+      # them was actively misleading: the retired oil pillar measured
+      # 15.0% "effective influence" while being incapable of changing any
+      # ranking. This recomputes both that figure and the cross-market
+      # spread from the panel, and fails if lib/scoring.ts disagrees.
+      - name: Published pillar influence still matches the panel
+        run: npx tsx scripts/measure-pillar-influence.ts
+
   build:
     name: Build
     runs-on: ubuntu-latest

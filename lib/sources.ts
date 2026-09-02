@@ -29,7 +29,15 @@ export interface SourceEntry {
   indicator: string;
   /** Verified from each fetcher own request, not assumed. */
   cadence: SourceCadence;
-  pillar: "PS" | "GM" | "LM" | "MC" | "EC";
+  /** Which pillar this source scores, if any.
+   *
+   *  OPTIONAL since 2026-09-01. Brent crude is still fetched and still
+   *  shown in the weekly feed, but stopped being a scored pillar when
+   *  Fiscal Resilience replaced External & Commodities. Forcing a pillar
+   *  on it would have meant either deleting a source the app really uses
+   *  or filing it under a pillar it does not feed -- both worse than
+   *  saying plainly that it scores nothing. */
+  pillar?: "PS" | "GM" | "LM" | "MC" | "FR";
   institution: string;
   license: string;
   status: FetchStatus;
@@ -56,7 +64,7 @@ export const SOURCES: SourceEntry[] = [
   { market: "United States", indicator: "GDP Growth (quarterly, YoY)", cadence: "quarterly", pillar: "GM", institution: "U.S. Bureau of Economic Analysis", license: "Public domain — U.S. federal government work", status: "live", lastVerified: "2026-08-22" , url: "https://www.bea.gov/data/gdp/gross-domestic-product" },
 
   // ---------- Euro Area ----------
-  { market: "Euro Area", indicator: "Inflation (HICP)", cadence: "monthly", pillar: "PS", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21" , url: "https://ec.europa.eu/eurostat" },
+  { market: "Euro Area", indicator: "Inflation (HICP)", cadence: "monthly", pillar: "PS", institution: "European Central Bank", license: "Free access and reuse policy for published statistics", status: "live", lastVerified: "2026-09-02", note: "Moved from Eurostat to the ECB on 2 September 2026. Eurostat retired its prc_hicp_manr dataset on 4 February 2026 when the euro area HICP methodology changed, and it stopped gaining new months without ever returning an error — so this figure was nine months out of date before it was caught. The ECB series is the current one." , url: "https://data.ecb.europa.eu/" },
   { market: "Euro Area", indicator: "GDP Growth (quarterly, YoY)", cadence: "quarterly", pillar: "GM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21", note: "Annual figure, updates once a year" , url: "https://ec.europa.eu/eurostat" },
   { market: "Euro Area", indicator: "Unemployment", cadence: "monthly", pillar: "LM", institution: "Eurostat", license: "Free reuse, commercial and non-commercial, with attribution", status: "live", lastVerified: "2026-08-21", note: "Published monthly across the euro area" , url: "https://ec.europa.eu/eurostat" },
   { market: "Euro Area", indicator: "Policy Rate (Deposit Facility)", cadence: "per decision", pillar: "MC", institution: "European Central Bank", license: "Free access and reuse policy for published statistics", status: "live", lastVerified: "2026-08-21" , url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/key_ecb_interest_rates/html/index.en.html" },
@@ -99,13 +107,30 @@ export const SOURCES: SourceEntry[] = [
   { market: "Norway", indicator: "Policy Rate (Key Policy Rate)", cadence: "per decision", pillar: "MC", institution: "Norges Bank", license: "Unresolved — Norges Bank's own terms require quoting them as source, but do not explicitly confirm commercial use is permitted", status: "manual", lastVerified: "2026-08-22", note: "DORMANT — Norway is not a published MMAI market; this source is wired but unused. Norway's national data catalog separately tags this dataset under an open license that would permit commercial use, but Norges Bank has not confirmed this on their own site — awaiting written confirmation from Norges Bank directly" , url: "https://www.norges-bank.no/en/topics/Monetary-policy/Policy-rate/" },
 
   // ---------- Shared across all markets ----------
-  { market: "All markets", indicator: "Brent Crude (External & Commodities pillar)", cadence: "daily", pillar: "EC", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "This is a single global oil price, so the same figure is used for every market" , url: "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm" },
+  { market: "All markets", indicator: "Brent Crude (context only — not scored)", cadence: "monthly", institution: "U.S. Energy Information Administration", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "NO LONGER SCORED as of 1 September 2026. This is a single global oil price: the identical figure applied to all six markets, so as a pillar it moved every score together and could not affect the ranking of one country against another. It is still shown in the weekly feed, where a global price is exactly what it claims to be." , url: "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm" },
+
+  // ---------- Fiscal Resilience — one BIS series, published per country ----------
+  // BIS returns all six in a single request, but these are SIX DIFFERENT
+  // national figures, not one shared number. Listed per market so the
+  // Sources page cannot be read as repeating the Brent mistake.
+  //
+  // Named as BIS names it. This is "Credit to General government from All
+  // sectors at Market value", which is closely related to gross government
+  // debt and built for cross-country comparison, but is not identical to
+  // the headline debt figure a national treasury publishes.
+  { market: "United States", indicator: "Government Debt (% of GDP)", cadence: "quarterly", pillar: "FR", institution: "Bank for International Settlements", license: "BIS Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers", status: "live", lastVerified: "2026-09-01", note: "BIS series WS_TC: credit to general government from all sectors, at market value" , url: "https://data.bis.org/topics/TOTAL_CREDIT" },
+  { market: "Euro Area", indicator: "Government Debt (% of GDP)", cadence: "quarterly", pillar: "FR", institution: "Bank for International Settlements", license: "BIS Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers", status: "live", lastVerified: "2026-09-01", note: "Published for the euro area as a whole, not per member state" , url: "https://data.bis.org/topics/TOTAL_CREDIT" },
+  { market: "United Kingdom", indicator: "Government Debt (% of GDP)", cadence: "quarterly", pillar: "FR", institution: "Bank for International Settlements", license: "BIS Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers", status: "live", lastVerified: "2026-09-01" , url: "https://data.bis.org/topics/TOTAL_CREDIT" },
+  { market: "Canada", indicator: "Government Debt (% of GDP)", cadence: "quarterly", pillar: "FR", institution: "Bank for International Settlements", license: "BIS Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers", status: "live", lastVerified: "2026-09-01" , url: "https://data.bis.org/topics/TOTAL_CREDIT" },
+  { market: "Japan", indicator: "Government Debt (% of GDP)", cadence: "quarterly", pillar: "FR", institution: "Bank for International Settlements", license: "BIS Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers", status: "live", lastVerified: "2026-09-01", note: "Japan's ratio is the highest of the six by a wide margin. It is also the least comparable: the debt is overwhelmingly held domestically, in yen, at near-zero rates. The pillar's slope is deliberately gentle for this reason — see lib/scoring.ts" , url: "https://data.bis.org/topics/TOTAL_CREDIT" },
+  { market: "Australia", indicator: "Government Debt (% of GDP)", cadence: "quarterly", pillar: "FR", institution: "Bank for International Settlements", license: "BIS Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers", status: "live", lastVerified: "2026-09-01" , url: "https://data.bis.org/topics/TOTAL_CREDIT" },
+  { market: "Norway", indicator: "Government Debt (% of GDP)", cadence: "quarterly", pillar: "FR", institution: "Bank for International Settlements", license: "BIS Terms — unrestricted use with citation; commercial use permitted provided it results in no additional charge to subscribers", status: "manual", lastVerified: "2026-09-01", note: "DORMANT — Norway is not a published MMAI market. BIS does cover it, so this pillar is wired and would work if Norway were ever published." , url: "https://data.bis.org/topics/TOTAL_CREDIT" },
 ];
 
 export function sourcesForMarket(marketName: string): SourceEntry[] {
   return SOURCES.filter((s) => s.market === marketName || s.market === "All markets");
 }
 
-export function sourceForPillar(marketName: string, pillar: "PS" | "GM" | "LM" | "MC" | "EC"): SourceEntry | undefined {
+export function sourceForPillar(marketName: string, pillar: "PS" | "GM" | "LM" | "MC" | "FR"): SourceEntry | undefined {
   return sourcesForMarket(marketName).find((s) => s.pillar === pillar);
 }

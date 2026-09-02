@@ -13,7 +13,9 @@ create table if not exists raw_indicators (
   gdp_growth numeric,                  -- % (see notes: convention varies by market)
   unemployment numeric,                -- %
   policy_rate numeric,                 -- % (null when no public source exists)
-  brent_yoy numeric,                   -- % YoY, shared across all markets
+  brent_yoy numeric,                   -- % YoY, shared across all markets; NOT SCORED since 2026-09-01
+  debt_pct_gdp numeric,                -- % of GDP, per market (BIS WS_TC)
+  debt_observation_period text,        -- BIS quarter label, e.g. "2025-Q4" -- a quarter is not a day
   observation_date date not null,      -- period the values represent
   source_note text,                    -- e.g. "BLS CUUR0000SA0; NY Fed EFFR"
   fetched_at timestamptz not null default now(),
@@ -32,7 +34,8 @@ create table if not exists mmai_scores (
   pillar_lm numeric,
   pillar_mc numeric,
   pillar_mm numeric,                   -- always null until a licensed equity source exists
-  pillar_ec numeric,
+  pillar_ec numeric,                   -- RETIRED 2026-09-01; pre-existing rows keep real values
+  pillar_fr numeric,                   -- Fiscal Resilience, replaced pillar_ec
   composite numeric,                   -- null when coverage < 70% (see Equation 7)
   coverage numeric not null,           -- 0.0 - 1.0
   band text not null,

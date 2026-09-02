@@ -37,12 +37,12 @@ export interface MarketData {
 // in demo mode, and every market still carried the retired brentYoY: -5
 // placeholder from before the EIA feed was wired up.
 export const FALLBACK_MARKETS: MarketData[] = [
-  { code: "US", name: "United States", raw: { inflation: 3.36, gdpGrowth: 2.1, unemployment: 4.1, policyRate: 3.63, brentYoY: 17.91 } },
-  { code: "EA", name: "Euro Area", raw: { inflation: 2.0, gdpGrowth: 1.2, unemployment: 6.3, policyRate: 2.25, brentYoY: 17.91 } },
-  { code: "CA", name: "Canada", raw: { inflation: 3.03, gdpGrowth: 1.74, unemployment: 6.91, policyRate: 2.25, brentYoY: 17.91 } },
-  { code: "UK", name: "United Kingdom", raw: { inflation: 2.9, gdpGrowth: 1.39, unemployment: 4.75, policyRate: 3.75, brentYoY: 17.91 } },
-  { code: "JP", name: "Japan", raw: { inflation: 3.17, gdpGrowth: 1.19, unemployment: 2.45, policyRate: 0.98, brentYoY: 17.91 } },
-  { code: "AU", name: "Australia", raw: { inflation: 3.75, gdpGrowth: 1.35, unemployment: 4.09, policyRate: 4.35, brentYoY: 17.91 } },
+  { code: "US", name: "United States", raw: { inflation: 3.36, gdpGrowth: 2.1, unemployment: 4.1, policyRate: 3.63, brentYoY: 17.91, debtPctGdp: 111.0 } },
+  { code: "EA", name: "Euro Area", raw: { inflation: 2.0, gdpGrowth: 1.2, unemployment: 6.3, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 85.3 } },
+  { code: "CA", name: "Canada", raw: { inflation: 3.03, gdpGrowth: 1.74, unemployment: 6.91, policyRate: 2.25, brentYoY: 17.91, debtPctGdp: 96.1 } },
+  { code: "UK", name: "United Kingdom", raw: { inflation: 2.9, gdpGrowth: 1.39, unemployment: 4.75, policyRate: 3.75, brentYoY: 17.91, debtPctGdp: 88.8 } },
+  { code: "JP", name: "Japan", raw: { inflation: 3.17, gdpGrowth: 1.19, unemployment: 2.45, policyRate: 0.98, brentYoY: 17.91, debtPctGdp: 178.8 } },
+  { code: "AU", name: "Australia", raw: { inflation: 3.75, gdpGrowth: 1.35, unemployment: 4.09, policyRate: 4.35, brentYoY: 17.91, debtPctGdp: 50.7 } },
 ];
 
 export function scoreMarket(market: MarketData): { pillars: PillarScores; composite: number | null; coverage: number; coveragePillars: number } {

@@ -11,6 +11,7 @@ export interface RawIndicatorRow {
   unemployment: number | null;
   policy_rate: number | null;
   brent_yoy: number | null;
+  debt_pct_gdp: number | null;
   observation_date: string;
   // Per-indicator observation dates (audit M-6). OPTIONAL because not every
   // query selects them -- useLiveHistory does not need them, the homepage does.
@@ -19,6 +20,9 @@ export interface RawIndicatorRow {
   unemployment_observation_date?: string | null;
   policy_rate_observation_date?: string | null;
   brent_observation_date?: string | null;
+  // BIS publishes a QUARTER label ("2025-Q4"), not a date -- stored and
+  // typed as text so nothing downstream can mistake it for a day.
+  debt_observation_period?: string | null;
 }
 
 /** Shared by the Trends and Compare pages (Overview/page.tsx has its own
@@ -44,7 +48,7 @@ export function useLiveHistory(): { history: Record<string, HistoryPoint[]>; dat
         const supabase = getPublicSupabaseClient();
         const { data, error } = await supabase
           .from("raw_indicators")
-          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, observation_date")
+          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, debt_pct_gdp, observation_date")
           .order("observation_date", { ascending: false })
           .order("fetched_at", { ascending: false }) // tiebreak same-day reruns
           // 7 markets x daily refreshes -- 200 rows covers roughly a
@@ -73,6 +77,7 @@ export function useLiveHistory(): { history: Record<string, HistoryPoint[]>; dat
             unemployment: row.unemployment,
             policyRate: row.policy_rate,
             brentYoY: row.brent_yoy,
+            debtPctGdp: row.debt_pct_gdp,
           };
           merged[market] = [...points.slice(0, -1), { year: liveYear, indicators: liveIndicators }];
         }

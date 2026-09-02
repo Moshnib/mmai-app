@@ -10,8 +10,11 @@ import { fetchJapanInflation, fetchJapanGdpGrowthQuarterly } from "@/lib/fetcher
 import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
 import { fetchAllBondYieldSeries, BOND_YIELD_SOURCE } from "@/lib/fetchers/bondYields";
 import { fetchAustraliaPolicyRate } from "@/lib/fetchers/rba";
-import { fetchEuroAreaInflation, fetchEuroAreaGdpGrowthQuarterly, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
-import { fetchEuroAreaPolicyRate } from "@/lib/fetchers/ecb";
+import { fetchEuroAreaGdpGrowthQuarterly, fetchEuroAreaUnemployment } from "@/lib/fetchers/eurostat";
+// EA INFLATION MOVED FROM EUROSTAT TO THE ECB on 2026-09-02. Eurostat
+// retired prc_hicp_manr on 2026-02-04 and MMAI published a nine-month-old
+// figure until it was found. See lib/fetchers/ecb.ts.
+import { fetchEuroAreaInflation, fetchEuroAreaPolicyRate } from "@/lib/fetchers/ecb";
 import { fetchCanadaInflation, fetchCanadaUnemployment, fetchCanadaGdpGrowthQuarterly } from "@/lib/fetchers/statcan";
 import { fetchCanadaPolicyRate } from "@/lib/fetchers/boc";
 import { fetchUkInflation, fetchUkUnemployment, fetchUkGdpGrowthQuarterly } from "@/lib/fetchers/ons";
@@ -20,6 +23,7 @@ import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
 import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
+import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
@@ -303,7 +307,7 @@ async function fetchRawIndicators(
   }
 
   if (market === "EA") {
-    // Inflation/GDP/unemployment via Eurostat, policy rate (deposit
+    // GDP/unemployment via Eurostat; INFLATION and policy rate (deposit
     // facility) via the ECB's own Data Portal — both confirmed live
     // 2026-08-21. See lib/fetchers/eurostat.ts for the EA20→EA21 geo
     // code note (that's the fix for the unemployment fetch that was
@@ -431,13 +435,27 @@ async function fetchRawIndicators(
 // branch below is left in place, ready to reactivate with a one-line change.
 const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
 
+// CORRECTED 2026-09-02. These strings are stored on every row and shown
+// to readers as provenance, and four of the seven credited the WORLD BANK
+// for data it did not supply -- left behind as each fetcher was replaced
+// by a national source. Canada reads Statistics Canada, the UK reads the
+// ONS, Australia reads the ABS, and Japan reads e-Stat. The World Bank is
+// now used ONLY as Japan unemployment fallback and for dormant Norway.
+//
+// This is not cosmetic. The site asks readers to check its work and
+// tracks a licence per institution, so naming the wrong institution is a
+// false statement about where a number came from -- and it made the data
+// look worse than it is, since the World Bank publishes annually.
+//
+// KEEP IN STEP WITH THE ACTUAL settle() CALLS ABOVE. There is no test
+// binding these strings to the fetchers; they drifted for weeks unnoticed.
 const SOURCE_NOTES: Record<string, string> = {
   US: "BEA (PCE + GDP) + BLS + New York Fed + EIA (live)",
-  JP: "World Bank + OECD + BOJ + EIA (live)",
-  AU: "ABS + World Bank + RBA + EIA (live)",
-  EA: "Eurostat + ECB + EIA (live)",
-  CA: "Statistics Canada + World Bank + Bank of Canada + EIA (live)",
-  UK: "ONS + World Bank + Bank of England + EIA (live)",
+  JP: "e-Stat + OECD + Bank of Japan + EIA (live)",
+  AU: "ABS + RBA + EIA (live)",
+  EA: "ECB (HICP + policy rate) + Eurostat + EIA (live)",
+  CA: "Statistics Canada + Bank of Canada + EIA (live)",
+  UK: "ONS + Bank of England + EIA (live)",
   NO: "Statistics Norway + World Bank + Norges Bank + EIA (live)",
 };
 
@@ -500,9 +518,30 @@ export async function GET(request: Request) {
 
   const brentResult = await settle("Brent Crude YoY", fetchBrentYoY());
 
+  // Fiscal Resilience. One BIS request returns all six markets, so it is
+  // fetched once here rather than per market -- same shape as Brent
+  // above, and for the same reason.
+  //
+  // Unlike Brent, the six values are DIFFERENT. That is the whole point
+  // of the pillar that replaced External & Commodities: an indicator
+  // that gives every market the same number cannot separate them.
+  const debtResult = await settle("Government debt (BIS)", fetchGovernmentDebt());
+  const debtByMarket = new Map((debtResult ?? []).map((d) => [d.market, d]));
+  if (debtResult == null) {
+    console.warn("BIS government debt unavailable this run -- Fiscal Resilience will be null for every market");
+  }
+
   for (const market of pending) {
     try {
       const { raw, dates } = await fetchRawIndicators(market, brentResult, relayedJp);
+
+      // Set here rather than inside each of fetchRawIndicators()'s
+      // seven per-market branches: the value is looked up from one
+      // shared response, so threading it through every branch would be
+      // seven chances to paste the wrong market's figure.
+      const debt = debtByMarket.get(market) ?? null;
+      raw.debtPctGdp = debt?.debtPctGdp ?? null;
+
       const pillars = computePillarScores(raw, market);
       const { composite, coverage } = computeComposite(pillars);
       const band = bandFor(composite);
@@ -512,7 +551,7 @@ export async function GET(request: Request) {
       // the only way to know whether the band actually changed.
       const { data: previousRows } = await supabase
         .from("mmai_scores")
-        .select("band, composite, observation_date, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_ec")
+        .select("band, composite, observation_date, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_fr")
         .eq("market", market)
         .order("observation_date", { ascending: false })
         .order("computed_at", { ascending: false })
@@ -536,9 +575,9 @@ export async function GET(request: Request) {
       // which exists to stop exactly this class of fake delta on the
       // homepage feed. The email path never got the equivalent guard.
       const shapeOf = (vals: Array<number | null | undefined>) => vals.map((v) => (v == null ? "0" : "1")).join("");
-      const currentShape = shapeOf([pillars.PS, pillars.GM, pillars.LM, pillars.MC, pillars.EC]);
+      const currentShape = shapeOf([pillars.PS, pillars.GM, pillars.LM, pillars.MC, pillars.FR]);
       const previousShape = previousRow
-        ? shapeOf([previousRow.pillar_ps, previousRow.pillar_gm, previousRow.pillar_lm, previousRow.pillar_mc, previousRow.pillar_ec])
+        ? shapeOf([previousRow.pillar_ps, previousRow.pillar_gm, previousRow.pillar_lm, previousRow.pillar_mc, previousRow.pillar_fr])
         : null;
       const comparableToPrevious = previousShape !== null && previousShape === currentShape;
 
@@ -622,6 +661,7 @@ export async function GET(request: Request) {
           unemployment: raw.unemployment,
           policy_rate: raw.policyRate,
           brent_yoy: raw.brentYoY,
+          debt_pct_gdp: raw.debtPctGdp,
           observation_date: observationDate,
           // WHEN each figure refers to, not when it was fetched (audit M-6).
           inflation_observation_date: dates.inflation,
@@ -629,6 +669,11 @@ export async function GET(request: Request) {
           unemployment_observation_date: dates.unemployment,
           policy_rate_observation_date: dates.policyRate,
           brent_observation_date: dates.brent,
+          // BIS's own quarter label, e.g. "2025-Q4", stored verbatim.
+          // A quarter is not a day: converting it to a date would invent
+          // a precision the release does not have, which is the mistake
+          // per-indicator dates were added to stop.
+          debt_observation_period: debt?.period ?? null,
           source_note: sourceNote,
           status: "current",
         }),
@@ -639,7 +684,12 @@ export async function GET(request: Request) {
           pillar_gm: pillars.GM,
           pillar_lm: pillars.LM,
           pillar_mc: pillars.MC,
-          pillar_ec: pillars.EC,
+          // pillar_ec is deliberately left unwritten. Rows before
+          // 2026-09-01 hold real External & Commodities scores and those
+          // stay as they are; writing a Fiscal Resilience value into a
+          // column named for a different pillar would corrupt the record
+          // the export button hands to readers.
+          pillar_fr: pillars.FR,
           composite,
           coverage,
           band: band.label,

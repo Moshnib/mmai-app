@@ -20,7 +20,7 @@ import {
   growthMomentumScore,
   labourMarketScore,
   monetaryConditionsScore,
-  externalCommoditiesScore,
+  fiscalResilienceScore,
   inflationTargetFor,
   neutralRateFor,
   NEUTRAL_RATE,
@@ -67,6 +67,13 @@ function compile(expression: string): (v: number, target: number, neutral: numbe
       new RegExp(String.raw`^\|\s*${VAR}\s*−\s*(${NUM})\s*\|$`),
       (m) => { const c = num(m[1]); return (v: number) => Math.abs(v - c); },
     ],
+    // max(0, var − 60)  one-sided: only the excess above a threshold
+    // counts. Fiscal Resilience is the first published formula with a
+    // floor inside the term rather than only at the outer clamp.
+    [
+      new RegExp(String.raw`^max\(\s*0\s*,\s*${VAR}\s*−\s*(${NUM})\s*\)$`),
+      (m) => { const c = num(m[1]); return (v: number) => Math.max(0, v - c); },
+    ],
     // |var|            plain absolute value
     [new RegExp(String.raw`^\|\s*${VAR}\s*\|$`), () => (v) => Math.abs(v)],
     // (var − 2%)       shifted, not absolute
@@ -97,13 +104,20 @@ const ENGINE: Record<PillarKey, (v: number, target: number, neutral: number) => 
   GM: (v) => growthMomentumScore(v),
   LM: (v) => labourMarketScore(v),
   MC: (v, _t, n) => monetaryConditionsScore(v, n),
-  EC: (v) => externalCommoditiesScore(v),
+  FR: (v) => fiscalResilienceScore(v),
 };
 
 // Wide enough to cross both clamp boundaries for every pillar, fine
 // enough that a small coefficient change cannot slip between samples.
 const SWEEP: number[] = [];
-for (let v = -40; v <= 40; v += 0.25) SWEEP.push(Math.round(v * 100) / 100);
+//
+// UPPER BOUND RAISED TO 260 on 2026-09-01. It was 40, which is ample for
+// a rate or a growth figure but never reaches a government debt ratio:
+// every sampled value sat below Fiscal Resilience's 60% threshold, so the
+// pillar would have been reported as verified without the sweep once
+// touching its slope. Japan is at 178.8; 260 clears the highest ratio any
+// scored market has recorded, with room to spare.
+for (let v = -40; v <= 260; v += 0.25) SWEEP.push(Math.round(v * 100) / 100);
 
 const MARKETS = FALLBACK_MARKETS.map((m) => m.code);
 const EPS = 1e-9;

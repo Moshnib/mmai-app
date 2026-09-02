@@ -234,7 +234,7 @@ Norway's technical notes, preserved for when it returns:
 ### 🌐 Shared across all markets
 | Indicator | Institution | Fetcher | Notes |
 |---|---|---|---|
-| Brent Crude YoY (External & Commodities pillar) | U.S. Energy Information Administration | `eia.ts` → `fetchBrentYoY()` | v2 API, product facet `EPCBRENT`, series facet `RBRTE` (pinned deliberately). Monthly, YoY computed manually. **Fetched ONCE per refresh cycle in `GET()`, not once per market** — passed as a parameter into `fetchRawIndicators(market, brentYoY)`. |
+| Brent Crude YoY (**context only — NOT SCORED since 2026-09-01**) | U.S. Energy Information Administration | `eia.ts` → `fetchBrentYoY()` | v2 API, product facet `EPCBRENT`, series facet `RBRTE` (pinned deliberately). Monthly, YoY computed manually. **Fetched ONCE per refresh cycle in `GET()`, not once per market** — passed as a parameter into `fetchRawIndicators(market, brentYoY)`. |
 
 ---
 
@@ -247,7 +247,7 @@ S_PS = clip(100 − 15 × |inflation − τ(market)|, 0, 100)  -- Price Stabilit
 S_GM = clip(50 + 10 × gdpGrowth, 0, 100)             -- Growth Momentum
 S_LM = clip(100 − 10 × (unemployment − 2), 0, 100)   -- Labour Market
 S_MC = clip(100 − 12 × |policyRate − rN(market)|, 0, 100)  -- Monetary Conditions, rN is PER-MARKET
-S_EC = clip(100 − 1.2 × |brentYoY|, 0, 100)          -- External & Commodities
+S_FR = clip(100 − 0.3 × max(0, debtPctGdp − 60), 0, 100)  -- Fiscal Resilience
 
 MMAI = (Σ weight × pillar_score) / (Σ active weights)  -- reweights around any missing pillar
 ```
@@ -608,8 +608,9 @@ Full record in `MMAI_CHANGE_LOG.md`, each entry to charter §14's required struc
 | 31 Aug | **Per-market inflation targets**; AU = 2.5% | AU 73.97 → **75.85** |
 
 Measured facts worth not rediscovering:
-- **Effective ≠ nominal weight.** Monetary Conditions is weighted 18.75% and operates at **9.2%**; External & Commodities is weighted 12.5% and operates at **15.0%**. Stored in `PILLAR_EFFECTIVE_INFLUENCE`, read by nothing in the scoring path.
-- **External & Commodities has zero cross-market variance** (sd exactly 0.0000) — one global Brent price for all six. Remove it and the ranking is unchanged. It is also the *only* daily-updating input, so all six scores move in lockstep day to day.
+- **Effective ≠ nominal weight.** Monetary Conditions is weighted 18.75% and operates at **11.0%**; Fiscal Resilience is weighted 12.5% and operates at **9.0%**. Stored in `PILLAR_EFFECTIVE_INFLUENCE`, read by nothing in the scoring path, and **re-measured by `scripts/measure-pillar-influence.ts` in CI** — which fails if the published figures drift.
+- **FIXED 2026-09-01 — see §17.** External & Commodities had zero cross-market variance (sd exactly 0.0000) and was replaced by Fiscal Resilience (sd 11.1). Brent is still fetched and shown in the weekly feed, but it no longer moves any score. **It is also not daily** — the registry claimed `cadence: "daily"` until 2026-09-02, but the EIA series it reads is MONTHLY, and the stored reading is routinely two months old. MMAI has no daily-updating input at all.
+- **Growth Momentum barely separates the six markets.** Cross-market sd of just **3.3**, the lowest of any pillar, against a joint-largest 25% weight — less than a third of what Labour Market achieves at 18.75%. Not the same defect as the oil pillar (GDP growth is genuinely per-market and will spread when the cycle diverges), but **uninvestigated**, and it should be before anyone claims the weights are calibrated. Tracked in `PILLAR_CROSS_MARKET_SD`.
 - **The pillars are NOT redundant.** Strongest cross-pillar correlation |r| = 0.32; Growth vs Labour only 0.17. This is genuine evidence for the five-pillar structure — record it in the IP file.
 
 ### 15.5 The refresh pipeline (this replaces §0's cron claim)
@@ -731,8 +732,154 @@ Every time-series chart renders through `TrendChart`, so this fixed all of them 
 
 | Item | Owner |
 |---|---|
-| **Rec 8** — replace External & Commodities (cross-market variance is exactly 0.0000) | decision |
 | **Rec 7** — geometric aggregation (21% of historical bands change) | decision |
 | **A domain** — email is impossible without it; also improves an IMF permission request | owner |
 | Refresh Australia's neutral rate (2017) | next session |
 | Historical calibration dataset extension | research branch |
+
+---
+
+## 17. Fiscal Resilience replaces the oil pillar (2026-09-01)
+
+Audit finding **M-4 / recommendation 8**, closed. Full charter-§14 record in [`MMAI_CHANGE_LOG.md`](MMAI_CHANGE_LOG.md); this is what you need to not break it.
+
+### 17.1 What changed
+
+```
+was:  S_EC = clip(100 − 1.2 × |brentYoY|, 0, 100)
+now:  S_FR = clip(100 − 0.3 × max(0, debtPctGdp − 60), 0, 100)
+```
+
+Weight is unchanged at 12.5%. **The pillar key is `FR`, not `EC`** — renamed on purpose so the compiler had to visit all seventeen call sites instead of letting a redefined `EC` slip through.
+
+### 17.2 Why the old pillar had to go
+
+Brent is **one global price**. The refresh route fetched a single figure and wrote it unchanged into all six market rows — confirmed live, every market carrying `brent_yoy = 17.91`. Its cross-market standard deviation was **exactly 0.0000**. It held 12.5% of the weight, added an identical 9.81 points to every composite, and **could not change any ranking**.
+
+It also scored *absolute* change, so a crash and a boom counted alike: oil fell 34% in 2020 and rose 69% in 2021, and the pillar read the recovery as instability worth 17.2/100.
+
+### 17.3 THE TRAP THAT LET IT HIDE FOR MONTHS
+
+The Learn page published External & Commodities at **15.0% "effective influence" — third of five, more than its weight.** It looked like the pillar was pulling more than its share.
+
+That figure is *weight × standard deviation across the whole panel*, which blends variation over **time** with variation across **markets**. All 15.0% was the former. A pillar fed by one global price scores brilliantly on that metric while doing nothing whatsoever for comparison.
+
+So `PILLAR_CROSS_MARKET_SD` now exists beside `PILLAR_EFFECTIVE_INFLUENCE`, and **both are published**. Any future pillar measuring near zero on the cross-market line is decoration, whatever its influence figure says. Read them together or you will make this mistake again.
+
+### 17.4 The 60% is sourced. The slope is a choice.
+
+60% is the **Maastricht reference value** (TFEU Protocol No 12, Article 1) — a published threshold that already governs six of the scored economies through the euro area. It is *not* the level at which debt becomes dangerous; no such universal level exists, and asserting one would repeat the H-2 error exactly.
+
+**The slope, 0.3, decides Japan's rank, and the site owner chose it.** Sensitivity:
+
+| Slope | Ranking |
+|---|---|
+| **0.30** | **AU > JP > EA > US > UK > CA** ← adopted |
+| 0.45–0.60 | AU > EA > JP > US > UK > CA |
+| 0.80–1.00 | AU > EA > UK > US > JP > CA |
+
+Australia first and Canada last under **every** slope; only Japan moves. Gentle was chosen because Japan's debt is held domestically, in yen, at near-zero rates — a genuinely different condition from the same ratio elsewhere.
+
+### 17.5 Data
+
+BIS `WS_TC`, key `Q.{area}.G.A.M.770.A`, quarterly. **`lib/fetchers/bis.ts` already existed** (shipped 29 August for the Compare page), so this needed no new source, licence review or key.
+
+Name it as BIS names it: *credit to general government from all sectors at market value*. Closely related to gross government debt and built for cross-country comparison, but **not identical** to a national treasury's headline figure.
+
+Seven years of Q4 history for all seven markets were fetched and written into `lib/history.ts` — **56 points, every one sourced.**
+
+### 17.6 Ranking changed; no band did
+
+| | Before | After |
+|---|---:|---:|
+| Australia | 81.02 | **83.71 (1st)** |
+| Japan | 83.76 (1st) | 81.99 (2nd) |
+| Euro Area | 78.70 | 80.44 |
+| US | 78.36 | 79.13 |
+| UK | 76.56 | 78.17 |
+| Canada | 72.13 | 73.46 |
+
+Cross-market spread of the fifth pillar: **0.0000 → 11.10**.
+
+Five of six markets **rise**. That is not the index turning generous — the retired pillar was scoring oil up 17.9% YoY and docking all six for it. Removing one indicator's noise lifted six scores at once. Only Japan falls, and only by 1.77.
+
+### 17.7 MIGRATION REQUIRED BEFORE DEPLOY
+
+`supabase/migrations/2026-09-01-fiscal-resilience-pillar.sql`. The refresh route inserts `debt_pct_gdp` and `pillar_fr`; **if those columns are missing the entire insert fails for every market.** Read paths degrade safely to fallback data, but the write path does not.
+
+`mmai_scores.pillar_ec` is **kept, not renamed**. Rows before this date hold genuine External & Commodities scores and are part of the record the export button hands readers.
+
+### 17.8 Traps this change earned
+
+- **A green pipeline proves the code compiles, not that a reader can see it.** Three more bugs shipped past `tsc`, lint and build here, all found by opening the site:
+  1. `targetNote` was nested inside the `targets` conditional, so the new Government Debt and Brent explanations rendered **for nobody**. Identical shape to the 31 August limitations bug.
+  2. `weeklyChanges.ts` and `useLiveHistory.ts` omitted `debt_pct_gdp` from their `.select()`, so they computed **four-pillar** composites disagreeing with the homepage — US showed 80.4 in one place and 78.3 in another.
+  3. The Learn page still published *"an assumed neutral level of 2.5% everywhere"* and *"no published estimate exists for the UK, Japan or Australia"* — both false since H-2 closed hours earlier.
+- **A verifier can pass without testing anything.** `verify-published-formulas` swept −40 to 40, which never reaches a debt ratio: every sample sat below the 60% threshold, so Fiscal Resilience would have been declared verified without the sweep once touching its slope. Raised to 260. **When you add a pillar, check the sweep actually covers its input range.**
+- **`scripts/measure-pillar-influence.ts` is new and runs in CI.** The published influence figures used to be computed by hand and pasted in. It caught four wrong values on its first run.
+
+### 17.9 Still open
+
+| Item | Owner |
+|---|---|
+| **Rec 7** — geometric aggregation (21% of historical bands change) | decision |
+| **Growth Momentum's 3.3 cross-market sd** against a 25% weight — §17.3 | investigate |
+| **A domain** — email is impossible without it; also improves an IMF permission request | owner |
+| Refresh Australia's neutral rate (2017) | next session |
+| Historical calibration dataset extension | research branch |
+
+---
+
+## 18. The Euro Area source died and nothing noticed (2026-09-02)
+
+Found by an operational audit, not by any automated check. **That is the finding.**
+
+### 18.1 What happened
+
+Eurostat retired `prc_hicp_manr` on **4 February 2026** when the euro area HICP methodology changed. The ECB discontinued its matching `ICP` dataflow the same day.
+
+Neither returned an error. They stopped gaining months. The fetcher asked for the newest observation, got **December 2025**, and reported success every morning for nine months.
+
+MMAI published euro area inflation as **2.0% — exactly on target** — while the real figure climbed to **3.3%**. Price Stability is 25% of the score, so **the Euro Area was published as *Supportive* when the correct verdict was *Balanced*.** First known wrong published band caused by a source failure rather than a methodology choice.
+
+### 18.2 THE KEY CHANGED SHAPE, NOT JUST NAME
+
+```
+dead:  ICP/M.U2.N.000000.4.ANR     <- still resolves, still returns 2025 data
+live:  HICP/M.U2.N.000000.4D0.ANR  <- provider dimension 4 -> 4D0
+```
+
+A half-migration looks like it works. `fetchEuroAreaInflation` now lives in **`lib/fetchers/ecb.ts`** and was **deleted** from `eurostat.ts` — not deprecated, because an exported function is one somebody imports by autocomplete.
+
+### 18.3 WHY NOTHING CAUGHT IT — READ THIS BEFORE ADDING ANY FETCHER
+
+The only staleness check in the project is:
+
+```
+isStale = now − row.fetched_at > 72 hours
+```
+
+`fetched_at` is **when we last ASKED**. It says nothing about **what came back**. A frozen source answers instantly every morning and reads as perfectly live. The per-indicator observation dates (audit M-6) *display* the age to a reader; **no code tests it.**
+
+The new ECB fetcher carries a local guard — it throws if the newest observation is over **100 days** old, generous against a ~7-week normal HICP gap. It throws rather than warns so `settle()` writes the row PARTIAL and the coverage gate withholds the score: **a confident wrong number is worse than a visible gap.**
+
+**That guard covers ONE fetcher. Fourteen other live series can still fail this way.** A system-wide observation-age check in CI is the highest-value item outstanding.
+
+### 18.4 Deploy ordering matters
+
+| Shipped as… | EA composite | Band |
+|---|---:|---|
+| Live before the fix | 78.70 | Supportive |
+| Inflation fix **alone** | 73.83 | **Balanced** |
+| **With §17 Fiscal Resilience** | **75.57** | **Supportive** |
+
+**Ship both together.** Fiscal Resilience removes the retired oil pillar that was docking every market for oil being up 17.9%, which offsets the inflation correction. Separately, the Euro Area changes band twice in a week for reasons unconnected to the euro area.
+
+### 18.5 Two false statements also corrected
+
+- **`SOURCE_NOTES` credited the World Bank for Canada, the UK, Australia and Japan.** They read Statistics Canada, ONS, ABS and e-Stat. The World Bank is used only for Japan's unemployment fallback and dormant Norway. These strings are stored on every row and shown as provenance. **Nothing binds them to the actual `settle()` calls — they drifted for weeks. Keep them in step by hand.**
+- **Brent was labelled `cadence: "daily"`; the EIA series is monthly** and runs about two months behind. MMAI has no daily-updating input at all.
+
+### 18.6 Still healthy, verified the same day
+
+All routes 200, no console errors, CI green, cron running, Gulf Watch fully correct (including Saudi/Kuwait BIS policy rates), subscriber and feedback tables correctly locked to the service role, scores written for all six markets. UK GDP (6mo) and unemployment (4mo) are genuine ONS lag — checked against ONS directly, not assumed.

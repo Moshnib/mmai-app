@@ -13,7 +13,7 @@ import { PILLAR_NAMES, formatWeightPct, RAW_FIELD, computePillarScores, computeC
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourcesForMarket, sourceForPillar } from "@/lib/sources";
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
+const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
 
 // Module scope, not per-render: derived purely from a module constant,
 // so rebuilding it each render would invalidate the memos below it.
@@ -122,7 +122,7 @@ export default function TrendsPageInner({
   }, [latestPoint, current]);
 
   const pillarCurrentScores: Record<PillarKey, number | null> = useMemo(() => {
-    if (!latestPoint) return { PS: null, GM: null, LM: null, MC: null, EC: null };
+    if (!latestPoint) return { PS: null, GM: null, LM: null, MC: null, FR: null };
     return computePillarScores(latestPoint.indicators, current);
   }, [latestPoint, current]);
 

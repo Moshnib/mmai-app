@@ -3,7 +3,7 @@
 import { PILLAR_NAMES, formatWeightPct, bandFor, type PillarKey, type PillarScores } from "@/lib/scoring";
 import Link from "next/link";
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
+const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
 
 // One-line plain-language descriptor per pillar (design brief §3: the
 // five cards should make it obvious what each one measures without a
@@ -14,7 +14,7 @@ export const PILLAR_DESC: Record<PillarKey, string> = {
   GM: "Output, demand & economic momentum",
   LM: "Employment, wage growth & participation",
   MC: "Policy stance & financial conditions",
-  EC: "Oil prices & external conditions",
+  FR: "Government debt against the 60% reference",
 };
 
 // Simple line icons, one per pillar, matching the design reference's
@@ -56,11 +56,14 @@ export const PILLAR_ICONS: Record<PillarKey, React.ReactNode> = {
       <path d="M2 14h12" />
     </>
   ),
-  // globe/arrow — external & commodities
-  EC: (
+  // shield with a reference line across it — fiscal resilience.
+  // Not a bank: MC already owns the columned building, and two
+  // variations on the same building would read as one pillar split in
+  // two rather than as two different things.
+  FR: (
     <>
-      <circle cx="8" cy="8" r="6" />
-      <path d="M2 8h12M8 2c1.8 2 2.7 4 2.7 6s-.9 4-2.7 6c-1.8-2-2.7-4-2.7-6S6.2 4 8 2z" />
+      <path d="M8 1.8l5.3 2v4.5c0 3.4-2.2 5.6-5.3 6.5-3.1-.9-5.3-3.1-5.3-6.5V3.8L8 1.8z" />
+      <path d="M4.7 8.3h6.6" />
     </>
   ),
 };

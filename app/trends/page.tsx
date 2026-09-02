@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     "How each market's MMAI score and its five underlying pillars have moved since 2019 — with the raw inflation, growth, unemployment, and policy-rate figures behind them.",
 };
 
-const VALID_PILLARS: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
+const VALID_PILLARS: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
 
 // searchParams is read here on the server and passed down as props, rather
 // than via useSearchParams() inside the client component. That keeps the page

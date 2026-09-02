@@ -42,15 +42,26 @@ function latestObservation(json: JsonStatResponse): { period: string; value: num
   return null;
 }
 
-export async function fetchEuroAreaInflation(): Promise<{ inflation: number; observationDate: string }> {
-  const url = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_manr?format=JSON&geo=EA&coicop=CP00&unit=RCH_A&lastTimePeriod=3";
-  const res = await fetch(url, { next: { revalidate: 0 } });
-  if (!res.ok) throw new Error(`Eurostat HICP request failed: ${res.status} ${res.statusText}`);
-
-  const obs = latestObservation(await res.json());
-  if (!obs) throw new Error("Eurostat HICP: no observation returned");
-  return { inflation: obs.value, observationDate: `${obs.period}-01` };
-}
+// ============================================================
+// REMOVED 2026-09-02 — fetchEuroAreaInflation()
+//
+// It read Eurostat `prc_hicp_manr` with geo=EA. Eurostat RETIRED that
+// dataset on 4 February 2026 when the euro area HICP methodology changed.
+// It did not start returning errors; it stopped gaining new months. The
+// function asked for the newest observation, was handed December 2025,
+// and returned success every single day for nine months while MMAI
+// published euro area inflation as 2.0% and the real figure reached 3.3%.
+//
+// Verified dead on 2026-09-02: EA, EA19 and EA20 all end at 2025-12, and
+// asking for 2026 explicitly returns an empty set.
+//
+// DO NOT REINSTATE THIS AGAINST prc_hicp_manr. The live series is at the
+// ECB: see fetchEuroAreaInflation() in lib/fetchers/ecb.ts, which also
+// carries the maximum-age guard this function lacked.
+//
+// Deleted rather than deprecated on purpose. A function left exported
+// "just in case" is a function someone imports by autocomplete.
+// ============================================================
 
 export async function fetchEuroAreaGdpGrowth(): Promise<{ gdpGrowth: number; observationDate: string }> {
   const url = `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/tec00115?format=JSON&geo=${EA_GEO_FIXED}&unit=CLV_PCH_PRE&lastTimePeriod=3`;

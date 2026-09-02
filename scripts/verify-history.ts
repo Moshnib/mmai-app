@@ -1,8 +1,29 @@
 import { HISTORY } from "../lib/history";
 import { computePillarScores, computeComposite } from "../lib/scoring";
 
-// Every value below was RE-PINNED on 2026-09-01 when the neutral policy
-// rate became per-market (audit H-2). MMAI had scored all six economies
+// RE-PINNED TWICE ON 2026-09-01. Read both notes; they describe two
+// separate methodology changes that landed the same day.
+//
+// ---- SECOND RE-PIN: Fiscal Resilience replaced External & Commodities
+// (audit M-4 / recommendation 8). The old fifth pillar scored Brent
+// crude, a single global price applied identically to all six markets.
+// The new one scores each market's own government debt.
+//
+// EVERY YEAR ROSE, AND 2021 ROSE MOST -- roughly 8 points for all three
+// markets at once. That is the clearest possible demonstration of what
+// was wrong with the old pillar. Brent rose 69% in 2021 as oil recovered
+// from the pandemic collapse, which scored 17.2 out of 100 and dragged
+// the US, the Euro Area and Canada down TOGETHER, by the same amount, in
+// a year when their actual macro positions were diverging sharply. The
+// index was reporting the oil market and calling it the economy.
+//
+// 2020 also rose everywhere, for the mirror reason: oil COLLAPSED 34%
+// that year, which the old pillar rewarded. It was scoring absolute
+// price change, so a crash and a boom both counted as instability --
+// giving the pandemic year an artificially decent fifth pillar.
+//
+// ---- FIRST RE-PIN: the neutral policy rate became per-market
+// (audit H-2). MMAI had scored all six economies
 // against a single 2.5%; each now uses a published estimate, so every
 // historical Monetary Conditions score -- and therefore every composite --
 // moved.
@@ -21,9 +42,9 @@ import { computePillarScores, computeComposite } from "../lib/scoring";
 // This test failing is what caught the omission when the neutral-rate
 // change shipped without updating it -- which is exactly what it is for.
 const expected: Record<string, Record<string, number | null>> = {
-  US: { "2019": 86.4, "2020": 55.1, "2021": 66.6, "2022": 58, "2023": 75.5, "2024": 81.5 },
-  EA: { "2019": 70.9, "2020": 46.6, "2021": 70.9, "2022": 54.2, "2023": 60.4, "2024": 76.3 },
-  CA: { "2019": 78.9, "2020": 42.9, "2021": 66.2, "2022": 63.7, "2023": 71.4, "2024": 80.2 },
+  US: { "2019": 86.3, "2020": 57.6, "2021": 74.7, "2022": 62.7, "2023": 76.7, "2024": 80.1 },
+  EA: { "2019": 71.1, "2020": 49.8, "2021": 79.5, "2022": 59.6, "2023": 62.3, "2024": 75.6 },
+  CA: { "2019": 79.4, "2020": 45.9, "2021": 74.8, "2022": 69, "2023": 73.1, "2024": 79.2 },
 };
 
 let allPass = true;

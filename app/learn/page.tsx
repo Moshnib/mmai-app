@@ -31,10 +31,10 @@ const NEUTRAL_LIST = FALLBACK_MARKETS
 export const metadata: Metadata = {
   title: "Learn More",
   description:
-    "Inflation, GDP growth, unemployment, policy rates, and oil — plus Gulf Watch's cost-of-living, investment-confidence, and currency-stability figures — what each one actually means for you, in plain language.",
+    "Inflation, GDP growth, unemployment, policy rates, and government debt — plus Gulf Watch's cost-of-living, investment-confidence, and currency-stability figures — what each one actually means for you, in plain language.",
 };
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "EC"];
+const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
 
 const TOPICS = [
   {
@@ -72,10 +72,20 @@ const TOPICS = [
     impact: "This number sets the floor for mortgage rates, car loans, and credit card APRs — when it rises, borrowing gets more expensive.",
   },
   {
+    id: "debt",
+    title: "Government Debt — how much room a country has left",
+    def: "What a government owes, measured against the size of its economy. A country with low debt can borrow to cushion a recession; a country with high debt has less room to act and spends more of its budget on interest instead of services.",
+    formula: formulaLine("FR"),
+    targetNote:
+      "The 60% mark is not our invention: it is the reference value written into the European Union's treaties, which is why it already applies to the euro area. It is a reference point, not a danger line — no such universal line exists. Debt at or below 60% scores full marks, and the penalty above it is deliberately gentle. Japan is the clearest reason why: its debt is the highest of the six by a wide margin, but it is owed almost entirely to its own citizens, in its own currency, at near-zero interest rates. That is a genuinely different situation from the same number elsewhere, and a harsh penalty would pretend otherwise.",
+    impact: "High government debt tends to show up in your life slowly — as higher taxes, tighter public spending, or less help from the state when the next downturn arrives.",
+  },
+  {
     id: "oil",
-    title: "Brent Crude Oil — the hidden cost inside everything",
+    title: "Brent Crude Oil — shown, but no longer scored",
     def: "The global benchmark oil price. Even if you never buy gasoline directly, oil is embedded in shipping, manufacturing, and heating costs.",
-    formula: formulaLine("EC"),
+    targetNote:
+      "Oil used to be MMAI's fifth pillar and stopped being one on 1 September 2026. The reason is simple: there is only one oil price in the world, so every country received exactly the same score for it. It moved all six scores up and down together and could never make one country look better or worse than another — while taking 12.5% of the weight. Government debt replaced it because every country has its own. Oil is still shown in the weekly feed, where a single global price is exactly what it claims to be.",
     impact: "Oil spikes show up weeks later as higher prices at the pump, higher heating bills, and higher shipping costs baked into everything you buy.",
   },
   {
@@ -86,14 +96,14 @@ const TOPICS = [
     // Weights are read from PILLAR_WEIGHTS rather than typed as a string, so
     // the published numbers can never drift out of sync with the engine.
     weights: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatWeightPct(k)}`).join("  ·  "),
-    // What those weights actually DO, measured rather than asserted. Published
-    // because the weight table alone overstates Monetary Conditions and
-    // understates External & Commodities -- see PILLAR_EFFECTIVE_INFLUENCE.
+    // What those weights actually DO, measured rather than asserted, by
+    // scripts/measure-pillar-influence.ts -- which runs in CI and fails if
+    // these published figures drift from the panel.
     influence: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatInfluencePct(k)}`).join("  ·  "),
     influenceNote:
-      `A pillar's real influence is its weight multiplied by how much it actually moves. Measured across all six markets since 2019 (as of ${PILLAR_INFLUENCE_MEASURED}), Monetary Conditions is weighted 18.75% but does 9.2% of the work, because policy rates change only a few times a year. External & Commodities is weighted 12.5% and does 15% — more than Monetary Conditions.`,
+      `A pillar's real influence is its weight multiplied by how much it actually moves. Measured across all six markets since 2019 (as of ${PILLAR_INFLUENCE_MEASURED}), Monetary Conditions is weighted 18.75% but does 11% of the work, because policy rates change only a few times a year. Fiscal Resilience is weighted 12.5% and does 9%, because government debt moves slowly.`,
     ecNote:
-      "One caveat worth knowing when comparing countries: External & Commodities uses a single global Brent oil price, so every market receives an identical score for it. It moves all six scores together over time, but it cannot make one market look better than another. Remove it entirely and the ranking of the six markets does not change at all.",
+      "A caveat worth knowing when comparing countries, and it has changed. Until 1 September 2026 the fifth pillar was the global oil price, which gave every country an identical score and so could not separate them at all. It is now each country's own government debt, which does. But the same question is worth asking of every pillar, so here is the honest answer for the current six: unemployment separates the countries most, then debt, then inflation. Growth separates them least — it carries the joint-largest weight, 25%, and on today's readings the six are close enough on growth that it does little to distinguish them. That will change when the cycle diverges, but it is true right now and you should know it.",
     // Audit findings H-1, H-2 and M-1. Stated on the page a reader
     // actually reads, not only in an internal document.
     limitations: [
@@ -103,9 +113,9 @@ const TOPICS = [
           "MMAI averages its five pillars, so a very low score in one can be offset by high scores in the others. In 2013 the Euro Area's Labour Market pillar fell to zero — unemployment above 12% — and the composite still read 59.9, \"Balanced\". Where that is happening now, the site says so beside the score. It is a property of averaging, disclosed rather than hidden.",
       },
       {
-        head: "One neutral interest rate is used for all six markets",
+        head: "Australia's neutral rate is nine years old",
         body:
-          "Monetary Conditions measures the policy rate against an assumed neutral level of 2.5% everywhere. The rate that is genuinely neutral differs by economy — published Federal Reserve estimates imply roughly 3.0% for the United States, 3.8% for Canada and 2.1% for the Euro Area, and no published estimate exists for the UK, Japan or Australia. Correcting three of six would make the comparison between countries incoherent, so the single assumption stands and is stated here instead.",
+          "Every market is now measured against a neutral interest rate published for its own economy, which was not true before 1 September 2026 — until then a single 2.5% was applied to all six. Five of the six figures are current. Australia's is not: it derives from a 2017 Reserve Bank study, because the RBA publishes its current estimates in charts rather than in text. Neutral rates have generally risen since 2017, so Australia's is more likely too low than too high — which makes Australia look further from neutral than it probably is, scoring it conservatively rather than flatteringly.",
       },
       {
         head: "The five pillars are less independent than they look",
@@ -226,18 +236,29 @@ export default function LearnPage() {
               )}
 
               {/* Per-market targets, rendered from INFLATION_TARGET so the
-                  published formula cannot drift from the scoring engine. */}
+                  published formula cannot drift from the scoring engine.
+                  targetNote is rendered by the SEPARATE block below, not
+                  nested in here: a note nested inside this conditional
+                  only appears for the two sections that also have a
+                  per-market target table, so the Government Debt and
+                  Brent Crude notes were written, compiled, linted, built
+                  -- and shown to nobody. Same shape of bug as the
+                  limitations block on 31 August, found the same way, by
+                  opening the page. */}
               {"targets" in t && t.targets && (
                 <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 8 }}>
                     Each market’s own target
                   </div>
-                  <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8, marginBottom: 10 }}>
+                  <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8 }}>
                     {t.targets}
                   </div>
-                  {"targetNote" in t && t.targetNote && (
-                    <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>{t.targetNote}</p>
-                  )}
+                </div>
+              )}
+
+              {"targetNote" in t && t.targetNote && (
+                <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
+                  <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>{t.targetNote}</p>
                 </div>
               )}
 

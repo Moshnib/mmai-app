@@ -23,7 +23,7 @@ export const RAW_DECIMALS: Record<PillarKey, number> = {
   GM: 1, // GDP growth
   LM: 1, // unemployment
   MC: 2, // policy rate -- set to the nearest quarter-point
-  EC: 1, // Brent YoY
+  FR: 1, // government debt, % of GDP -- BIS publishes one decimal
 };
 
 const STATS: Array<{ pillar: PillarKey; color: string }> = [
