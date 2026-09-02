@@ -190,9 +190,54 @@ export default function TrendChart({
     return row;
   });
 
+  // ---------- Text alternative for screen readers ----------
+  //
+  // A Recharts chart is an SVG full of <path> elements. To anyone using a
+  // screen reader it is silence -- and these charts ARE the content on
+  // Trends and Compare, so silence means the page's main feature does not
+  // exist for them.
+  //
+  // Described rather than merely labelled: "line chart" tells a reader
+  // nothing they can use. The direction and the endpoints are the part a
+  // sighted reader takes from a glance, so that is what gets spoken.
+  //
+  // Built from the same `series` the chart draws, so it cannot describe
+  // something the chart is not showing.
+  const describeSeries = (s: Series): string => {
+    const pts = s.data.filter((d) => d.value != null) as Array<{ year: string; value: number }>;
+    if (pts.length === 0) return `${s.name}: no data`;
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    const unit = yLabel ? yLabel.trim() : "";
+    // ONE DECIMAL, ALWAYS. These strings are SPOKEN, and the underlying
+    // values carry full float precision -- a screen reader reads 70.5175
+    // as "seventy point five one seven five", which is worse than no
+    // description at all. The chart itself is read at a glance; the
+    // spoken version should be too.
+    const n = (v: number) => v.toFixed(1);
+    if (pts.length === 1) return `${s.name}: ${n(last.value)}${unit} at ${last.year}`;
+    const direction = last.value > first.value ? "rising" : last.value < first.value ? "falling" : "flat";
+    return (
+      `${s.name}: ${direction} from ${n(first.value)}${unit} at ${first.year} ` +
+      `to ${n(last.value)}${unit} at ${last.year}`
+    );
+  };
+  const chartDescription =
+    series.length > 0
+      ? `Line chart. ${series.map(describeSeries).join(". ")}.`
+      : "Line chart with no data.";
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={merged} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+      {/* role="img" collapses the SVG's internals for assistive tech and
+          presents the description instead, rather than reading out
+          hundreds of meaningless path nodes. */}
+      <LineChart
+        data={merged}
+        margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
+        role="img"
+        aria-label={chartDescription}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
         <XAxis
           dataKey="year"

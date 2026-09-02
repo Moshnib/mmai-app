@@ -155,11 +155,11 @@ export default async function StablecoinsPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Token</th>
-                  <th>Issuer</th>
-                  <th style={{ textAlign: "right" }}>Total supply</th>
-                  <th>Split by network</th>
-                  <th>Backed by</th>
+                  <th scope="col">Token</th>
+                  <th scope="col">Issuer</th>
+                  <th scope="col" style={{ textAlign: "right" }}>Total supply</th>
+                  <th scope="col">Split by network</th>
+                  <th scope="col">Backed by</th>
                 </tr>
               </thead>
               <tbody>

@@ -310,7 +310,7 @@ export default function TrendsPageInner({
                   the composite bullet is suppressed whenever coverage
                   falls under the publication gate, and without it the
                   bullets below would name moves with no period at all. */}
-              <h3 style={{ justifyContent: "space-between" }}>
+              <h2 style={{ justifyContent: "space-between" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                   <span style={{ color: "var(--gold-deep)" }}>◆</span> What changed?
                 </span>
@@ -319,7 +319,7 @@ export default function TrendsPageInner({
                     {changes.from} → {changes.to}
                   </span>
                 )}
-              </h3>
+              </h2>
               {changes ? (
                 <ul>
                   {changes.composite != null && (

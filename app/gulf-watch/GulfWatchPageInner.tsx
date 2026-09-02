@@ -36,10 +36,10 @@ export default function GulfWatchPageInner() {
             {/* "The Gulf at a glance" (brief §16). Strictly a count of
                 what is and isn't covered -- no regional commentary. */}
             <div className="insight-card">
-              <h3>
+              <h2>
                 <span aria-hidden="true" style={{ color: "var(--gold-deep)" }}>◈</span>
                 The Gulf at a glance
-              </h3>
+              </h2>
               <ul>
                 <li>
                   <i style={{ background: "var(--gold)" }} />

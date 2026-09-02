@@ -136,11 +136,11 @@ function ComparisonTable() {
       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
         <thead>
           <tr style={{ textAlign: "left", borderBottom: "1px solid var(--hair)" }}>
-            <th style={th}>Country</th>
-            <th style={th}>Inflation (YoY)</th>
-            <th style={th}>FX reserves</th>
-            <th style={th}>Current account</th>
-            <th style={th}>Real estate</th>
+            <th scope="col" style={th}>Country</th>
+            <th scope="col" style={th}>Inflation (YoY)</th>
+            <th scope="col" style={th}>FX reserves</th>
+            <th scope="col" style={th}>Current account</th>
+            <th scope="col" style={th}>Real estate</th>
           </tr>
         </thead>
         <tbody>

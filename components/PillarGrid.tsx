@@ -103,7 +103,17 @@ export default function PillarGrid({ pillars, market, observationDates }: { pill
               {PILLAR_ICONS[key]}
             </svg>
             <div style={{ width: 92, height: 92, margin: "0 auto", position: "relative" }}>
-              <svg viewBox="0 0 56 56" width={92} height={92} style={{ transform: "rotate(-90deg)", overflow: "visible" }}>
+              {/* Decorative. The score this ring draws is rendered as
+                  visible text in the middle of it, so letting a screen
+                  reader announce the SVG too makes it say the number
+                  twice. */}
+              <svg
+                viewBox="0 0 56 56"
+                width={92}
+                height={92}
+                aria-hidden="true"
+                style={{ transform: "rotate(-90deg)", overflow: "visible" }}
+              >
                 <circle cx={28} cy={28} r={23} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
                 <circle
                   cx={28} cy={28} r={23} fill="none"
