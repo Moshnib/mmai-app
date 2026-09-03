@@ -10,3 +10,8 @@ tsconfig.tsbuildinfo
 # and manually excluded from every commit so far; ignoring it removes
 # the chance of sweeping it in by accident.
 .claude/
+
+# Bulk data dumps produced by the backfill scripts. 2.3 MB of daily bond
+# yields that already live in Supabase -- the script regenerates it on
+# demand, so the repo does not need to carry it.
+bond-history-backfill.csv
