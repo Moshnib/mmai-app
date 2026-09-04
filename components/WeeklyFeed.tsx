@@ -154,7 +154,7 @@ export default function WeeklyFeed() {
           const hasFigures = !!now;
           const scoreDelta = r.buckets[0] && then ? delta(r.buckets[0].composite, then.composite) : null;
           const stateColor =
-            scoreDelta?.symbol === "↑" ? "var(--teal)" : scoreDelta?.symbol === "↓" ? COMPOSITE_DOWN_COLOR : "var(--slate)";
+            scoreDelta?.symbol === "↑" ? "var(--status-live)" : scoreDelta?.symbol === "↓" ? COMPOSITE_DOWN_COLOR : "var(--slate)";
 
           return (
             <div key={r.marketCode} className="signal-row">

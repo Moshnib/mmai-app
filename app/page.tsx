@@ -311,7 +311,7 @@ export default function OverviewPage() {
                     lineHeight: 1.6,
                     margin: '10px 0 0',
                     padding: '10px 13px',
-                    borderLeft: '3px solid var(--gold-deep)',
+                    borderLeft: '3px solid var(--accent-2)',
                     background: 'var(--glass)',
                     borderRadius: '0 8px 8px 0',
                     color: 'var(--ink-soft)',
@@ -329,7 +329,7 @@ export default function OverviewPage() {
                     maintenance metadata (see lib/sources.ts) and reads as
                     staleness here. Data freshness is the line above the
                     headline and in the footer. */}
-                <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
+                <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--accent-2)" }}>view all</Link></span>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
                 <Link className="tap"
@@ -337,7 +337,7 @@ export default function OverviewPage() {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
-                    color: "var(--gold)", textDecoration: "none", padding: "7px 14px",
+                    color: "var(--accent)", textDecoration: "none", padding: "7px 14px",
                     border: "1px solid rgba(34,211,238,0.35)", borderRadius: 999, background: "rgba(34,211,238,0.08)",
                   }}
                 >
@@ -354,7 +354,7 @@ export default function OverviewPage() {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
-                    color: "var(--gold-deep)", textDecoration: "none", padding: "7px 14px",
+                    color: "var(--accent-2)", textDecoration: "none", padding: "7px 14px",
                     border: "1px solid rgba(139,92,246,0.35)", borderRadius: 999, background: "rgba(139,92,246,0.08)",
                   }}
                 >
@@ -484,7 +484,7 @@ export default function OverviewPage() {
               <GulfCard key={c.code} country={c} compact />
             ))}
           </div>
-          <Link href="/gulf-watch" className="tap" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--gold-deep)", textDecoration: "none" }}>
+          <Link href="/gulf-watch" className="tap" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--accent-2)", textDecoration: "none" }}>
             See history and comparison →
           </Link>
         </div>
@@ -506,7 +506,7 @@ export default function OverviewPage() {
                 className="tap"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
-                  background: "linear-gradient(135deg, var(--gold-deep), #6D28D9)", color: "#fff",
+                  background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff",
                   fontWeight: 700, fontSize: 13.5, textDecoration: "none",
                 }}
               >

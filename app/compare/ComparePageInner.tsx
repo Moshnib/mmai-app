@@ -229,7 +229,7 @@ export default function ComparePageInner() {
 
     rows.push({
       text: `${supportive} of ${latest.length} selected markets sit above the historical median.`,
-      color: "var(--gold-deep)",
+      color: "var(--accent-2)",
     });
 
     return rows;
@@ -256,7 +256,7 @@ export default function ComparePageInner() {
             {standouts.length > 0 && (
               <div className="insight-card">
                 <h3>
-                  <span aria-hidden="true" style={{ color: "var(--gold-deep)" }}>◈</span>
+                  <span aria-hidden="true" style={{ color: "var(--accent-2)" }}>◈</span>
                   What stands out now
                 </h3>
                 <ul>
@@ -381,7 +381,7 @@ export default function ComparePageInner() {
                       padding: "5px 12px", borderRadius: 999, cursor: "pointer",
                       fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700,
                       letterSpacing: 0.5, textTransform: "uppercase",
-                      border: pillarView === v ? "1px solid var(--gold-deep)" : "1px solid var(--hair)",
+                      border: pillarView === v ? "1px solid var(--accent-2)" : "1px solid var(--hair)",
                       background: pillarView === v ? "rgba(139,92,246,0.18)" : "transparent",
                       color: pillarView === v ? "#fff" : "var(--slate)",
                     }}

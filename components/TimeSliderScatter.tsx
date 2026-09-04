@@ -143,7 +143,7 @@ export default function TimeSliderScatter({
           aria-label={playing ? "Pause" : "Play"}
           style={{
             width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--hair)",
-            background: "rgba(34,211,238,0.1)", color: "var(--gold)", cursor: "pointer",
+            background: "rgba(34,211,238,0.1)", color: "var(--accent)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", flex: "none", fontSize: 13,
           }}
         >
@@ -159,15 +159,15 @@ export default function TimeSliderScatter({
             onChange={handleSliderChange}
             aria-label="Year"
             aria-valuetext={currentYear}
-            style={{ width: "100%", accentColor: "var(--gold)", cursor: "pointer" }}
+            style={{ width: "100%", accentColor: "var(--accent)", cursor: "pointer" }}
           />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: "var(--slate)" }}>
             {years.map((y, i) => (
-              <span key={y} style={i === safeYearIndex ? { color: "var(--gold)", fontWeight: 700 } : undefined}>{y}</span>
+              <span key={y} style={i === safeYearIndex ? { color: "var(--accent)", fontWeight: 700 } : undefined}>{y}</span>
             ))}
           </div>
         </div>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 20, color: "var(--gold)", minWidth: 56, textAlign: "center", flex: "none" }}>
+        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 20, color: "var(--accent)", minWidth: 56, textAlign: "center", flex: "none" }}>
           {currentYear}
         </div>
       </div>

@@ -54,7 +54,7 @@ export default function ComparePage() {
               className="tap"
               style={{
                 fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5, fontWeight: 700,
-                color: "var(--gold-deep)", textDecoration: "none", whiteSpace: "nowrap",
+                color: "var(--accent-2)", textDecoration: "none", whiteSpace: "nowrap",
               }}
             >
               How MMAI is calculated →

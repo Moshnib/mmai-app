@@ -140,7 +140,7 @@ export default function SourcesTable({
             {group.name}
           </h2>
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden", backdropFilter: "blur(14px)" }}>
-            <div className="sources-head" style={{ background: "rgba(139,92,246,0.18)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>
+            <div className="sources-head" style={{ background: "rgba(139,92,246,0.18)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 700, color: "var(--accent)", letterSpacing: 0.5 }}>
               <span>INDICATOR</span>
               <span>INSTITUTION</span>
               <span>LICENCE</span>
@@ -170,7 +170,7 @@ export default function SourcesTable({
                 </span>
                 <span data-label="Licence" style={{ color: "var(--slate)" }}>
                   {e.license}
-                  {e.note && <div style={{ fontSize: 10.5, fontStyle: "italic", color: "var(--gold-deep)", marginTop: 2 }}>{e.note}</div>}
+                  {e.note && <div style={{ fontSize: 10.5, fontStyle: "italic", color: "var(--accent-2)", marginTop: 2 }}>{e.note}</div>}
                 </span>
                 <span data-label="Status">
                   <span
@@ -180,8 +180,8 @@ export default function SourcesTable({
                       fontWeight: 700,
                       padding: "3px 9px",
                       borderRadius: 999,
-                      background: e.status === "live" ? "var(--teal-bg)" : e.status === "manual" ? "var(--gold-bg)" : "rgba(255,255,255,0.06)",
-                      color: e.status === "live" ? "var(--teal)" : e.status === "manual" ? "var(--gold-deep)" : "var(--slate)",
+                      background: e.status === "live" ? "var(--status-live-bg)" : e.status === "manual" ? "var(--status-manual-bg)" : "rgba(255,255,255,0.06)",
+                      color: e.status === "live" ? "var(--status-live)" : e.status === "manual" ? "var(--accent-2)" : "var(--slate)",
                     }}
                   >
                     {e.status === "live" ? "LIVE" : e.status === "manual" ? "MANUAL" : "UNAVAILABLE"}

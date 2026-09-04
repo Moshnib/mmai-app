@@ -54,7 +54,7 @@ export default function ContactForm() {
   if (status === "done") {
     return (
       <div style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 16, padding: "24px 28px", textAlign: "center" }}>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 16, color: "var(--gold-deep)" }}>Thanks — that&apos;s been sent ✓</div>
+        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 16, color: "var(--accent-2)" }}>Thanks — that&apos;s been sent ✓</div>
         <p style={{ fontSize: 13, color: "var(--slate)", margin: "8px 0 0" }}>
           We read every submission. If you left an email, we&apos;ll get back to you when there&apos;s something to say.
         </p>
@@ -121,7 +121,7 @@ export default function ContactForm() {
         disabled={status === "loading"}
         style={{
           marginTop: 18, padding: "10px 24px", borderRadius: 10, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg, var(--gold-deep), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13,
+          background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13,
           opacity: status === "loading" ? 0.6 : 1,
         }}
       >

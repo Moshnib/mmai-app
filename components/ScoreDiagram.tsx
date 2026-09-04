@@ -114,7 +114,7 @@ export default function ScoreDiagram() {
               {t as string}
             </text>
           ))}
-          <text x={IN_X} y={48} fontSize={11} fill="var(--gold-deep)" fontFamily="IBM Plex Sans, sans-serif">
+          <text x={IN_X} y={48} fontSize={11} fill="var(--accent-2)" fontFamily="IBM Plex Sans, sans-serif">
             Australia, as a worked example
           </text>
 

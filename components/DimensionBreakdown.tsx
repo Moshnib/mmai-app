@@ -66,7 +66,7 @@ export default function DimensionBreakdown({
           >
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
               <b style={{ fontSize: 15, color: "#fff" }}>{DIMENSION_NAMES[key]}</b>
-              <span style={{ fontSize: 12, color: "var(--gold-deep)", fontStyle: "italic" }}>
+              <span style={{ fontSize: 12, color: "var(--accent-2)", fontStyle: "italic" }}>
                 {DIMENSION_QUESTIONS[key]}
               </span>
               <span

@@ -374,7 +374,7 @@ export default function TrendsPageInner({
                   bullets below would name moves with no period at all. */}
               <h2 style={{ justifyContent: "space-between" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "var(--gold-deep)" }}>◆</span> What changed?
+                  <span style={{ color: "var(--accent-2)" }}>◆</span> What changed?
                 </span>
                 {changes && (
                   <span className="meta-label" style={{ fontWeight: 500 }}>
@@ -465,7 +465,7 @@ export default function TrendsPageInner({
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 10.5, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
               <span>
                 Built from {sourcesForMarket(marketNames[current]).length} sources — each institution is listed on the{" "}
-                <Link href="/sources" style={{ color: "var(--gold-deep)" }}>Sources</Link> page
+                <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources</Link> page
               </span>
               <span>Most recent point: {latestPoint?.year ?? "—"}</span>
             </div>
@@ -520,7 +520,7 @@ export default function TrendsPageInner({
                   </div>
                   <div className="psc-name">{DIMENSION_NAMES[key]}</div>
                   <div className="psc-desc">{DIMENSION_DESC[key]}</div>
-                  <div className="psc-desc" style={{ fontStyle: "italic", color: "var(--gold-deep)", marginTop: 4 }}>
+                  <div className="psc-desc" style={{ fontStyle: "italic", color: "var(--accent-2)", marginTop: 4 }}>
                     {DIMENSION_QUESTIONS[key]}
                   </div>
                 </button>
@@ -576,7 +576,7 @@ export default function TrendsPageInner({
                         padding: "4px 10px", borderRadius: 999, cursor: "pointer",
                         fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700,
                         letterSpacing: 0.4, textTransform: "uppercase",
-                        border: focusIndicator === ind ? "1px solid var(--gold-deep)" : "1px solid var(--hair)",
+                        border: focusIndicator === ind ? "1px solid var(--accent-2)" : "1px solid var(--hair)",
                         background: focusIndicator === ind ? "rgba(139,92,246,0.18)" : "transparent",
                         color: focusIndicator === ind ? "#fff" : "var(--slate)",
                       }}
@@ -649,8 +649,8 @@ export default function TrendsPageInner({
                         <span
                           style={{
                             padding: "2px 8px", borderRadius: 999, fontFamily: "IBM Plex Mono, monospace", fontSize: 10,
-                            background: focusSource.status === "live" ? "var(--teal-bg)" : "var(--gold-bg)",
-                            color: focusSource.status === "live" ? "var(--teal)" : "var(--gold-deep)",
+                            background: focusSource.status === "live" ? "var(--status-live-bg)" : "var(--status-manual-bg)",
+                            color: focusSource.status === "live" ? "var(--status-live)" : "var(--accent-2)",
                           }}
                         >
                           {focusSource.status === "live" ? "LIVE" : "MANUAL"}

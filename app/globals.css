@@ -3,11 +3,22 @@
   --ink-soft: #C7C9D9;      /* secondary text */
   --paper: #08080D;         /* page background, near-black */
   --white: #12121A;         /* "card" surfaces (glass panels, not literal white) */
-  --gold: #22D3EE;          /* primary accent: cyan */
-  --gold-deep: #B98CFF;     /* secondary accent: violet */
-  --gold-bg: rgba(139, 92, 246, 0.14);
-  --teal: #22D3EE;          /* "good"/live status — cyan, matches the gradient's positive end */
-  --teal-bg: rgba(34, 211, 238, 0.12);
+  /* NAMED FOR WHAT THEY DO, NOT WHAT THEY ONCE WERE.
+     These were --gold, --gold-deep, --gold-bg, --teal and --teal-bg. The
+     site was gold once; the palette moved to cyan and violet and the names
+     stayed, so --gold held cyan and any new work reaching for it got a
+     colour it did not expect. --gold-bg was worse: translucent #8B5CF6,
+     the OLD violet, so the "gold" background could never match the "gold"
+     foreground. Every value below is unchanged -- this is a rename only. */
+  --accent: #22D3EE;        /* primary accent: cyan */
+  --accent-2: #B98CFF;      /* secondary accent: violet */
+
+  /* Source status, used by the Sources table and the Trends panel. Kept
+     separate from --accent even though live currently shares its value,
+     so the two can diverge without one silently dragging the other. */
+  --status-live: #22D3EE;
+  --status-live-bg: rgba(34, 211, 238, 0.12);
+  --status-manual-bg: rgba(139, 92, 246, 0.14);
   --slate: #8A8EA3;         /* muted/meta text */
   --hair: rgba(255, 255, 255, 0.1); /* borders */
   --glass: rgba(255, 255, 255, 0.035);
@@ -59,7 +70,7 @@ body {
   position: absolute; top: -48px; left: 8px; z-index: 100;
   background: var(--paper); color: var(--ink);
   padding: 10px 18px; border-radius: 8px;
-  border: 1px solid var(--gold); text-decoration: none;
+  border: 1px solid var(--accent); text-decoration: none;
   font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 700;
   transition: top 0.15s ease;
 }
@@ -105,14 +116,14 @@ nav {
   font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: 20px;
   display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink);
 }
-.brand .dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-deep), var(--gold)); box-shadow: 0 0 12px rgba(139,92,246,0.7); }
+.brand .dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-2), var(--accent)); box-shadow: 0 0 12px rgba(139,92,246,0.7); }
 .navlinks { display: flex; gap: 8px; font-size: 13.5px; font-weight: 600; }
 .navlink {
   padding: 8px 14px; border-radius: 8px; color: var(--slate);
   text-decoration: none; background: none; border: none; cursor: pointer;
   font-family: inherit; font-size: 13.5px; font-weight: 600;
 }
-.navlink.active { background: linear-gradient(135deg, var(--gold-deep), #6D28D9); color: #fff; }
+.navlink.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
 
 /* Mobile nav -- hamburger + slide-down panel, hidden entirely above
    860px (matches the breakpoint already used by .score-panel and the
@@ -145,7 +156,7 @@ nav {
   color: var(--slate); text-decoration: none; background: none; border: none; cursor: pointer;
   font-family: inherit; font-size: 14.5px; font-weight: 600; text-align: left;
 }
-.navpanel-link.active { background: linear-gradient(135deg, var(--gold-deep), #6D28D9); color: #fff; }
+.navpanel-link.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
 
 @media (max-width: 860px) {
   .navlinks { display: none; }
@@ -156,7 +167,7 @@ nav {
 .hero { padding: 48px 0 36px; position: relative; z-index: 1; }
 .eyebrow {
   font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 700;
-  background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
   -webkit-background-clip: text; background-clip: text; color: transparent;
   letter-spacing: 2px; margin: 0 0 14px;
 }
@@ -174,7 +185,7 @@ h1.headline {
 }
 
 .micro-note { font-size: 10px; color: var(--slate); font-family: "IBM Plex Mono", monospace; }
-.pillar-cta { margin-top: 6px; font-size: 10px; font-family: "IBM Plex Mono", monospace; color: var(--gold-deep); }
+.pillar-cta { margin-top: 6px; font-size: 10px; font-family: "IBM Plex Mono", monospace; color: var(--accent-2); }
 .gulf-obs-date {
   display: block; font-family: "IBM Plex Mono", monospace;
   font-size: 10px; color: var(--slate); margin-top: 1px;
@@ -192,8 +203,8 @@ h1.headline {
    so the country tabs on Gulf Watch keep their compact sizing. */
 .hero-centered .tabs { display: flex; width: 100%; }
 .hero-centered .tabs .tab { flex: 1 1 150px; justify-content: center; }
-.hl-cyan { color: var(--gold); }
-.hl-violet { color: var(--gold-deep); }
+.hl-cyan { color: var(--accent); }
+.hl-violet { color: var(--accent-2); }
 .sub { font-size: 16px; color: var(--slate); max-width: 60ch; line-height: 1.6; margin: 0 0 28px; }
 
 .tabs {
@@ -210,7 +221,7 @@ h1.headline {
      minimum consistently, on both mobile and desktop. */
   min-height: 44px; display: inline-flex; align-items: center;
 }
-.tab.active { background: linear-gradient(135deg, var(--gold-deep), #6D28D9); color: #fff; }
+.tab.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
 
 /* Now nested inside .snapshot-card, so it carries no border or
    background of its own -- a vertical rule separates score from chart,
@@ -256,7 +267,7 @@ h1.headline {
    lines. */
 .dimension-grid { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 720px) { .dimension-grid { grid-template-columns: 1fr; } }
-.dimension-question { font-size: 10.5px; color: var(--gold-deep); font-style: italic; margin-top: 6px; line-height: 1.4; }
+.dimension-question { font-size: 10.5px; color: var(--accent-2); font-style: italic; margin-top: 6px; line-height: 1.4; }
 
 /* ===== Featured Market Snapshot strip (brief §2) =====
    A compact context bar directly above the score card: what you're
@@ -350,7 +361,7 @@ h1.headline {
 }
 .chart-card-label {
   font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 700;
-  color: var(--gold-deep); letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent-2); letter-spacing: 1px; text-transform: uppercase;
   margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
 
@@ -367,7 +378,7 @@ h1.headline {
 }
 .selector-btn:hover { color: var(--ink-soft); border-color: rgba(255,255,255,0.2); }
 .selector-btn.active {
-  border-color: var(--gold-deep); color: #fff;
+  border-color: var(--accent-2); color: #fff;
   background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(109,40,217,0.18));
 }
 
@@ -422,12 +433,12 @@ h1.headline {
   transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
 }
 .pillar-select-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
-.pillar-select-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.pillar-select-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .pillar-select-card { transition: none; }
   .pillar-select-card:hover { transform: none; }
 }
-.pillar-select-card[aria-pressed="true"] { border-color: var(--gold-deep); background: rgba(139,92,246,0.10); }
+.pillar-select-card[aria-pressed="true"] { border-color: var(--accent-2); background: rgba(139,92,246,0.10); }
 .pillar-select-card .psc-name {
   font-family: "Space Grotesk", sans-serif; font-size: 13px; font-weight: 600;
   color: var(--ink-soft); line-height: 1.25;
@@ -533,7 +544,7 @@ h1.headline {
   .sources-row { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
   .sources-row > span[data-label]::before {
     content: attr(data-label); display: block; font-family: "IBM Plex Mono", monospace;
-    font-size: 9.5px; font-weight: 700; color: var(--gold-deep); text-transform: uppercase;
+    font-size: 9.5px; font-weight: 700; color: var(--accent-2); text-transform: uppercase;
     letter-spacing: 0.5px; margin-bottom: 3px;
   }
 }
@@ -560,7 +571,7 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
   transition: background .15s ease, border-color .15s ease;
 }
 .country-chip:hover { color: var(--ink-soft); }
-.country-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.country-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* An unselected chip stays fully readable -- dimming it to near-invisible
    would hide which countries exist at all. */
 .country-chip:not(.on) { opacity: 0.72; }
@@ -620,7 +631,7 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
 a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
 .dim-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .dim-card-name { font-size: 15px; font-weight: 700; color: var(--ink); }
-.dim-card-q { font-size: 11.5px; color: var(--gold-deep); font-style: italic; margin-top: 3px; line-height: 1.45; }
+.dim-card-q { font-size: 11.5px; color: var(--accent-2); font-style: italic; margin-top: 3px; line-height: 1.45; }
 .dim-card-num {
   font-family: "Space Grotesk", sans-serif; font-size: 34px; font-weight: 700;
   line-height: 1; font-variant-numeric: tabular-nums; flex: none;
@@ -733,7 +744,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 .learn-index-link:hover,
-.learn-index-link:focus-visible { border-color: var(--gold); color: var(--ink); }
+.learn-index-link:focus-visible { border-color: var(--accent); color: var(--ink); }
 .learn-index-link > i { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
 
 /* Which dimension this indicator feeds, on the card itself. Same three

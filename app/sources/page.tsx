@@ -49,7 +49,7 @@ export default function SourcesPage() {
             <h2>Six more countries, without a composite score</h2>
             <p style={{ maxWidth: "68ch" }}>
               UAE, Bahrain, Qatar, Saudi Arabia, Kuwait, and Oman appear on the{" "}
-              <Link href="/gulf-watch" style={{ color: "var(--gold-deep)" }}>Gulf Watch</Link> page with real, live
+              <Link href="/gulf-watch" style={{ color: "var(--accent-2)" }}>Gulf Watch</Link> page with real, live
               data — but none of them get an MMAI score. Gulf Watch deliberately shows each country&apos;s raw
               indicators instead of a composite. Policy rates are now live for Saudi Arabia and Kuwait, via BIS
               republishing their own central banks; no usable, legal, automatable source has been found for the UAE
@@ -70,7 +70,7 @@ export default function SourcesPage() {
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "28px 32px", color: "#fff", backdropFilter: "blur(14px)" }}>
-            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--gold)", letterSpacing: 1, marginBottom: 10 }}>
+            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: 1, marginBottom: 10 }}>
               DISCLAIMER
             </div>
             <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: "0 0 12px" }}>
@@ -87,7 +87,7 @@ export default function SourcesPage() {
             </p>
             <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: 0 }}>
               Every formula used to turn these raw figures into the three dimension scores and the composite MMAI
-              percentile is published in full on the <Link href="/learn" style={{ color: "var(--gold)" }}>Learn More</Link> page,
+              percentile is published in full on the <Link href="/learn" style={{ color: "var(--accent)" }}>Learn More</Link> page,
               together with the reference table the scores are ranked against — so the averages behind them can be checked
               rather than taken on trust. Nothing in the calculation is hidden or proprietary, and the page states plainly
               which numbers were measured and which were decided.

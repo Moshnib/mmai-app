@@ -119,7 +119,7 @@ function DimensionTag({ topicId }: { topicId: string }) {
 
   const [label, tone] =
     d === "all"
-      ? ["All three dimensions", "var(--gold-deep)"]
+      ? ["All three dimensions", "var(--accent-2)"]
       : d === "none"
         ? ["Shown, not scored", "var(--slate)"]
         : [`Part of ${DIMENSION_NAMES[d]}`, DIM_TONE[d]];
@@ -349,7 +349,7 @@ export default function LearnPage() {
             {TOPICS.map((t) => {
               const d = TOPIC_DIMENSION[t.id];
               const tone =
-                d === "all" ? "var(--gold-deep)"
+                d === "all" ? "var(--accent-2)"
                   : d === "none" ? "var(--slate)"
                     : DIM_TONE[d as DimensionKey];
               // The title carries a long explanatory clause after the dash
@@ -532,12 +532,12 @@ export default function LearnPage() {
               <div
                 style={{
                   padding: "14px 16px",
-                  borderLeft: "3px solid var(--teal)",
-                  background: "var(--teal-bg)",
+                  borderLeft: "3px solid var(--status-live)",
+                  background: "var(--status-live-bg)",
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
                 <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
@@ -572,12 +572,12 @@ export default function LearnPage() {
               <div
                 style={{
                   padding: "14px 16px",
-                  borderLeft: "3px solid var(--teal)",
-                  background: "var(--teal-bg)",
+                  borderLeft: "3px solid var(--status-live)",
+                  background: "var(--status-live-bg)",
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
                 <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>

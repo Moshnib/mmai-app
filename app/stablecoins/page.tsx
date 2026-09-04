@@ -105,7 +105,7 @@ export default async function StablecoinsPage() {
             <div
               style={{
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 46, lineHeight: 1.05,
-                margin: "10px 0 6px", color: "var(--teal)", fontVariantNumeric: "tabular-nums",
+                margin: "10px 0 6px", color: "var(--status-live)", fontVariantNumeric: "tabular-nums",
                 textShadow: "0 0 26px rgba(34,211,238,0.35)",
               }}
             >
@@ -237,7 +237,7 @@ export default async function StablecoinsPage() {
               Deliberately absent: the live peg price. It is readable, but no source for it has cleared this
               site&apos;s licensing bar yet, and MMAI would rather show nothing than publish a number it cannot
               republish cleanly. The same rule is applied on the{" "}
-              <Link href="/sources" style={{ color: "var(--gold-deep)" }}>Sources</Link> page for every market.
+              <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources</Link> page for every market.
             </p>
           </div>
         </div>

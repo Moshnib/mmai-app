@@ -153,7 +153,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
       </svg>
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
-        <Link href={`/trends?market=${marketCode}`} className="tap" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--gold-deep)", textDecoration: "none" }}>
+        <Link href={`/trends?market=${marketCode}`} className="tap" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--accent-2)", textDecoration: "none" }}>
           More score detail →
         </Link>
       </div>
