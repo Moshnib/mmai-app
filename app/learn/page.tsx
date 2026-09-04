@@ -86,6 +86,52 @@ export const metadata: Metadata = {
     "Inflation, GDP growth, unemployment, policy rates, and government debt — plus Gulf Watch's cost-of-living, investment-confidence, and currency-stability figures — what each one actually means for you, in plain language.",
 };
 
+/**
+ * Which dimension each indicator feeds, so the reader meets that fact on
+ * the card itself.
+ *
+ * The three dimensions are the whole structure of the score, and this
+ * page explained five indicators one after another without ever saying,
+ * on the card, which of the three each one belongs to. A reader could
+ * finish "Government Debt" without learning it is half of Capacity.
+ *
+ * Keyed by topic id and checked against the engine below, so adding an
+ * indicator without placing it here fails the build rather than shipping
+ * an untagged card.
+ */
+const TOPIC_DIMENSION: Record<string, DimensionKey | "none" | "all"> = {
+  cpi: "C",
+  unemployment: "C",
+  gdp: "D",
+  debt: "K",
+  rate: "K",
+  oil: "none",
+  mmai: "all",
+};
+
+const DIM_TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
+
+/** The pill that carries it: colour and name, matching the colours the
+ *  dimensions already use in the diagram above and on the front page. */
+function DimensionTag({ topicId }: { topicId: string }) {
+  const d = TOPIC_DIMENSION[topicId];
+  if (!d) return null;
+
+  const [label, tone] =
+    d === "all"
+      ? ["All three dimensions", "var(--gold-deep)"]
+      : d === "none"
+        ? ["Shown, not scored", "var(--slate)"]
+        : [`Part of ${DIMENSION_NAMES[d]}`, DIM_TONE[d]];
+
+  return (
+    <span className="learn-tag" style={{ color: tone, borderColor: tone }}>
+      <i style={{ background: tone }} />
+      {label}
+    </span>
+  );
+}
+
 const TOPICS = [
   {
     id: "cpi",
@@ -288,7 +334,36 @@ export default function LearnPage() {
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">SCORED MARKETS</p>
             <h2>The five indicators behind every MMAI score</h2>
+            <p>
+              One card each, grouped by the dimension it feeds. Jump straight to any of them.
+            </p>
           </div>
+
+          {/* A CONTENTS LINE, because this is a long page.
+              Seven full-width cards stacked in sequence gave a reader
+              arriving from a link no way to see what was on the page or
+              to reach the one thing they came for without scrolling past
+              everything else. The anchors already existed on every card;
+              nothing linked to them. */}
+          <nav className="learn-index" aria-label="Jump to an indicator">
+            {TOPICS.map((t) => {
+              const d = TOPIC_DIMENSION[t.id];
+              const tone =
+                d === "all" ? "var(--gold-deep)"
+                  : d === "none" ? "var(--slate)"
+                    : DIM_TONE[d as DimensionKey];
+              // The title carries a long explanatory clause after the dash
+              // that belongs on the card, not in a contents line. One title
+              // has no dash to cut at and needs naming outright.
+              const shortTitle = t.id === "mmai" ? "Putting it together" : t.title.split(" — ")[0];
+              return (
+                <a key={t.id} href={`#topic-${t.id}`} className="learn-index-link">
+                  <i style={{ background: tone }} />
+                  {shortTitle}
+                </a>
+              );
+            })}
+          </nav>
           {TOPICS.map((t) => (
             <div
               key={t.id}
@@ -303,7 +378,8 @@ export default function LearnPage() {
                 backdropFilter: "blur(14px)",
               }}
             >
-              <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>{t.title}</h3>
+              <DimensionTag topicId={t.id} />
+              <h3 className="learn-h3">{t.title}</h3>
               <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{
@@ -491,7 +567,7 @@ export default function LearnPage() {
                 backdropFilter: "blur(14px)",
               }}
             >
-              <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>{t.title}</h3>
+              <h3 className="learn-h3">{t.title}</h3>
               <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{

@@ -3,6 +3,7 @@ import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import { fetchAllStablecoinSupplies, STABLECOINS, type StablecoinSupply, type StablecoinChain } from "@/lib/fetchers/stablecoins";
 import { ETHEREUM_STABLECOIN_HISTORY } from "@/lib/stablecoinHistory";
+import StablecoinTokens from "@/components/StablecoinTokens";
 
 export const metadata: Metadata = {
   title: "Stablecoins",
@@ -34,11 +35,6 @@ const CHAIN_NOTE: Record<StablecoinChain, string> = {
   solana: "A faster, lower-cost network that has taken a growing share of stablecoin activity.",
 };
 
-const BACKING_LABEL: Record<string, string> = {
-  "fiat-backed": "Cash & short-term government debt",
-  "crypto-backed": "Over-collateralised with crypto assets",
-  synthetic: "Hedged derivatives position",
-};
 
 function money(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
@@ -146,45 +142,13 @@ export default async function StablecoinsPage() {
             <p className="eyebrow">BY TOKEN</p>
             <h2>Each stablecoin, and where it lives</h2>
             <p>
-              The same token runs on several networks at once, holding a separate supply on each. Those are
-              shown split out rather than merged, because they are not one pool of money.
+              Bar length is each token&apos;s size against the largest one, and the coloured segments are the
+              networks it lives on. The same token runs on several at once, holding a separate supply on each,
+              shown split out rather than merged because they are not one pool of money.
             </p>
           </div>
 
-          <div className="scroll-x" style={{ marginTop: 20 }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th scope="col">Token</th>
-                  <th scope="col">Issuer</th>
-                  <th scope="col" style={{ textAlign: "right" }}>Total supply</th>
-                  <th scope="col">Split by network</th>
-                  <th scope="col">Backed by</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coins.map((c) => (
-                  <tr key={c.symbol}>
-                    <td>
-                      <b style={{ color: "#fff" }}>{c.symbol}</b>
-                      <div style={{ fontSize: 11, color: "var(--slate)" }}>{c.name}</div>
-                    </td>
-                    <td style={{ fontSize: 12.5 }}>{c.issuer}</td>
-                    <td style={{ textAlign: "right", fontFamily: "IBM Plex Mono, monospace", fontVariantNumeric: "tabular-nums", color: "#fff" }}>
-                      {money(c.total)}
-                    </td>
-                    <td style={{ fontSize: 11.5, color: "var(--slate)" }}>
-                      {c.chains
-                        .sort((a, b) => b.supply - a.supply)
-                        .map((s) => `${CHAIN_LABEL[s.chain]} ${money(s.supply)}`)
-                        .join("  ·  ")}
-                    </td>
-                    <td style={{ fontSize: 11.5, color: "var(--slate)" }}>{BACKING_LABEL[c.backing] ?? c.backing}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StablecoinTokens coins={coins} />
         </div>
       </div>
 

@@ -16,6 +16,32 @@ const N = REFERENCE_SET.length;
  *  exist and are weak, not that they are absent. */
 const MIN_DRAWN = 0.15;
 
+/**
+ * A CORRELATION IS NOT A SENTENCE ANYONE CAN READ.
+ *
+ * The triangle used to label each line "0.344", "0.141", "0.050". Three
+ * decimal places of a coefficient tells a reader who already knows the
+ * scale exactly what they already knew, and tells everyone else nothing:
+ * there is no way to know from the digits alone whether 0.344 is a lot.
+ *
+ * Squaring it gives the share of movement the two genuinely have in
+ * common -- the ordinary coefficient of determination, r-squared -- and
+ * that IS a sentence: "12% of their ups and downs are shared". The
+ * coefficients themselves stay in the caption for anyone checking the
+ * arithmetic, so nothing is hidden, only demoted.
+ */
+const sharedMovement = (r: number) => {
+  const pct = r * r * 100;
+  return pct < 1 ? "under 1% shared" : `${Math.round(pct)}% shared`;
+};
+
+/** The plain reading of the line, so the picture states its conclusion
+ *  instead of leaving the reader to infer it from a stroke width. */
+const strengthWord = (r: number) => {
+  const a = Math.abs(r);
+  return a >= 0.3 ? "move together" : a >= 0.15 ? "loosely linked" : "barely related";
+};
+
 const short: Record<IndicatorKey, string> = {
   infGap: "Inflation",
   une: "Unemployment",
@@ -177,12 +203,13 @@ export default function CorrelationMatrix() {
       <figure style={{ margin: 0 }}>
         <div style={{ overflowX: "auto" }}>
           <svg
-            viewBox="0 0 680 210" width="100%" style={{ display: "block", minWidth: 520 }}
+            viewBox="0 0 680 224" width="100%" style={{ display: "block", minWidth: 520 }}
             role="img"
             aria-label={
-              `The three dimensions and how closely they move together. Direction and Capacity move together at ` +
-              `${DIMENSION_CORRELATIONS.D.K.toFixed(3)}, while Conditions is close to independent of both, at ` +
-              `${DIMENSION_CORRELATIONS.C.D.toFixed(3)} with Direction and ${DIMENSION_CORRELATIONS.C.K.toFixed(3)} with Capacity.`
+              `The three dimensions and how closely they move together. Direction and Capacity share ` +
+              `${sharedMovement(DIMENSION_CORRELATIONS.D.K)} of their movement, while Conditions is close to ` +
+              `independent of both, sharing ${sharedMovement(DIMENSION_CORRELATIONS.C.D)} with Direction and ` +
+              `${sharedMovement(DIMENSION_CORRELATIONS.C.K)} with Capacity.`
             }
           >
             {(() => {
@@ -204,11 +231,27 @@ export default function CorrelationMatrix() {
                           stroke="#22D3EE" strokeWidth={1 + Math.abs(r) * 16}
                           strokeOpacity={0.28 + Math.abs(r) * 1.2} strokeLinecap="round"
                         />
+                        {/* The labels sit on top of the line they describe,
+                            so they need their own ground to stay legible
+                            against a stroke that gets thicker with r. */}
+                        <rect
+                          x={mid.x - 62} y={mid.y - 26} width={124} height={33}
+                          rx={7} fill="var(--paper)" opacity={0.92}
+                        />
+                        {/* The plain reading first, the measurement under
+                            it. A coefficient printed on its own asks the
+                            reader to supply the scale it is measured on. */}
                         <text
-                          x={mid.x} y={mid.y - 10} textAnchor="middle" fontSize={12.5}
-                          fontWeight={700} fill="#22D3EE" fontFamily="IBM Plex Mono, monospace"
+                          x={mid.x} y={mid.y - 14} textAnchor="middle" fontSize={13}
+                          fontWeight={700} fill="var(--ink)" fontFamily="IBM Plex Sans, sans-serif"
                         >
-                          {r.toFixed(3)}
+                          {strengthWord(r)}
+                        </text>
+                        <text
+                          x={mid.x} y={mid.y + 2} textAnchor="middle" fontSize={11.5}
+                          fill="#22D3EE" fontFamily="IBM Plex Mono, monospace"
+                        >
+                          {sharedMovement(r)}
                         </text>
                       </g>
                     );
@@ -239,12 +282,15 @@ export default function CorrelationMatrix() {
         </div>
         <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "76ch" }}>
           <b style={{ color: "var(--ink-soft)" }}>This is the picture that explains why equal thirds is not equal in
-          effect.</b> The thick line is Direction and Capacity, moving together at{" "}
-          {DIMENSION_CORRELATIONS.D.K.toFixed(3)}. Conditions barely connects to either. A composite built by
-          averaging tracks a pair that moves together more closely than it tracks the one that does not — so a
-          declared third each becomes an effective 25.5 / 39.6 / 34.9. Standardising equalised how much each
-          dimension varies; nothing can equalise this while they stay correlated, which is why it is published here
-          rather than left for a critic to find.
+          effect.</b> The thick line is Direction and Capacity: {sharedMovement(DIMENSION_CORRELATIONS.D.K)}{" "}
+          movement, meaning when one is having a good year the other usually is too. Conditions barely connects to
+          either. A composite built by averaging tracks a pair that moves together more closely than it tracks the
+          one that does not — so a declared third each becomes an effective 25.5 / 39.6 / 34.9. Standardising
+          equalised how much each dimension varies; nothing can equalise this while they stay correlated, which is
+          why it is published here rather than left for a critic to find. The underlying coefficients, for anyone
+          checking the arithmetic, are {DIMENSION_CORRELATIONS.D.K.toFixed(3)} for Direction with Capacity,{" "}
+          {DIMENSION_CORRELATIONS.C.D.toFixed(3)} for Conditions with Direction and{" "}
+          {DIMENSION_CORRELATIONS.C.K.toFixed(3)} for Conditions with Capacity.
         </figcaption>
       </figure>
     </div>
