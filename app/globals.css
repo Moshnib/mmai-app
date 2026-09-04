@@ -603,3 +603,58 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
   white-space: nowrap;
   border: 0;
 }
+
+/* ---- The score recipe on the Learn page ----
+   Nested boxes rather than a flow chart: which figure belongs to which
+   group is said by position, so there is nothing to trace. HTML rather
+   than SVG so it reflows on a phone instead of scrolling sideways. */
+.recipe { display: grid; grid-template-columns: 1fr 260px; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .recipe { grid-template-columns: 1fr; } }
+.recipe-groups { display: grid; gap: 12px; }
+.recipe-card {
+  background: var(--glass); border: 1px solid var(--hair); border-left-width: 3px;
+  border-radius: 0 14px 14px 0; padding: 14px 16px; backdrop-filter: blur(10px);
+}
+.recipe-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
+.recipe-name { font-size: 15px; font-weight: 700; color: var(--ink); }
+.recipe-q { font-size: 11.5px; color: var(--gold-deep); font-style: italic; margin-top: 2px; }
+.recipe-rank {
+  font-family: "IBM Plex Mono", monospace; font-size: 20px; font-weight: 700;
+  line-height: 1; text-align: right; white-space: nowrap;
+}
+.recipe-rank span { display: block; font-size: 9.5px; font-weight: 400; color: var(--slate); margin-top: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+.recipe-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 1px solid var(--hair); border-radius: 8px;
+  background: rgba(255,255,255,0.025); font-size: 12.5px;
+}
+.recipe-row + .recipe-row { margin-top: 7px; }
+.recipe-label { color: var(--ink-soft); }
+.recipe-weight {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 700;
+  border: 1px solid; border-radius: 999px; padding: 1px 7px; flex: none;
+}
+.recipe-value {
+  margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 12px;
+  color: var(--ink); text-align: right;
+}
+.recipe-out {
+  background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.5);
+  border-radius: 16px; padding: 18px 18px 16px; text-align: center;
+  position: sticky; top: 18px;
+}
+@media (max-width: 860px) { .recipe-out { position: static; } }
+.recipe-out-label { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate); }
+.recipe-out-num { font-family: "Space Grotesk", sans-serif; font-size: 44px; font-weight: 700; line-height: 1.1; margin: 8px 0 6px; }
+.recipe-out-sub { font-size: 12px; color: var(--ink-soft); line-height: 1.55; }
+.recipe-out-market { font-size: 11px; color: var(--slate); margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(139,92,246,0.3); }
+.recipe-steps {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 12px; list-style: none; padding: 0; margin: 18px 0 0;
+}
+.recipe-steps li { border: 1px solid var(--hair); border-radius: 12px; padding: 12px 14px; background: rgba(255,255,255,0.025); }
+.recipe-step-n { display: block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: #8B5CF6; margin-bottom: 5px; }
+.recipe-step-h { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.recipe-step-b { display: block; font-size: 11.5px; color: var(--slate); line-height: 1.5; }
+.recipe-cap { font-size: 12px; color: var(--slate); line-height: 1.65; margin-top: 16px; max-width: 76ch; }
+.recipe-cap b { color: var(--ink-soft); }
