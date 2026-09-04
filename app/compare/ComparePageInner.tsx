@@ -5,10 +5,26 @@ import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
 import { useLiveHistory } from "@/lib/useLiveHistory";
-import { PILLAR_NAMES, RAW_FIELD, computePillarScores, computeComposite, type PillarKey, type PillarScores, type RawIndicators } from "@/lib/scoring";
+import { type RawIndicators } from "@/lib/scoring";
+import {
+  DIMENSION_NAMES, computeMmai, dimensionPercentiles,
+  SOURCE_BREAK_UNCERTAINTY_PTS, type DimensionKey,
+} from "@/lib/composite";
+
+/** The five scored indicators, as their own selector. Under the three
+ *  dimensions a "raw view" of a dimension is ambiguous -- Conditions has
+ *  two indicators behind it -- so the raw series gets a flat list rather
+ *  than being nested inside a dimension that may hold one or two. */
+const RAW_CHOICES = [
+  { key: "inflation", label: "Inflation", unit: "% YoY" },
+  { key: "unemployment", label: "Unemployment", unit: "%" },
+  { key: "gdpGrowth", label: "GDP growth", unit: "% YoY" },
+  { key: "debtPctGdp", label: "Government debt", unit: "% of GDP" },
+  { key: "policyRate", label: "Policy rate", unit: "%" },
+] as const satisfies readonly { key: keyof RawIndicators; label: string; unit: string }[];
 import { FALLBACK_MARKETS } from "@/lib/markets";
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
+const ORDER: DimensionKey[] = ["C", "D", "K"];
 
 // Fixed, distinct colors per market -- unlike the pillar/score coloring
 // elsewhere in the app (which is deliberately score-based, not identity-based),
@@ -67,8 +83,10 @@ export default function ComparePageInner() {
   // the range to a single year instead of falling back to the new default.
   const effectiveFromYear = fromYear && allYears.includes(fromYear) ? fromYear : allYears[0];
   const effectiveToYear = toYear && allYears.includes(toYear) ? toYear : allYears[allYears.length - 1];
-  const [selectedPillar, setSelectedPillar] = useState<PillarKey>("PS");
-  // Which view of the selected pillar the single chart area shows.
+  const [selectedDimension, setSelectedDimension] = useState<DimensionKey>("C");
+  const [selectedRaw, setSelectedRaw] = useState<(typeof RAW_CHOICES)[number]["key"]>("inflation");
+  // Which view the single chart area shows: the dimension's rank against
+  // history, or one raw indicator on its own units.
   const [pillarView, setPillarView] = useState<"score" | "raw">("score");
 
   const yearsInRange = useMemo(() => {
@@ -83,35 +101,38 @@ export default function ComparePageInner() {
   // only because yearsInRange happens to change when live data arrives --
   // true today, but nothing enforces it. Now the dependency is explicit.
   const buildSeries = useCallback(
-    (valueFn: (pillars: PillarScores, raw: RawIndicators) => number | null): Series[] =>
+    (valueFn: (raw: RawIndicators, code: string) => number | null): Series[] =>
       selectedMarkets.map((code) => {
         const history = (liveHistory[code] ?? []).filter((h) => yearsInRange.includes(h.year));
         return {
           key: code,
           name: marketNames[code],
           color: MARKET_COLORS[code] ?? "#9296AB",
-          data: history.map((h) => {
-            const pillars = computePillarScores(h.indicators, code);
-            return { year: h.year, value: valueFn(pillars, h.indicators) };
-          }),
+          data: history.map((h) => ({ year: h.year, value: valueFn(h.indicators, code) })),
         };
       }),
     [selectedMarkets, liveHistory, yearsInRange, marketNames]
   );
 
   const compositeSeries = useMemo(
-    () => buildSeries((pillars) => computeComposite(pillars).composite),
+    () => buildSeries((raw, code) => computeMmai(raw, code).percentile),
     [buildSeries]
   );
 
+  // The dimension's own rank against the same 148 market-years the headline
+  // uses, so both charts on this page share one scale and one meaning.
   const pillarScoreSeries = useMemo(
-    () => buildSeries((pillars) => pillars[selectedPillar]),
-    [buildSeries, selectedPillar]
+    () =>
+      buildSeries((raw, code) => {
+        const { dimensions } = computeMmai(raw, code);
+        return dimensions ? dimensionPercentiles(dimensions)[selectedDimension] : null;
+      }),
+    [buildSeries, selectedDimension]
   );
 
   const rawIndicatorSeries = useMemo(
-    () => buildSeries((_pillars, raw) => raw[RAW_FIELD[selectedPillar].key] ?? null),
-    [buildSeries, selectedPillar]
+    () => buildSeries((raw) => (raw[selectedRaw] as number | null | undefined) ?? null),
+    [buildSeries, selectedRaw]
   );
 
   // Inflation and policy rate come from live Supabase data now (via
@@ -158,17 +179,15 @@ export default function ComparePageInner() {
 
     // Markets within this many points are reported as LEVEL, not ranked.
     //
-    // Not an arbitrary round number. The MMAI evidence audit (31 Aug 2026)
-    // re-scored every market under equal 20% pillar weights -- the neutral
-    // reference case named in the methodology charter -- holding the pillar
-    // scores themselves identical. Every composite moved by less than one
-    // point, yet the top three REORDERED, because they sat only 0.71 points
-    // apart. A gap smaller than the movement an equally defensible weighting
-    // choice produces is not a gap the data supports naming a leader from.
-    // 1.0 is that measured largest shift, rounded up.
+    // Now the measured source-break uncertainty rather than the old
+    // five-pillar figure. Rebuilding the entire reference history on a
+    // single data source moves any published score by up to 2.3 percentile
+    // points; a gap narrower than that is not a gap the data supports
+    // naming a leader from. The same constant drives areTied() on the
+    // homepage, so the two pages cannot disagree about who is level.
     //
     // This is a DISPLAY rule. It changes no score and no equation.
-    const LEVEL_TOLERANCE = 1.0;
+    const LEVEL_TOLERANCE = SOURCE_BREAK_UNCERTAINTY_PTS;
 
     const fmtNames = (xs: { name: string }[]) =>
       xs.length === 2
@@ -180,7 +199,10 @@ export default function ComparePageInner() {
     const bottom = latest[latest.length - 1];
     const leaders = latest.filter((m) => top.value - m.value <= LEVEL_TOLERANCE);
     const trailers = latest.filter((m) => m.value - bottom.value <= LEVEL_TOLERANCE);
-    const supportive = latest.filter((m) => m.value >= 65).length;
+    // Against the historical median, which is what a percentile of 50
+    // means. "65 or above" was a threshold on the old 0-100 composite and
+    // has no meaning on a rank.
+    const supportive = latest.filter((m) => m.value >= 50).length;
 
     const rows: { text: string; color: string }[] = [];
 
@@ -206,7 +228,7 @@ export default function ComparePageInner() {
     }
 
     rows.push({
-      text: `${supportive} of ${latest.length} selected markets score 65 or above.`,
+      text: `${supportive} of ${latest.length} selected markets sit above the historical median.`,
       color: "var(--gold-deep)",
     });
 
@@ -224,7 +246,7 @@ export default function ComparePageInner() {
                   page has one; without it this page reads to a search engine and
                   a screen reader as sections with no subject. */}
               <h1>Compare Markets Over Time</h1>
-              <p>Track how the MMAI score and economic pillars evolve across major economies.</p>
+              <p>Track how the MMAI score and its three dimensions evolve across major economies.</p>
             </div>
 
             {/* "What stands out now" (brief §9). Deliberately factual --
@@ -306,22 +328,36 @@ export default function ComparePageInner() {
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
-            <p className="eyebrow">2. EXPLORE BY PILLAR</p>
-            <h2>Pick a pillar to compare</h2>
-            <p>Select a pillar to see how each market performs on that dimension over time.</p>
+            <p className="eyebrow">2. EXPLORE BY DIMENSION</p>
+            <h2>Pick a dimension to compare</h2>
+            <p>
+              Each line is that dimension&rsquo;s rank against the same 148 market-years the headline
+              uses. Switch to the raw view for the underlying indicator on its own units.
+            </p>
           </div>
 
           <div className="selector-row">
-            {ORDER.map((key) => (
-              <button
-                key={key}
-                className={`selector-btn${selectedPillar === key ? " active" : ""}`}
-                onClick={() => setSelectedPillar(key)}
-                aria-pressed={selectedPillar === key}
-              >
-                {PILLAR_NAMES[key]}
-              </button>
-            ))}
+            {pillarView === "score"
+              ? ORDER.map((key) => (
+                  <button
+                    key={key}
+                    className={`selector-btn${selectedDimension === key ? " active" : ""}`}
+                    onClick={() => setSelectedDimension(key)}
+                    aria-pressed={selectedDimension === key}
+                  >
+                    {DIMENSION_NAMES[key]}
+                  </button>
+                ))
+              : RAW_CHOICES.map((c) => (
+                  <button
+                    key={c.key}
+                    className={`selector-btn${selectedRaw === c.key ? " active" : ""}`}
+                    onClick={() => setSelectedRaw(c.key)}
+                    aria-pressed={selectedRaw === c.key}
+                  >
+                    {c.label}
+                  </button>
+                ))}
           </div>
 
           {/* ONE chart at a time (brief §11), not two stacked. The
@@ -332,8 +368,9 @@ export default function ComparePageInner() {
               the brief warns against. */}
           <div className="chart-card">
             <div className="chart-card-label">
-              {PILLAR_NAMES[selectedPillar]} —{" "}
-              {pillarView === "score" ? "pillar score (0–100)" : `${RAW_FIELD[selectedPillar].label} (raw)`}
+              {pillarView === "score"
+                ? `${DIMENSION_NAMES[selectedDimension]} — rank against history (0–100)`
+                : `${RAW_CHOICES.find((c) => c.key === selectedRaw)!.label} (raw)`}
               <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
                 {(["score", "raw"] as const).map((v) => (
                   <button
@@ -349,7 +386,7 @@ export default function ComparePageInner() {
                       color: pillarView === v ? "#fff" : "var(--slate)",
                     }}
                   >
-                    {v === "score" ? "Pillar score" : "Raw rate"}
+                    {v === "score" ? "Dimension rank" : "Raw rate"}
                   </button>
                 ))}
               </span>
@@ -357,7 +394,7 @@ export default function ComparePageInner() {
             {pillarView === "score" ? (
               <TrendChart series={pillarScoreSeries} height={340} yDomain={[0, 100]} showDots={false} />
             ) : (
-              <TrendChart series={rawIndicatorSeries} height={340} yLabel={RAW_FIELD[selectedPillar].unit} showDots={false} />
+              <TrendChart series={rawIndicatorSeries} height={340} yLabel={RAW_CHOICES.find((c) => c.key === selectedRaw)!.unit} showDots={false} />
             )}
           </div>
         </div>

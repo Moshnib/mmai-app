@@ -1,7 +1,8 @@
 "use client";
 
 import { getPublicSupabaseClient } from "@/lib/supabase";
-import { computePillarScores, computeComposite, type RawIndicators } from "@/lib/scoring";
+import { type RawIndicators } from "@/lib/scoring";
+import { computeMmai } from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
 
@@ -181,7 +182,7 @@ function buildBuckets(rowsDesc: RawIndicatorRow[], weeksBack: number): WeeklyBuc
 
     if (cursorTime === null) {
       // First (newest) bucket -- no gap requirement.
-      buckets.push({ fetchedAt: row.fetched_at, raw: toRawIndicators(row), composite: computeComposite(computePillarScores(toRawIndicators(row), row.market)).composite });
+      buckets.push({ fetchedAt: row.fetched_at, raw: toRawIndicators(row), composite: computeMmai(toRawIndicators(row), row.market).percentile });
       cursorTime = rowTime;
       continue;
     }
@@ -190,7 +191,7 @@ function buildBuckets(rowsDesc: RawIndicatorRow[], weeksBack: number): WeeklyBuc
     if (gapDays < BUCKET_MIN_GAP_DAYS) continue; // too close to the previous bucket -- keep looking further back
     if (gapDays > BUCKET_MAX_GAP_DAYS) break; // gap too large -- a stalled market's old row, not "last week"
 
-    buckets.push({ fetchedAt: row.fetched_at, raw: toRawIndicators(row), composite: computeComposite(computePillarScores(toRawIndicators(row), row.market)).composite });
+    buckets.push({ fetchedAt: row.fetched_at, raw: toRawIndicators(row), composite: computeMmai(toRawIndicators(row), row.market).percentile });
     cursorTime = rowTime;
   }
 
@@ -294,7 +295,7 @@ export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyCh
         ? {
             fetchedAt: newest.fetched_at,
             raw: toRawIndicators(newest),
-            composite: computeComposite(computePillarScores(toRawIndicators(newest), newest.market)).composite,
+            composite: computeMmai(toRawIndicators(newest), newest.market).percentile,
           }
         : null;
 
