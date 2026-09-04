@@ -756,3 +756,55 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
   margin: 0 0 12px; color: var(--ink);
   text-wrap: balance;
 }
+
+/* ============================================================
+   TOUCH TARGETS
+
+   WCAG 2.5.5 and Apple's HIG both put the minimum at 44x44. Measured
+   on a real 375px viewport, six control types on this site were under
+   it -- the worst a 125x14 link, which is roughly a third of a
+   fingertip and sat on the homepage.
+
+   Scoped to coarse pointers and narrow screens so desktop layout is
+   untouched: the extra height is taken as padding, so nothing moves
+   for a mouse user. The comma is deliberate -- a touch laptop needs
+   this at any width, and a narrow window needs it whatever the
+   pointer.
+
+   INLINE LINKS IN RUNNING TEXT ARE EXEMPT, which is what the standard
+   says too: growing them would break the line box around them. That is
+   why this lists standalone controls rather than every `a`.
+   ============================================================ */
+@media (pointer: coarse), (max-width: 900px) {
+  button,
+  [role="button"],
+  .tap,
+  .brand,
+  .skip-link,
+  .navlink,
+  .country-chip,
+  .learn-index-link,
+  .map-mobile-links a {
+    min-height: 44px;
+  }
+
+  /* An inline box ignores height entirely, and a flex box that was
+     only ever one line tall has no reason to have set align-items --
+     so both need saying here, or min-height grows the box and leaves
+     the label stuck to its top edge. */
+  .tap,
+  .map-mobile-links a {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  button,
+  [role="button"],
+  .brand,
+  .skip-link,
+  .navlink,
+  .country-chip,
+  .learn-index-link {
+    align-items: center;
+  }
+}

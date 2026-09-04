@@ -332,7 +332,7 @@ export default function OverviewPage() {
                 <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-                <Link
+                <Link className="tap"
                   href="/learn#topic-mmai"
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
@@ -484,7 +484,7 @@ export default function OverviewPage() {
               <GulfCard key={c.code} country={c} compact />
             ))}
           </div>
-          <Link href="/gulf-watch" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--gold-deep)", textDecoration: "none" }}>
+          <Link href="/gulf-watch" className="tap" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--gold-deep)", textDecoration: "none" }}>
             See history and comparison →
           </Link>
         </div>
@@ -503,6 +503,7 @@ export default function OverviewPage() {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link
                 href="/learn"
+                className="tap"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
                   background: "linear-gradient(135deg, var(--gold-deep), #6D28D9)", color: "#fff",
@@ -513,6 +514,7 @@ export default function OverviewPage() {
               </Link>
               <Link
                 href="/sources"
+                className="tap"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
                   border: "1px solid var(--hair)", color: "var(--ink-soft)",
