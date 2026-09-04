@@ -7,7 +7,7 @@ import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
 import DimensionGrid from "@/components/DimensionGrid";
-import DimensionBreakdown from "@/components/DimensionBreakdown";
+import DimensionBars from "@/components/DimensionBars";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import WorldMap from "@/components/WorldMap";
 import GulfCard from "@/components/GulfCard";
@@ -387,25 +387,35 @@ export default function OverviewPage() {
             standardised={dimensions}
             market={current}
           />
-          {/* The rings give three numbers. This gives the arithmetic behind
-              them -- which indicators, what they read, and how they add up.
-              Without it a reader can see Japan scores 100 on Conditions but
-              not that it is inflation on target AND unemployment at 2.4%,
-              both at once, better than almost anything in the record. */}
-          <details open style={{ marginTop: 22 }}>
-            <summary
-              style={{
-                cursor: "pointer", fontFamily: "IBM Plex Mono, monospace", fontSize: 12,
-                color: "var(--gold-deep)", letterSpacing: 0.4, textTransform: "uppercase",
-                listStyle: "revert",
-              }}
-            >
-              The numbers behind each dimension
-            </summary>
-            <div style={{ marginTop: 14 }}>
-              <DimensionBreakdown raw={market.raw} market={market.code} percentiles={dimensionPercentiles} />
+          {/* WHAT THE RINGS CANNOT SHOW: which dimension pulled the score
+              up and which pulled it down. Three rings are three separate
+              readings; this puts them on one axis around the historical
+              average, so the shape of a country's position is legible in a
+              glance rather than assembled in the reader's head.
+
+              The arithmetic behind each dimension lives on the Trends page.
+              A front page should make someone understand the shape; it
+              should not make them do the sum. */}
+          <div
+            style={{
+              marginTop: 26,
+              border: "1px solid var(--hair)",
+              borderRadius: 16,
+              padding: "20px 22px",
+              background: "var(--glass)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            <div className="meta-label" style={{ marginBottom: 4 }}>
+              What is pulling {market.name}&apos;s score
             </div>
-          </details>
+            <p style={{ fontSize: 12.5, color: "var(--slate)", lineHeight: 1.6, margin: "0 0 16px", maxWidth: "68ch" }}>
+              Each bar is one dimension against the average of the last 26 years across these six economies.
+              Right of the line is better than usual, left is worse.{" "}
+              <Link href="/trends" style={{ color: "var(--gold-deep)" }}>See the full working →</Link>
+            </p>
+            <DimensionBars standardised={dimensions} percentile={percentile} />
+          </div>
 
           <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 16, maxWidth: "72ch" }}>
             {CONVENTION_NOTE}
