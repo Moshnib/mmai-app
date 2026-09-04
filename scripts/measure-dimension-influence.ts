@@ -25,7 +25,7 @@
 
 import { REFERENCE_SET } from "../lib/referenceSet";
 import {
-  rawDimensions, standardiseDimensions, compositeZ, dimensionPercentiles,
+  rawDimensions, standardiseDimensions, compositeZ,
   DIMENSION_NAMES, DIMENSION_EFFECTIVE_INFLUENCE, DIMENSION_CROSS_MARKET_SD,
   q, type DimensionKey, type IndicatorKey,
 } from "../lib/composite";
