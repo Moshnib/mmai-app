@@ -36,7 +36,15 @@ create table if not exists mmai_scores (
   pillar_mm numeric,                   -- always null until a licensed equity source exists
   pillar_ec numeric,                   -- RETIRED 2026-09-01; pre-existing rows keep real values
   pillar_fr numeric,                   -- Fiscal Resilience, replaced pillar_ec
-  composite numeric,                   -- null when coverage < 70% (see Equation 7)
+  composite numeric,                   -- v1.0 only: null when coverage < 70% (see Equation 7)
+  -- Engine v2.0 — three standardised dimensions, their composite, and the
+  -- percentile rank against the 148-row pooled reference distribution.
+  -- Additive: v1.0 rows keep their pillar values and carry null here.
+  dim_conditions numeric,
+  dim_direction numeric,
+  dim_capacity numeric,
+  composite_z numeric,
+  percentile numeric,
   coverage numeric not null,           -- 0.0 - 1.0
   band text not null,
   computed_at timestamptz not null default now(),
