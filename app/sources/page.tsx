@@ -73,19 +73,19 @@ export default function SourcesPage() {
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: 1, marginBottom: 10 }}>
               DISCLAIMER
             </div>
-            <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: "0 0 12px" }}>
+            <p style={{ fontSize: 13, color: "#DCE3EE", lineHeight: 1.75, margin: "0 0 12px" }}>
               MMAI is an analytical communication tool built entirely from data published by the government and multilateral
               institutions listed above. It is <b>not</b> a forecast, credit rating, trading signal, or recommendation to buy
               or sell any security, currency, or asset. Nothing on this site should be relied upon as investment, legal, or
               financial advice.
             </p>
-            <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: "0 0 12px" }}>
+            <p style={{ fontSize: 13, color: "#DCE3EE", lineHeight: 1.75, margin: "0 0 12px" }}>
               Entries marked <b>LIVE</b> are fetched directly from the source institution&apos;s public API at refresh time.
               Entries marked <b>MANUAL</b> use the most recent figure verified by hand and have not yet been connected to
               a live feed — the exact gap is stated in each row&apos;s note, and none are silently treated as current or
               extrapolated forward.
             </p>
-            <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: 0 }}>
+            <p style={{ fontSize: 13, color: "#DCE3EE", lineHeight: 1.75, margin: 0 }}>
               Every formula used to turn these raw figures into the three dimension scores and the composite MMAI
               percentile is published in full on the <Link href="/learn" style={{ color: "var(--accent)" }}>Learn More</Link> page,
               together with the reference table the scores are ranked against — so the averages behind them can be checked

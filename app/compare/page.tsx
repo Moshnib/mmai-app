@@ -45,7 +45,7 @@ export default function ComparePage() {
             className="mmai-card"
             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}
           >
-            <span style={{ fontSize: 12.5, color: "var(--slate)", lineHeight: 1.6, maxWidth: "70ch" }}>
+            <span style={{ fontSize: 13, color: "var(--slate)", lineHeight: 1.6, maxWidth: "70ch" }}>
               MMAI is a percentile rank (0–100) against 148 market-years of the same six economies, built from three equally weighted dimensions. A higher score means a more supportive
               macro backdrop. Not investment advice.
             </span>
@@ -53,7 +53,7 @@ export default function ComparePage() {
               href="/learn#topic-mmai"
               className="tap"
               style={{
-                fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5, fontWeight: 700,
+                fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700,
                 color: "var(--accent-2)", textDecoration: "none", whiteSpace: "nowrap",
               }}
             >

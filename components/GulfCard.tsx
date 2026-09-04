@@ -102,9 +102,9 @@ function Stat({
   const asOfLabel = value != null && asOf && granularity ? formatObsDate(asOf, granularity) : null;
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", gap: 10 }}>
-      <span style={{ fontSize: 11.5, color: "var(--slate)" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "var(--slate)" }}>{label}</span>
       <span style={{ textAlign: "right" }}>
-        <span style={{ display: "block", fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
+        <span style={{ display: "block", fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
           {value ?? "—"}
         </span>
         {/* Class rather than an inline font-size: at 9.5px this was the
@@ -150,7 +150,7 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
             granularity={GULF_CURRENT_ACCOUNT_GRANULARITY}
           />
         </div>
-        <div style={{ borderTop: "1px solid var(--hair)", marginTop: 8, paddingTop: 8, fontSize: 10.5, color: "var(--slate)" }}>
+        <div style={{ borderTop: "1px solid var(--hair)", marginTop: 8, paddingTop: 8, fontSize: 11, color: "var(--slate)" }}>
           {isStale ? "Not refreshing" : "Score pending"}
         </div>
       </Link>
@@ -214,7 +214,7 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
         )}
       </div>
 
-      <div style={{ borderTop: "1px solid var(--hair)", marginTop: 8, paddingTop: 8, fontSize: 10.5, color: "var(--slate)", lineHeight: 1.5 }}>
+      <div style={{ borderTop: "1px solid var(--hair)", marginTop: 8, paddingTop: 8, fontSize: 11, color: "var(--slate)", lineHeight: 1.5 }}>
         {isStale ? (
           "Not currently refreshing — no recent data available."
         ) : (

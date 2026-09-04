@@ -20,6 +20,29 @@
   --status-live-bg: rgba(34, 211, 238, 0.12);
   --status-manual-bg: rgba(139, 92, 246, 0.14);
   --slate: #8A8EA3;         /* muted/meta text */
+
+  /* THE TYPE SCALE. Ten steps, and nothing outside them.
+     The site had grown to twenty-seven distinct font sizes -- 12, 12.5 and
+     13 all existed, doing the same job, so there was no way to know which
+     to reach for next. These are the nine that survived, named for the
+     job rather than the number. scripts/check-type-scale.ts fails the
+     build on a size that is not one of them, including the endpoints of
+     the one clamp() -- a fluid heading is deliberately off-scale BETWEEN
+     its endpoints, but the endpoints themselves are ordinary choices.
+
+     SVG text inside a scaled viewBox is deliberately NOT on this scale:
+     those numbers are viewBox units, not screen pixels, so an 11 there is
+     about 6px once the diagram is drawn at phone width. */
+  --t-micro: 11px;      /* meta labels, source dates, chip text */
+  --t-caption: 12px;    /* captions, footnotes, table cells */
+  --t-small: 13px;      /* secondary body, card detail */
+  --t-body: 15px;       /* body copy */
+  --t-lead: 17px;       /* lead paragraphs */
+  --t-h3: 21px;         /* card headings */
+  --t-h2: 27px;         /* section headings */
+  --t-h1: 34px;         /* page headings */
+  --t-display: 46px;    /* score display */
+  --t-hero: 52px;       /* the page headline, desktop end of its clamp */
   --hair: rgba(255, 255, 255, 0.1); /* borders */
   --glass: rgba(255, 255, 255, 0.035);
 
@@ -46,7 +69,7 @@
    uppercase ONLY for these -- never for headings or body copy. */
 .meta-label {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px; font-weight: 700;
+  font-size: var(--t-micro); font-weight: 700;
   letter-spacing: 1.2px; text-transform: uppercase;
   color: var(--slate);
 }
@@ -58,6 +81,17 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  /* THE BASE SIZE, which the site never actually set. Anything that did
+     not name its own size inherited the BROWSER's 16px -- a value that is
+     not on the scale and was never chosen by anyone. Almost everything
+     here names its own size, so this surfaced only in the places that
+     don't: the Suspense "Loading..." fallbacks on Compare and Gulf Watch.
+     Setting it means the default is now a scale value, so the next
+     element written without a size lands on the scale by doing nothing.
+     Safe to change: letter-spacing is the only em-based value in this
+     file and em is relative to its own element, and there is no rem
+     anywhere (rem answers to <html>, not <body>, in any case). */
+  font-size: var(--t-body);
   position: relative;
   scrollbar-width: thin;             /* Firefox */
   scrollbar-color: rgba(139,92,246,0.5) transparent;
@@ -71,7 +105,7 @@ body {
   background: var(--paper); color: var(--ink);
   padding: 10px 18px; border-radius: 8px;
   border: 1px solid var(--accent); text-decoration: none;
-  font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 700;
+  font-family: "IBM Plex Mono", monospace; font-size: var(--t-small); font-weight: 700;
   transition: top 0.15s ease;
 }
 .skip-link:focus { top: 8px; }
@@ -113,15 +147,15 @@ nav {
   padding: 16px 24px; max-width: 1180px; margin: 0 auto;
 }
 .brand {
-  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: 20px;
+  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: var(--t-h3);
   display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink);
 }
 .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-2), var(--accent)); box-shadow: 0 0 12px rgba(139,92,246,0.7); }
-.navlinks { display: flex; gap: 8px; font-size: 13.5px; font-weight: 600; }
+.navlinks { display: flex; gap: 8px; font-size: var(--t-small); font-weight: 600; }
 .navlink {
   padding: 8px 14px; border-radius: 8px; color: var(--slate);
   text-decoration: none; background: none; border: none; cursor: pointer;
-  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  font-family: inherit; font-size: var(--t-small); font-weight: 600;
 }
 .navlink.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
 
@@ -154,7 +188,7 @@ nav {
 .navpanel-link {
   display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px;
   color: var(--slate); text-decoration: none; background: none; border: none; cursor: pointer;
-  font-family: inherit; font-size: 14.5px; font-weight: 600; text-align: left;
+  font-family: inherit; font-size: var(--t-body); font-weight: 600; text-align: left;
 }
 .navpanel-link.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
 
@@ -166,13 +200,13 @@ nav {
 
 .hero { padding: 48px 0 36px; position: relative; z-index: 1; }
 .eyebrow {
-  font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 700;
+  font-family: "IBM Plex Mono", monospace; font-size: var(--t-caption); font-weight: 700;
   background: linear-gradient(90deg, var(--accent-2), var(--accent));
   -webkit-background-clip: text; background-clip: text; color: transparent;
   letter-spacing: 2px; margin: 0 0 14px;
 }
 h1.headline {
-  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: clamp(30px, 5vw, 52px);
+  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: clamp(var(--t-h2), 5vw, var(--t-hero));
   line-height: 1.12; margin: 0 auto 16px; max-width: 22ch; letter-spacing: -0.015em;
 }
 /* 1.12 is right for a two-line headline at 52px. On a phone the same
@@ -184,11 +218,11 @@ h1.headline {
   h1.headline { line-height: 1.26; }
 }
 
-.micro-note { font-size: 10px; color: var(--slate); font-family: "IBM Plex Mono", monospace; }
-.pillar-cta { margin-top: 6px; font-size: 10px; font-family: "IBM Plex Mono", monospace; color: var(--accent-2); }
+.micro-note { font-size: var(--t-micro); color: var(--slate); font-family: "IBM Plex Mono", monospace; }
+.pillar-cta { margin-top: 6px; font-size: var(--t-micro); font-family: "IBM Plex Mono", monospace; color: var(--accent-2); }
 .gulf-obs-date {
   display: block; font-family: "IBM Plex Mono", monospace;
-  font-size: 10px; color: var(--slate); margin-top: 1px;
+  font-size: var(--t-micro); color: var(--slate); margin-top: 1px;
 }
 
 /* Hero is centred, matching the design reference. The two coloured
@@ -205,7 +239,7 @@ h1.headline {
 .hero-centered .tabs .tab { flex: 1 1 150px; justify-content: center; }
 .hl-cyan { color: var(--accent); }
 .hl-violet { color: var(--accent-2); }
-.sub { font-size: 16px; color: var(--slate); max-width: 60ch; line-height: 1.6; margin: 0 0 28px; }
+.sub { font-size: var(--t-lead); color: var(--slate); max-width: 60ch; line-height: 1.6; margin: 0 0 28px; }
 
 .tabs {
   display: inline-flex; flex-wrap: wrap; background: var(--glass);
@@ -213,7 +247,7 @@ h1.headline {
   backdrop-filter: blur(10px);
 }
 .tab {
-  padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 600;
+  padding: 9px 16px; border-radius: 9px; font-size: var(--t-small); font-weight: 600;
   color: var(--slate); cursor: pointer; border: none; background: none; font-family: inherit;
   /* min-height (not just padding) so the flag icon + text inside some
      .tab buttons don't stretch it past 44px while a plain-text one
@@ -236,30 +270,30 @@ h1.headline {
   .score-panel > .score-right { border-left: none; padding-left: 0; border-top: 1px solid var(--hair); padding-top: 22px; width: 100%; }
 }
 
-.gauge-num { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 50px; }
-.gauge-label { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 700; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; }
-.band-pill { display: inline-block; margin-top: 10px; padding: 5px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+.gauge-num { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: var(--t-display); }
+.gauge-label { font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); font-weight: 700; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; }
+.band-pill { display: inline-block; margin-top: 10px; padding: 5px 14px; border-radius: 999px; font-size: var(--t-small); font-weight: 700; font-family: "IBM Plex Mono", monospace; }
 
-.score-right h2 { font-family: "Space Grotesk", sans-serif; font-size: 23px; font-weight: 600; margin: 0 0 12px; }
-.score-narrative { font-size: 14.5px; color: var(--ink-soft); line-height: 1.65; margin: 0 0 16px; }
-.meta-row { display: flex; gap: 20px; flex-wrap: wrap; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--slate); }
+.score-right h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h3); font-weight: 600; margin: 0 0 12px; }
+.score-narrative { font-size: var(--t-body); color: var(--ink-soft); line-height: 1.65; margin: 0 0 16px; }
+.meta-row { display: flex; gap: 20px; flex-wrap: wrap; font-family: "IBM Plex Mono", monospace; font-size: var(--t-caption); color: var(--slate); }
 .meta-row b { color: var(--ink); }
 
 .section { padding: 44px 0; position: relative; z-index: 1; }
 .section-head h1,
-.section-head h2 { font-family: "Space Grotesk", sans-serif; font-size: 26px; font-weight: 600; margin: 0 0 8px; }
-.section-head p { color: var(--slate); font-size: 14px; margin: 0; max-width: 64ch; }
+.section-head h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h2); font-weight: 600; margin: 0 0 8px; }
+.section-head p { color: var(--slate); font-size: var(--t-body); margin: 0; max-width: 64ch; }
 
 .pillar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
 @media (max-width: 980px) { .pillar-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 560px) { .pillar-grid { grid-template-columns: repeat(2, 1fr); } }
 .pillar-card { background: var(--glass); border: 1px solid var(--hair); border-radius: 16px; padding: 22px 16px 18px; text-align: center; backdrop-filter: blur(10px); transition: border-color 0.2s ease, transform 0.2s ease; }
 .pillar-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
-.pillar-name { font-size: 13px; font-weight: 700; margin: 14px 0 2px; color: var(--ink); }
-.pillar-weight { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--slate); }
+.pillar-name { font-size: var(--t-small); font-weight: 700; margin: 14px 0 2px; color: var(--ink); }
+.pillar-weight { font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); color: var(--slate); }
 /* One-line plain-language descriptor under each pillar name, so the five
    cards explain what they measure without a separate legend (brief §3). */
-.pillar-desc { font-size: 10.5px; color: var(--slate); line-height: 1.45; margin-top: 5px; }
+.pillar-desc { font-size: var(--t-micro); color: var(--slate); line-height: 1.45; margin-top: 5px; }
 
 /* Three dimensions, not five pillars -- wider cards, so the grid drops to
    a single column earlier than .pillar-grid does. Three across a phone
@@ -267,7 +301,7 @@ h1.headline {
    lines. */
 .dimension-grid { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 720px) { .dimension-grid { grid-template-columns: 1fr; } }
-.dimension-question { font-size: 10.5px; color: var(--accent-2); font-style: italic; margin-top: 6px; line-height: 1.4; }
+.dimension-question { font-size: var(--t-micro); color: var(--accent-2); font-style: italic; margin-top: 6px; line-height: 1.4; }
 
 /* ===== Featured Market Snapshot strip (brief §2) =====
    A compact context bar directly above the score card: what you're
@@ -290,7 +324,7 @@ h1.headline {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 11px; border-radius: 999px;
   border: 1px solid var(--hair); background: rgba(255,255,255,0.03);
-  font-size: 11.5px; font-weight: 600; color: var(--ink-soft);
+  font-size: var(--t-caption); font-weight: 600; color: var(--ink-soft);
   white-space: nowrap;
 }
 .chip i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
@@ -319,7 +353,7 @@ h1.headline {
   transition: border-color 0.18s ease, transform 0.18s ease;
 }
 .compare-chip:hover { border-color: rgba(255,255,255,0.24); transform: translateY(-2px); }
-.compare-chip .cc-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+.compare-chip .cc-name { font-size: var(--t-small); font-weight: 700; color: var(--ink); }
 /* Fixed height so all six shapes occupy the same block regardless of
    their aspect ratio -- otherwise a wide country (the US) and a tall
    one (the UK) push their score lines to different heights and the row
@@ -328,8 +362,8 @@ h1.headline {
   height: 96px; display: flex; align-items: center; justify-content: center;
   margin: 4px 0 2px;
 }
-.compare-chip .cc-score { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; }
-.compare-chip .cc-band { font-size: 11px; color: var(--slate); }
+.compare-chip .cc-score { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: var(--t-h2); line-height: 1.1; }
+.compare-chip .cc-band { font-size: var(--t-micro); color: var(--slate); }
 
 /* ===== Page header with a side insight card (design reference on the
    Compare, Gulf Watch and Data Over Time pages) ===== */
@@ -343,12 +377,12 @@ h1.headline {
 }
 .insight-card h2,
 .insight-card h3 {
-  font-family: "Space Grotesk", sans-serif; font-size: 14.5px; font-weight: 600;
+  font-family: "Space Grotesk", sans-serif; font-size: var(--t-body); font-weight: 600;
   margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
 }
 .insight-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .insight-card li {
-  font-size: 12.5px; color: var(--ink-soft); line-height: 1.5;
+  font-size: var(--t-small); color: var(--ink-soft); line-height: 1.5;
   display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start;
 }
 .insight-card li i { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex: none; }
@@ -360,7 +394,7 @@ h1.headline {
   border-radius: 18px; padding: 22px 24px; backdrop-filter: blur(12px);
 }
 .chart-card-label {
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 700;
+  font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); font-weight: 700;
   color: var(--accent-2); letter-spacing: 1px; text-transform: uppercase;
   margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
@@ -371,7 +405,7 @@ h1.headline {
 .selector-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 16px; border-radius: 12px; cursor: pointer;
-  font-family: inherit; font-size: 13px; font-weight: 600;
+  font-family: inherit; font-size: var(--t-small); font-weight: 600;
   border: 1px solid var(--hair); background: var(--card-bg); color: var(--slate);
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   min-height: 44px;
@@ -407,15 +441,15 @@ h1.headline {
 .data-table { border-collapse: collapse; width: 100%; min-width: 640px; }
 .data-table th, .data-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--hair); vertical-align: top; }
 .data-table thead th {
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 700;
+  font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); font-weight: 700;
   letter-spacing: 1px; text-transform: uppercase; color: var(--slate);
   background: rgba(255,255,255,0.03);
 }
 .data-table tbody tr:last-child td { border-bottom: none; }
-.data-table td { font-size: 13px; color: var(--ink-soft); }
+.data-table td { font-size: var(--t-small); color: var(--ink-soft); }
 
 .tabs-inline { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
-.tabs-inline .tab { flex: 0 1 auto; padding: 9px 13px; font-size: 12.5px; }
+.tabs-inline .tab { flex: 0 1 auto; padding: 9px 13px; font-size: var(--t-small); }
 
 /* Breakpoints deliberately match .pillar-grid above -- the two are the
    same five-across layout on two different pages, so they must reflow
@@ -440,14 +474,14 @@ h1.headline {
 }
 .pillar-select-card[aria-pressed="true"] { border-color: var(--accent-2); background: rgba(139,92,246,0.10); }
 .pillar-select-card .psc-name {
-  font-family: "Space Grotesk", sans-serif; font-size: 13px; font-weight: 600;
+  font-family: "Space Grotesk", sans-serif; font-size: var(--t-small); font-weight: 600;
   color: var(--ink-soft); line-height: 1.25;
 }
 .pillar-select-card .psc-score {
-  font-family: "Space Grotesk", sans-serif; font-size: 34px; font-weight: 700;
+  font-family: "Space Grotesk", sans-serif; font-size: var(--t-h1); font-weight: 700;
   line-height: 1; margin: 10px 0 2px; font-variant-numeric: tabular-nums;
 }
-.pillar-select-card .psc-desc { font-size: 11.5px; color: var(--slate); line-height: 1.4; margin-top: 6px; }
+.pillar-select-card .psc-desc { font-size: var(--t-caption); color: var(--slate); line-height: 1.4; margin-top: 6px; }
 
 /* Chart beside a narrow facts panel (raw-indicator detail, and the
    macro-forces chart with its notes). */
@@ -464,7 +498,7 @@ h1.headline {
   background: var(--card-bg); border: 1px solid var(--hair);
   border-radius: 12px;
 }
-.signal-market { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--ink); min-width: 0; }
+.signal-market { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-small); font-weight: 600; color: var(--ink); min-width: 0; }
 .signal-market span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .signal-body { min-width: 0; }
 /* display:block on both -- these are <span>s in WeeklyFeed, and without
@@ -472,12 +506,12 @@ h1.headline {
    together on one line and their boxes overlapped by 15px. Visible as
    "78.5— 0.0Infl 3.4%" with no break. margin-top on an inline element is
    also ignored, which is why the 3px gap never appeared. */
-.signal-headline { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.35; }
-.signal-detail { display: block; font-size: 10.5px; color: var(--slate); font-family: "IBM Plex Mono", monospace; margin-top: 3px; }
+.signal-headline { display: block; font-size: var(--t-small); font-weight: 600; color: var(--ink); line-height: 1.35; }
+.signal-detail { display: block; font-size: var(--t-micro); color: var(--slate); font-family: "IBM Plex Mono", monospace; margin-top: 3px; }
 .signal-state {
   width: 26px; height: 26px; border-radius: 50%; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
+  font-size: var(--t-caption); font-weight: 700;
 }
 
 /* ===== Closing call-to-action band (brief §8, item 7) ===== */
@@ -488,8 +522,8 @@ h1.headline {
   border: 1px solid rgba(139,92,246,0.3);
   background: linear-gradient(120deg, rgba(139,92,246,0.14), rgba(34,211,238,0.07));
 }
-.cta-band h2 { font-family: "Space Grotesk", sans-serif; font-size: 24px; font-weight: 600; margin: 0 0 6px; }
-.cta-band p { margin: 0; color: var(--slate); font-size: 14px; }
+.cta-band h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h3); font-weight: 600; margin: 0 0 6px; }
+.cta-band p { margin: 0; color: var(--slate); font-size: var(--t-body); }
 
 /* The only remaining user is the 6-card Gulf Watch grid (/gulf-watch and
    the homepage's Gulf Watch section) -- 3 columns divides 6 evenly with no
@@ -502,7 +536,7 @@ h1.headline {
   padding: 16px 18px; cursor: pointer; transition: all .2s ease; backdrop-filter: blur(10px);
 }
 .compare-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
-.compare-name { font-weight: 700; font-size: 13.5px; color: var(--ink); }
+.compare-name { font-weight: 700; font-size: var(--t-small); color: var(--ink); }
 
 /* Homepage Gulf strip: all six countries across one row, condensed,
    with the full indicator set on /gulf-watch (design reference). */
@@ -510,7 +544,7 @@ h1.headline {
 @media (max-width: 1080px) { .gulf-strip { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 620px) { .gulf-strip { grid-template-columns: repeat(2, 1fr); } }
 .gulf-compact { display: block; text-decoration: none; color: inherit; cursor: pointer; }
-.gulf-compact .compare-name { font-size: 12.5px; }
+.gulf-compact .compare-name { font-size: var(--t-small); }
 
 /* Text fallback shown only where the map itself is hidden (see the
    world-map-wrap rule below) -- without this, a phone user has no way
@@ -530,8 +564,8 @@ h1.headline {
 }
 
 .sources-head, .sources-row { display: grid; grid-template-columns: 1.4fr 1.6fr 2.2fr 0.9fr 1.15fr; }
-.sources-head { padding: 10px 18px; font-size: 10.5px; }
-.sources-row { padding: 12px 18px; font-size: 12.5px; align-items: start; gap: 6px; }
+.sources-head { padding: 10px 18px; font-size: var(--t-micro); }
+.sources-row { padding: 12px 18px; font-size: var(--t-small); align-items: start; gap: 6px; }
 
 /* Below 860px, 5 equal-ish grid columns squeeze institution names like
    "Federal Reserve Bank of St. Louis" into ~60px -- illegible. Flip each
@@ -544,12 +578,12 @@ h1.headline {
   .sources-row { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
   .sources-row > span[data-label]::before {
     content: attr(data-label); display: block; font-family: "IBM Plex Mono", monospace;
-    font-size: 9.5px; font-weight: 700; color: var(--accent-2); text-transform: uppercase;
+    font-size: var(--t-micro); font-weight: 700; color: var(--accent-2); text-transform: uppercase;
     letter-spacing: 0.5px; margin-bottom: 3px;
   }
 }
 
-footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10px; font-size: 12px; color: var(--slate); position: relative; z-index: 1; }
+footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10px; font-size: var(--t-caption); color: var(--slate); position: relative; z-index: 1; }
 
 /* ===== Country filter for the Gulf cross-country chart =====
    Six lines on one axis is legible on a desktop and genuinely not on a
@@ -560,7 +594,7 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
 .country-chip {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 7px 12px; border-radius: 999px; cursor: pointer;
-  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  font-family: inherit; font-size: var(--t-small); font-weight: 600;
   border: 1px solid var(--hair); background: var(--card-bg); color: var(--slate);
   min-height: 36px;
   transition: border-color .15s ease, color .15s ease, background .15s ease;
@@ -575,14 +609,14 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
 /* An unselected chip stays fully readable -- dimming it to near-invisible
    would hide which countries exist at all. */
 .country-chip:not(.on) { opacity: 0.72; }
-.country-chip-all { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .04em; }
+.country-chip-all { font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); letter-spacing: .04em; }
 .country-chip-all:disabled { opacity: 0.35; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .country-chip, .country-chip i { transition: none; } }
 
 /* ===== Mobile legibility floor =====
    MUST STAY LAST IN THIS FILE. A media query adds no specificity, so
    these only win by coming after the base rules they override --
-   .pillar-weight's own `font-size: 10px` sits ~60 lines above and beat
+   .pillar-weight's own `font-size: var(--t-micro)` sits ~60 lines above and beat
    an identical selector placed earlier.
 
    A 9.5px or 10px label is readable on a desktop monitor at arm's length
@@ -590,15 +624,15 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
    22 separate text elements sat below 10.5px. Small screens only, so the
    dense look of the cards on a large screen is untouched. */
 @media (max-width: 640px) {
-  .meta-label { font-size: 11px; }
-  .pillar-weight { font-size: 11px; }
-  .pillar-cta { font-size: 11px; }
-  .gulf-obs-date { font-size: 11px; }
-  .micro-note { font-size: 11px; }
-  .chart-card-label { font-size: 11px; }
-  .pillar-select-card .psc-desc { font-size: 12px; }
-  .signal-detail { font-size: 11.5px; }
-  .data-table thead th { font-size: 11px; }
+  .meta-label { font-size: var(--t-micro); }
+  .pillar-weight { font-size: var(--t-micro); }
+  .pillar-cta { font-size: var(--t-micro); }
+  .gulf-obs-date { font-size: var(--t-micro); }
+  .micro-note { font-size: var(--t-micro); }
+  .chart-card-label { font-size: var(--t-micro); }
+  .pillar-select-card .psc-desc { font-size: var(--t-caption); }
+  .signal-detail { font-size: var(--t-caption); }
+  .data-table thead th { font-size: var(--t-micro); }
 }
 
 /* Visible to a screen reader, not on screen. Used for <caption> on the
@@ -630,10 +664,10 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
 }
 a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
 .dim-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.dim-card-name { font-size: 15px; font-weight: 700; color: var(--ink); }
-.dim-card-q { font-size: 11.5px; color: var(--accent-2); font-style: italic; margin-top: 3px; line-height: 1.45; }
+.dim-card-name { font-size: var(--t-body); font-weight: 700; color: var(--ink); }
+.dim-card-q { font-size: var(--t-caption); color: var(--accent-2); font-style: italic; margin-top: 3px; line-height: 1.45; }
 .dim-card-num {
-  font-family: "Space Grotesk", sans-serif; font-size: 34px; font-weight: 700;
+  font-family: "Space Grotesk", sans-serif; font-size: var(--t-h1); font-weight: 700;
   line-height: 1; font-variant-numeric: tabular-nums; flex: none;
 }
 .dim-track { position: relative; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; margin: 16px 0 7px; }
@@ -641,11 +675,11 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 .dim-track-fill { position: absolute; top: 0; bottom: 0; transition: left .7s cubic-bezier(.22,1,.36,1), width .7s cubic-bezier(.22,1,.36,1); }
 .dim-track-labels {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 10px; color: var(--slate); font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); color: var(--slate); font-family: "IBM Plex Mono", monospace;
 }
-.dim-track-sd { font-size: 11px; font-weight: 700; }
+.dim-track-sd { font-size: var(--t-micro); font-weight: 700; }
 .dim-card-of {
-  font-size: 11.5px; color: var(--slate); margin-top: 12px;
+  font-size: var(--t-caption); color: var(--slate); margin-top: 12px;
   padding-top: 10px; border-top: 1px solid var(--hair);
 }
 
@@ -676,26 +710,26 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
   border-radius: 50%;
   border: 1.5px solid;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px; font-weight: 600; letter-spacing: -0.02em;
+  font-size: var(--t-micro); font-weight: 600; letter-spacing: -0.02em;
 }
 
 .coin-id { min-width: 0; flex: 1 1 auto; }
 .coin-sym {
   font-family: "Space Grotesk", sans-serif;
-  font-weight: 700; font-size: 16px; color: var(--ink); line-height: 1.2;
+  font-weight: 700; font-size: var(--t-lead); color: var(--ink); line-height: 1.2;
 }
 .coin-name {
-  font-size: 11.5px; color: var(--slate); margin-top: 2px;
+  font-size: var(--t-caption); color: var(--slate); margin-top: 2px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 .coin-figs { flex: 0 0 auto; text-align: right; }
 .coin-total {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 16px; font-weight: 600; color: var(--ink);
+  font-size: var(--t-lead); font-weight: 600; color: var(--ink);
   font-variant-numeric: tabular-nums; line-height: 1.2;
 }
-.coin-share { font-size: 11px; color: var(--slate); margin-top: 2px; }
+.coin-share { font-size: var(--t-micro); color: var(--slate); margin-top: 2px; }
 
 .coin-bar {
   height: 9px; border-radius: 5px; margin: 12px 0 10px;
@@ -707,7 +741,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 .coin-foot { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .coin-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11.5px; color: var(--slate);
+  font-size: var(--t-caption); color: var(--slate);
   font-variant-numeric: tabular-nums;
 }
 .coin-chip > i { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
@@ -739,7 +773,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
   border-radius: 999px;
   background: var(--glass);
   color: var(--ink-soft);
-  font-size: 12.5px;
+  font-size: var(--t-small);
   text-decoration: none;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
@@ -755,7 +789,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
   border: 1px solid; border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase;
+  font-size: var(--t-micro); letter-spacing: 0.07em; text-transform: uppercase;
   margin-bottom: 12px;
 }
 .learn-tag > i { width: 6px; height: 6px; border-radius: 50%; }
@@ -763,7 +797,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 /* Georgia was the only serif on the site and appeared only here. */
 .learn-h3 {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 21px; font-weight: 700; line-height: 1.3;
+  font-size: var(--t-h3); font-weight: 700; line-height: 1.3;
   margin: 0 0 12px; color: var(--ink);
   text-wrap: balance;
 }

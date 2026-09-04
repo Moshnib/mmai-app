@@ -237,11 +237,11 @@ export default function ScoreDiagram() {
           ["Rank it", "The average becomes a place in the historical record. That is the score."],
         ].map(([head, body], i) => (
           <li key={head} style={{ border: "1px solid var(--hair)", borderRadius: 12, padding: "12px 14px", background: "rgba(255,255,255,0.025)" }}>
-            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, color: FINAL, marginBottom: 5 }}>
+            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: FINAL, marginBottom: 5 }}>
               {String(i + 1).padStart(2, "0")}
             </div>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{head}</div>
-            <div style={{ fontSize: 11.5, color: "var(--slate)", lineHeight: 1.5 }}>{body}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{head}</div>
+            <div style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.5 }}>{body}</div>
           </li>
         ))}
       </ol>

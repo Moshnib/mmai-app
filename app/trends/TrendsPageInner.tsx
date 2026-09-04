@@ -314,7 +314,7 @@ export default function TrendsPageInner({
   const focusSource = focusSources[0];
 
   const notEnough = (
-    <p style={{ color: "var(--slate)", fontSize: 13.5, padding: "40px 0", textAlign: "center" }}>
+    <p style={{ color: "var(--slate)", fontSize: 13, padding: "40px 0", textAlign: "center" }}>
       Not enough history yet to chart a trend for {marketNames[current]} — that needs at least two points.
     </p>
   );
@@ -435,7 +435,7 @@ export default function TrendsPageInner({
                   )}
                 </ul>
               ) : (
-                <p style={{ fontSize: 12.5, color: "var(--slate)", margin: 0, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.5 }}>
                   {marketNames[current]} doesn&apos;t have two periods of history yet, so there is nothing to compare
                   against.
                 </p>
@@ -462,7 +462,7 @@ export default function TrendsPageInner({
               <TimeRangeFilter options={ANNUAL_RANGES} selected={rangeDays} onChange={setRangeDays} />
             </div>
             {hasTrend ? <TrendChart series={compositeSeries} height={320} yDomain={[0, 100]} /> : notEnough}
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 10.5, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 11, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
               <span>
                 Built from {sourcesForMarket(marketNames[current]).length} sources — each institution is listed on the{" "}
                 <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources</Link> page
@@ -574,7 +574,7 @@ export default function TrendsPageInner({
                       aria-pressed={focusIndicator === ind}
                       style={{
                         padding: "4px 10px", borderRadius: 999, cursor: "pointer",
-                        fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700,
+                        fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
                         letterSpacing: 0.4, textTransform: "uppercase",
                         border: focusIndicator === ind ? "1px solid var(--accent-2)" : "1px solid var(--hair)",
                         background: focusIndicator === ind ? "rgba(139,92,246,0.18)" : "transparent",
@@ -602,7 +602,7 @@ export default function TrendsPageInner({
                 {hasTrend ? (
                   <TrendChart series={rawDetailSeries} height={280} showLegend={false} yLabel={INDICATOR_FIELD[focusIndicator].unit} />
                 ) : (
-                  <p style={{ color: "var(--slate)", fontSize: 13.5, padding: "40px 0", textAlign: "center" }}>
+                  <p style={{ color: "var(--slate)", fontSize: 13, padding: "40px 0", textAlign: "center" }}>
                     Not enough history yet for {marketNames[current]}.
                   </p>
                 )}
@@ -612,21 +612,21 @@ export default function TrendsPageInner({
                 <div className="meta-label">Current reading</div>
                 <div
                   style={{
-                    fontFamily: "'Space Grotesk', sans-serif", fontSize: 30, fontWeight: 700,
+                    fontFamily: "'Space Grotesk', sans-serif", fontSize: 27, fontWeight: 700,
                     color: focusBand.color, margin: "6px 0 2px", fontVariantNumeric: "tabular-nums",
                     filter: rawNow == null ? undefined : "brightness(1.12) saturate(1.05)",
                   }}
                 >
                   {rawNow == null ? "—" : rawNow.toFixed(INDICATOR_FIELD[focusIndicator].decimals)}
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--slate)", marginLeft: 5 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: "var(--slate)", marginLeft: 5 }}>
                     {INDICATOR_FIELD[focusIndicator].unit}
                   </span>
                 </div>
-                <div style={{ fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.5 }}>
                   {INDICATOR_FIELD[focusIndicator].label}
                 </div>
 
-                <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 11.5, color: "var(--slate)" }}>
+                <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 12, color: "var(--slate)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span>Weight in score</span>
                     <b style={{ color: "#fff" }}>{formatDimensionWeight()}</b>
@@ -648,7 +648,7 @@ export default function TrendsPageInner({
                             green survived in the UI. */}
                         <span
                           style={{
-                            padding: "2px 8px", borderRadius: 999, fontFamily: "IBM Plex Mono, monospace", fontSize: 10,
+                            padding: "2px 8px", borderRadius: 999, fontFamily: "IBM Plex Mono, monospace", fontSize: 11,
                             background: focusSource.status === "live" ? "var(--status-live-bg)" : "var(--status-manual-bg)",
                             color: focusSource.status === "live" ? "var(--status-live)" : "var(--accent-2)",
                           }}
@@ -689,21 +689,21 @@ export default function TrendsPageInner({
               </div>
               <div style={{ border: "1px solid var(--hair)", borderRadius: 14, padding: "16px 18px", background: "rgba(255,255,255,0.03)" }}>
                 <div className="meta-label">Why these three</div>
-                <p style={{ fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.6, margin: "8px 0 0" }}>
+                <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6, margin: "8px 0 0" }}>
                   A central bank raises its policy rate specifically to cool inflation — and that same rate hike
                   typically slows hiring, nudging unemployment up. This is where that relationship shows up in{" "}
                   {marketNames[current]}&apos;s own numbers.
                 </p>
-                <p style={{ fontSize: 11.5, color: "var(--slate)", lineHeight: 1.6, margin: "12px 0 0" }}>
+                <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, margin: "12px 0 0" }}>
                   Each rate also moves for reasons of its own, so not every wiggle lines up.
                 </p>
-                <p style={{ fontSize: 11.5, color: "var(--slate)", lineHeight: 1.6, margin: "10px 0 0" }}>
+                <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, margin: "10px 0 0" }}>
                   <b style={{ color: "var(--ink-soft)" }}>Three charts, not three lines.</b> All three are quoted in
                   per cent, which makes them look like the same kind of quantity — put on one axis they would sit
                   almost on top of each other and appear to track far more closely than they do. Each has its own
                   scale here, so what you are comparing is the shape over time.
                 </p>
-                <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 11.5 }}>
+                <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 12 }}>
                   {RATE_INDICATORS.map(({ indicator, color }) => {
                     // Deliberately the value at the LATEST period, not
                     // the latest non-null one. Falling back to an older

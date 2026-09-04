@@ -72,14 +72,14 @@ export default function DimensionBreakdown({
               <span
                 style={{
                   marginLeft: "auto", fontFamily: "IBM Plex Mono, monospace",
-                  fontSize: 18, fontWeight: 700, color,
+                  fontSize: 17, fontWeight: 700, color,
                 }}
               >
                 {pct == null ? "—" : pct.toFixed(1)}
               </span>
             </div>
 
-            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.6, margin: "8px 0 14px" }}>
+            <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6, margin: "8px 0 14px" }}>
               {DIMENSION_MEANING[key]}
             </p>
 
@@ -93,7 +93,7 @@ export default function DimensionBreakdown({
                     display: "grid",
                     gridTemplateColumns: "minmax(120px,1.4fr) auto auto auto",
                     gap: 10, alignItems: "center",
-                    fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5,
+                    fontFamily: "IBM Plex Mono, monospace", fontSize: 12,
                     color: "var(--slate)",
                   }}
                 >
@@ -126,7 +126,7 @@ export default function DimensionBreakdown({
             <div
               style={{
                 borderTop: "1px solid var(--hair)", marginTop: 12, paddingTop: 10,
-                fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5, color: "var(--slate)",
+                fontFamily: "IBM Plex Mono, monospace", fontSize: 12, color: "var(--slate)",
                 display: "grid", gap: 4,
               }}
             >

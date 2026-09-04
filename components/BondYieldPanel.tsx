@@ -145,7 +145,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
                 style={{
                   fontFamily: "'Space Grotesk', sans-serif",
                   fontWeight: 700,
-                  fontSize: 24,
+                  fontSize: 21,
                   color: COLORS[m.code],
                   fontVariantNumeric: "tabular-nums",
                   lineHeight: 1.1,
@@ -158,7 +158,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
                   why -- so this deliberately avoids the score palette. */}
               <div
                 style={{
-                  fontSize: 11.5,
+                  fontSize: 12,
                   color: "var(--slate)",
                   marginTop: 3,
                   fontFamily: "IBM Plex Mono, monospace",
@@ -166,7 +166,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
               >
                 {m.change == null ? "—" : `${m.change >= 0 ? "+" : ""}${m.change.toFixed(3)} vs prev. day`}
               </div>
-              <div style={{ fontSize: 10.5, color: "var(--slate)", marginTop: 2, fontFamily: "IBM Plex Mono, monospace" }}>
+              <div style={{ fontSize: 11, color: "var(--slate)", marginTop: 2, fontFamily: "IBM Plex Mono, monospace" }}>
                 {m.days} trading {m.days === 1 ? "day" : "days"} of history
               </div>
               {m.spread != null && (
@@ -231,7 +231,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
           <TrendChart series={series} height={340} yLabel="%" showDots={false} connectNulls={false} />
           <p
             style={{
-              fontSize: 11.5,
+              fontSize: 12,
               color: "var(--slate)",
               margin: "14px 0 0",
               paddingTop: 12,
@@ -244,7 +244,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
             disappearing. Markets close at weekends and on public holidays — those days are gaps, never zeros. Latest
             reading {fmtDay(newestDate)}.
           </p>
-          <p style={{ fontSize: 11.5, color: "var(--slate)", margin: "8px 0 0", lineHeight: 1.7 }}>
+          <p style={{ fontSize: 12, color: "var(--slate)", margin: "8px 0 0", lineHeight: 1.7 }}>
             <b style={{ color: "var(--ink-soft)" }}>On the 10y−2y spread</b>, shown for the two markets that publish
             both maturities: a negative number means lenders want more to lend for two years than for ten. That is
             unusual, and worth reading alongside everything else rather than on its own.

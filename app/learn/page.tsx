@@ -380,11 +380,11 @@ export default function LearnPage() {
             >
               <DimensionTag topicId={t.id} />
               <h3 className="learn-h3">{t.title}</h3>
-              <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
+              <p style={{ fontSize: 15, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{
                   fontFamily: "IBM Plex Mono, monospace",
-                  fontSize: 14,
+                  fontSize: 15,
                   background: "var(--paper)",
                   border: "1px solid var(--hair)",
                   borderRadius: 8,
@@ -398,7 +398,7 @@ export default function LearnPage() {
                   pretended to be, so every transform gets a line saying what
                   zero means and which way is better. */}
               {"formulaNote" in t && t.formulaNote && (
-                <p style={{ fontSize: 12.5, color: "var(--slate)", lineHeight: 1.6, margin: "-6px 0 14px" }}>
+                <p style={{ fontSize: 13, color: "var(--slate)", lineHeight: 1.6, margin: "-6px 0 14px" }}>
                   {t.formulaNote as string}
                 </p>
               )}
@@ -406,7 +406,7 @@ export default function LearnPage() {
                 <div
                   style={{
                     fontFamily: "IBM Plex Mono, monospace",
-                    fontSize: 12.5,
+                    fontSize: 13,
                     background: "var(--paper)",
                     border: "1px solid var(--hair)",
                     borderRadius: 8,
@@ -435,7 +435,7 @@ export default function LearnPage() {
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 8 }}>
                     Each market’s own target
                   </div>
-                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8 }}>
+                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.8 }}>
                     {t.targets}
                   </div>
                 </div>
@@ -465,7 +465,7 @@ export default function LearnPage() {
                   </p>
                   {lims.map((lim: { head: string; body: string }) => (
                     <div key={lim.head} style={{ marginBottom: 11 }}>
-                      <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 2 }}>{lim.head}</div>
+                      <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 2 }}>{lim.head}</div>
                       <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.65 }}>{lim.body}</p>
                     </div>
                   ))}
@@ -500,7 +500,7 @@ export default function LearnPage() {
                   <div
                     style={{
                       fontFamily: "IBM Plex Mono, monospace",
-                      fontSize: 12.5,
+                      fontSize: 13,
                       color: "var(--ink-soft)",
                       lineHeight: 1.8,
                       marginBottom: 10,
@@ -537,10 +537,10 @@ export default function LearnPage() {
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
+                <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
               </div>
             </div>
           ))}
@@ -568,7 +568,7 @@ export default function LearnPage() {
               }}
             >
               <h3 className="learn-h3">{t.title}</h3>
-              <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
+              <p style={{ fontSize: 15, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{
                   padding: "14px 16px",
@@ -577,10 +577,10 @@ export default function LearnPage() {
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
+                <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
               </div>
             </div>
           ))}

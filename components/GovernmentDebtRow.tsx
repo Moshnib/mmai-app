@@ -112,13 +112,13 @@ export default async function GovernmentDebtRow() {
             ))}
           </div>
 
-          <p style={{ fontSize: 11.5, color: "var(--slate)", margin: "16px 0 0", paddingTop: 12, borderTop: "1px dashed var(--hair)", lineHeight: 1.7 }}>
+          <p style={{ fontSize: 12, color: "var(--slate)", margin: "16px 0 0", paddingTop: 12, borderTop: "1px dashed var(--hair)", lineHeight: 1.7 }}>
             <b style={{ color: "var(--ink-soft)" }}>A high number is not automatically a bad one.</b> Japan owes the
             most here by a wide margin and borrows at some of the lowest interest rates in the world, because it owes
             almost all of it in its own currency to its own savers. What matters is who the lender is and what the
             debt costs to service — which is why this figure sits beside the MMAI score rather than inside it.
           </p>
-          <p style={{ fontSize: 11.5, color: "var(--slate)", margin: "8px 0 0", lineHeight: 1.7 }}>
+          <p style={{ fontSize: 12, color: "var(--slate)", margin: "8px 0 0", lineHeight: 1.7 }}>
             Source: Bank for International Settlements, credit to general government from all sectors at market
             value, adjusted for breaks. BIS publishes no equivalent series for the Gulf states.
           </p>

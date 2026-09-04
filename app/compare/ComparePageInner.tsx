@@ -379,7 +379,7 @@ export default function ComparePageInner() {
                     aria-pressed={pillarView === v}
                     style={{
                       padding: "5px 12px", borderRadius: 999, cursor: "pointer",
-                      fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700,
+                      fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
                       letterSpacing: 0.5, textTransform: "uppercase",
                       border: pillarView === v ? "1px solid var(--accent-2)" : "1px solid var(--hair)",
                       background: pillarView === v ? "rgba(139,92,246,0.18)" : "transparent",

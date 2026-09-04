@@ -103,7 +103,7 @@ export default function DimensionGrid({
               <div
                 style={{
                   position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26,
+                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 27,
                   color: missing ? "var(--slate)" : color,
                   textShadow: missing ? undefined : `0 0 14px ${color}70`,
                   filter: missing ? undefined : "brightness(1.12) saturate(1.05)",

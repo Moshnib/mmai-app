@@ -38,7 +38,7 @@ export default function DimensionBars({
 }) {
   if (!standardised) {
     return (
-      <p style={{ fontSize: 12.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: 0 }}>
+      <p style={{ fontSize: 13, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: 0 }}>
         No score to break down — an indicator is missing.
       </p>
     );
@@ -60,11 +60,11 @@ export default function DimensionBars({
           return (
             <div key={key} style={{ display: "grid", gridTemplateColumns: "minmax(96px,120px) 1fr auto", gap: 12, alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: "#fff" }}>{DIMENSION_NAMES[key]}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{DIMENSION_NAMES[key]}</div>
                 {/* The indicators behind it, named but not explained. The
                     front page should say WHAT a dimension is made of; the
                     arithmetic lives on the Trends page. */}
-                <div style={{ fontSize: 10, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", lineHeight: 1.4, marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", lineHeight: 1.4, marginTop: 2 }}>
                   {DIMENSION_INDICATORS[key].map((i) => INDICATOR_FIELD[i].label).join(" + ")}
                 </div>
               </div>
@@ -99,9 +99,9 @@ export default function DimensionBars({
 
       {/* where the three average out, and what that becomes */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(96px,120px) 1fr auto", gap: 12, alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--hair)" }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
           MMAI
-          <div style={{ fontSize: 10, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 400, marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 400, marginTop: 2 }}>
             average of the three
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function DimensionBars({
         </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", marginTop: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", marginTop: 8 }}>
         <span>worse than usual</span>
         <span>average of the last 26 years</span>
         <span>better than usual</span>

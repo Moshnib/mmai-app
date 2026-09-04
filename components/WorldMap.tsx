@@ -204,7 +204,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
             borderRadius: 8,
             padding: "7px 10px",
             fontFamily: "IBM Plex Mono, monospace",
-            fontSize: 11.5,
+            fontSize: 12,
             whiteSpace: "nowrap",
             pointerEvents: "none",
           }}

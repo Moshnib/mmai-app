@@ -72,7 +72,7 @@ function MiniChart({
   return (
     <div style={CARD_STYLE}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)" }}>{title}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{title}</span>
         {granularity && (
           <span className="micro-note" style={{ textTransform: "uppercase" }}>{granularity}</span>
         )}
@@ -107,7 +107,7 @@ function ComparisonCell({ lp, kind, noSourceHint }: { lp: LatestPoint | null; ki
   }
   return (
     <div>
-      <div style={{ fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
+      <div style={{ fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
         {formatValue(lp.point.value as number, kind)}
       </div>
       <div className="micro-note">

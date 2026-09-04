@@ -50,10 +50,10 @@ export default function Sparkline({ marketCode, currentScore }: { marketCode: st
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--slate)", letterSpacing: 1 }}>
+        <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--slate)", letterSpacing: 1 }}>
           TREND, {points[0].year}–{points[points.length - 1].year}
         </span>
-        <Link href={`/trends?market=${marketCode}`} style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: band.color, textDecoration: "none" }}>
+        <Link href={`/trends?market=${marketCode}`} style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: band.color, textDecoration: "none" }}>
           full chart →
         </Link>
       </div>

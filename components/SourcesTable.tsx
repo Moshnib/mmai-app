@@ -135,7 +135,7 @@ export default function SourcesTable({
     <>
       {groups.map((group) => (
         <div key={group.name} style={{ marginBottom: 28 }}>
-          <h2 style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: 19, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
+          <h2 style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: 17, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
             {codeForName[group.name] && <Flag code={codeForName[group.name]} size={22} />}
             {group.name}
           </h2>
@@ -162,7 +162,7 @@ export default function SourcesTable({
                       rel="noopener noreferrer"
                       style={{ color: "var(--ink-soft)", textDecoration: "underline", textDecorationColor: "var(--hair)", textUnderlineOffset: 3 }}
                     >
-                      {e.institution} <span style={{ color: "var(--slate)", fontSize: 10 }}>↗</span>
+                      {e.institution} <span style={{ color: "var(--slate)", fontSize: 11 }}>↗</span>
                     </a>
                   ) : (
                     e.institution
@@ -170,13 +170,13 @@ export default function SourcesTable({
                 </span>
                 <span data-label="Licence" style={{ color: "var(--slate)" }}>
                   {e.license}
-                  {e.note && <div style={{ fontSize: 10.5, fontStyle: "italic", color: "var(--accent-2)", marginTop: 2 }}>{e.note}</div>}
+                  {e.note && <div style={{ fontSize: 11, fontStyle: "italic", color: "var(--accent-2)", marginTop: 2 }}>{e.note}</div>}
                 </span>
                 <span data-label="Status">
                   <span
                     style={{
                       fontFamily: "IBM Plex Mono, monospace",
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: 700,
                       padding: "3px 9px",
                       borderRadius: 999,
@@ -190,7 +190,7 @@ export default function SourcesTable({
                       figure is current. A World Bank annual series fetched
                       today is working, not new. Cadence separates the two. */}
                   {e.status === "live" && e.cadence && (
-                    <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, color: "var(--slate)", marginLeft: 7 }}>
+                    <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)", marginLeft: 7 }}>
                       {cadenceLabel(e.cadence)}
                     </span>
                   )}

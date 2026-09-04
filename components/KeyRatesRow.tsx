@@ -75,10 +75,10 @@ export default function KeyRatesRow({ raw, market }: { raw: RawIndicators; marke
               backdropFilter: "blur(10px)",
             }}
           >
-            <dt style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700, color, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>
+            <dt style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>
               {label}
             </dt>
-            <dd style={{ margin: 0, fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 28, color: "var(--ink)", lineHeight: 1.15 }}>
+            <dd style={{ margin: 0, fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 27, color: "var(--ink)", lineHeight: 1.15 }}>
               {value != null ? `${value.toFixed(decimals)}${unit}` : "—"}
             </dd>
             {value != null && (

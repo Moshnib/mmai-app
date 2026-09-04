@@ -228,7 +228,7 @@ export default function OverviewPage() {
             MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
           </p>
           {dataSource === "live" && lastUpdated && (
-            <p style={{ fontSize: 11.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>
+            <p style={{ fontSize: 12, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>
               Last updated {formatUpdatedAt(lastUpdated)} (oldest of the {markets.length} markets) · scheduled to refresh daily at 06:00 UTC
             </p>
           )}
@@ -238,7 +238,7 @@ export default function OverviewPage() {
               what "macro environment" means to them personally. This
               line answers "what even is this" before asking the
               headline's more evocative question. */}
-          <p style={{ fontSize: 14, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px auto 0", lineHeight: 1.6 }}>
+          <p style={{ fontSize: 15, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px auto 0", lineHeight: 1.6 }}>
             MMAI reads public government data — inflation, jobs, interest rates — and turns it into one plain-language
             score per country, updated daily. Not investment advice, just the honest picture.
           </p>
@@ -307,7 +307,7 @@ export default function OverviewPage() {
               {observationNote && (
                 <p
                   style={{
-                    fontSize: 12.5,
+                    fontSize: 13,
                     lineHeight: 1.6,
                     margin: '10px 0 0',
                     padding: '10px 13px',
@@ -507,7 +507,7 @@ export default function OverviewPage() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
                   background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff",
-                  fontWeight: 700, fontSize: 13.5, textDecoration: "none",
+                  fontWeight: 700, fontSize: 13, textDecoration: "none",
                 }}
               >
                 How MMAI is calculated →
@@ -518,7 +518,7 @@ export default function OverviewPage() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
                   border: "1px solid var(--hair)", color: "var(--ink-soft)",
-                  fontWeight: 700, fontSize: 13.5, textDecoration: "none",
+                  fontWeight: 700, fontSize: 13, textDecoration: "none",
                 }}
               >
                 Sources

@@ -111,7 +111,7 @@ export default async function StablecoinsPage() {
             >
               {money(total)}
             </div>
-            <p style={{ fontSize: 12.5, color: "var(--slate)", margin: 0, lineHeight: 1.6, maxWidth: "70ch" }}>
+            <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.6, maxWidth: "70ch" }}>
               Counting {rows.length} dollar-pegged tokens across three networks. Read directly from each
               blockchain when this page was last built, and refreshed at most every ten minutes.
               {missing > 0 && ` ${missing} of ${STABLECOINS.length} could not be read on this build and are excluded rather than estimated.`}
@@ -126,10 +126,10 @@ export default async function StablecoinsPage() {
             {chainTotals.map((c) => (
               <div key={c.chain} className="mmai-card">
                 <div className="meta-label">{CHAIN_LABEL[c.chain]}</div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26, margin: "6px 0 4px", fontVariantNumeric: "tabular-nums" }}>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 27, margin: "6px 0 4px", fontVariantNumeric: "tabular-nums" }}>
                   {money(c.total)}
                 </div>
-                <div style={{ fontSize: 11.5, color: "var(--slate)", lineHeight: 1.5 }}>{CHAIN_NOTE[c.chain]}</div>
+                <div style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.5 }}>{CHAIN_NOTE[c.chain]}</div>
               </div>
             ))}
           </div>
@@ -217,14 +217,14 @@ export default async function StablecoinsPage() {
 
           <div className="mmai-card" style={{ marginTop: 12 }}>
             <div className="meta-label">Where these numbers come from</div>
-            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
+            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
               Each figure is read from the token&apos;s own contract on the network named — Ethereum and Tron are
               asked directly for their total supply, Solana for its mint supply. This is public ledger data, not a
               data provider&apos;s product, so there is no estimate and no intermediary between the chain and this
               page. Backing type is the one hand-maintained field here, and describes the kind of asset an issuer
               says stands behind the token, not an audit of it.
             </p>
-            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "10px 0 0", lineHeight: 1.7 }}>
+            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "10px 0 0", lineHeight: 1.7 }}>
               <b>Why these figures differ from a crypto data site.</b> This page counts every token that{" "}
               <b style={{ color: "var(--ink)" }}>exists</b> on each chain. Most aggregators publish{" "}
               <b style={{ color: "var(--ink)" }}>circulating</b> supply, which subtracts tokens an issuer has
@@ -233,7 +233,7 @@ export default async function StablecoinsPage() {
               blockchain can answer without anybody&apos;s estimate. Coverage differs too: the tokens listed above
               are the ones tracked here, and euro-pegged coins are excluded because this page counts dollars.
             </p>
-            <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "10px 0 0", lineHeight: 1.7 }}>
+            <p style={{ fontSize: 13, color: "var(--slate)", margin: "10px 0 0", lineHeight: 1.7 }}>
               Deliberately absent: the live peg price. It is readable, but no source for it has cleared this
               site&apos;s licensing bar yet, and MMAI would rather show nothing than publish a number it cannot
               republish cleanly. The same rule is applied on the{" "}

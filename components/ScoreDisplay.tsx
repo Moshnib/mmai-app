@@ -77,7 +77,7 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
           }}
         />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--slate)", marginTop: 6, fontFamily: "IBM Plex Mono, monospace" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--slate)", marginTop: 6, fontFamily: "IBM Plex Mono, monospace" }}>
         <span>0</span>
         <span>100</span>
       </div>

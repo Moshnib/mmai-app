@@ -126,6 +126,15 @@ jobs:
       - name: Change feed finds the real change
         run: npx tsx scripts/test-change-feed.ts
 
+      # The site reached twenty-seven distinct font sizes without anyone
+      # deciding to have twenty-seven -- each was a reasonable local
+      # choice, and 12, 12.5 and 13 ended up coexisting. A comment saying
+      # "use the scale" would have stopped none of it, because the drift
+      # came from copying a neighbouring component rather than from
+      # reading the stylesheet. So the scale fails the build instead.
+      - name: Every font size is on the scale
+        run: npx tsx scripts/check-type-scale.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT 31 AUGUST.
       # Parses the formulas the site publishes to readers, executes them,
       # and asserts they reproduce lib/scoring.ts across ~9,600

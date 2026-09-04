@@ -78,7 +78,7 @@ export default function WeeklyFeed() {
     <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "20px 24px", backdropFilter: "blur(14px)" }}>
       {brentNow != null && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, paddingBottom: 14, borderBottom: "1px dashed var(--hair)", fontFamily: "IBM Plex Mono, monospace" }}>
-          <span style={{ fontSize: 10.5, color: "var(--slate)", textTransform: "uppercase", letterSpacing: 0.5 }}>Brent crude, YoY (shared across all markets)</span>
+          <span style={{ fontSize: 11, color: "var(--slate)", textTransform: "uppercase", letterSpacing: 0.5 }}>Brent crude, YoY (shared across all markets)</span>
           <span style={{ fontSize: 13, color: "var(--ink)" }}>
             {brentNow.toFixed(1)}% <span style={{ color: "var(--slate)", marginLeft: 6 }}>{brentDeltaText}</span>
           </span>
@@ -119,7 +119,7 @@ export default function WeeklyFeed() {
           currently refreshing", which blamed the data pipeline for what
           is almost always a connection problem on the reader's side. */}
       {data && !data.ok && (
-        <div style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "12px 14px", background: "rgba(240,151,91,0.06)", border: "1px solid rgba(240,151,91,0.22)", borderRadius: 10, fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.6 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "12px 14px", background: "rgba(240,151,91,0.06)", border: "1px solid rgba(240,151,91,0.22)", borderRadius: 10, fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6 }}>
           <span aria-hidden="true">●</span>
           <span>
             {data.reason === "unconfigured"

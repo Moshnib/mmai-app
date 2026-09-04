@@ -112,10 +112,10 @@ export default function ExportDataButtons() {
 
   return (
     <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 16, padding: "20px 24px", backdropFilter: "blur(10px)" }}>
-      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700, color: "var(--accent-2)", letterSpacing: 1, marginBottom: 10 }}>
+      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--accent-2)", letterSpacing: 1, marginBottom: 10 }}>
         EXPORT THE DATA
       </div>
-      <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "0 0 14px" }}>
+      <p style={{ fontSize: 13, color: "var(--slate)", margin: "0 0 14px" }}>
         Every number behind every chart on this site, as a plain CSV file — no account, no request, nothing held back.
       </p>
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
@@ -133,10 +133,10 @@ export default function ExportDataButtons() {
               {status[table] === "loading" ? "Preparing…" : `Download ${label}`}
             </button>
             {status[table] === "error" && (
-              <p style={{ color: "#E14B4B", fontSize: 11.5, margin: "6px 0 0" }}>Couldn&apos;t reach the database — try again in a moment.</p>
+              <p style={{ color: "#E14B4B", fontSize: 12, margin: "6px 0 0" }}>Couldn&apos;t reach the database — try again in a moment.</p>
             )}
             {status[table] === "empty" && (
-              <p style={{ color: "var(--slate)", fontSize: 11.5, margin: "6px 0 0" }}>No data yet for this table.</p>
+              <p style={{ color: "var(--slate)", fontSize: 12, margin: "6px 0 0" }}>No data yet for this table.</p>
             )}
           </div>
         ))}
