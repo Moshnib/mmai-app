@@ -383,7 +383,7 @@ export default function LearnPage() {
               <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{
-                  fontFamily: "monospace",
+                  fontFamily: "IBM Plex Mono, monospace",
                   fontSize: 14,
                   background: "var(--paper)",
                   border: "1px solid var(--hair)",
@@ -405,7 +405,7 @@ export default function LearnPage() {
               {"weights" in t && t.weights && (
                 <div
                   style={{
-                    fontFamily: "monospace",
+                    fontFamily: "IBM Plex Mono, monospace",
                     fontSize: 12.5,
                     background: "var(--paper)",
                     border: "1px solid var(--hair)",
@@ -435,7 +435,7 @@ export default function LearnPage() {
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 8 }}>
                     Each market’s own target
                   </div>
-                  <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8 }}>
+                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8 }}>
                     {t.targets}
                   </div>
                 </div>
@@ -499,7 +499,7 @@ export default function LearnPage() {
                   </div>
                   <div
                     style={{
-                      fontFamily: "monospace",
+                      fontFamily: "IBM Plex Mono, monospace",
                       fontSize: 12.5,
                       color: "var(--ink-soft)",
                       lineHeight: 1.8,
@@ -537,7 +537,7 @@ export default function LearnPage() {
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
                 <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
@@ -577,7 +577,7 @@ export default function LearnPage() {
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
                 <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>

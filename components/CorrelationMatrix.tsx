@@ -108,7 +108,14 @@ export default function CorrelationMatrix() {
 
   return (
     <div style={{ display: "grid", gap: 26 }}>
-      <figure style={{ margin: 0 }}>
+      {/* minWidth 0: a grid item defaults to min-width:auto, so it
+          refuses to shrink below its own content. The SVG below carries
+          a minWidth so the diagram stays readable, and without this that
+          minimum propagated up through the scroll container to the figure
+          and out to the page -- 584px of content in a 375px phone, and
+          the whole Learn page scrolled sideways. The scroll belongs to
+          the diagram, not to the document. */}
+      <figure style={{ margin: 0, minWidth: 0 }}>
         <div style={{ overflowX: "auto" }}>
           <svg
             viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minWidth: 560 }}
@@ -189,7 +196,7 @@ export default function CorrelationMatrix() {
             </g>
           </svg>
         </div>
-        <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "76ch" }}>
+        <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "min(76ch, 100%)" }}>
           <b style={{ color: "var(--ink-soft)" }}>The solid lines are the strong ones, and that is the whole test.</b>{" "}
           The heaviest is {short[strongest.a].toLowerCase()} with {short[strongest.b].toLowerCase()} at{" "}
           {strongest.r.toFixed(2)} — countries carrying less debt have tended to have rates with further to fall,
@@ -200,7 +207,14 @@ export default function CorrelationMatrix() {
       </figure>
 
       {/* ---- the three dimensions ---- */}
-      <figure style={{ margin: 0 }}>
+      {/* minWidth 0: a grid item defaults to min-width:auto, so it
+          refuses to shrink below its own content. The SVG below carries
+          a minWidth so the diagram stays readable, and without this that
+          minimum propagated up through the scroll container to the figure
+          and out to the page -- 584px of content in a 375px phone, and
+          the whole Learn page scrolled sideways. The scroll belongs to
+          the diagram, not to the document. */}
+      <figure style={{ margin: 0, minWidth: 0 }}>
         <div style={{ overflowX: "auto" }}>
           <svg
             viewBox="0 0 680 224" width="100%" style={{ display: "block", minWidth: 520 }}
@@ -280,7 +294,7 @@ export default function CorrelationMatrix() {
             })()}
           </svg>
         </div>
-        <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "76ch" }}>
+        <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "min(76ch, 100%)" }}>
           <b style={{ color: "var(--ink-soft)" }}>This is the picture that explains why equal thirds is not equal in
           effect.</b> The thick line is Direction and Capacity: {sharedMovement(DIMENSION_CORRELATIONS.D.K)}{" "}
           movement, meaning when one is having a good year the other usually is too. Conditions barely connects to

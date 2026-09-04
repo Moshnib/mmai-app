@@ -214,7 +214,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
         </div>
       )}
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 18px", marginTop: 14, fontSize: 11, fontFamily: "monospace" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 18px", marginTop: 14, fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }}>
         {markets.map((m) => {
           const { composite, band } = scoreOf(m);
           const label = composite === null ? "N/A" : composite.toFixed(1);

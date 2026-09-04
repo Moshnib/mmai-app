@@ -252,7 +252,7 @@ export default function TrendChart({
           label={yLabel ? { value: yLabel, angle: -90, position: "insideLeft", fontSize: 11, fill: "#9296AB" } : undefined}
         />
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "#12121A", fontSize: 12.5, fontFamily: "monospace" }}
+          contentStyle={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "#12121A", fontSize: 12.5, fontFamily: "IBM Plex Mono, monospace" }}
           labelStyle={{ fontWeight: 700, color: "#F5F6FA" }}
           itemStyle={{ color: "#C7C9D9" }}
         />

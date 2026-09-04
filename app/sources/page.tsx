@@ -70,7 +70,7 @@ export default function SourcesPage() {
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "28px 32px", color: "#fff", backdropFilter: "blur(14px)" }}>
-            <div style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: "var(--gold)", letterSpacing: 1, marginBottom: 10 }}>
+            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--gold)", letterSpacing: 1, marginBottom: 10 }}>
               DISCLAIMER
             </div>
             <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: "0 0 12px" }}>
