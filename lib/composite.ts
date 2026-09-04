@@ -460,3 +460,40 @@ export function dimensionDrivers(
   if (percentiles[sorted[0]] === percentiles[sorted[2]]) return null;
   return { best: sorted[0], worst: sorted[2] };
 }
+
+// ------------------------------------------------------------------
+//  WHAT THE WEIGHTS ACTUALLY DO
+// ------------------------------------------------------------------
+
+/** Share of the composite's movement each dimension accounts for, %.
+ *
+ *  MEASURED, not declared. Equal thirds is what the method says; this is
+ *  what it does. They differ because the dimensions are correlated with
+ *  each other -- Direction and Capacity move together (r = 0.34) while
+ *  Conditions is nearly independent of both -- so the composite tracks the
+ *  first two more closely than the third.
+ *
+ *  This is the same nominal-versus-effective gap one level up. Group-level
+ *  standardisation equalised the dimensions' SPREAD, which is what it was
+ *  introduced to fix. It does not equalise their INFLUENCE, and nothing
+ *  can while they remain correlated.
+ *
+ *  Re-measured by scripts/measure-dimension-influence.ts, which runs in CI
+ *  and fails if these drift. */
+export const DIMENSION_EFFECTIVE_INFLUENCE: Record<DimensionKey, number> = {
+  C: 25.5,
+  D: 39.6,
+  K: 34.9,
+};
+
+/** How far each dimension spreads today's six markets apart, in percentile
+ *  points. A dimension every country scores alike cannot distinguish them
+ *  whatever weight it carries -- the question that retired the oil pillar,
+ *  asked of the replacement. */
+export const DIMENSION_CROSS_MARKET_SD: Record<DimensionKey, number> = {
+  C: 21.8,
+  D: 14.0,
+  K: 22.8,
+};
+
+export const DIMENSION_INFLUENCE_MEASURED = "4 September 2026";
