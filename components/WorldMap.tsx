@@ -2,8 +2,16 @@
 
 import { useRef, useState } from "react";
 import worldPaths from "@/lib/mapdata/world-paths.json";
-import { bandFor } from "@/lib/scoring";
-import { scoreMarket, type MarketData } from "@/lib/markets";
+import { colorForScore } from "@/lib/scoring";
+import { percentileBandLabel } from "@/lib/composite";
+import { scoreMarketV2, type MarketData } from "@/lib/markets";
+
+/** One place for the score-plus-label pair, so the map cannot drift onto a
+ *  different engine from the panel above it — which it briefly did. */
+function scoreOf(m: MarketData) {
+  const { percentile } = scoreMarketV2(m);
+  return { composite: percentile, band: { color: colorForScore(percentile), label: percentileBandLabel(percentile) } };
+}
 import Flag from "@/components/Flag";
 
 // ISO 3166-1 numeric country IDs (topojson world-atlas) grouped by market.
@@ -98,7 +106,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
   }
 
   const hoverMarket = hover ? marketByCode[hover.code] : null;
-  const hoverBand = hoverMarket ? bandFor(scoreMarket(hoverMarket).composite) : null;
+  const hoverBand = hoverMarket ? scoreOf(hoverMarket).band : null;
 
   return (
     <div
@@ -116,8 +124,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
             return <path key={key} d={c.d} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.4} />;
           }
 
-          const { composite } = scoreMarket(market);
-          const band = bandFor(composite);
+          const { band } = scoreOf(market);
 
           return (
             <path
@@ -150,8 +157,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
           const pos = MARKET_LABEL_LONLAT[m.code];
           if (!pos) return null;
           const [x, y] = project(pos[0], pos[1], worldPaths.width, worldPaths.height);
-          const { composite } = scoreMarket(m);
-          const band = bandFor(composite);
+          const { composite, band } = scoreOf(m);
           const label = composite === null ? "N/A" : composite.toFixed(1);
           const isSelected = m.code === current;
           // The visible label is just the number (62.4) -- WCAG 2.5.3
@@ -210,8 +216,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 18px", marginTop: 14, fontSize: 11, fontFamily: "monospace" }}>
         {markets.map((m) => {
-          const { composite } = scoreMarket(m);
-          const band = bandFor(composite);
+          const { composite, band } = scoreOf(m);
           const label = composite === null ? "N/A" : composite.toFixed(1);
           // Visible text includes the score (below), so the accessible
           // name does too -- same Label in Name reasoning as the map's

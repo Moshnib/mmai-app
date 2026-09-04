@@ -6,7 +6,7 @@ import Link from "next/link";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
-import PillarGrid from "@/components/PillarGrid";
+import DimensionGrid from "@/components/DimensionGrid";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import WorldMap from "@/components/WorldMap";
 import GulfCard from "@/components/GulfCard";
@@ -14,8 +14,12 @@ import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
 import CountryGlyph from "@/components/CountryGlyph";
-import { narrativeDrivers, bandFor, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators , inflationTargetFor , maskedPillar, colorForScore } from "@/lib/scoring";
-import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
+import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/scoring";
+import {
+  DIMENSION_NAMES, dimensionDrivers, maskedDimension, percentileBandLabel,
+  UNCERTAINTY_NOTE, CONVENTION_NOTE,
+} from "@/lib/composite";
+import { FALLBACK_MARKETS, scoreMarketV2, type MarketData } from "@/lib/markets";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
@@ -29,14 +33,16 @@ function formatUpdatedAt(iso: string): string {
 }
 
 function narrativeFor(market: MarketData): string {
-  const { pillars, coveragePillars, coverage } = scoreMarket(market);
-  const drivers = narrativeDrivers(pillars);
-  if (coverage < 0.7 || !drivers) {
-    return `${market.name} currently has only ${coveragePillars} of ${TOTAL_PILLARS} structural pillars populated (${(coverage * 100).toFixed(1)}% coverage), below the 70% publication threshold. Rather than compute a score from incomplete data, MMAI shows N/A.`;
+  const { percentile, dimensionPercentiles, missing } = scoreMarketV2(market);
+  if (percentile == null || dimensionPercentiles == null) {
+    const names = missing.join(", ");
+    return `${market.name} has no score right now: ${names} is missing. MMAI withholds the composite rather than reweighting around a gap, because a country scored on four indicators is not comparable with one scored on five.`;
   }
-  const bestVal = pillars[drivers.best]!;
-  const worstVal = pillars[drivers.worst]!;
-  return `${market.name}'s strongest pillar right now is ${PILLAR_NAMES[drivers.best]} (${bestVal.toFixed(1)}), while ${PILLAR_NAMES[drivers.worst]} (${worstVal.toFixed(1)}) is doing the most to hold the composite back.`;
+  const drivers = dimensionDrivers(dimensionPercentiles);
+  if (!drivers) return `${market.name} sits at ${percentile.toFixed(1)} — ${percentileBandLabel(percentile).toLowerCase()} of the last 26 years, with its three dimensions evenly matched.`;
+  const best = dimensionPercentiles[drivers.best];
+  const worst = dimensionPercentiles[drivers.worst];
+  return `${market.name}'s strongest dimension is ${DIMENSION_NAMES[drivers.best]}, above ${best.toFixed(0)}% of the historical record, while ${DIMENSION_NAMES[drivers.worst]} sits above only ${worst.toFixed(0)}%. The headline averages the three equally.`;
 }
 
 // Rule-based, not AI-generated -- every sentence below is a direct,
@@ -172,11 +178,13 @@ export default function OverviewPage() {
   }, []);
 
   const market = markets.find((m) => m.code === current)!;
-  const { pillars, composite, coveragePillars } = scoreMarket(market);
-  // Audit finding H-1: MMAI aggregates linearly, so a collapsed pillar can
-  // be masked by the other four. When that is happening, say so next to the
-  // score rather than leaving a reader to discover it in the pillar grid.
-  const masked = maskedPillar(pillars, composite);
+  const { percentile, dimensions, dimensionPercentiles } = scoreMarketV2(market);
+  const composite = percentile;
+  // Averaging three dimensions is fully compensatory, so a collapse in one
+  // can be offset without limit by the other two. Publishing all three
+  // makes that visible, which is most of the fix -- but a reader who takes
+  // in only the headline still deserves to be told. Japan is the live case.
+  const masked = maskedDimension(dimensionPercentiles, percentile);
   const rateNarrative = rateNarrativeFor(market.raw, market.code);
 
   return (
@@ -208,7 +216,7 @@ export default function OverviewPage() {
             Is today&apos;s macro environment <span className="hl-cyan">supportive</span> — or{" "}
             <span className="hl-violet">working against you?</span>
           </h1>
-          <p className="sub">One composite score. Five economic pillars. Verified market signals.</p>
+          <p className="sub">One composite score. Three economic dimensions. Verified market signals.</p>
 
           <div className="tabs">
             {markets.map((m) => (
@@ -240,7 +248,7 @@ export default function OverviewPage() {
             <div style={{ width: "100%", maxWidth: 260 }}>
               <p className="meta-label" style={{ margin: "0 0 4px" }}>MMAI Composite Score</p>
               <p style={{ fontSize: 12, color: "var(--slate)", margin: "0 0 14px", lineHeight: 1.5 }}>
-                Composite view of the current macro backdrop
+                Rank against 148 market-years, 2000–2025 — not a mark out of 100
               </p>
               <ScoreDisplay score={composite} />
             </div>
@@ -254,22 +262,22 @@ export default function OverviewPage() {
                     lineHeight: 1.6,
                     margin: "10px 0 0",
                     padding: "11px 14px",
-                    borderLeft: `3px solid ${colorForScore(masked.score)}`,
+                    borderLeft: `3px solid ${colorForScore(masked.percentile)}`,
                     background: "var(--glass)",
                     borderRadius: "0 8px 8px 0",
                     color: "var(--ink-soft)",
                   }}
                 >
-                  <b>Read this score with care.</b> {PILLAR_NAMES[masked.pillar]} is at{" "}
-                  <b>{masked.score.toFixed(1)}</b> — {masked.gap.toFixed(0)} points below the composite. MMAI
-                  averages its five pillars, so strength elsewhere is offsetting a weak one here. The
-                  headline alone understates this.
+                  <b>Read this score with care.</b> {DIMENSION_NAMES[masked.key]} sits at{" "}
+                  <b>{masked.percentile.toFixed(1)}</b> — {masked.gap.toFixed(0)} points below the headline.
+                  MMAI averages its three dimensions equally, so strength elsewhere is offsetting a
+                  collapse here. The headline alone does not tell you this; the three rings below do.
                 </p>
               )}
               <ScoreTrendChart marketCode={current} currentScore={composite} />
               <div className="meta-row" style={{ marginTop: 14 }}>
-                <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
-                <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
+                <span>Band: <b>{percentileBandLabel(composite)}</b></span>
+                <span>Ranked against: <b>148 market-years, 2000–2025</b></span>
                 {/* Source COUNT, not the licence-review date -- that date is
                     maintenance metadata (see lib/sources.ts) and reads as
                     staleness here. Data freshness is the line above the
@@ -320,19 +328,23 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">WHAT DRIVES THE SCORE</p>
-            <h2>Five pillars, weighted and shown in full</h2>
-            <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it. Click one to see its history.</p>
+            <h2>Three dimensions, weighted equally and shown in full</h2>
+            <p>
+              Each ring ranks that dimension against the same 148 market-years the headline uses —
+              so 80 means better than 80% of the historical record, not a mark out of 100.
+            </p>
           </div>
-          <PillarGrid
-            pillars={pillars}
+          <DimensionGrid
+            percentiles={dimensionPercentiles}
+            standardised={dimensions}
             market={current}
-            observationDates={{
-              PS: market.observationDates?.inflation,
-              GM: market.observationDates?.gdpGrowth,
-              LM: market.observationDates?.unemployment,
-              MC: market.observationDates?.policyRate,
-            }}
           />
+          <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 16, maxWidth: "72ch" }}>
+            {CONVENTION_NOTE}
+          </p>
+          <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 8, maxWidth: "72ch" }}>
+            {UNCERTAINTY_NOTE}
+          </p>
         </div>
       </div>
 
@@ -349,8 +361,8 @@ export default function OverviewPage() {
               navigation aid rather than the dominant element. */}
           <div className="compare-strip">
             {markets.map((m) => {
-              const { composite: mScore } = scoreMarket(m);
-              const mBand = bandFor(mScore);
+              const { percentile: mScore } = scoreMarketV2(m);
+              const mBand = { color: colorForScore(mScore), label: percentileBandLabel(mScore) };
               return (
                 <Link key={m.code} href={`/trends?market=${m.code}`} className="compare-chip">
                   <span className="cc-name">{m.name}</span>

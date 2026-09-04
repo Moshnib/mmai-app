@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { computePillarScores, computeComposite, bandFor } from "@/lib/scoring";
+import { colorForScore } from "@/lib/scoring";
+import { computeMmai, percentileBandLabel } from "@/lib/composite";
 import { useLiveHistory } from "@/lib/useLiveHistory";
 
 export default function Sparkline({ marketCode, currentScore }: { marketCode: string; currentScore: number | null }) {
@@ -13,13 +14,15 @@ export default function Sparkline({ marketCode, currentScore }: { marketCode: st
   const history = liveHistory[marketCode] ?? [];
   const points = history
     .map((h) => {
-      const pillars = computePillarScores(h.indicators, marketCode);
-      const { composite } = computeComposite(pillars);
-      return { year: h.year, value: composite };
+      // Same engine as the score displayed beside it. A stored v1.0
+      // composite here would draw a five-pillar history under a
+      // three-dimension number.
+      const { percentile } = computeMmai(h.indicators, marketCode);
+      return { year: h.year, value: percentile };
     })
     .filter((p) => p.value !== null) as { year: string; value: number }[];
 
-  const band = bandFor(currentScore);
+  const band = { color: colorForScore(currentScore), label: percentileBandLabel(currentScore) };
 
   if (points.length < 2) {
     return (

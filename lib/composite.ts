@@ -406,3 +406,57 @@ export function percentileReading(percentile: number | null): string {
     `produced between 2000 and 2025.`
   );
 }
+
+// ------------------------------------------------------------------
+//  WHEN THE HEADLINE HIDES SOMETHING
+// ------------------------------------------------------------------
+
+export interface MaskedDimension {
+  key: DimensionKey;
+  percentile: number;
+  /** How far below the headline it sits, in percentile points. */
+  gap: number;
+}
+
+/** Averaging three dimensions is FULLY COMPENSATORY: a collapse in one can
+ *  be offset without limit by strength in the others. Publishing all three
+ *  makes that visible rather than hidden, which is most of the fix — but a
+ *  reader who takes in only the headline still deserves to be told.
+ *
+ *  Japan is the live case. Conditions in the 100th percentile, Capacity in
+ *  the 9th, and a composite near the middle that describes neither.
+ *
+ *  Thresholds carried over from the five-pillar rule they replace: a weak
+ *  dimension is not itself the problem, a weak dimension the headline
+ *  CONCEALS is, so the test measures the concealment directly. */
+export const MASK_GAP_THRESHOLD = 40;
+export const MASK_DIMENSION_THRESHOLD = 30;
+
+export function maskedDimension(
+  percentiles: Record<DimensionKey, number> | null,
+  headline: number | null
+): MaskedDimension | null {
+  if (percentiles == null || headline == null) return null;
+  let worst: DimensionKey = "C";
+  for (const k of ["C", "D", "K"] as DimensionKey[]) {
+    if (percentiles[k] < percentiles[worst]) worst = k;
+  }
+  const value = percentiles[worst];
+  const gap = headline - value;
+  if (gap > MASK_GAP_THRESHOLD && value < MASK_DIMENSION_THRESHOLD) {
+    return { key: worst, percentile: value, gap };
+  }
+  return null;
+}
+
+/** The strongest and weakest dimensions, for the auto-generated narrative.
+ *  Returns null when they cannot be distinguished. */
+export function dimensionDrivers(
+  percentiles: Record<DimensionKey, number> | null
+): { best: DimensionKey; worst: DimensionKey } | null {
+  if (percentiles == null) return null;
+  const keys = ["C", "D", "K"] as DimensionKey[];
+  const sorted = [...keys].sort((a, b) => percentiles[b] - percentiles[a]);
+  if (percentiles[sorted[0]] === percentiles[sorted[2]]) return null;
+  return { best: sorted[0], worst: sorted[2] };
+}

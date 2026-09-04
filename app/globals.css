@@ -250,6 +250,14 @@ h1.headline {
    cards explain what they measure without a separate legend (brief §3). */
 .pillar-desc { font-size: 10.5px; color: var(--slate); line-height: 1.45; margin-top: 5px; }
 
+/* Three dimensions, not five pillars -- wider cards, so the grid drops to
+   a single column earlier than .pillar-grid does. Three across a phone
+   would leave each ring about 90px wide with the label wrapping to four
+   lines. */
+.dimension-grid { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 720px) { .dimension-grid { grid-template-columns: 1fr; } }
+.dimension-question { font-size: 10.5px; color: var(--gold-deep); font-style: italic; margin-top: 6px; line-height: 1.4; }
+
 /* ===== Featured Market Snapshot strip (brief §2) =====
    A compact context bar directly above the score card: what you're
    looking at, when it was last verified, and 2-3 short state chips. */
