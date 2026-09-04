@@ -497,3 +497,27 @@ export const DIMENSION_CROSS_MARKET_SD: Record<DimensionKey, number> = {
 };
 
 export const DIMENSION_INFLUENCE_MEASURED = "4 September 2026";
+
+/** The exact transform applied to one indicator, written out with the
+ *  constants the engine actually holds.
+ *
+ *  GENERATED rather than typed, for the reason the Learn page already
+ *  learned the hard way: a formula written by hand drifts from the engine
+ *  the first time a constant moves, and the page promises a reader can
+ *  reproduce any published score. One generated from the engine cannot
+ *  disagree with it. */
+export function indicatorFormula(key: IndicatorKey): string {
+  const { mean, sd } = INDICATOR_STATS[key];
+  const sign = HIGHER_IS_BETTER[key] ? "" : "−";
+  return `${sign}( X − ${mean.toFixed(6)} ) ÷ ${sd.toFixed(6)}`;
+}
+
+/** How each indicator's score should be read in one line, since a z-score
+ *  is not self-explanatory the way a 0-100 pillar score pretended to be. */
+export const INDICATOR_READING: Record<IndicatorKey, string> = {
+  infGap: "0 is average distance from target across the record; positive is closer to target than average.",
+  une: "0 is average unemployment across the record; positive is lower than average.",
+  gdp: "0 is average growth across the record; positive is faster than average.",
+  debt: "0 is average debt across the record; positive is lower than average.",
+  rate: "0 is average policy rate across the record; positive is a higher rate, meaning more room to cut.",
+};
