@@ -7,7 +7,7 @@ import GovernmentDebtRow from "@/components/GovernmentDebtRow";
 export const metadata: Metadata = {
   title: "Compare Markets",
   description:
-    "Every tracked market side by side over any year range — composite scores, individual pillar scores, and the raw underlying rates, on one chart.",
+    "Every tracked market side by side over any year range — composite scores, the three dimension rankings, and the raw underlying rates, on one chart.",
 };
 
 // The methodology footer lives HERE rather than inside ComparePageInner

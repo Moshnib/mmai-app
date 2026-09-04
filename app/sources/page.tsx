@@ -86,9 +86,11 @@ export default function SourcesPage() {
               extrapolated forward.
             </p>
             <p style={{ fontSize: 13.5, color: "#DCE3EE", lineHeight: 1.75, margin: 0 }}>
-              Every formula used to convert these raw figures into the 0–100 pillar scores and the composite MMAI score is
-              published in full on the <Link href="/learn" style={{ color: "var(--gold)" }}>Learn More</Link> page — nothing in
-              the calculation is hidden or proprietary.
+              Every formula used to turn these raw figures into the three dimension scores and the composite MMAI
+              percentile is published in full on the <Link href="/learn" style={{ color: "var(--gold)" }}>Learn More</Link> page,
+              together with the reference table the scores are ranked against — so the averages behind them can be checked
+              rather than taken on trust. Nothing in the calculation is hidden or proprietary, and the page states plainly
+              which numbers were measured and which were decided.
             </p>
           </div>
         </div>
