@@ -13,6 +13,7 @@ import {
   type DimensionKey,
 } from "@/lib/composite";
 import { REFERENCE_SET } from "@/lib/referenceSet";
+import ScoreDiagram from "@/components/ScoreDiagram";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { indicatorFormula, INDICATOR_READING } from "@/lib/composite";
 
@@ -242,6 +243,23 @@ export default function LearnPage() {
             What these numbers actually mean — and why they affect you
           </h1>
           <p className="sub">Every indicator behind the MMAI score, plus Gulf Watch&apos;s cost-of-living, investment-confidence, and currency-stability figures — explained in plain language, with the exact formula used where a formula applies.</p>
+        </div>
+      </div>
+
+      {/* The whole method on one screen, before any of the detail. A
+          reader who takes in only this should still know what a score is
+          and where it came from. */}
+      <div className="section" style={{ paddingTop: 10 }}>
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 18 }}>
+            <p className="eyebrow">THE METHOD AT A GLANCE</p>
+            <h2>How five published figures become one rank</h2>
+            <p>
+              Nothing here is hidden and nothing is estimated by us. Each step is shown below, and every
+              constant it uses is published further down this page.
+            </p>
+          </div>
+          <ScoreDiagram />
         </div>
       </div>
 

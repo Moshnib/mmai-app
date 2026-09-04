@@ -7,6 +7,7 @@ import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
 import DimensionGrid from "@/components/DimensionGrid";
+import DimensionBreakdown from "@/components/DimensionBreakdown";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import WorldMap from "@/components/WorldMap";
 import GulfCard from "@/components/GulfCard";
@@ -386,6 +387,26 @@ export default function OverviewPage() {
             standardised={dimensions}
             market={current}
           />
+          {/* The rings give three numbers. This gives the arithmetic behind
+              them -- which indicators, what they read, and how they add up.
+              Without it a reader can see Japan scores 100 on Conditions but
+              not that it is inflation on target AND unemployment at 2.4%,
+              both at once, better than almost anything in the record. */}
+          <details style={{ marginTop: 22 }}>
+            <summary
+              style={{
+                cursor: "pointer", fontFamily: "IBM Plex Mono, monospace", fontSize: 12,
+                color: "var(--gold-deep)", letterSpacing: 0.4, textTransform: "uppercase",
+                listStyle: "revert",
+              }}
+            >
+              Show the numbers behind each dimension
+            </summary>
+            <div style={{ marginTop: 14 }}>
+              <DimensionBreakdown raw={market.raw} market={market.code} percentiles={dimensionPercentiles} />
+            </div>
+          </details>
+
           <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 16, maxWidth: "72ch" }}>
             {CONVENTION_NOTE}
           </p>

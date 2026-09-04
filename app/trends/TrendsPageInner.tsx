@@ -278,13 +278,31 @@ export default function TrendsPageInner({
   // scores, so there's no "band" to color by. Picked from the same
   // Ember-to-Ice palette used everywhere else in the app (lib/scoring.ts),
   // so nothing new is introduced and green is still never used.
-  const rateComparisonSeries: Series[] = useMemo(
+  // ONE CHART PER INDICATOR, not three lines sharing an axis.
+  //
+  // Inflation, the policy rate and unemployment are all quoted in per
+  // cent, which makes them look like the same kind of quantity -- and in
+  // 2026 the US reads 3.7, 3.63 and 4.1, so on a shared axis the three
+  // lines sit almost on top of each other and appear to move together far
+  // more than they do. They are three different things measured in the
+  // same unit, and a shared scale asserts a relationship the data has not
+  // been asked about.
+  //
+  // Small multiples instead: same x-axis, each with its own y-scale, so a
+  // reader compares SHAPES over time rather than levels against each
+  // other. The relationship is still the point of the section; it is now
+  // stated in words and shown honestly rather than implied by a drawing.
+  const rateSeriesEach = useMemo(
     () =>
       RATE_INDICATORS.map(({ indicator, color }) => ({
-        key: INDICATOR_FIELD[indicator].key,
-        name: INDICATOR_FIELD[indicator].label,
-        color,
-        data: history.map((h) => ({ year: h.year, value: (h.indicators[INDICATOR_FIELD[indicator].key] as number | null) ?? null })),
+        indicator,
+        unit: INDICATOR_FIELD[indicator].unit,
+        series: [{
+          key: INDICATOR_FIELD[indicator].key,
+          name: INDICATOR_FIELD[indicator].label,
+          color,
+          data: history.map((h) => ({ year: h.year, value: (h.indicators[INDICATOR_FIELD[indicator].key] as number | null) ?? null })),
+        }] as Series[],
       })),
     [history]
   );
@@ -497,7 +515,7 @@ export default function TrendsPageInner({
                     }}
                   >
                     {val == null ? "—" : val.toFixed(0)}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--slate)", marginLeft: 4 }}>/100</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--slate)", marginLeft: 4 }}>percentile</span>
                   </div>
                   <div className="psc-name">{DIMENSION_NAMES[key]}</div>
                   <div className="psc-desc">{DIMENSION_DESC[key]}</div>
@@ -635,8 +653,20 @@ export default function TrendsPageInner({
           <div className="chart-card">
             {sectionLabel(5, "How key macro forces move together")}
             <div className="detail-split">
-              <div>
-                {hasTrend ? <TrendChart series={rateComparisonSeries} height={320} yLabel="%" showDots={false} /> : notEnough}
+              <div style={{ display: "grid", gap: 14 }}>
+                {hasTrend
+                  ? rateSeriesEach.map(({ indicator, unit, series }) => (
+                      <div key={indicator}>
+                        <div
+                          className="meta-label"
+                          style={{ marginBottom: 4, color: RATE_INDICATORS.find((r) => r.indicator === indicator)!.color }}
+                        >
+                          {INDICATOR_FIELD[indicator].label}
+                        </div>
+                        <TrendChart series={series} height={132} yLabel={unit} showDots={false} showLegend={false} />
+                      </div>
+                    ))
+                  : notEnough}
               </div>
               <div style={{ border: "1px solid var(--hair)", borderRadius: 14, padding: "16px 18px", background: "rgba(255,255,255,0.03)" }}>
                 <div className="meta-label">Why these three</div>
@@ -647,6 +677,12 @@ export default function TrendsPageInner({
                 </p>
                 <p style={{ fontSize: 11.5, color: "var(--slate)", lineHeight: 1.6, margin: "12px 0 0" }}>
                   Each rate also moves for reasons of its own, so not every wiggle lines up.
+                </p>
+                <p style={{ fontSize: 11.5, color: "var(--slate)", lineHeight: 1.6, margin: "10px 0 0" }}>
+                  <b style={{ color: "var(--ink-soft)" }}>Three charts, not three lines.</b> All three are quoted in
+                  per cent, which makes them look like the same kind of quantity — put on one axis they would sit
+                  almost on top of each other and appear to track far more closely than they do. Each has its own
+                  scale here, so what you are comparing is the shape over time.
                 </p>
                 <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 11.5 }}>
                   {RATE_INDICATORS.map(({ indicator, color }) => {
