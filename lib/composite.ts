@@ -1,0 +1,332 @@
+// ============================================================
+//  THE MMAI COMPOSITE — three dimensions, standardised, equally weighted,
+//  read as a percentile of the pooled historical distribution.
+//
+//    CONDITIONS  =  inflation gap  +  unemployment
+//    DIRECTION   =  GDP growth  (only)
+//    CAPACITY    =  government debt  +  policy rate space
+//
+//    MMAI_Z  =  ( C' + D' + K' ) / 3   ->  percentile against 148 rows
+//
+//  WHY THE DIMENSIONS ARE STANDARDISED BEFORE THEY ARE AVERAGED. The three
+//  do not vary equally across history -- Conditions moves about a third
+//  less than Direction. Averaging them raw would hand Direction the larger
+//  voice whatever the 1/3 written beside it said. That is the difference
+//  between a NOMINAL weight and an EFFECTIVE one, and it is the error the
+//  five-pillar design this replaces actually contained.
+//
+//  NO WEIGHT IN THIS METHOD IS MEASURED. Two are declared judgments
+//  informed by published evidence, two are declared outright, and three
+//  are a stated convention. See WEIGHT_STANDING below. The specification
+//  says so in those words and the site must too.
+//
+//  Every constant here is DERIVED at module load from REFERENCE_SET, not
+//  typed in. scripts/verify-composite.ts recomputes them independently and
+//  fails the build if any drifts from the documented value. Constants
+//  copied by hand and never re-checked is how the previous engine shipped
+//  a defect that made two of six rankings wrong.
+// ============================================================
+
+import { REFERENCE_SET } from "./referenceSet";
+import { inflationTargetFor } from "./scoring";
+
+export type DimensionKey = "C" | "D" | "K";
+
+export const DIMENSION_NAMES: Record<DimensionKey, string> = {
+  C: "Conditions",
+  D: "Direction",
+  K: "Capacity",
+};
+
+/** What each dimension is asking about, in the site's own voice. */
+export const DIMENSION_QUESTIONS: Record<DimensionKey, string> = {
+  C: "How are prices and jobs right now?",
+  D: "Which way is the economy moving?",
+  K: "How much room is there to respond to trouble?",
+};
+
+// ------------------------------------------------------------------
+//  WEIGHTS
+// ------------------------------------------------------------------
+
+/** Blanchflower (2007), NBER WP 13505: the wellbeing cost of a one-point
+ *  rise in unemployment against a one-point rise in inflation, 0.0146 to
+ *  0.0090. Held as the exact fraction, not a rounding of it. */
+const B_INFLATION = 0.0090;
+const B_UNEMPLOYMENT = 0.0146;
+
+export const W_INFLATION = B_INFLATION / (B_INFLATION + B_UNEMPLOYMENT);
+export const W_UNEMPLOYMENT = B_UNEMPLOYMENT / (B_INFLATION + B_UNEMPLOYMENT);
+export const W_DEBT = 0.5;
+export const W_RATE = 0.5;
+export const W_DIMENSION = 1 / 3;
+
+/** The standing of each weight, published verbatim. A reader is entitled
+ *  to know which numbers were measured and which were decided, and the
+ *  honest answer is that none of them were measured for the quantity they
+ *  are applied to. */
+export const WEIGHT_STANDING = {
+  inflation: {
+    value: W_INFLATION,
+    standing: "judgment" as const,
+    basis:
+      "0.0090 / (0.0090 + 0.0146), informed by Blanchflower (2007). NOT measured for this " +
+      "variable: the published coefficient is estimated on the inflation RATE, and MMAI " +
+      "applies it to distance from target. Those are different quantities, and they disagree " +
+      "about which direction is an improvement on the 45% of reference rows that sit below " +
+      "target. The ratio is real and cited; the application is a declared judgment.",
+  },
+  unemployment: {
+    value: W_UNEMPLOYMENT,
+    standing: "judgment" as const,
+    basis: "0.0146 / (0.0090 + 0.0146), informed by Blanchflower (2007). Same qualification.",
+  },
+  debt: { value: W_DEBT, standing: "judgment" as const, basis: "Declared. No measurement behind it." },
+  rate: { value: W_RATE, standing: "judgment" as const, basis: "Declared. No measurement behind it." },
+  dimensions: {
+    value: W_DIMENSION,
+    standing: "convention" as const,
+    basis:
+      "Equal weighting across the three dimensions. The most widely used approach for " +
+      "composite indicators and the default in the OECD/JRC Handbook (2008) — a convention, " +
+      "not evidence that the three matter equally. No such evidence exists. Robustness " +
+      "testing shows this is the one choice the ranking is genuinely sensitive to.",
+  },
+} as const;
+
+// ------------------------------------------------------------------
+//  REFERENCE STATISTICS — derived, never typed in
+// ------------------------------------------------------------------
+
+export interface Moments {
+  mean: number;
+  /** POPULATION standard deviation, divisor n. Not n-1. */
+  sd: number;
+}
+
+function moments(values: readonly number[]): Moments {
+  const n = values.length;
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const sd = Math.sqrt(values.reduce((s, x) => s + (x - mean) ** 2, 0) / n);
+  return { mean, sd };
+}
+
+export type IndicatorKey = "infGap" | "une" | "gdp" | "debt" | "rate";
+
+export const INDICATOR_STATS: Record<IndicatorKey, Moments> = {
+  infGap: moments(REFERENCE_SET.map((r) => r.infGap)),
+  une: moments(REFERENCE_SET.map((r) => r.une)),
+  gdp: moments(REFERENCE_SET.map((r) => r.gdp)),
+  debt: moments(REFERENCE_SET.map((r) => r.debt)),
+  rate: moments(REFERENCE_SET.map((r) => r.rate)),
+};
+
+/** Which way is better. Positive always means better after alignment. */
+export const HIGHER_IS_BETTER: Record<IndicatorKey, boolean> = {
+  infGap: false, // distance from target — closer is better
+  une: false,
+  gdp: true,
+  debt: false,
+  /** A HIGHER policy rate scores better INSIDE CAPACITY, which is the
+   *  opposite of a "how tight is policy" reading. Capacity asks whether a
+   *  country has room to respond to trouble, and a central bank at 4% has
+   *  room to cut that one at 0.5% does not. This is a judgment and the
+   *  site must carry the Capacity framing wherever the number appears, or
+   *  a reader will reasonably read a high rate as stress. */
+  rate: true,
+};
+
+/** Sign-aligned z-score: positive is better, always. */
+export function q(key: IndicatorKey, value: number): number {
+  const { mean, sd } = INDICATOR_STATS[key];
+  const z = (value - mean) / sd;
+  return HIGHER_IS_BETTER[key] ? z : -z;
+}
+
+// ------------------------------------------------------------------
+//  DIMENSIONS
+// ------------------------------------------------------------------
+
+export interface DimensionInputs {
+  infGap: number;
+  une: number;
+  gdp: number;
+  debt: number;
+  rate: number;
+}
+
+export interface Dimensions {
+  C: number;
+  D: number;
+  K: number;
+}
+
+export function rawDimensions(v: DimensionInputs): Dimensions {
+  return {
+    C: W_INFLATION * q("infGap", v.infGap) + W_UNEMPLOYMENT * q("une", v.une),
+    /** Direction has ONE indicator, so it carries no internal weight — D is
+     *  the sign-aligned z-score of GDP growth and nothing more. Its standard
+     *  deviation over the reference set is therefore exactly 1 by
+     *  construction. That same value was the fingerprint of a bug in the
+     *  previous build; here it is correct and expected. Do not "fix" it. */
+    D: q("gdp", v.gdp),
+    K: W_DEBT * q("debt", v.debt) + W_RATE * q("rate", v.rate),
+  };
+}
+
+/** Dimension moments across the reference set. These depend on the weights
+ *  above: change any of them and these move too, which is why they are
+ *  derived here rather than pinned. */
+export const DIMENSION_STATS: Record<DimensionKey, Moments> = (() => {
+  const dims = REFERENCE_SET.map((r) => rawDimensions(r));
+  return {
+    C: moments(dims.map((d) => d.C)),
+    D: moments(dims.map((d) => d.D)),
+    K: moments(dims.map((d) => d.K)),
+  };
+})();
+
+export function standardiseDimensions(d: Dimensions): Dimensions {
+  return {
+    C: (d.C - DIMENSION_STATS.C.mean) / DIMENSION_STATS.C.sd,
+    D: (d.D - DIMENSION_STATS.D.mean) / DIMENSION_STATS.D.sd,
+    K: (d.K - DIMENSION_STATS.K.mean) / DIMENSION_STATS.K.sd,
+  };
+}
+
+export function compositeZ(standardised: Dimensions): number {
+  return (standardised.C + standardised.D + standardised.K) * W_DIMENSION;
+}
+
+// ------------------------------------------------------------------
+//  THE PERCENTILE LADDER
+// ------------------------------------------------------------------
+
+/** The 148 historical composites, sorted ascending. A published score is a
+ *  rank against this, not a continuous measurement. */
+export const LADDER: readonly number[] = REFERENCE_SET
+  .map((r) => compositeZ(standardiseDimensions(rawDimensions(r))))
+  .sort((a, b) => a - b);
+
+/** One step on the ladder, in percentile points. Nothing finer than this
+ *  is meaningful, which is why scores publish to one decimal. */
+export const LADDER_STEP = 100 / LADDER.length;
+
+/** Percentile rank against the pooled six-economy history.
+ *
+ *  STRICTLY LESS THAN, so ties resolve downward. The current year is
+ *  scored against the 2000-2025 ladder and is not part of it, which keeps
+ *  a score comparable from one week to the next. */
+export function percentileOf(z: number): number {
+  let lo = 0;
+  let hi = LADDER.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (LADDER[mid] < z) lo = mid + 1;
+    else hi = mid;
+  }
+  return (100 * lo) / LADDER.length;
+}
+
+// ------------------------------------------------------------------
+//  THE PUBLISHED RESULT
+// ------------------------------------------------------------------
+
+export interface CompositeInput {
+  inflation?: number | null;
+  unemployment?: number | null;
+  gdpGrowth?: number | null;
+  debtPctGdp?: number | null;
+  policyRate?: number | null;
+}
+
+export interface MmaiResult {
+  /** Sign-aligned, standardised dimension scores. Published beside the
+   *  composite — not optional presentation. Equal thirds is a convention
+   *  the ranking is sensitive to, so a reader has to be able to see the
+   *  components and disagree with it. */
+  dimensions: Dimensions | null;
+  /** The raw, un-standardised dimension scores, for anyone checking. */
+  rawDimensions: Dimensions | null;
+  composite: number | null;
+  percentile: number | null;
+  /** Which indicators were missing, if any. */
+  missing: IndicatorKey[];
+  publishable: boolean;
+}
+
+/** MISSING DATA IS NOT INTERPOLATED AND NOT REWEIGHTED.
+ *
+ *  The specification does not define a partial composite, so this does not
+ *  invent one. If any of the five indicators is absent the composite is
+ *  withheld and the dimensions that CAN be computed are still returned, so
+ *  the site can show what it knows and say plainly what it does not.
+ *
+ *  The five-pillar engine this replaces reweighted around gaps and
+ *  published anything with 70% coverage. That let a country be scored on
+ *  a different basis from its neighbour while the headline looked
+ *  identical, which is exactly the comparison an index is supposed to make
+ *  safe. If a partial composite is ever wanted it needs its own rule,
+ *  written down and tested, not a silent fallback here. */
+export function computeMmai(input: CompositeInput, market: string): MmaiResult {
+  const missing: IndicatorKey[] = [];
+  const target = inflationTargetFor(market);
+
+  const infGap = input.inflation != null ? Math.abs(input.inflation - target) : null;
+  if (infGap == null) missing.push("infGap");
+  if (input.unemployment == null) missing.push("une");
+  if (input.gdpGrowth == null) missing.push("gdp");
+  if (input.debtPctGdp == null) missing.push("debt");
+  if (input.policyRate == null) missing.push("rate");
+
+  if (missing.length > 0) {
+    return { dimensions: null, rawDimensions: null, composite: null, percentile: null, missing, publishable: false };
+  }
+
+  const raw = rawDimensions({
+    infGap: infGap as number,
+    une: input.unemployment as number,
+    gdp: input.gdpGrowth as number,
+    debt: input.debtPctGdp as number,
+    rate: input.policyRate as number,
+  });
+  const standardised = standardiseDimensions(raw);
+  const z = compositeZ(standardised);
+
+  return {
+    dimensions: standardised,
+    rawDimensions: raw,
+    composite: z,
+    percentile: percentileOf(z),
+    missing,
+    publishable: true,
+  };
+}
+
+// ------------------------------------------------------------------
+//  WHAT THE SITE MUST SAY ALONGSIDE A SCORE
+// ------------------------------------------------------------------
+
+/** Measured in the source-break test: rebuilding the whole reference panel
+ *  on a single source moves any published score by at most this much, with
+ *  the ranking unaffected. Published as a band rather than buried. */
+export const SOURCE_BREAK_UNCERTAINTY_PTS = 2.3;
+
+/** Two markets whose scores differ by less than the measured uncertainty
+ *  are reported as tied, because an ordering between them would claim a
+ *  precision the method does not have. */
+export function areTied(a: number | null, b: number | null): boolean {
+  if (a == null || b == null) return false;
+  return Math.abs(a - b) < SOURCE_BREAK_UNCERTAINTY_PTS;
+}
+
+/** The sentence that has to travel with the number. */
+export const UNCERTAINTY_NOTE =
+  `Scores carry an uncertainty of about ±${SOURCE_BREAK_UNCERTAINTY_PTS} percentile points, ` +
+  `measured by rebuilding the reference history on a single data source. Countries closer ` +
+  `together than that are shown as tied.`;
+
+export const CONVENTION_NOTE =
+  "Conditions, Direction and Capacity are weighted equally. That is a stated methodological " +
+  "convention, not an empirical finding — there is no evidence that the three matter equally. " +
+  "All three are published beside the composite so you can weigh them differently if you disagree.";
