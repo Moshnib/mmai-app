@@ -521,3 +521,54 @@ export const INDICATOR_READING: Record<IndicatorKey, string> = {
   debt: "0 is average debt across the record; positive is lower than average.",
   rate: "0 is average policy rate across the record; positive is a higher rate, meaning more room to cut.",
 };
+
+// ------------------------------------------------------------------
+//  WHAT SITS BEHIND EACH DIMENSION
+// ------------------------------------------------------------------
+
+/** Which indicators build each dimension, in the order they are weighted.
+ *  Direction holds one; the other two hold a pair. Anything that renders
+ *  "the raw figures behind X" has to cope with both cases rather than
+ *  assuming one indicator per dimension the way the pillar layout could. */
+export const DIMENSION_INDICATORS: Record<DimensionKey, readonly IndicatorKey[]> = {
+  C: ["infGap", "une"],
+  D: ["gdp"],
+  K: ["debt", "rate"],
+};
+
+/** The raw field each indicator reads, with how to label it. Mirrors
+ *  RAW_FIELD in lib/scoring.ts, which is keyed by pillar and cannot be
+ *  reused once pillars are gone. */
+export const INDICATOR_FIELD: Record<
+  IndicatorKey,
+  { key: "inflation" | "unemployment" | "gdpGrowth" | "debtPctGdp" | "policyRate"; label: string; unit: string; decimals: number }
+> = {
+  infGap: { key: "inflation", label: "Inflation", unit: "% YoY", decimals: 1 },
+  une: { key: "unemployment", label: "Unemployment", unit: "%", decimals: 1 },
+  gdp: { key: "gdpGrowth", label: "GDP growth", unit: "% YoY", decimals: 1 },
+  debt: { key: "debtPctGdp", label: "Government debt", unit: "% of GDP", decimals: 1 },
+  rate: { key: "policyRate", label: "Policy rate", unit: "%", decimals: 2 },
+};
+
+/** The old pillar keys each dimension absorbed, so the source registry can
+ *  still be queried. The registry is keyed by pillar and there is no
+ *  reason to rewrite it: which institution publishes a country's
+ *  unemployment figure did not change when the scoring did. */
+export const DIMENSION_PILLARS: Record<DimensionKey, readonly ("PS" | "GM" | "LM" | "MC" | "FR")[]> = {
+  C: ["PS", "LM"],
+  D: ["GM"],
+  K: ["FR", "MC"],
+};
+
+/** The declared weight on one dimension, for display. Always a third --
+ *  written as a function so a page cannot hard-code 33.3% and then be
+ *  wrong if the convention is ever revisited. */
+export function formatDimensionWeight(): string {
+  return `${(W_DIMENSION * 100).toFixed(1)}%`;
+}
+
+/** What the dimension actually does, against what it is declared to do.
+ *  Published together because the point is that they differ. */
+export function formatDimensionInfluence(key: DimensionKey): string {
+  return `${DIMENSION_EFFECTIVE_INFLUENCE[key].toFixed(1)}%`;
+}

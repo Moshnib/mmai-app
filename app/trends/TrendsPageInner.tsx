@@ -5,15 +5,43 @@ import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeRangeFilter, { ANNUAL_RANGES } from "@/components/TimeRangeFilter";
 import Flag from "@/components/Flag";
-import { PILLAR_DESC, PILLAR_ICONS } from "@/components/PillarGrid";
-import { RAW_DECIMALS } from "@/components/KeyRatesRow";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
 import { useLiveHistory } from "@/lib/useLiveHistory";
-import { PILLAR_NAMES, formatWeightPct, RAW_FIELD, computePillarScores, computeComposite, bandFor, type PillarKey } from "@/lib/scoring";
+import { colorForScore } from "@/lib/scoring";
+import {
+  computeMmai, dimensionPercentiles, percentileBandLabel,
+  DIMENSION_NAMES, DIMENSION_QUESTIONS, DIMENSION_INDICATORS, DIMENSION_PILLARS,
+  INDICATOR_FIELD, formatDimensionWeight, formatDimensionInfluence,
+  type DimensionKey, type IndicatorKey,
+} from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { sourcesForMarket, sourceForPillar } from "@/lib/sources";
+import { sourcesForMarket, sourcesForDimension } from "@/lib/sources";
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
+const ORDER: DimensionKey[] = ["C", "D", "K"];
+
+/** What each dimension is built from, in the reader's language. */
+const DIMENSION_DESC: Record<DimensionKey, string> = {
+  C: "Inflation against target, and unemployment",
+  D: "Real GDP growth, year on year",
+  K: "Government debt, and room to cut rates",
+};
+
+/** Three line glyphs, matching the card structure the pillars used. */
+const DIMENSION_ICONS: Record<DimensionKey, React.ReactNode> = {
+  C: (
+    <>
+      <path d="M8 2v12" /><path d="M4 14h8" /><path d="M2.5 5.5h11" />
+      <path d="M2.5 5.5 1 9.5h3z" /><path d="M13.5 5.5 12 9.5h3z" />
+    </>
+  ),
+  D: (<><path d="M2 11.5 6 7l3 3 5-6" /><path d="M10.5 4h3.5v3.5" /></>),
+  K: (
+    <>
+      <path d="M3 3h10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M3 9h10" /><path d="M6 12h4" />
+    </>
+  ),
+};
 
 // Module scope, not per-render: derived purely from a module constant,
 // so rebuilding it each render would invalidate the memos below it.
@@ -30,10 +58,10 @@ const MOVE_EPSILON = 0.05;
 // rather than a blank cell -- the same reasoning as KeyRatesRow.
 // Colours match KeyRatesRow exactly, from the Ember-to-Ice palette in
 // lib/scoring.ts, so these three read as the same three things sitewide.
-const RATE_PILLARS: Array<{ pillar: PillarKey; color: string }> = [
-  { pillar: "PS", color: "#E14B4B" },
-  { pillar: "MC", color: "#8B5CF6" },
-  { pillar: "LM", color: "#22D3EE" },
+const RATE_INDICATORS: Array<{ indicator: IndicatorKey; color: string }> = [
+  { indicator: "infGap", color: "#E14B4B" },
+  { indicator: "rate", color: "#8B5CF6" },
+  { indicator: "une", color: "#22D3EE" },
 ];
 
 // The market/pillar from the URL arrive as props read on the SERVER (see
@@ -44,22 +72,37 @@ const RATE_PILLARS: Array<{ pillar: PillarKey; color: string }> = [
 // WhatsApp, X, Bing) saw an empty page.
 export default function TrendsPageInner({
   initialMarket = "US",
-  initialPillar = null,
+  initialDimension = null,
 }: {
   initialMarket?: string;
-  initialPillar?: PillarKey | null;
+  initialDimension?: DimensionKey | null;
 }) {
   const [current, setCurrent] = useState(initialMarket);
   // Annual points, so the presets are years. Default to the full record --
   // eight points is readable, and narrowing is the exception here rather
   // than the rule it is for daily bond data.
   const [rangeDays, setRangeDays] = useState<number | null>(null);
-  // Always a pillar selected, never null: the page's shape is now
-  // "five cards driving one chart" (brief §26), so an empty selection
-  // would leave two sections rendering nothing at all.
-  const [focusPillar, setFocusPillar] = useState<PillarKey>(initialPillar ?? "PS");
+  // Always a dimension selected, never null: the page's shape is "cards
+  // driving one chart", so an empty selection would leave two sections
+  // rendering nothing at all.
+  const [focusDimension, setFocusDimension] = useState<DimensionKey>(initialDimension ?? "C");
+  // Which raw indicator the detail chart shows. Conditions and Capacity
+  // hold two each, so a dimension no longer maps to a single raw series
+  // the way a pillar did.
+  //
+  // DERIVED, not synced. Storing the pick and correcting it in an effect
+  // would render one frame showing an unemployment chart under a heading
+  // that says GDP growth, and needs a second render to fix itself. Falling
+  // back here means the pick can never be outside the selected dimension
+  // at any point.
+  const [rawPick, setRawPick] = useState<IndicatorKey | null>(null);
   const pillarSectionRef = useRef<HTMLDivElement>(null);
-  const arrivedWithPillar = useRef(initialPillar !== null);
+  const arrivedWithPillar = useRef(initialDimension !== null);
+
+  const focusIndicator: IndicatorKey =
+    rawPick && DIMENSION_INDICATORS[focusDimension].includes(rawPick)
+      ? rawPick
+      : DIMENSION_INDICATORS[focusDimension][0];
 
   // Only scroll when the reader ARRIVED on a pillar link from another
   // page. Clicking a card here needs no scroll -- its chart is directly
@@ -117,24 +160,22 @@ export default function TrendsPageInner({
   // Two pillars/markets scoring the same land on the same color.
   const compositeCurrentScore = useMemo(() => {
     if (!latestPoint) return null;
-    const { composite } = computeComposite(computePillarScores(latestPoint.indicators, current));
-    return composite;
+    return computeMmai(latestPoint.indicators, current).percentile;
   }, [latestPoint, current]);
 
-  const pillarCurrentScores: Record<PillarKey, number | null> = useMemo(() => {
-    if (!latestPoint) return { PS: null, GM: null, LM: null, MC: null, FR: null };
-    return computePillarScores(latestPoint.indicators, current);
+  // Each dimension ranked against its own history, the same figure the
+  // homepage rings show, so the two pages cannot disagree.
+  const dimensionCurrentScores: Record<DimensionKey, number | null> = useMemo(() => {
+    if (!latestPoint) return { C: null, D: null, K: null };
+    const { dimensions } = computeMmai(latestPoint.indicators, current);
+    return dimensions ? dimensionPercentiles(dimensions) : { C: null, D: null, K: null };
   }, [latestPoint, current]);
 
   const compositeSeries: Series[] = useMemo(() => [{
     key: "composite",
     name: marketNames[current],
-    color: bandFor(compositeCurrentScore).color,
-    data: history.map((h) => {
-      const pillars = computePillarScores(h.indicators, current);
-      const { composite } = computeComposite(pillars);
-      return { year: h.year, value: composite };
-    }),
+    color: colorForScore(compositeCurrentScore),
+    data: history.map((h) => ({ year: h.year, value: computeMmai(h.indicators, current).percentile })),
   }], [current, history, marketNames, compositeCurrentScore]);
 
   // "What changed?" — the header panel. Every line is arithmetic on the
@@ -143,20 +184,21 @@ export default function TrendsPageInner({
   const changes = useMemo(() => {
     if (history.length < 2) return null;
     const prev = history[history.length - 2];
-    const prevPillars = computePillarScores(prev.indicators, current);
-    const compPrev = computeComposite(prevPillars).composite;
+    const prevResult = computeMmai(prev.indicators, current);
+    const prevDims = prevResult.dimensions ? dimensionPercentiles(prevResult.dimensions) : null;
+    const compPrev = prevResult.percentile;
     const compNow = compositeCurrentScore;
 
     const moves = ORDER
       .map((key) => {
-        const a = prevPillars[key];
-        const b = pillarCurrentScores[key];
+        const a = prevDims ? prevDims[key] : null;
+        const b = dimensionCurrentScores[key];
         return a == null || b == null ? null : { key, delta: b - a };
       })
-      .filter((m): m is { key: PillarKey; delta: number } => m !== null)
+      .filter((m): m is { key: DimensionKey; delta: number } => m !== null)
       .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 
-    const missing = ORDER.filter((k) => pillarCurrentScores[k] == null);
+    const missing = ORDER.filter((k) => dimensionCurrentScores[k] == null);
 
     const largest = moves[0] ?? null;
     const smallest = moves.length > 1 ? moves[moves.length - 1] : null;
@@ -164,7 +206,7 @@ export default function TrendsPageInner({
     // Two guards, both about not stating something false:
     //  - if nothing actually moved, there is no "biggest move" to name;
     //  - if the largest and smallest moves are the same size, the pair
-    //    is meaningless (with two pillars at +5 and -5, whichever came
+    //    is meaningless (with two dimensions at +5 and -5, whichever came
     //    first in ORDER would arbitrarily win each label).
     const moved = largest != null && Math.abs(largest.delta) >= MOVE_EPSILON;
     const separated = smallest != null && Math.abs(largest!.delta) - Math.abs(smallest.delta) >= MOVE_EPSILON;
@@ -177,17 +219,17 @@ export default function TrendsPageInner({
       smallest: moved && separated ? smallest : null,
       missing,
     };
-  }, [history, latestPoint, compositeCurrentScore, pillarCurrentScores, current]);
+  }, [history, latestPoint, compositeCurrentScore, dimensionCurrentScores, current]);
 
   const focusSeries: Series[] = useMemo(() => [{
-    key: focusPillar,
-    name: PILLAR_NAMES[focusPillar],
-    color: bandFor(pillarCurrentScores[focusPillar]).color,
+    key: focusDimension,
+    name: DIMENSION_NAMES[focusDimension],
+    color: colorForScore(dimensionCurrentScores[focusDimension]),
     data: history.map((h) => {
-      const pillars = computePillarScores(h.indicators, current);
-      return { year: h.year, value: pillars[focusPillar] };
+      const { dimensions } = computeMmai(h.indicators, current);
+      return { year: h.year, value: dimensions ? dimensionPercentiles(dimensions)[focusDimension] : null };
     }),
-  }], [focusPillar, history, pillarCurrentScores, current]);
+  }], [focusDimension, history, dimensionCurrentScores, current]);
 
   // MONTHLY where the sources publish monthly, annual only as a
   // fallback. Inflation, unemployment and the policy rate all have a
@@ -195,16 +237,16 @@ export default function TrendsPageInner({
   // Brent do not, so those two still fall back to the annual points.
   // This is why the chart stopped being one dot per year.
   const monthly = MONTHLY_HISTORY[current] ?? [];
-  const monthlyField: Partial<Record<PillarKey, keyof MonthlyPoint>> = {
-    PS: "inflation",
-    LM: "unemployment",
-    MC: "policyRate",
+  const monthlyField: Partial<Record<IndicatorKey, keyof MonthlyPoint>> = {
+    infGap: "inflation",
+    une: "unemployment",
+    rate: "policyRate",
   };
 
   const rawDetailSeries: Series[] = useMemo(() => {
-    const field = RAW_FIELD[focusPillar];
-    const mField = monthlyField[focusPillar];
-    const color = bandFor(pillarCurrentScores[focusPillar]).color;
+    const field = INDICATOR_FIELD[focusIndicator];
+    const mField = monthlyField[focusIndicator];
+    const color = colorForScore(dimensionCurrentScores[focusDimension]);
 
     if (mField) {
       // Points with no published value are DROPPED, not zeroed -- Japan
@@ -225,10 +267,10 @@ export default function TrendsPageInner({
       data: history.map((h) => ({ year: h.year, value: h.indicators[field.key] as number | null })),
     }];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusPillar, history, current, marketNames, pillarCurrentScores, monthly]);
+  }, [focusIndicator, focusDimension, history, current, marketNames, dimensionCurrentScores, monthly]);
 
   const rawIsMonthly = (() => {
-    const f = monthlyField[focusPillar];
+    const f = monthlyField[focusIndicator];
     return !!f && monthly.filter((m) => m[f] != null).length > 1;
   })();
 
@@ -238,18 +280,19 @@ export default function TrendsPageInner({
   // so nothing new is introduced and green is still never used.
   const rateComparisonSeries: Series[] = useMemo(
     () =>
-      RATE_PILLARS.map(({ pillar, color }) => ({
-        key: RAW_FIELD[pillar].key,
-        name: RAW_FIELD[pillar].label,
+      RATE_INDICATORS.map(({ indicator, color }) => ({
+        key: INDICATOR_FIELD[indicator].key,
+        name: INDICATOR_FIELD[indicator].label,
         color,
-        data: history.map((h) => ({ year: h.year, value: (h.indicators[RAW_FIELD[pillar].key] as number | null) ?? null })),
+        data: history.map((h) => ({ year: h.year, value: (h.indicators[INDICATOR_FIELD[indicator].key] as number | null) ?? null })),
       })),
     [history]
   );
 
-  const focusBand = bandFor(pillarCurrentScores[focusPillar]);
-  const rawNow = latestPoint ? (latestPoint.indicators[RAW_FIELD[focusPillar].key] as number | null) : null;
-  const focusSource = sourceForPillar(marketNames[current], focusPillar);
+  const focusBand = { color: colorForScore(dimensionCurrentScores[focusDimension]), label: percentileBandLabel(dimensionCurrentScores[focusDimension]) };
+  const rawNow = latestPoint ? (latestPoint.indicators[INDICATOR_FIELD[focusIndicator].key] as number | null) : null;
+  const focusSources = sourcesForDimension(marketNames[current], DIMENSION_PILLARS[focusDimension]);
+  const focusSource = focusSources[0];
 
   const notEnough = (
     <p style={{ color: "var(--slate)", fontSize: 13.5, padding: "40px 0", textAlign: "center" }}>
@@ -275,7 +318,7 @@ export default function TrendsPageInner({
                 How the score — and everything behind it — has moved
               </h1>
               <p className="sub" style={{ marginLeft: 0 }}>
-                Start with the composite, then open any one of the five pillars to see its own trend and the raw
+                Start with the composite, then open any one of the three dimensions to see its own trend and the raw
                 indicator underneath it.
               </p>
               {/* Inside the left column, beside the panel -- matching
@@ -324,7 +367,7 @@ export default function TrendsPageInner({
                 <ul>
                   {changes.composite != null && (
                     <li>
-                      <i style={{ background: bandFor(compositeCurrentScore).color }} />
+                      <i style={{ background: colorForScore(compositeCurrentScore) }} />
                       <span>
                         Composite score moved{" "}
                         <b style={{ color: "#fff" }}>
@@ -337,15 +380,15 @@ export default function TrendsPageInner({
                   )}
                   {/* "this period" throughout, never "steadiest": these
                       are the largest and smallest moves between the last
-                      two points only. A pillar can post the smallest
+                      two points only. A dimension can post the smallest
                       move here and still be the most volatile one on the
                       chart below -- calling it "steadiest" said the
                       opposite of what that chart shows. */}
                   {changes.biggest && (
                     <li>
-                      <i style={{ background: bandFor(pillarCurrentScores[changes.biggest.key]).color }} />
+                      <i style={{ background: colorForScore(dimensionCurrentScores[changes.biggest.key]) }} />
                       <span>
-                        Largest move this period: <b style={{ color: "#fff" }}>{PILLAR_NAMES[changes.biggest.key]}</b>,{" "}
+                        Largest move this period: <b style={{ color: "#fff" }}>{DIMENSION_NAMES[changes.biggest.key]}</b>,{" "}
                         {changes.biggest.delta >= 0 ? "+" : ""}
                         {changes.biggest.delta.toFixed(1)} points.
                       </span>
@@ -353,9 +396,9 @@ export default function TrendsPageInner({
                   )}
                   {changes.smallest && (
                     <li>
-                      <i style={{ background: bandFor(pillarCurrentScores[changes.smallest.key]).color }} />
+                      <i style={{ background: colorForScore(dimensionCurrentScores[changes.smallest.key]) }} />
                       <span>
-                        Smallest move this period: <b style={{ color: "#fff" }}>{PILLAR_NAMES[changes.smallest.key]}</b>,{" "}
+                        Smallest move this period: <b style={{ color: "#fff" }}>{DIMENSION_NAMES[changes.smallest.key]}</b>,{" "}
                         {changes.smallest.delta >= 0 ? "+" : ""}
                         {changes.smallest.delta.toFixed(1)} points.
                       </span>
@@ -366,7 +409,7 @@ export default function TrendsPageInner({
                       <i style={{ background: "var(--slate)" }} />
                       <span>
                         No current reading for{" "}
-                        <b style={{ color: "#fff" }}>{changes.missing.map((k) => PILLAR_NAMES[k]).join(", ")}</b> —
+                        <b style={{ color: "#fff" }}>{changes.missing.map((k) => DIMENSION_NAMES[k]).join(", ")}</b> —
                         excluded rather than guessed.
                       </span>
                     </li>
@@ -411,27 +454,27 @@ export default function TrendsPageInner({
         </div>
       </div>
 
-      {/* 2 — pillar selectors */}
+      {/* 2 — dimension selectors */}
       <div className="section" style={{ paddingTop: 0 }} ref={pillarSectionRef} id="pillars">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">2 — EXPLORE THE FIVE PILLARS</p>
-            <h2>Pick a pillar to drive the two charts below</h2>
-            <p>Each card shows what that pillar scores right now, out of 100, and what it measures.</p>
+            <p className="eyebrow">2 — EXPLORE THE THREE DIMENSIONS</p>
+            <h2>Pick a dimension to drive the two charts below</h2>
+            <p>Each card shows how that dimension ranks right now against the 148 market-years the headline uses, and what it measures.</p>
           </div>
 
           <div className="pillar-select-grid" style={{ marginTop: 22 }}>
             {ORDER.map((key) => {
-              const val = pillarCurrentScores[key];
-              const band = val == null ? { color: "var(--slate)" } : bandFor(val);
-              const active = focusPillar === key;
+              const val = dimensionCurrentScores[key];
+              const band = { color: val == null ? "var(--slate)" : colorForScore(val) };
+              const active = focusDimension === key;
               return (
                 <button
                   key={key}
                   type="button"
                   className="pillar-select-card"
                   aria-pressed={active}
-                  onClick={() => setFocusPillar(key)}
+                  onClick={() => setFocusDimension(key)}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                     <svg
@@ -439,11 +482,11 @@ export default function TrendsPageInner({
                       fill="none" stroke={band.color} strokeWidth={1.3}
                       strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", opacity: 0.95 }}
                     >
-                      {PILLAR_ICONS[key]}
+                      {DIMENSION_ICONS[key]}
                     </svg>
                     {/* Labelled: a bare "25%" beside a "74/100" score
                         reads as a change or a share, not a weight. */}
-                    <span className="meta-label">{formatWeightPct(key)} weight</span>
+                    <span className="meta-label">{formatDimensionWeight()} weight · {formatDimensionInfluence(key)} effect</span>
                   </div>
                   <div
                     className="psc-score"
@@ -456,8 +499,11 @@ export default function TrendsPageInner({
                     {val == null ? "—" : val.toFixed(0)}
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--slate)", marginLeft: 4 }}>/100</span>
                   </div>
-                  <div className="psc-name">{PILLAR_NAMES[key]}</div>
-                  <div className="psc-desc">{PILLAR_DESC[key]}</div>
+                  <div className="psc-name">{DIMENSION_NAMES[key]}</div>
+                  <div className="psc-desc">{DIMENSION_DESC[key]}</div>
+                  <div className="psc-desc" style={{ fontStyle: "italic", color: "var(--gold-deep)", marginTop: 4 }}>
+                    {DIMENSION_QUESTIONS[key]}
+                  </div>
                 </button>
               );
             })}
@@ -469,7 +515,7 @@ export default function TrendsPageInner({
       <div className="section" style={{ paddingTop: 26 }}>
         <div className="wrap">
           <div className="chart-card">
-            {sectionLabel(3, `${PILLAR_NAMES[focusPillar]} over time — ${marketNames[current]}`)}
+            {sectionLabel(3, `${DIMENSION_NAMES[focusDimension]} over time — ${marketNames[current]}`)}
             {hasTrend ? <TrendChart series={focusSeries} height={300} yDomain={[0, 100]} showLegend={false} /> : notEnough}
           </div>
         </div>
@@ -481,7 +527,28 @@ export default function TrendsPageInner({
           <div className="chart-card">
             <div className="chart-card-label">
               <span style={{ color: "var(--slate)" }}>4</span>
-              <span>Raw indicator behind {PILLAR_NAMES[focusPillar]}</span>
+              <span>Raw indicator behind {DIMENSION_NAMES[focusDimension]}</span>
+              {DIMENSION_INDICATORS[focusDimension].length > 1 && (
+                <span style={{ display: "inline-flex", gap: 6, marginLeft: 10 }}>
+                  {DIMENSION_INDICATORS[focusDimension].map((ind) => (
+                    <button
+                      key={ind}
+                      onClick={() => setRawPick(ind)}
+                      aria-pressed={focusIndicator === ind}
+                      style={{
+                        padding: "4px 10px", borderRadius: 999, cursor: "pointer",
+                        fontFamily: "IBM Plex Mono, monospace", fontSize: 10, fontWeight: 700,
+                        letterSpacing: 0.4, textTransform: "uppercase",
+                        border: focusIndicator === ind ? "1px solid var(--gold-deep)" : "1px solid var(--hair)",
+                        background: focusIndicator === ind ? "rgba(139,92,246,0.18)" : "transparent",
+                        color: focusIndicator === ind ? "#fff" : "var(--slate)",
+                      }}
+                    >
+                      {INDICATOR_FIELD[ind].label}
+                    </button>
+                  ))}
+                </span>
+              )}
               {/* States the frequency outright. The same chart is monthly
                   for inflation/unemployment/policy rate and annual for
                   GDP and Brent, and a reader should not have to infer
@@ -496,7 +563,7 @@ export default function TrendsPageInner({
             <div className="detail-split">
               <div>
                 {hasTrend ? (
-                  <TrendChart series={rawDetailSeries} height={280} showLegend={false} yLabel={RAW_FIELD[focusPillar].unit} />
+                  <TrendChart series={rawDetailSeries} height={280} showLegend={false} yLabel={INDICATOR_FIELD[focusIndicator].unit} />
                 ) : (
                   <p style={{ color: "var(--slate)", fontSize: 13.5, padding: "40px 0", textAlign: "center" }}>
                     Not enough history yet for {marketNames[current]}.
@@ -513,19 +580,19 @@ export default function TrendsPageInner({
                     filter: rawNow == null ? undefined : "brightness(1.12) saturate(1.05)",
                   }}
                 >
-                  {rawNow == null ? "—" : rawNow.toFixed(RAW_DECIMALS[focusPillar])}
+                  {rawNow == null ? "—" : rawNow.toFixed(INDICATOR_FIELD[focusIndicator].decimals)}
                   <span style={{ fontSize: 14, fontWeight: 600, color: "var(--slate)", marginLeft: 5 }}>
-                    {RAW_FIELD[focusPillar].unit}
+                    {INDICATOR_FIELD[focusIndicator].unit}
                   </span>
                 </div>
                 <div style={{ fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.5 }}>
-                  {RAW_FIELD[focusPillar].label}
+                  {INDICATOR_FIELD[focusIndicator].label}
                 </div>
 
                 <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 11.5, color: "var(--slate)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span>Weight in score</span>
-                    <b style={{ color: "#fff" }}>{formatWeightPct(focusPillar)}</b>
+                    <b style={{ color: "#fff" }}>{formatDimensionWeight()}</b>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span>Period</span>
@@ -582,21 +649,21 @@ export default function TrendsPageInner({
                   Each rate also moves for reasons of its own, so not every wiggle lines up.
                 </p>
                 <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 11.5 }}>
-                  {RATE_PILLARS.map(({ pillar, color }) => {
+                  {RATE_INDICATORS.map(({ indicator, color }) => {
                     // Deliberately the value at the LATEST period, not
                     // the latest non-null one. Falling back to an older
                     // reading would print a 2025 number in a list the
                     // reader takes as current, directly beside section
                     // 4's "Period: 2026".
-                    const v = latestPoint ? (latestPoint.indicators[RAW_FIELD[pillar].key] as number | null) : null;
+                    const v = latestPoint ? (latestPoint.indicators[INDICATOR_FIELD[indicator].key] as number | null) : null;
                     return (
-                      <div key={pillar} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                      <div key={indicator} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 7, color: "var(--slate)" }}>
                           <i style={{ width: 8, height: 8, borderRadius: "50%", background: color, flex: "none" }} />
-                          {RAW_FIELD[pillar].label}
+                          {INDICATOR_FIELD[indicator].label}
                         </span>
                         <b style={{ color: "#fff", fontVariantNumeric: "tabular-nums" }}>
-                          {v == null ? "—" : `${v.toFixed(RAW_DECIMALS[pillar])}%`}
+                          {v == null ? "—" : `${v.toFixed(INDICATOR_FIELD[indicator].decimals)}%`}
                         </b>
                       </div>
                     );

@@ -153,6 +153,20 @@ export function sourceForPillar(marketName: string, pillar: "PS" | "GM" | "LM" |
   return sourcesForMarket(marketName).find((s) => s.pillar === pillar);
 }
 
+/** Every source behind one dimension. A dimension can hold two
+ *  indicators, so this returns a list where sourceForPillar returned one.
+ *  The registry stays keyed by pillar deliberately: which institution
+ *  publishes a country’s unemployment rate did not change when the
+ *  scoring did, and rewriting the registry to match a scoring change would
+ *  be exactly the kind of unnecessary churn that loses provenance. */
+export function sourcesForDimension(
+  marketName: string,
+  pillars: readonly ("PS" | "GM" | "LM" | "MC" | "FR")[]
+): SourceEntry[] {
+  const all = sourcesForMarket(marketName);
+  return pillars.map((p) => all.find((s) => s.pillar === p)).filter((s): s is SourceEntry => s != null);
+}
+
 /** The provenance line stored on every scored row and shown to readers.
  *
  *  GENERATED FROM THIS REGISTRY, NOT WRITTEN BY HAND.
