@@ -155,39 +155,14 @@ const TOPICS = [
       `A measure every country scores alike cannot tell them apart, whatever weight it carries — the reason the global oil price stopped being scored. Asked of the three dimensions, for the current six, highest first: ${SEPARATION_LIST}. ${MOST_SEPARATING} does the most to distinguish one country from another; ${LEAST_SEPARATING} does the least. Re-measured rather than assumed, and it will shift as cycles diverge.`,
     limitations: [
       {
-        head: "No weight in this method was measured",
+        head: "It measures conditions, it does not forecast",
         body:
-          "This is the most important thing on this page. The inflation-to-unemployment split inside Conditions comes from published research on how much each costs people’s wellbeing — but that research measures the cost of a higher inflation RATE, while MMAI applies it to distance from a target. Those are not the same quantity, and on the 45% of historical readings that sit below target they disagree about which direction is even an improvement. The ratio is real and it is cited; using it here is a judgment. The two weights inside Capacity are declared outright with nothing behind them, and equal thirds across the dimensions is a convention. Nothing was fitted to MMAI’s own data — and nothing here is measured for the job it is actually doing.",
+          "Every figure describes what has already been published by an official source. MMAI contains no prediction, no model and no view about what happens next. It is also why the yield curve is not scored despite the data being collected: its standing in economics is almost entirely as a predictor of future recessions, and an index that disclaims forecasting cannot lean on one.",
       },
       {
-        head: "Equal thirds is a convention, and it is not equal in effect",
-        body:
-          "Weighting the three dimensions equally is the most common approach for an index like this and the default in the OECD’s handbook. That is a reason to adopt it, not evidence the three matter equally — no such evidence exists. Testing shows it is also the choice the ranking is most sensitive to: vary the other weights by half and the order never changes, but vary these and it does. And as measured above, equal weighting does not produce equal influence. All three dimensions are published beside the score so a reader who disagrees can weigh them differently.",
-      },
-      {
-        head: "A strong dimension can hide a weak one",
+        head: "Read the three dimensions, not just the headline",
         body:
           "Averaging three numbers means a collapse in one can be offset without limit by the other two. Japan is the live case: its Conditions score is the highest of every market-year in the record — inflation on target, unemployment near 2% — while its Capacity is close to the lowest, with debt near 180% of GDP and almost no room to cut rates. Those genuinely offset, and a headline near the middle describes neither. Where that is happening the site says so beside the score, and all three dimensions are always shown.",
-      },
-      {
-        head: "The score carries a measured margin of error",
-        body:
-          `The historical record changes data source partway through: figures to 2018 come from the World Bank’s annual series, and from 2019 onward from each country’s own statistics office. Rebuilding the entire history on a single source moves any published score by up to ${SOURCE_BREAK_UNCERTAINTY_PTS} percentile points, though it does not change the order. Countries closer together than that are reported as level rather than ranked. GDP growth is where the two sources disagree most, by about a quarter of a point on average — later revisions, not a mistake by either.`,
-      },
-      {
-        head: `${REF_SHORTEST.name} is under-represented in the record`,
-        body:
-          `The reference distribution holds ${REF_N} market-years rather than a clean 26 for each of the six. ${REF_SHORTEST.name} contributes ${REF_SHORTEST.n}, because for eight of those years its central bank targeted the quantity of money rather than an interest rate, so no policy rate exists to record. Those years are absent at source, not dropped for convenience — but it does mean ${REF_SHORTEST.name} shapes the historical average slightly less than the others, and the years missing are its most unusual ones.`,
-      },
-      {
-        head: "Inflation above and below target are treated the same",
-        body:
-          "MMAI penalises inflation one point above target exactly as much as one point below. The evidence does not support that, and does not agree on the alternative either: estimates of what central banks actually do find overshoots penalised about three times as heavily, while work on what happens when interest rates are near zero implies the opposite. Adopting either would mean picking a side of a live argument. Symmetry is kept because the European Central Bank states it in its own published strategy — negative and positive deviations equally undesirable — which is a citation to a stated objective, not a measurement. Choosing differently would move scores by around six percentile points.",
-      },
-      {
-        head: "Full employment is treated as the same number everywhere",
-        body:
-          "Unemployment is scored against one historical distribution for all six markets, so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Japan and the euro area do not plausibly share a single definition of full employment. Using each country’s own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
       },
       {
         head: "A high interest rate is scored as a good thing here",
@@ -195,9 +170,34 @@ const TOPICS = [
           "Inside Capacity a higher policy rate scores better, which is the opposite of how a rate is usually read. That is deliberate, and it only makes sense alongside the question Capacity asks: how much room is there to respond to trouble. A central bank at 4% can cut; one at 0.5% cannot. Read without that framing the sign looks simply wrong, which is why the question appears beside the number everywhere it is shown.",
       },
       {
-        head: "It measures conditions, it does not forecast",
+        head: "The score carries a measured margin of error",
         body:
-          "Every figure describes what has already been published by an official source. MMAI contains no prediction, no model and no view about what happens next. It is also why the yield curve is not scored despite the data being collected: its standing in economics is almost entirely as a predictor of future recessions, and an index that disclaims forecasting cannot lean on one.",
+          `The historical record changes data source partway through: figures to 2018 come from the World Bank’s annual series, and from 2019 onward from each country’s own statistics office. Rebuilding the entire history on a single source moves any published score by up to ${SOURCE_BREAK_UNCERTAINTY_PTS} percentile points, though it does not change the order. Countries closer together than that are reported as level rather than ranked, so the site never claims a lead it cannot support. GDP growth is where the two sources disagree most, by about a quarter of a point on average — later revisions, not a mistake by either.`,
+      },
+      {
+        head: "The weights are stated judgments, not measurements",
+        body:
+          "No index of this kind can measure what inflation is worth against unemployment, because there is no experiment that would settle it — so every one of them declares a weighting instead. MMAI does too, and says which is which. The inflation-to-unemployment split follows published research on the wellbeing cost of each, though that research measures the cost of a higher inflation RATE while MMAI applies it to distance from a target; those are not the same quantity, so the split is described as informed by that evidence rather than measured for this use. The two weights inside Capacity are declared outright. Nothing was fitted to MMAI’s own data, which is what would make a score circular.",
+      },
+      {
+        head: "Equal thirds is a convention, and it is not equal in effect",
+        body:
+          "Weighting the three dimensions equally is the most common approach for an index like this and the default in the OECD’s handbook. That is a reason to adopt it, not evidence the three matter equally. Testing shows it is also the choice the ranking is most sensitive to: vary the other weights by half and the order never changes, but vary these and it does. And as measured above, equal weighting does not produce equal influence, because the three dimensions move together to different degrees. All three are published beside the score so a reader who disagrees can weigh them differently.",
+      },
+      {
+        head: "Inflation above and below target are treated the same",
+        body:
+          "MMAI penalises inflation one point above target exactly as much as one point below. The evidence does not support that, and does not agree on the alternative either: estimates of what central banks actually do find overshoots penalised about three times as heavily, while work on what happens when interest rates are near zero implies the opposite. Adopting either would mean picking a side of a live argument. Symmetry is kept because the European Central Bank states it in its own published strategy — negative and positive deviations equally undesirable — a citation to a stated objective rather than a measurement. Choosing differently would move scores by around six percentile points.",
+      },
+      {
+        head: "Full employment is treated as the same number everywhere",
+        body:
+          "Unemployment is scored against one historical distribution for all six markets, so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Japan and the euro area do not plausibly share a single definition of full employment. Using each country’s own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
+      },
+      {
+        head: `${REF_SHORTEST.name} is under-represented in the record`,
+        body:
+          `The reference distribution holds ${REF_N} market-years rather than a clean 26 for each of the six. ${REF_SHORTEST.name} contributes ${REF_SHORTEST.n}, because for eight of those years its central bank targeted the quantity of money rather than an interest rate, so no policy rate exists to record. Those years are absent at source, not dropped for convenience — but it does mean ${REF_SHORTEST.name} shapes the historical average slightly less than the others, and the years missing are its most unusual ones.`,
       },
     ],
     impact:
@@ -339,8 +339,16 @@ export default function LearnPage() {
               {(() => { const lims = (t as { limitations?: Array<{ head: string; body: string }> }).limitations; return lims ? (
                 <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 10 }}>
-                    What this score does not tell you
+                    How to read this score, and where the judgment calls are
                   </div>
+                  <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 14px" }}>
+                    <b>The data and the arithmetic are checkable.</b> Every figure comes from a named official source,
+                    the {REF_N}-row reference table is published in full, and any reader can reproduce a score by hand —
+                    one already has, working only from the published files and without being told the answer. What
+                    follows is the layer above that: the choices about how those figures are combined. <b>Every index
+                    of this kind rests on choices like these</b>, because no experiment settles what inflation is worth
+                    against unemployment. What is unusual here is stating them, and measuring what they actually do.
+                  </p>
                   {lims.map((lim: { head: string; body: string }) => (
                     <div key={lim.head} style={{ marginBottom: 11 }}>
                       <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 2 }}>{lim.head}</div>

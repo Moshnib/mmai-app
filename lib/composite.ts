@@ -572,3 +572,78 @@ export function formatDimensionWeight(): string {
 export function formatDimensionInfluence(key: DimensionKey): string {
   return `${DIMENSION_EFFECTIVE_INFLUENCE[key].toFixed(1)}%`;
 }
+
+/** The weight each indicator carries inside its own dimension. Direction
+ *  holds one indicator, so its weight is 1 -- not a third of anything. A
+ *  reader shown "GDP growth 33%" would reasonably conclude two more
+ *  indicators were hiding somewhere. */
+export const INDICATOR_WEIGHT: Record<IndicatorKey, number> = {
+  infGap: W_INFLATION,
+  une: W_UNEMPLOYMENT,
+  gdp: 1,
+  debt: W_DEBT,
+  rate: W_RATE,
+};
+
+/** One indicator's full working, for a page that wants to show the
+ *  arithmetic rather than assert the result. */
+export interface IndicatorContribution {
+  key: IndicatorKey;
+  label: string;
+  /** The published figure, as it appears on the source's own site. */
+  raw: number | null;
+  unit: string;
+  decimals: number;
+  /** Sign-aligned z-score: positive is better, always. */
+  q: number | null;
+  weight: number;
+  /** weight x q -- what this indicator adds to its dimension. */
+  contribution: number | null;
+}
+
+/** Break one dimension into the indicators behind it, with the arithmetic
+ *  visible. The dimension score is the sum of the contributions. */
+export function explainDimension(
+  key: DimensionKey,
+  input: CompositeInput,
+  market: string
+): { total: number | null; parts: IndicatorContribution[] } {
+  const target = inflationTargetFor(market);
+  const rawOf = (k: IndicatorKey): number | null => {
+    switch (k) {
+      case "infGap": return input.inflation ?? null;
+      case "une": return input.unemployment ?? null;
+      case "gdp": return input.gdpGrowth ?? null;
+      case "debt": return input.debtPctGdp ?? null;
+      case "rate": return input.policyRate ?? null;
+    }
+  };
+  // The scored value differs from the published one for inflation only:
+  // the score uses distance from that market's target, not the rate.
+  const scoredOf = (k: IndicatorKey): number | null => {
+    const v = rawOf(k);
+    if (v == null) return null;
+    return k === "infGap" ? Math.abs(v - target) : v;
+  };
+
+  const parts = DIMENSION_INDICATORS[key].map((k) => {
+    const scored = scoredOf(k);
+    const field = INDICATOR_FIELD[k];
+    const qv = scored == null ? null : q(k, scored);
+    return {
+      key: k,
+      label: field.label,
+      raw: rawOf(k),
+      unit: field.unit,
+      decimals: field.decimals,
+      q: qv,
+      weight: INDICATOR_WEIGHT[k],
+      contribution: qv == null ? null : INDICATOR_WEIGHT[k] * qv,
+    };
+  });
+
+  const total = parts.every((p) => p.contribution != null)
+    ? parts.reduce((s, p) => s + (p.contribution as number), 0)
+    : null;
+  return { total, parts };
+}
