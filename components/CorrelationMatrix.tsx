@@ -1,5 +1,5 @@
 import {
-  INDICATOR_CORRELATIONS, DIMENSION_CORRELATIONS, INDICATOR_FIELD,
+  INDICATOR_CORRELATIONS, DIMENSION_CORRELATIONS,
   INDICATOR_DIMENSION, DIMENSION_NAMES, DIMENSION_INDICATORS,
   type IndicatorKey, type DimensionKey,
 } from "@/lib/composite";
@@ -7,186 +7,246 @@ import { REFERENCE_SET } from "@/lib/referenceSet";
 
 const IND: IndicatorKey[] = ["infGap", "une", "gdp", "debt", "rate"];
 const DIM: DimensionKey[] = ["C", "D", "K"];
+const TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
 const N = REFERENCE_SET.length;
 
-/** Cyan for "these move together", red for "these move against each other",
- *  neutral in between. Never green -- the site's palette excludes it so a
- *  colour can never be mistaken for a pass/fail verdict. */
-function cell(r: number): { bg: string; fg: string } {
-  const a = Math.min(1, Math.abs(r));
-  if (a < 0.08) return { bg: "rgba(255,255,255,0.04)", fg: "var(--slate)" };
-  const hue = r > 0 ? "34,211,238" : "225,75,75";
-  return { bg: `rgba(${hue},${(0.10 + a * 0.55).toFixed(2)})`, fg: a > 0.45 ? "#fff" : "var(--ink-soft)" };
-}
+/** Below this a relationship is noise, and drawing it would fill the
+ *  picture with lines that mean nothing. Chosen so the strongest
+ *  cross-dimension pair is still visible -- the point is partly that those
+ *  exist and are weak, not that they are absent. */
+const MIN_DRAWN = 0.15;
 
 const short: Record<IndicatorKey, string> = {
   infGap: "Inflation",
-  une: "Unemploy.",
-  gdp: "Growth",
-  debt: "Debt",
-  rate: "Rate",
+  une: "Unemployment",
+  gdp: "GDP growth",
+  debt: "Govt debt",
+  rate: "Policy rate",
 };
 
 /**
- * How the five indicators actually relate to one another, and then the
- * three dimensions.
+ * What relates to what, drawn rather than tabulated.
  *
- * WHY IT IS HERE. An index that groups five numbers into three buckets is
- * making a claim -- that the things in a bucket belong together and the
- * buckets are measuring different things. Until now the site asserted that
- * grouping and never showed whether the data supported it. This is the
- * evidence, and it is not uniformly flattering.
+ * This was a pair of heatmap tables. A grid of twenty-five numbers is a
+ * data dump: it answers "what is the correlation of X and Y" for a reader
+ * who already knows which pair to look up, and answers nothing at all for
+ * the reader who wants to know whether the grouping holds. The question is
+ * structural, so the answer should be a picture of the structure.
  *
- * COMPUTED ON THE SIGN-ALIGNED VALUES, so positive always means "these two
- * tend to be good together". On the raw figures the signs would flip for
- * the three where lower is better and the whole matrix would read
- * backwards -- a table that looks authoritative and says the opposite of
- * the truth is worse than no table.
+ * Five indicators on a ring, an arc for every relationship worth drawing,
+ * thickness by strength and colour by direction. A pair inside the same
+ * dimension is drawn solid; a pair spanning two dimensions is dashed, so
+ * the eye can tell at once that the solid lines are the strong ones.
+ *
+ * COMPUTED ON SIGN-ALIGNED VALUES, so positive always means "these two
+ * tend to be favourable together". On the raw figures the signs flip for
+ * the three where lower is better, and every arc would read backwards.
  */
 export default function CorrelationMatrix() {
+  const W = 680, H = 400;
+  const cx = 250, cy = 196, R = 128;
+
+  // Five points on a ring, starting at the top and going clockwise.
+  const at = (i: number) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / IND.length;
+    return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) };
+  };
+  const pos = Object.fromEntries(IND.map((k, i) => [k, at(i)])) as Record<IndicatorKey, { x: number; y: number }>;
+
+  // Every pair once, strongest drawn last so it sits on top.
+  const pairs: { a: IndicatorKey; b: IndicatorKey; r: number; same: boolean }[] = [];
+  for (let i = 0; i < IND.length; i++) {
+    for (let j = i + 1; j < IND.length; j++) {
+      const a = IND[i], b = IND[j];
+      const r = INDICATOR_CORRELATIONS[a][b];
+      if (Math.abs(r) >= MIN_DRAWN) {
+        pairs.push({ a, b, r, same: INDICATOR_DIMENSION[a] === INDICATOR_DIMENSION[b] });
+      }
+    }
+  }
+  pairs.sort((p, q) => Math.abs(p.r) - Math.abs(q.r));
+
+  const strongest = [...pairs].sort((p, q) => Math.abs(q.r) - Math.abs(p.r))[0];
+  const maxCross = Math.max(
+    ...IND.flatMap((a) => IND.filter((b) => b !== a && INDICATOR_DIMENSION[a] !== INDICATOR_DIMENSION[b])
+      .map((b) => Math.abs(INDICATOR_CORRELATIONS[a][b])))
+  );
+
+  // Curve every arc through the middle so none of them run straight over a
+  // node that is not part of the pair.
+  const arc = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const qx = mx + (cx - mx) * 0.45, qy = my + (cy - my) * 0.45;
+    return `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${qx.toFixed(1)},${qy.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`;
+  };
+
   return (
-    <div style={{ display: "grid", gap: 22 }}>
-      {/* ---- the five indicators ---- */}
-      <div>
-        <div className="meta-label" style={{ marginBottom: 8 }}>
-          The five indicators, against each other
-        </div>
+    <div style={{ display: "grid", gap: 26 }}>
+      <figure style={{ margin: 0 }}>
         <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              borderCollapse: "separate", borderSpacing: 3, fontSize: 11.5,
-              fontFamily: "IBM Plex Mono, monospace", minWidth: 460,
-            }}
+          <svg
+            viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minWidth: 560 }}
+            role="img"
+            aria-label={
+              `A ring of the five scored indicators with an arc drawn between every pair that is related. ` +
+              `The strongest is ${short[strongest.a].toLowerCase()} with ${short[strongest.b].toLowerCase()} at ` +
+              `${strongest.r.toFixed(2)}, and both sit inside the same dimension. No pair spanning two different ` +
+              `dimensions exceeds ${maxCross.toFixed(2)}, which is the evidence that the grouping holds. ` +
+              `Measured across ${N} market-years.`
+            }
           >
-            <caption className="sr-only">
-              Correlation between each pair of the five scored indicators across {N} market-years, on
-              sign-aligned values so a positive figure means the two tend to be favourable together.
-            </caption>
-            <thead>
-              <tr>
-                <th />
-                {IND.map((k) => (
-                  <th key={k} scope="col" style={{ fontWeight: 500, color: "var(--slate)", padding: "0 4px", textAlign: "center" }}>
+            {/* arcs first, so nodes sit above them */}
+            {pairs.map(({ a, b, r, same }) => (
+              <path
+                key={`${a}-${b}`}
+                d={arc(pos[a], pos[b])}
+                fill="none"
+                stroke={r > 0 ? "#22D3EE" : "#E14B4B"}
+                strokeWidth={1 + Math.abs(r) * 7}
+                strokeOpacity={same ? 0.75 : 0.4}
+                strokeDasharray={same ? undefined : "5 5"}
+                strokeLinecap="round"
+              />
+            ))}
+
+            {/* the value on the strongest arc only -- labelling all eight
+                would put text over every line and defeat the drawing */}
+            {(() => {
+              const a = pos[strongest.a], b = pos[strongest.b];
+              const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+              return (
+                <text
+                  x={mx + (cx - mx) * 0.45} y={my + (cy - my) * 0.45 - 8}
+                  textAnchor="middle" fontSize={12} fontWeight={700} fill="#22D3EE"
+                  fontFamily="IBM Plex Mono, monospace"
+                >
+                  {strongest.r.toFixed(2)}
+                </text>
+              );
+            })()}
+
+            {IND.map((k) => {
+              const p = pos[k];
+              const tone = TONE[INDICATOR_DIMENSION[k]];
+              const right = p.x > cx + 4;
+              const above = p.y < cy - 40;
+              return (
+                <g key={k}>
+                  <circle cx={p.x} cy={p.y} r={9} fill={tone} stroke="var(--paper)" strokeWidth={2.5} />
+                  <text
+                    x={p.x + (right ? 16 : p.x < cx - 4 ? -16 : 0)}
+                    y={p.y + (above ? -16 : right || p.x < cx - 4 ? 4 : 26)}
+                    textAnchor={right ? "start" : p.x < cx - 4 ? "end" : "middle"}
+                    fontSize={12.5} fill="#fff" fontFamily="IBM Plex Sans, sans-serif"
+                  >
                     {short[k]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {IND.map((a) => (
-                <tr key={a}>
-                  <th scope="row" style={{ fontWeight: 500, color: "var(--ink-soft)", textAlign: "right", paddingRight: 8, whiteSpace: "nowrap" }}>
-                    {INDICATOR_FIELD[a].label}
-                  </th>
-                  {IND.map((b) => {
-                    const r = INDICATOR_CORRELATIONS[a][b];
-                    const same = a !== b && INDICATOR_DIMENSION[a] === INDICATOR_DIMENSION[b];
-                    const c = cell(a === b ? 0 : r);
-                    return (
-                      <td
-                        key={b}
-                        title={
-                          a === b
-                            ? "An indicator against itself."
-                            : same
-                              ? `${INDICATOR_FIELD[a].label} and ${INDICATOR_FIELD[b].label} are both inside ${DIMENSION_NAMES[INDICATOR_DIMENSION[a]]}, so a relationship here is expected.`
-                              : `${INDICATOR_FIELD[a].label} and ${INDICATOR_FIELD[b].label} sit in different dimensions.`
-                        }
-                        style={{
-                          background: a === b ? "rgba(255,255,255,0.07)" : c.bg,
-                          color: a === b ? "var(--slate)" : c.fg,
-                          padding: "8px 10px", textAlign: "center", borderRadius: 6,
-                          minWidth: 60, fontVariantNumeric: "tabular-nums",
-                          outline: same ? "1px dashed rgba(255,255,255,0.35)" : undefined,
-                        }}
-                      >
-                        {a === b ? "—" : r.toFixed(2)}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* legend, out of the ring's way */}
+            <g transform="translate(486, 96)">
+              <text x={0} y={0} fontSize={10.5} letterSpacing={1.2} fill="var(--slate)" fontFamily="IBM Plex Mono, monospace">
+                HOW TO READ IT
+              </text>
+              <line x1={0} y1={22} x2={34} y2={22} stroke="#22D3EE" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.75} />
+              <text x={44} y={26} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">good together</text>
+              <line x1={0} y1={48} x2={34} y2={48} stroke="#E14B4B" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.75} />
+              <text x={44} y={52} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">pull apart</text>
+              <line x1={0} y1={74} x2={34} y2={74} stroke="var(--slate)" strokeWidth={3} strokeLinecap="round" />
+              <text x={44} y={78} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">same dimension</text>
+              <line x1={0} y1={100} x2={34} y2={100} stroke="var(--slate)" strokeWidth={3} strokeDasharray="5 5" strokeLinecap="round" />
+              <text x={44} y={104} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">across dimensions</text>
+              <text x={0} y={134} fontSize={11} fill="var(--slate)" fontFamily="IBM Plex Sans, sans-serif">Thicker means stronger.</text>
+              <text x={0} y={150} fontSize={11} fill="var(--slate)" fontFamily="IBM Plex Sans, sans-serif">Faint pairs are left undrawn.</text>
+            </g>
+          </svg>
         </div>
-        <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, margin: "10px 0 0", maxWidth: "74ch" }}>
-          <span style={{ outline: "1px dashed rgba(255,255,255,0.35)", padding: "1px 5px", borderRadius: 4 }}>Dashed</span>{" "}
-          pairs sit inside the same dimension, where a relationship is expected and is part of why they were grouped.
-          The strongest is <b style={{ color: "var(--ink-soft)" }}>government debt and the policy rate at{" "}
-          {INDICATOR_CORRELATIONS.debt.rate.toFixed(2)}</b> — countries carrying less debt have tended to have rates
-          with further to fall, which is exactly the room-to-act idea Capacity is built on. Everything outside a dashed
-          box is a pair the index treats as measuring different things, and none of those exceeds{" "}
-          {Math.max(...IND.flatMap((a) => IND.filter((b) => INDICATOR_DIMENSION[a] !== INDICATOR_DIMENSION[b]).map((b) => Math.abs(INDICATOR_CORRELATIONS[a][b])))).toFixed(2)}.
-        </p>
-      </div>
+        <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "76ch" }}>
+          <b style={{ color: "var(--ink-soft)" }}>The solid lines are the strong ones, and that is the whole test.</b>{" "}
+          The heaviest is {short[strongest.a].toLowerCase()} with {short[strongest.b].toLowerCase()} at{" "}
+          {strongest.r.toFixed(2)} — countries carrying less debt have tended to have rates with further to fall,
+          which is the room-to-act idea Capacity is built on, visible in the data rather than argued for. No pair
+          spanning two different dimensions reaches {maxCross.toFixed(2)}. The groups hold together and stay apart,
+          which is what a grouping has to do to be worth making.
+        </figcaption>
+      </figure>
 
       {/* ---- the three dimensions ---- */}
-      <div>
-        <div className="meta-label" style={{ marginBottom: 8 }}>
-          The three dimensions, against each other
-        </div>
+      <figure style={{ margin: 0 }}>
         <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              borderCollapse: "separate", borderSpacing: 3, fontSize: 12,
-              fontFamily: "IBM Plex Mono, monospace", minWidth: 380,
-            }}
+          <svg
+            viewBox="0 0 680 210" width="100%" style={{ display: "block", minWidth: 520 }}
+            role="img"
+            aria-label={
+              `The three dimensions and how closely they move together. Direction and Capacity move together at ` +
+              `${DIMENSION_CORRELATIONS.D.K.toFixed(3)}, while Conditions is close to independent of both, at ` +
+              `${DIMENSION_CORRELATIONS.C.D.toFixed(3)} with Direction and ${DIMENSION_CORRELATIONS.C.K.toFixed(3)} with Capacity.`
+            }
           >
-            <caption className="sr-only">
-              Correlation between each pair of the three dimensions across {N} market-years.
-            </caption>
-            <thead>
-              <tr>
-                <th />
-                {DIM.map((d) => (
-                  <th key={d} scope="col" style={{ fontWeight: 500, color: "var(--slate)", padding: "0 6px" }}>
-                    {DIMENSION_NAMES[d]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {DIM.map((a) => (
-                <tr key={a}>
-                  <th scope="row" style={{ fontWeight: 500, color: "var(--ink-soft)", textAlign: "right", paddingRight: 8, whiteSpace: "nowrap" }}>
-                    {DIMENSION_NAMES[a]}
-                    <span style={{ color: "var(--slate)", fontSize: 10, marginLeft: 6 }}>
-                      {DIMENSION_INDICATORS[a].length === 1 ? "1 indicator" : `${DIMENSION_INDICATORS[a].length} indicators`}
-                    </span>
-                  </th>
-                  {DIM.map((b) => {
+            {(() => {
+              const P: Record<DimensionKey, { x: number; y: number }> = {
+                C: { x: 150, y: 62 },
+                D: { x: 340, y: 158 },
+                K: { x: 530, y: 62 },
+              };
+              const links: [DimensionKey, DimensionKey][] = [["C", "D"], ["D", "K"], ["C", "K"]];
+              return (
+                <>
+                  {links.map(([a, b]) => {
                     const r = DIMENSION_CORRELATIONS[a][b];
-                    const c = cell(a === b ? 0 : r);
+                    const mid = { x: (P[a].x + P[b].x) / 2, y: (P[a].y + P[b].y) / 2 };
                     return (
-                      <td
-                        key={b}
-                        style={{
-                          background: a === b ? "rgba(255,255,255,0.07)" : c.bg,
-                          color: a === b ? "var(--slate)" : c.fg,
-                          padding: "10px 14px", textAlign: "center", borderRadius: 6,
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
-                        {a === b ? "—" : r.toFixed(3)}
-                      </td>
+                      <g key={`${a}${b}`}>
+                        <line
+                          x1={P[a].x} y1={P[a].y} x2={P[b].x} y2={P[b].y}
+                          stroke="#22D3EE" strokeWidth={1 + Math.abs(r) * 16}
+                          strokeOpacity={0.28 + Math.abs(r) * 1.2} strokeLinecap="round"
+                        />
+                        <text
+                          x={mid.x} y={mid.y - 10} textAnchor="middle" fontSize={12.5}
+                          fontWeight={700} fill="#22D3EE" fontFamily="IBM Plex Mono, monospace"
+                        >
+                          {r.toFixed(3)}
+                        </text>
+                      </g>
                     );
                   })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  {DIM.map((d) => (
+                    <g key={d}>
+                      <circle cx={P[d].x} cy={P[d].y} r={13} fill={TONE[d]} stroke="var(--paper)" strokeWidth={3} />
+                      <text
+                        x={P[d].x} y={P[d].y + (d === "D" ? 36 : -26)}
+                        textAnchor="middle" fontSize={14} fontWeight={700} fill="#fff"
+                        fontFamily="IBM Plex Sans, sans-serif"
+                      >
+                        {DIMENSION_NAMES[d]}
+                      </text>
+                      <text
+                        x={P[d].x} y={P[d].y + (d === "D" ? 52 : -10)}
+                        textAnchor="middle" fontSize={11} fill="var(--slate)"
+                        fontFamily="IBM Plex Mono, monospace"
+                      >
+                        {DIMENSION_INDICATORS[d].length === 1 ? "1 indicator" : `${DIMENSION_INDICATORS[d].length} indicators`}
+                      </text>
+                    </g>
+                  ))}
+                </>
+              );
+            })()}
+          </svg>
         </div>
-        <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, margin: "10px 0 0", maxWidth: "74ch" }}>
-          <b style={{ color: "var(--ink-soft)" }}>This is the table that explains why equal thirds is not equal in
-          effect.</b> Direction and Capacity move together at{" "}
-          {DIMENSION_CORRELATIONS.D.K.toFixed(3)}, while Conditions is close to independent of both
-          ({DIMENSION_CORRELATIONS.C.D.toFixed(3)} and {DIMENSION_CORRELATIONS.C.K.toFixed(3)}). A composite built by
-          averaging tracks a pair that moves together more closely than it tracks the one that does not — so the
-          declared third each becomes an effective 25.5 / 39.6 / 34.9. Standardising the dimensions equalised how much
-          each varies. Nothing can equalise this while they remain correlated, which is why it is published rather than
-          left for a reader to discover.
-        </p>
-      </div>
+        <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "76ch" }}>
+          <b style={{ color: "var(--ink-soft)" }}>This is the picture that explains why equal thirds is not equal in
+          effect.</b> The thick line is Direction and Capacity, moving together at{" "}
+          {DIMENSION_CORRELATIONS.D.K.toFixed(3)}. Conditions barely connects to either. A composite built by
+          averaging tracks a pair that moves together more closely than it tracks the one that does not — so a
+          declared third each becomes an effective 25.5 / 39.6 / 34.9. Standardising equalised how much each
+          dimension varies; nothing can equalise this while they stay correlated, which is why it is published here
+          rather than left for a critic to find.
+        </figcaption>
+      </figure>
     </div>
   );
 }
