@@ -20,6 +20,7 @@ import {
   UNCERTAINTY_NOTE, CONVENTION_NOTE,
 } from "@/lib/composite";
 import { FALLBACK_MARKETS, scoreMarketV2, type MarketData } from "@/lib/markets";
+import { latestCompleteObservation, fallbackNote, type ObservationPick } from "@/lib/latestComplete";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
@@ -98,6 +99,12 @@ function rateNarrativeFor(raw: RawIndicators, marketCode: string): string | null
 export default function OverviewPage() {
   const router = useRouter();
   const [markets, setMarkets] = useState<MarketData[]>(FALLBACK_MARKETS);
+  // Which observation each market's score came from, so the page can say
+  // "scored on 3 September data" when today's row was incomplete rather
+  // than either blanking the country or quietly showing an older figure.
+  const [observationPicks, setObservationPicks] = useState<
+    Record<string, ObservationPick<RawIndicatorRow & { fetched_at: string }>>
+  >({});
   const [current, setCurrent] = useState("US");
   const [dataSource, setDataSource] = useState<"live" | "fallback">("fallback");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -116,10 +123,17 @@ export default function OverviewPage() {
           .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
         if (error || !data || data.length === 0) return;
 
-        const latestByMarket = new Map<string, RawIndicatorRow & { fetched_at: string }>();
-        for (const row of data as Array<RawIndicatorRow & { fetched_at: string }>) {
-          if (!latestByMarket.has(row.market)) latestByMarket.set(row.market, row);
+        type Row = RawIndicatorRow & { fetched_at: string };
+        // Every row per market, newest first — the composite is scored on
+        // the most recent COMPLETE observation, so one row is not enough.
+        const rowsByMarket = new Map<string, Row[]>();
+        for (const row of data as Row[]) {
+          const list = rowsByMarket.get(row.market);
+          if (list) list.push(row);
+          else rowsByMarket.set(row.market, [row]);
         }
+        const latestByMarket = new Map<string, Row>();
+        for (const [code, list] of rowsByMarket) latestByMarket.set(code, list[0]);
         // Oldest of the *displayed* markets' latest fetches, not the newest --
         // if one market's refresh stalled, "last updated" should say so rather
         // than claim everything is as fresh as the one market that ran.
@@ -138,8 +152,20 @@ export default function OverviewPage() {
         if (oldestOfLatestFetches) setLastUpdated(oldestOfLatestFetches);
 
         const now = Date.now();
+        const picks: Record<string, ObservationPick<Row>> = {};
         const live: MarketData[] = FALLBACK_MARKETS.map((m) => {
-          const row = latestByMarket.get(m.code);
+          const all = rowsByMarket.get(m.code) ?? [];
+          // Score the most recent complete observation rather than the
+          // newest row. A single failed fetch should not blank a country,
+          // and interpolating one would be inventing data -- so this uses a
+          // real earlier observation and shows its date.
+          const pick = latestCompleteObservation(
+            all,
+            ["inflation", "gdp_growth", "unemployment", "policy_rate", "debt_pct_gdp"],
+            (r) => r.observation_date
+          );
+          picks[m.code] = pick;
+          const row = pick.row ?? latestByMarket.get(m.code);
           const isStale = !row || now - new Date(row.fetched_at).getTime() > STALE_THRESHOLD_MS;
           if (isStale) {
             // No row, or the row is too old to trust: show this market
@@ -168,6 +194,7 @@ export default function OverviewPage() {
             },
           };
         });
+        setObservationPicks(picks);
         setMarkets(live);
         setDataSource("live");
       } catch {
@@ -176,6 +203,9 @@ export default function OverviewPage() {
     }
     loadLiveData();
   }, []);
+
+  const pick = observationPicks[current] ?? null;
+  const observationNote = pick ? fallbackNote(pick, (iso) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" })) : null;
 
   const market = markets.find((m) => m.code === current)!;
   const { percentile, dimensions, dimensionPercentiles } = scoreMarketV2(market);
@@ -272,6 +302,23 @@ export default function OverviewPage() {
                   <b>{masked.percentile.toFixed(1)}</b> — {masked.gap.toFixed(0)} points below the headline.
                   MMAI averages its three dimensions equally, so strength elsewhere is offsetting a
                   collapse here. The headline alone does not tell you this; the three rings below do.
+                </p>
+              )}
+              {observationNote && (
+                <p
+                  style={{
+                    fontSize: 12.5,
+                    lineHeight: 1.6,
+                    margin: '10px 0 0',
+                    padding: '10px 13px',
+                    borderLeft: '3px solid var(--gold-deep)',
+                    background: 'var(--glass)',
+                    borderRadius: '0 8px 8px 0',
+                    color: 'var(--ink-soft)',
+                    fontFamily: 'IBM Plex Mono, monospace',
+                  }}
+                >
+                  {observationNote}
                 </p>
               )}
               <ScoreTrendChart marketCode={current} currentScore={composite} />
