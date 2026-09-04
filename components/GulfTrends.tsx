@@ -190,7 +190,7 @@ function buildRelationshipSeries(): { series: TimeSliderSeriesData[]; years: str
     }
     const byYear = new Map(paired.map((p) => [p.period, { x: p.x, y: p.y }]));
     paired.forEach((p) => yearSet.add(p.period));
-    series.push({ key: c.code, name: c.name, color: COUNTRY_COLORS[c.code] ?? "#9296AB", byYear });
+    series.push({ key: c.code, name: c.name, color: COUNTRY_COLORS[c.code] ?? "var(--slate)", byYear });
   }
   return { series, years: Array.from(yearSet).sort(), excluded };
 }
@@ -260,7 +260,7 @@ function buildCrossSeries(indicator: CrossIndicatorKey): { series: Series[]; exc
     series.push({
       key: c.code,
       name: c.name,
-      color: COUNTRY_COLORS[c.code] ?? "#9296AB",
+      color: COUNTRY_COLORS[c.code] ?? "var(--slate)",
       data: years.map((y) => ({ year: y, value: byYear.get(y) ?? null })),
     });
   }

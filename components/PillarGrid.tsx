@@ -86,7 +86,7 @@ export default function PillarGrid({ pillars, market, observationDates }: { pill
       {ORDER.map((key) => {
         const val = pillars[key];
         const excluded = val == null;
-        const band = excluded ? { color: "#8A93A6" } : bandFor(val);
+        const band = excluded ? { color: "var(--slate)" } : bandFor(val);
         const circumference = 2 * Math.PI * 23;
         const pct = excluded ? 0 : val / 100;
 

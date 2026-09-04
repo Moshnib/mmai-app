@@ -226,7 +226,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
             <span
               key={m.code}
               onClick={() => onSelect(m.code)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", color: m.code === current ? "#fff" : "#9296AB" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", color: m.code === current ? "#fff" : "var(--slate)" }}
               {...a11yButtonProps(actionLabel, () => onSelect(m.code))}
             >
               <i style={{ width: 8, height: 8, borderRadius: "50%", background: band.color, boxShadow: `0 0 6px ${band.color}` }} />

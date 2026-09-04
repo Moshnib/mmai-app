@@ -107,7 +107,7 @@ export default function ComparePageInner() {
         return {
           key: code,
           name: marketNames[code],
-          color: MARKET_COLORS[code] ?? "#9296AB",
+          color: MARKET_COLORS[code] ?? "var(--slate)",
           data: history.map((h) => ({ year: h.year, value: valueFn(h.indicators, code) })),
         };
       }),
@@ -155,7 +155,7 @@ export default function ComparePageInner() {
       return {
         key: code,
         name: marketNames[code],
-        color: MARKET_COLORS[code] ?? "#9296AB",
+        color: MARKET_COLORS[code] ?? "var(--slate)",
         byYear,
       };
     });
@@ -289,7 +289,7 @@ export default function ComparePageInner() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {allMarketCodes.map((code) => {
                 const active = selectedMarkets.includes(code);
-                const color = MARKET_COLORS[code] ?? "#9296AB";
+                const color = MARKET_COLORS[code] ?? "var(--slate)";
                 return (
                   <button
                     key={code}

@@ -44,7 +44,7 @@ export default function DimensionCards({
         const pct = percentiles ? percentiles[key] : null;
         const sd = standardised ? standardised[key] : null;
         const missing = pct == null || sd == null;
-        const color = missing ? "#8A93A6" : colorForScore(pct);
+        const color = missing ? "var(--slate)" : colorForScore(pct);
 
         // Position on a track centred on the historical average.
         const at = missing ? 50 : 50 + (Math.max(-LIMIT, Math.min(LIMIT, sd)) / LIMIT) * 50;

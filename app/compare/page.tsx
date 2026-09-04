@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default function ComparePage() {
   return (
     <>
-      <Suspense fallback={<div style={{ padding: 60, textAlign: "center", color: "#9296AB" }}>Loading…</div>}>
+      <Suspense fallback={<div style={{ padding: 60, textAlign: "center", color: "var(--slate)" }}>Loading…</div>}>
         <ComparePageInner />
       </Suspense>
 

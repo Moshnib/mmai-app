@@ -72,7 +72,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
           return {
             key: code,
             name: MARKET_NAMES[code] ?? code,
-            color: COLORS[code] ?? "#9296AB",
+            color: COLORS[code] ?? "var(--slate)",
             // Every date any market reported, so a market that missed a
             // day renders as a gap rather than being bridged across it.
             // sortKey is the ISO date. Without it the chart sorts on the DISPLAY

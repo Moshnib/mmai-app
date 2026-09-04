@@ -64,7 +64,7 @@ export default function DimensionGrid({
       {ORDER.map((key) => {
         const val = percentiles ? percentiles[key] : null;
         const missing = val == null;
-        const color = missing ? "#8A93A6" : colorForScore(val);
+        const color = missing ? "var(--slate)" : colorForScore(val);
         const circumference = 2 * Math.PI * 23;
         const pct = missing ? 0 : val / 100;
         const z = standardised ? standardised[key] : null;
