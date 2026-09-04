@@ -330,3 +330,79 @@ export const CONVENTION_NOTE =
   "Conditions, Direction and Capacity are weighted equally. That is a stated methodological " +
   "convention, not an empirical finding — there is no evidence that the three matter equally. " +
   "All three are published beside the composite so you can weigh them differently if you disagree.";
+
+// ------------------------------------------------------------------
+//  PER-DIMENSION PERCENTILES
+// ------------------------------------------------------------------
+
+/** Each dimension gets its own ladder, built the same way as the headline.
+ *
+ *  WHY. C', D' and K' are z-scores — roughly -3 to +3, centred on zero.
+ *  Published raw they would be a second scale a reader has to learn, sitting
+ *  next to a headline on 0-100. Ranking each dimension against its own
+ *  history puts all four numbers on one scale and makes them directly
+ *  comparable: "Capacity sits above 92% of the last 26 years" reads without
+ *  a legend, and it is the same operation the headline already performs.
+ *
+ *  These are RANKS WITHIN A DIMENSION, not shares of the composite. A
+ *  dimension in the 90th percentile is not contributing 90% of anything. */
+const DIMENSION_LADDERS: Record<DimensionKey, readonly number[]> = (() => {
+  const std = REFERENCE_SET.map((r) => standardiseDimensions(rawDimensions(r)));
+  const sortNum = (v: number[]) => v.sort((a, b) => a - b);
+  return {
+    C: sortNum(std.map((d) => d.C)),
+    D: sortNum(std.map((d) => d.D)),
+    K: sortNum(std.map((d) => d.K)),
+  };
+})();
+
+function rankIn(ladder: readonly number[], value: number): number {
+  let lo = 0;
+  let hi = ladder.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (ladder[mid] < value) lo = mid + 1;
+    else hi = mid;
+  }
+  return (100 * lo) / ladder.length;
+}
+
+export function dimensionPercentiles(standardised: Dimensions): Record<DimensionKey, number> {
+  return {
+    C: rankIn(DIMENSION_LADDERS.C, standardised.C),
+    D: rankIn(DIMENSION_LADDERS.D, standardised.D),
+    K: rankIn(DIMENSION_LADDERS.K, standardised.K),
+  };
+}
+
+// ------------------------------------------------------------------
+//  BANDS
+// ------------------------------------------------------------------
+
+/** A percentile is a rank, so the labels say where a reading sits in the
+ *  historical distribution rather than passing judgement on the economy.
+ *  "Better than most of the last 26 years" is a claim the method can
+ *  actually support; "Strongly Supportive" is an editorial verdict the old
+ *  0-100 composite was never entitled to make. */
+const PERCENTILE_BANDS = [
+  { min: 80, label: "Top fifth" },
+  { min: 60, label: "Above average" },
+  { min: 40, label: "Middle of the range" },
+  { min: 20, label: "Below average" },
+  { min: 0, label: "Bottom fifth" },
+];
+
+export function percentileBandLabel(percentile: number | null): string {
+  if (percentile == null) return "Not published";
+  return (PERCENTILE_BANDS.find((b) => percentile >= b.min) ?? PERCENTILE_BANDS[PERCENTILE_BANDS.length - 1]).label;
+}
+
+/** How a percentile should be read, in one sentence, for a tooltip or a
+ *  caption. The reference window is a fact about the data, not a flourish. */
+export function percentileReading(percentile: number | null): string {
+  if (percentile == null) return "Not published — an indicator is missing.";
+  return (
+    `Better than ${percentile.toFixed(1)}% of the 148 market-years the six economies ` +
+    `produced between 2000 and 2025.`
+  );
+}
