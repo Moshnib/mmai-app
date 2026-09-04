@@ -482,8 +482,8 @@ export default function OverviewPage() {
       <div className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">WEEKLY SIGNALS</p>
-            <h2>What changed this week</h2>
+            <p className="eyebrow">LATEST SIGNALS</p>
+            <h2>What changed, and when</h2>
             <p>Movement for each market since roughly a week ago — the raw numbers, no interpretation.</p>
           </div>
           <WeeklyFeed />

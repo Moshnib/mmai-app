@@ -119,6 +119,13 @@ jobs:
       - name: Subscriber alert guard survives the engine change
         run: npx tsx scripts/test-alert-guard.ts
 
+      # The change feed is event-driven, not calendar-driven: it compares
+      # against the most recent DIFFERENT reading. These pin that it reaches
+      # past still days, refuses a stale comparison, and ignores the one
+      # indicator that is shown but no longer scored.
+      - name: Change feed finds the real change
+        run: npx tsx scripts/test-change-feed.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT 31 AUGUST.
       # Parses the formulas the site publishes to readers, executes them,
       # and asserts they reproduce lib/scoring.ts across ~9,600

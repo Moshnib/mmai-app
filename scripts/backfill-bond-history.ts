@@ -247,3 +247,7 @@ async function main() {
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
+
+// No imports, so this would otherwise be a global script whose top-level
+// type names collide with the other standalone scripts.
+export {};

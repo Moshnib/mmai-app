@@ -5,7 +5,7 @@ import Flag from "@/components/Flag";
 import { colorForScore, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { RAW_DECIMALS } from "@/components/KeyRatesRow";
-import { fetchAllWeeklyChanges, floorFor, BUCKET_MIN_GAP_DAYS, type WeeklyChangesResult } from "@/lib/weeklyChanges";
+import { fetchAllWeeklyChanges, floorFor, type WeeklyChangesResult } from "@/lib/weeklyChanges";
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -18,8 +18,6 @@ function formatDate(ms: number): string {
 // and printing one date for all six would have told a reader the US had
 // no comparable history when it had a week of it.
 const trackingSince = (market: string) => formatDate(floorFor(market));
-const firstComparison = (market: string) =>
-  formatDate(floorFor(market) + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000);
 
 // Matches lib/scoring.ts's COLOR_STOPS[1] (the orange stop) -- not
 // imported since scoring.ts doesn't export the raw stops, only
@@ -49,7 +47,7 @@ export default function WeeklyFeed() {
     // .catch as well as .then: fetchAllWeeklyChanges swallows its own
     // errors today, but a future edit that let one escape would have
     // left this stuck on the skeleton forever with no way to tell.
-    fetchAllWeeklyChanges(2)
+    fetchAllWeeklyChanges()
       .then((r) => alive && setData(r))
       .catch(() => alive && setData({ ok: false, reason: "unavailable" }));
     return () => {
@@ -101,15 +99,11 @@ export default function WeeklyFeed() {
               const soonest = Math.min(...waiting.map((r) => floorFor(r.marketCode)));
               return (
                 <>
-                  A week-over-week comparison needs two readings at least {BUCKET_MIN_GAP_DAYS} days apart from the
-                  same source. <b style={{ color: "var(--ink)" }}>{names}</b>{" "}
-                  {waiting.length === 1 ? "changed source" : "changed source"} on{" "}
-                  <b style={{ color: "var(--ink)" }}>{formatDate(soonest)}</b>, so{" "}
-                  {waiting.length === 1 ? "its" : "their"} first real change appears around{" "}
-                  <b style={{ color: "var(--ink)" }}>
-                    {formatDate(soonest + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000)}
-                  </b>{" "}
-                  — not a gap in the data, just how recently that source changed.
+                  Nothing has moved for <b style={{ color: "var(--ink)" }}>{names}</b> since{" "}
+                  <b style={{ color: "var(--ink)" }}>{formatDate(soonest)}</b>, when{" "}
+                  {waiting.length === 1 ? "its source" : "their sources"} last changed. Inflation and unemployment
+                  are published monthly, growth and debt quarterly, and policy rates only when a committee sits — so
+                  a still reading is the normal state between releases, not a gap in the data.
                 </>
               );
             })()}
@@ -180,7 +174,7 @@ export default function WeeklyFeed() {
                       Tracking since {trackingSince(r.marketCode)}
                     </span>
                     <span className="signal-detail">
-                      First comparison expected ~{firstComparison(r.marketCode)}
+                      No change yet since its source was swapped
                     </span>
                   </>
                 ) : (

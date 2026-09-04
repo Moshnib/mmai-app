@@ -35,3 +35,8 @@ ok("v2 could not be computed today — NOT comparable, correctly suppressed",
 
 console.log("\n" + (fails === 0 ? "ALL PASS" : `${fails} FAILURE(S)`));
 if (fails) process.exit(1);
+
+// No imports, so TypeScript would treat this as a global script and its
+// top-level names would collide with every other script. This makes it a
+// module.
+export {};
