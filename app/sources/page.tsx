@@ -36,13 +36,13 @@ export default function SourcesPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <SourcesTable groups={grouped} codeForName={codeForName} />
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 8 }}>
             <p className="eyebrow">GULF WATCH (NON-SCORED)</p>
@@ -61,13 +61,13 @@ export default function SourcesPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <ExportDataButtons />
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "28px 32px", color: "#fff", backdropFilter: "blur(14px)" }}>
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: 1, marginBottom: 10 }}>

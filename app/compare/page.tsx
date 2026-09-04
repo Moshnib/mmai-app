@@ -38,7 +38,7 @@ export default function ComparePage() {
           put an error block on a page whose main content is fine. */}
       <GovernmentDebtRow />
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           {/* Short methodology footer (brief §13, item 5) */}
           <div

@@ -296,7 +296,7 @@ export default function LearnPage() {
       {/* The whole method on one screen, before any of the detail. A
           reader who takes in only this should still know what a score is
           and where it came from. */}
-      <div className="section" style={{ paddingTop: 10 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 18 }}>
             <p className="eyebrow">THE METHOD AT A GLANCE</p>
@@ -314,7 +314,7 @@ export default function LearnPage() {
           things in a bucket belong together and the buckets measure
           different things. This is the evidence for it, including the part
           that is not flattering. */}
-      <div className="section" style={{ paddingTop: 10 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 18 }}>
             <p className="eyebrow">DOES THE GROUPING HOLD UP?</p>
@@ -329,7 +329,7 @@ export default function LearnPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 10 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">SCORED MARKETS</p>
@@ -547,7 +547,7 @@ export default function LearnPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">GULF WATCH (NON-SCORED)</p>

@@ -24,7 +24,7 @@
   /* THE TYPE SCALE. Ten steps, and nothing outside them.
      The site had grown to twenty-seven distinct font sizes -- 12, 12.5 and
      13 all existed, doing the same job, so there was no way to know which
-     to reach for next. These are the nine that survived, named for the
+     to reach for next. These are the ten that survived, named for the
      job rather than the number. scripts/check-type-scale.ts fails the
      build on a size that is not one of them, including the endpoints of
      the one clamp() -- a fluid heading is deliberately off-scale BETWEEN
@@ -279,7 +279,32 @@ h1.headline {
 .meta-row { display: flex; gap: 20px; flex-wrap: wrap; font-family: "IBM Plex Mono", monospace; font-size: var(--t-caption); color: var(--slate); }
 .meta-row b { color: var(--ink); }
 
-.section { padding: 44px 0; position: relative; z-index: 1; }
+/* THE RHYTHM LIVES HERE, NOT AT THE CALL SITES.
+
+   Twenty-nine sections used to correct this padding inline, and the
+   corrections did not agree: the gap between two consecutive sections
+   was 0, 10, 26 or 44 depending on the page, and on the homepage two
+   adjacent sections had 88px between them while the four below had 44.
+   When two thirds of the uses of a class override it, the class is not
+   carrying the rhythm -- the call sites are.
+
+   THE PADDING IS ON ONE SIDE ONLY, and that is the whole trick. Padding
+   both sides makes two consecutive sections add up to 88, which is what
+   every one of those overrides was correcting by hand. The obvious fix,
+   ".section + .section { padding-top: 0 }", works only while sections are
+   DOM siblings -- and on Compare they are not: ComparePageInner renders
+   its sections inside a wrapper div, so the selector cannot see across it
+   and that page would have kept the doubled gap. Bottom-only spacing is
+   nesting-proof, because each section carries its own gap wherever it
+   sits. */
+.section { padding: 0 0 44px; position: relative; z-index: 1; }
+
+/* A section that opens its container has nothing above it to inherit a
+   gap from, so it supplies its own. Listed before the hero rule: both
+   have the same specificity, and a section directly under a hero should
+   take the tighter value. */
+.section:first-child { padding-top: 44px; }
+.hero + .section { padding-top: 10px; }
 .section-head h1,
 .section-head h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h2); font-weight: 600; margin: 0 0 8px; }
 .section-head p { color: var(--slate); font-size: var(--t-body); margin: 0; max-width: 64ch; }

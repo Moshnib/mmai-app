@@ -458,7 +458,7 @@ export default function OverviewPage() {
       {/* Weekly Signals sits BEFORE Gulf Watch, per the brief's page
           flow (§8): situation -> drivers -> comparison -> what changed
           -> Gulf context. */}
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">LATEST SIGNALS</p>
@@ -472,7 +472,7 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">GULF WATCH</p>
@@ -493,7 +493,7 @@ export default function OverviewPage() {
       {/* Closing call-to-action (brief §8, item 7). Points at the two
           things that actually answer "where does this come from" --
           methodology and sources -- rather than a marketing link. */}
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="cta-band">
             <div>
@@ -528,7 +528,7 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }} id="subscribe">
+      <div className="section" id="subscribe">
         <div className="wrap" style={{ maxWidth: 560 }}>
           <SubscribeForm />
         </div>

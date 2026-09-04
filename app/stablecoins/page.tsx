@@ -136,7 +136,7 @@ export default async function StablecoinsPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 10 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">BY TOKEN</p>
@@ -158,7 +158,7 @@ export default async function StablecoinsPage() {
           They are not -- the supply moved chains. Context first, then the
           chart, and the heading names the chain rather than saying
           "stablecoin supply". */}
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">OVER TIME · ETHEREUM ONLY</p>
@@ -188,7 +188,7 @@ export default async function StablecoinsPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">WHY THIS IS HERE</p>

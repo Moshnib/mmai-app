@@ -451,7 +451,7 @@ export default function TrendsPageInner({
       </div>
 
       {/* 1 — the composite */}
-      <div className="section" style={{ paddingTop: 10 }}>
+      <div className="section">
         <div className="wrap">
           <div className="chart-card">
             {sectionLabel(1, `MMAI composite score over time — ${marketNames[current]}`)}
@@ -474,7 +474,7 @@ export default function TrendsPageInner({
       </div>
 
       {/* 2 — dimension selectors */}
-      <div className="section" style={{ paddingTop: 0 }} ref={pillarSectionRef} id="pillars">
+      <div className="section" ref={pillarSectionRef} id="pillars">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">2 — EXPLORE THE THREE DIMENSIONS</p>
@@ -531,7 +531,7 @@ export default function TrendsPageInner({
       </div>
 
       {/* 3 — the selected pillar's own score history */}
-      <div className="section" style={{ paddingTop: 26 }}>
+      <div className="section">
         <div className="wrap">
           <div className="chart-card">
             {sectionLabel(3, `${DIMENSION_NAMES[focusDimension]} over time — ${marketNames[current]}`)}
@@ -559,7 +559,7 @@ export default function TrendsPageInner({
       </div>
 
       {/* 4 — the raw indicator underneath that pillar */}
-      <div className="section" style={{ paddingTop: 26 }}>
+      <div className="section">
         <div className="wrap">
           <div className="chart-card">
             <div className="chart-card-label">
@@ -667,7 +667,7 @@ export default function TrendsPageInner({
       </div>
 
       {/* 5 — the three headline rates together */}
-      <div className="section" style={{ paddingTop: 26 }}>
+      <div className="section">
         <div className="wrap">
           <div className="chart-card">
             {sectionLabel(5, "How key macro forces move together")}

@@ -18,7 +18,7 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap" style={{ maxWidth: 640 }}>
           <ContactForm />
         </div>

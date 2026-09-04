@@ -325,7 +325,7 @@ export default function ComparePageInner() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">2. EXPLORE BY DIMENSION</p>
@@ -400,7 +400,7 @@ export default function ComparePageInner() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">3. HOW EACH MARKET IS POSITIONED</p>

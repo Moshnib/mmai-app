@@ -306,7 +306,7 @@ export default function GulfTrends() {
 
   return (
     <>
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           {/* Primary analytical block (brief §18): one large chart, all
               six countries, switched by indicator tab -- rather than a
@@ -423,7 +423,7 @@ export default function GulfTrends() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">SNAPSHOT COMPARISON</p>
@@ -437,7 +437,7 @@ export default function GulfTrends() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">COST OF LIVING VS. CURRENCY STABILITY</p>

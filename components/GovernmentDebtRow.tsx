@@ -50,7 +50,7 @@ export default async function GovernmentDebtRow() {
   const period = sorted[0].period;
 
   return (
-    <div className="section" style={{ paddingTop: 0 }}>
+    <div className="section">
       <div className="wrap">
         <div className="section-head" style={{ marginBottom: 16 }}>
           <p className="eyebrow">4. GOVERNMENT DEBT</p>

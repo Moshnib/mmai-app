@@ -120,7 +120,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
   const newestDate = allDates[allDates.length - 1];
 
   return (
-    <div className="section" style={{ paddingTop: 26 }}>
+    <div className="section">
       <div className="wrap">
         <div className="section-head" style={{ marginBottom: 16 }}>
           <p className="eyebrow">MARKET RATES · DAILY</p>
