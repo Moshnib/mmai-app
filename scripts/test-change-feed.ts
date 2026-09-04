@@ -33,17 +33,21 @@ function scoredDiffers(a: Row, b: Row): boolean {
 }
 
 /** Mirrors buildBuckets in lib/weeklyChanges.ts. */
-function pick(rowsDesc: Row[]): Row[] {
-  if (rowsDesc.length === 0) return [];
+function build(rowsDesc: Row[]): { buckets: Row[]; steadySince: string | null } {
+  if (rowsDesc.length === 0) return { buckets: [], steadySince: null };
   const newest = rowsDesc[0];
   const t = new Date(newest.fetched_at).getTime();
+  let steadySince: string | null = null;
   for (const row of rowsDesc.slice(1)) {
     const age = (t - new Date(row.fetched_at).getTime()) / 86_400_000;
     if (age > MAX_LOOKBACK_DAYS) break;
-    if (scoredDiffers(newest, row)) return [newest, row];
+    if (scoredDiffers(newest, row)) return { buckets: [newest, row], steadySince: null };
+    steadySince = row.fetched_at;
   }
-  return [newest];
+  return { buckets: [newest], steadySince };
 }
+
+const pick = (rowsDesc: Row[]): Row[] => build(rowsDesc).buckets;
 
 const day = (n: number) => new Date(Date.UTC(2026, 8, 30 - n)).toISOString();
 const base = (over: Partial<Row> & { fetched_at: string }): Row => ({
@@ -104,6 +108,25 @@ console.log("\nWHAT COUNTS AS A CHANGE\n");
   // feed should say a figure went missing, not silently skip past it.
   const gone = [base({ fetched_at: day(0), unemployment: null }), base({ fetched_at: day(1) })];
   ok("a figure going missing counts as a change", pick(gone).length === 2);
+}
+
+console.log("\nHOW LONG IT HAS STOOD\n");
+{
+  // The feed only fires on a change, so most rows on most days have no
+  // comparison. The row still has to say something true, and this is the
+  // fact it says: how far back the current figures reach.
+  const still = [0, 1, 2, 3].map((n) => base({ fetched_at: day(n) }));
+  ok("names the oldest identical reading, not the newest", build(still).steadySince === day(3));
+
+  const moved = [base({ fetched_at: day(0) }), base({ fetched_at: day(1), unemployment: 6.6 })];
+  ok("stays null when there IS a comparison to draw", build(moved).steadySince === null);
+
+  ok("null on a single row, so the feed says 'first reading'", build([base({ fetched_at: day(0) })]).steadySince === null);
+
+  // Rows beyond the bound are not evidence the figures have stood: the
+  // gap between them was never inspected.
+  const beyond = [base({ fetched_at: day(0) }), base({ fetched_at: day(60) })];
+  ok("does not reach past the lookback bound", build(beyond).steadySince === null, `${MAX_LOOKBACK_DAYS}-day limit`);
 }
 
 console.log("\nEDGE CASES\n");

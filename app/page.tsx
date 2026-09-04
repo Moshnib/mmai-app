@@ -463,7 +463,10 @@ export default function OverviewPage() {
           <div className="section-head">
             <p className="eyebrow">LATEST SIGNALS</p>
             <h2>What changed, and when</h2>
-            <p>Movement for each market since roughly a week ago — the raw numbers, no interpretation.</p>
+            <p>
+              Every market&apos;s most recent move — what changed, and the day it changed. Where nothing has moved,
+              how long the current figures have stood.
+            </p>
           </div>
           <WeeklyFeed />
         </div>

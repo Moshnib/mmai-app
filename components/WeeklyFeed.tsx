@@ -187,11 +187,18 @@ export default function WeeklyFeed() {
                       {scoreDelta ? (
                         <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>
                       ) : (
-                        // Says WHY there is no delta rather than leaving a
-                        // blank the reader has to interpret. The figure
-                        // beside it is live either way.
+                        // ALWAYS SAYS SOMETHING. This read "no weekly
+                        // comparison yet", which reports the state of the
+                        // software rather than the state of the economy --
+                        // and on a feed that only fires when a figure
+                        // moves, most rows on most days land here.
+                        // "Unchanged since 12 August" is the same absence
+                        // stated as the fact it actually is, and unlike
+                        // the old label it is checkable.
                         <span style={{ color: "var(--slate)", marginLeft: 8, fontWeight: 500 }}>
-                          no weekly comparison yet
+                          {r.steadySince
+                            ? `unchanged since ${formatDate(new Date(r.steadySince).getTime())}`
+                            : "first reading — nothing to compare yet"}
                         </span>
                       )}
                     </span>
@@ -226,10 +233,12 @@ export default function WeeklyFeed() {
       </div>
 
       <p style={{ fontSize: 11, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.6 }}>
-        Compares each market&apos;s latest figures to the closest available reading from roughly a week earlier — the raw
-        numbers only, no interpretation. An annual-frequency indicator (GDP growth or unemployment for most markets
-        outside the US) showing no change most weeks is expected — it only updates when a new annual figure is published,
-        not every week.
+        Each market is compared against the most recent reading that was actually <em>different</em>, not against a
+        fixed week ago — official figures arrive on release schedules, so a fixed window is either empty or lumps
+        unrelated releases together. Where nothing has moved, the row says how long the current figures have stood.
+        Raw numbers only, no interpretation. Inflation and unemployment are published monthly, growth and debt
+        quarterly, and policy rates only when a committee sits, so a steady reading between releases is the normal
+        state rather than a gap in the data.
       </p>
     </div>
   );

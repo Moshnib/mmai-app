@@ -145,6 +145,15 @@ export interface WeeklyMarketResult {
    *  sitting right there. So this drives the display, and `buckets`
    *  drives the delta. */
   latest: WeeklyBucket | null;
+  /** When there is no second bucket, the date of the OLDEST reading
+   *  inside the lookback that still read identically -- so the feed can
+   *  say "unchanged since 12 August" instead of leaving the row blank.
+   *
+   *  A row with nothing to report is still a fact about the data, and
+   *  the feed was printing "no weekly comparison yet", which tells the
+   *  reader only that the software has nothing, not that the economy has
+   *  been still. Null when the newest reading is the only one in range. */
+  steadySince: string | null;
 }
 
 interface RawIndicatorRow {
@@ -203,8 +212,8 @@ function scoredDiffers(a: RawIndicatorRow, b: RawIndicatorRow): boolean {
 /** Newest reading, and the most recent one before it that read
  *  differently. Two buckets or one -- one means nothing has moved inside
  *  the lookback, which the feed states plainly rather than hiding. */
-function buildBuckets(rowsDesc: RawIndicatorRow[]): WeeklyBucket[] {
-  if (rowsDesc.length === 0) return [];
+function buildBuckets(rowsDesc: RawIndicatorRow[]): { buckets: WeeklyBucket[]; steadySince: string | null } {
+  if (rowsDesc.length === 0) return { buckets: [], steadySince: null };
   const mk = (row: RawIndicatorRow): WeeklyBucket => ({
     fetchedAt: row.fetched_at,
     raw: toRawIndicators(row),
@@ -214,15 +223,21 @@ function buildBuckets(rowsDesc: RawIndicatorRow[]): WeeklyBucket[] {
   const newest = rowsDesc[0];
   const newestTime = new Date(newest.fetched_at).getTime();
 
+  // The oldest row seen so far that still read the same as now. Rows are
+  // newest-first, so this walks backwards in time and the last one
+  // assigned is the furthest back the current figures reach.
+  let steadySince: string | null = null;
+
   for (const row of rowsDesc.slice(1)) {
     const ageDays = (newestTime - new Date(row.fetched_at).getTime()) / (1000 * 60 * 60 * 24);
     if (ageDays > MAX_LOOKBACK_DAYS) break;
     // Rows are newest-first, so the first difference found IS the most
     // recent change. Anything between it and now read identically.
-    if (scoredDiffers(newest, row)) return [mk(newest), mk(row)];
+    if (scoredDiffers(newest, row)) return { buckets: [mk(newest), mk(row)], steadySince: null };
+    steadySince = row.fetched_at;
   }
 
-  return [mk(newest)];
+  return { buckets: [mk(newest)], steadySince };
 }
 
 // "Couldn't reach the database" and "every market has stopped
@@ -328,10 +343,10 @@ export async function fetchAllWeeklyChanges(): Promise<WeeklyChangesResult> {
 
       // Comparison: floor applied, because a delta spanning a source
       // swap would report a fetcher change as an economic move.
-      const buckets = buildBuckets(
+      const { buckets, steadySince } = buildBuckets(
         marketRows.filter((r) => new Date(r.fetched_at).getTime() >= marketFloor)
       );
-      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets, latest };
+      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets, latest, steadySince };
     });
 
     return { ok: true, markets };
