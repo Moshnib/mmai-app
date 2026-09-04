@@ -6,8 +6,7 @@ import Link from "next/link";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
-import DimensionGrid from "@/components/DimensionGrid";
-import DimensionBars from "@/components/DimensionBars";
+import DimensionCards from "@/components/DimensionCards";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import WorldMap from "@/components/WorldMap";
 import GulfCard from "@/components/GulfCard";
@@ -376,46 +375,26 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">WHAT DRIVES THE SCORE</p>
-            <h2>Three dimensions, weighted equally and shown in full</h2>
+            <h2>Three dimensions, and where {market.name} sits on each</h2>
             <p>
-              Each ring ranks that dimension against the same 148 market-years the headline uses —
-              so 80 means better than 80% of the historical record, not a mark out of 100.
+              Every score is a rank against the same 148 market-years — so 80 means better than 80% of
+              the record, not a mark out of 100. The bar shows which side of the historical average it
+              falls on, and by how far.
             </p>
           </div>
-          <DimensionGrid
-            percentiles={dimensionPercentiles}
+          {/* ONE VISUAL, NOT TWO. This section used to show a ring grid and
+              then a diverging bar chart: the same three numbers drawn twice,
+              one after the other. The ring gave the rank but not the
+              direction — an arc at 9 and an arc at 100 are both just arcs —
+              and the bar gave the direction but not the rank. The card does
+              both, once. The arithmetic behind each dimension lives on the
+              Trends page; a front page should make the shape understood, not
+              make someone do the sum. */}
+          <DimensionCards
             standardised={dimensions}
+            percentiles={dimensionPercentiles}
             market={current}
           />
-          {/* WHAT THE RINGS CANNOT SHOW: which dimension pulled the score
-              up and which pulled it down. Three rings are three separate
-              readings; this puts them on one axis around the historical
-              average, so the shape of a country's position is legible in a
-              glance rather than assembled in the reader's head.
-
-              The arithmetic behind each dimension lives on the Trends page.
-              A front page should make someone understand the shape; it
-              should not make them do the sum. */}
-          <div
-            style={{
-              marginTop: 26,
-              border: "1px solid var(--hair)",
-              borderRadius: 16,
-              padding: "20px 22px",
-              background: "var(--glass)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div className="meta-label" style={{ marginBottom: 4 }}>
-              What is pulling {market.name}&apos;s score
-            </div>
-            <p style={{ fontSize: 12.5, color: "var(--slate)", lineHeight: 1.6, margin: "0 0 16px", maxWidth: "68ch" }}>
-              Each bar is one dimension against the average of the last 26 years across these six economies.
-              Right of the line is better than usual, left is worse.{" "}
-              <Link href="/trends" style={{ color: "var(--gold-deep)" }}>See the full working →</Link>
-            </p>
-            <DimensionBars standardised={dimensions} percentile={percentile} />
-          </div>
 
           <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 16, maxWidth: "72ch" }}>
             {CONVENTION_NOTE}
