@@ -589,3 +589,17 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
   .signal-detail { font-size: 11.5px; }
   .data-table thead th { font-size: 11px; }
 }
+
+/* Visible to a screen reader, not on screen. Used for <caption> on the
+   correlation tables -- a data table needs a caption for a screen reader
+   to announce what it is, but the heading above it already says so
+   sightedly and repeating it would just be noise. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

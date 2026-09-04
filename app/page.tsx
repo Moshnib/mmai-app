@@ -392,7 +392,7 @@ export default function OverviewPage() {
               Without it a reader can see Japan scores 100 on Conditions but
               not that it is inflation on target AND unemployment at 2.4%,
               both at once, better than almost anything in the record. */}
-          <details style={{ marginTop: 22 }}>
+          <details open style={{ marginTop: 22 }}>
             <summary
               style={{
                 cursor: "pointer", fontFamily: "IBM Plex Mono, monospace", fontSize: 12,
@@ -400,7 +400,7 @@ export default function OverviewPage() {
                 listStyle: "revert",
               }}
             >
-              Show the numbers behind each dimension
+              The numbers behind each dimension
             </summary>
             <div style={{ marginTop: 14 }}>
               <DimensionBreakdown raw={market.raw} market={market.code} percentiles={dimensionPercentiles} />

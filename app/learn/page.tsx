@@ -14,6 +14,7 @@ import {
 } from "@/lib/composite";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 import ScoreDiagram from "@/components/ScoreDiagram";
+import CorrelationMatrix from "@/components/CorrelationMatrix";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { indicatorFormula, INDICATOR_READING } from "@/lib/composite";
 
@@ -260,6 +261,25 @@ export default function LearnPage() {
             </p>
           </div>
           <ScoreDiagram />
+        </div>
+      </div>
+
+      {/* Grouping five numbers into three buckets is a CLAIM -- that the
+          things in a bucket belong together and the buckets measure
+          different things. This is the evidence for it, including the part
+          that is not flattering. */}
+      <div className="section" style={{ paddingTop: 10 }}>
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 18 }}>
+            <p className="eyebrow">DOES THE GROUPING HOLD UP?</p>
+            <h2>How the indicators actually relate to each other</h2>
+            <p>
+              Putting five figures into three dimensions asserts that each group belongs together and that the
+              groups measure different things. Measured across the whole reference record, here is whether that
+              is true.
+            </p>
+          </div>
+          <CorrelationMatrix />
         </div>
       </div>
 

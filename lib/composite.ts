@@ -647,3 +647,68 @@ export function explainDimension(
     : null;
   return { total, parts };
 }
+
+// ------------------------------------------------------------------
+//  HOW THE INDICATORS RELATE TO EACH OTHER
+// ------------------------------------------------------------------
+
+function pearson(a: readonly number[], b: readonly number[]): number {
+  const ma = a.reduce((s, x) => s + x, 0) / a.length;
+  const mb = b.reduce((s, x) => s + x, 0) / b.length;
+  let num = 0, da = 0, db = 0;
+  for (let i = 0; i < a.length; i++) {
+    num += (a[i] - ma) * (b[i] - mb);
+    da += (a[i] - ma) ** 2;
+    db += (b[i] - mb) ** 2;
+  }
+  return num / Math.sqrt(da * db);
+}
+
+const INDICATOR_KEYS: IndicatorKey[] = ["infGap", "une", "gdp", "debt", "rate"];
+
+/** Correlation between every pair of indicators across the reference set,
+ *  computed on the SIGN-ALIGNED values -- so a positive number means the
+ *  two tend to be good together, which is the question a reader is
+ *  actually asking. On the raw values the signs would flip for the three
+ *  where lower is better, and the matrix would read backwards.
+ *
+ *  Derived at load, so it cannot drift from the data and needs no pinning. */
+export const INDICATOR_CORRELATIONS: Record<IndicatorKey, Record<IndicatorKey, number>> = (() => {
+  const cols: Record<IndicatorKey, number[]> = {
+    infGap: [], une: [], gdp: [], debt: [], rate: [],
+  };
+  for (const r of REFERENCE_SET) for (const k of INDICATOR_KEYS) cols[k].push(q(k, r[k]));
+  const out = {} as Record<IndicatorKey, Record<IndicatorKey, number>>;
+  for (const a of INDICATOR_KEYS) {
+    out[a] = {} as Record<IndicatorKey, number>;
+    for (const b of INDICATOR_KEYS) out[a][b] = a === b ? 1 : pearson(cols[a], cols[b]);
+  }
+  return out;
+})();
+
+/** The same for the three dimensions.
+ *
+ *  This is the matrix that explains why equal thirds does not produce equal
+ *  influence: Direction and Capacity move together while Conditions is
+ *  nearly independent of both, so the composite tracks the pair more
+ *  closely than the loner. Standardising fixed the spread; it cannot fix
+ *  this. */
+export const DIMENSION_CORRELATIONS: Record<DimensionKey, Record<DimensionKey, number>> = (() => {
+  const dims = REFERENCE_SET.map((r) => rawDimensions(r));
+  const cols: Record<DimensionKey, number[]> = {
+    C: dims.map((d) => d.C), D: dims.map((d) => d.D), K: dims.map((d) => d.K),
+  };
+  const keys: DimensionKey[] = ["C", "D", "K"];
+  const out = {} as Record<DimensionKey, Record<DimensionKey, number>>;
+  for (const a of keys) {
+    out[a] = {} as Record<DimensionKey, number>;
+    for (const b of keys) out[a][b] = a === b ? 1 : pearson(cols[a], cols[b]);
+  }
+  return out;
+})();
+
+/** Which dimension an indicator belongs to — for marking the pairs that
+ *  are SUPPOSED to be related. */
+export const INDICATOR_DIMENSION: Record<IndicatorKey, DimensionKey> = {
+  infGap: "C", une: "C", gdp: "D", debt: "K", rate: "K",
+};

@@ -8,6 +8,7 @@ import Flag from "@/components/Flag";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
 import { useLiveHistory } from "@/lib/useLiveHistory";
 import { colorForScore } from "@/lib/scoring";
+import DimensionBreakdown from "@/components/DimensionBreakdown";
 import {
   computeMmai, dimensionPercentiles, percentileBandLabel,
   DIMENSION_NAMES, DIMENSION_QUESTIONS, DIMENSION_INDICATORS, DIMENSION_PILLARS,
@@ -535,6 +536,24 @@ export default function TrendsPageInner({
           <div className="chart-card">
             {sectionLabel(3, `${DIMENSION_NAMES[focusDimension]} over time — ${marketNames[current]}`)}
             {hasTrend ? <TrendChart series={focusSeries} height={300} yDomain={[0, 100]} showLegend={false} /> : notEnough}
+
+            {/* The chart shows where this dimension sits. This shows WHY --
+                which indicators are behind it and what each contributes.
+                Inline rather than hidden: a reader looking at one dimension
+                in detail is exactly the reader who needs its parts. */}
+            {latestPoint && (
+              <div style={{ marginTop: 18 }}>
+                <div className="meta-label" style={{ marginBottom: 10 }}>
+                  What {DIMENSION_NAMES[focusDimension]} is made of, at {latestPoint.year}
+                </div>
+                <DimensionBreakdown
+                  raw={latestPoint.indicators}
+                  market={current}
+                  percentiles={dimensionCurrentScores.C == null ? null : (dimensionCurrentScores as Record<DimensionKey, number>)}
+                  only={focusDimension}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
