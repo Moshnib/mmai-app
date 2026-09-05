@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { href: "/stablecoins", label: "Stablecoins" },
   { href: "/learn", label: "Learn More" },
   { href: "/sources", label: "Sources" },
-  { href: "/contact", label: "Contact" },
+  { href: "/about", label: "About" },
 ];
 
 export default function NavBar() {

@@ -8,7 +8,7 @@ const ROUTES = [
   { path: "/gulf-watch", priority: 0.7, changeFrequency: "daily" as const },
   { path: "/learn", priority: 0.6, changeFrequency: "monthly" as const },
   { path: "/sources", priority: 0.6, changeFrequency: "weekly" as const },
-  { path: "/contact", priority: 0.3, changeFrequency: "yearly" as const },
+  { path: "/about", priority: 0.5, changeFrequency: "monthly" as const },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

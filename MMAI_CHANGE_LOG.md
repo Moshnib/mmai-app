@@ -6,9 +6,63 @@ Entries are newest first. The frozen V1 record is in [`MMAI_V1_FROZEN_BENCHMARK.
 
 ---
 
+## 2026-09-05 — How the new method was verified before it went live
+
+**Category:** Verification. **No rule changes.** This entry records how the three-dimension composite was checked, and on what basis it was published.
+
+### What was required
+
+The site owner set the gate himself, in writing, before implementation began:
+
+> Choose one person who has never worked on MMAI and has not seen the target result. Compare their result privately. If it matches with no guessing, the gate closes — then push and build.
+
+The requirement was an **independent reproduction from the published material alone**, with the answer withheld from the reproducer.
+
+### What was done
+
+A reviewer edition of the specification was prepared and deliberately stripped:
+
+- the target score was removed, so it could not be recognised or worked backwards from
+- every derived constant was removed — the dimension means and standard deviations, the percentile ladder — leaving only the 148-row reference table, the formulas, and Australia's five raw 2026 inputs
+- the verification script was withheld
+
+That package was given to **ChatGPT**, which had not seen the project, the answer, or any prior working. It computed the indicator means and standard deviations, standardised the three dimensions, averaged them, ranked the result against the 148-row distribution, and returned:
+
+```
+85.135135135 %
+```
+
+This matches MMAI's own figure **exactly**, to every digit. 85.135135135% is 126/148 — the 126th of 148 market-years — so the agreement is not a rounding coincidence but the same rank arrived at independently.
+
+### What this establishes, and what it does not
+
+**It establishes that the published material is sufficient.** Someone with the reference table and the formulas, and nothing else, reaches the same number. That is the substantive claim the project makes about itself, and it now has evidence behind it.
+
+**It is not the human reviewer the owner specified.** The gate as written called for a named person who had never worked on MMAI. That person was not found, and the owner decided on 5 September to publish on the strength of the blind AI reproduction rather than wait.
+
+That decision is recorded here as a decision, not presented as equivalent. A named reviewer remains the stronger claim and remains open: the redacted package still exists and can be sent to one at any time, and a second matching result would only strengthen the record.
+
+### Reason for the decision
+
+Waiting had a real cost. Two scoring engines were running side by side, which is the situation in which they quietly diverge, and the site was publishing a method the owner had already concluded was not defensible. The reproduction was genuinely blind, from genuinely redacted material, and it matched to nine decimal places.
+
+### Impact
+
+None on any published number. This entry documents evidence, not a change.
+
+### Approval status
+
+**Recorded.** The decision to publish on the AI reproduction was taken by the site owner on 5 September 2026.
+
+### Rollback method
+
+Not applicable — nothing was changed.
+
+---
+
 ## 2026-09-04 — The composite is rebuilt: three standardised dimensions, read as a percentile
 
-**Category:** Method. **Every published score changes.** Awaiting approval — PR #1, branch `composite-three-dimensions`, not merged and not live.
+**Category:** Method. **Every published score changes.** Approved and live since 5 September 2026 — PR #1 merged. Verification recorded in the 5 September entry above.
 
 ### Old rule
 
@@ -88,11 +142,13 @@ Japan is the substantive change. Its Conditions score is the highest of every ma
 
 ### Approval status
 
-**Not approved. Not merged. Not live.** The five-pillar engine still produces every published number. PR #1 open; CI green; Vercel preview deployed. The migration `2026-09-04-three-dimension-composite.sql` is applied but additive — the old composite column is left null on new rows so an unmigrated page fails visibly rather than quietly showing a different number.
+**Approved and live.** Merged 5 September 2026. The five-pillar engine ran alongside it for one day and was retired the same evening; it no longer computes, no longer writes, and its code has been removed from the tree.
+
+The migration `2026-09-04-three-dimension-composite.sql` is additive. Rows written before 5 September keep their five-pillar scores — that is the historical record, and the CSV export still hands it to readers — but nothing new is written to a scheme the site no longer runs.
 
 ### Rollback method
 
-Before cutover: close PR #1. Nothing published changes, because nothing published uses it.
+The five-pillar site is tagged `v1.0-five-pillar`, a named snapshot of the last state before the change. `git revert` of the merge commit restores the pages; the retired engine itself is recoverable from that tag or from history. Published rows are untouched by either direction, so no data is lost on a rollback.
 
 After cutover: revert the four switches — `ALERT_ENGINE` to `"v1.0"`, `band` back to `bandFor`, restore `lib/publishedFormulas.ts` and its CI step, re-enable the five-pillar path. `mmai_scores` keeps every pillar column and every historical row, so no data is lost in either direction and both engines can be recomputed from `raw_indicators` at any time. The v2 columns can be left in place; they are additive and unread by the old engine.
 
