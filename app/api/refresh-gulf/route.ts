@@ -3,6 +3,10 @@ import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { fetchInflation, fetchFxReservesMonths, fetchCurrentAccountPctGdp } from "@/lib/fetchers/worldbank";
 import { fetchBahrainInflation } from "@/lib/fetchers/bahrainCpi";
+import { withRetry } from "@/lib/retryFetch";
+import {
+  carryForwardGulf, carryNote, MAX_GULF_CARRY_DAYS, type StoredGulfRow,
+} from "@/lib/gulfCarryForward";
 import { fetchQatarInflation } from "@/lib/fetchers/qatarCpi";
 import { fetchQatarRealEstate } from "@/lib/fetchers/qatarRealEstate";
 import { fetchSaudiInflation } from "@/lib/fetchers/datasaudi";
@@ -50,9 +54,12 @@ const SOURCE_NOTES: Record<GulfCountryCode, string> = {
   OM: "World Bank (live)",
 };
 
-async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> {
+// Takes a THUNK now, not a promise, because a retry has to be able to
+// start the request again -- a promise can only be awaited once. Every
+// call site passes `() => fetchX()` for that reason.
+async function settle<T>(label: string, run: () => Promise<T>): Promise<T | null> {
   try {
-    return await promise;
+    return await withRetry(`Gulf [${label}]`, run);
   } catch (err) {
     console.error(`Gulf fetch failed [${label}]:`, (err as Error).message);
     return null;
@@ -90,21 +97,33 @@ interface GulfRawIndicators {
 }
 
 async function fetchCpi(country: GulfCountryCode): Promise<{ inflation: number; observationDate: string } | null> {
-  if (country === "AE") return settle("UAE CPI", fetchInflation("ARE"));
-  if (country === "BH") return settle("Bahrain CPI", fetchBahrainInflation());
-  if (country === "QA") return settle("Qatar CPI", fetchQatarInflation());
-  if (country === "SA") return settle("Saudi CPI", fetchSaudiInflation());
-  if (country === "KW") return settle("Kuwait CPI", fetchInflation("KWT"));
-  return settle("Oman CPI", fetchInflation("OMN")); // OM
+  if (country === "AE") return settle("UAE CPI", () => fetchInflation("ARE"));
+  if (country === "BH") return settle("Bahrain CPI", () => fetchBahrainInflation());
+  if (country === "QA") return settle("Qatar CPI", () => fetchQatarInflation());
+  if (country === "SA") return settle("Saudi CPI", () => fetchSaudiInflation());
+  if (country === "KW") return settle("Kuwait CPI", () => fetchInflation("KWT"));
+  return settle("Oman CPI", () => fetchInflation("OMN")); // OM
 }
 
 // BIS carries central bank policy rates for Saudi Arabia and Kuwait
 // only (of these six). UAE and Bahrain are absent from BIS and IMF
-// alike, and their own central banks are bot-protected; Qatar and Oman
-// are available from IMF but not wired in yet.
+// alike, and their own central banks are bot-protected.
+//
+// QATAR AND OMAN, checked against IMF MFS_IR on 6 September 2026, are
+// NOT the matching pair an earlier note here claimed:
+//
+//   Qatar   MFS166 "Monetary policy-related, Rate"  4.35%, 2026-M07
+//   Oman    no MFS166 at all; its best rate series stops at 2022-M04
+//           and its discount rate at 2018-M10
+//
+// So Oman is not a wiring job, it is absent data, and publishing a
+// four-year-old policy rate beside Saudi's from last week would be
+// worse than the gap. Qatar is genuinely available and current, and is
+// held back only by IMF's terms, which require written permission for
+// commercial reuse -- see MMAI_MASTER_HANDOVER.md.
 async function fetchPolicyRate(country: GulfCountryCode) {
-  if (country === "SA") return settle("Saudi policy rate", fetchBisPolicyRate("SA"));
-  if (country === "KW") return settle("Kuwait policy rate", fetchBisPolicyRate("KW"));
+  if (country === "SA") return settle("Saudi policy rate", () => fetchBisPolicyRate("SA"));
+  if (country === "KW") return settle("Kuwait policy rate", () => fetchBisPolicyRate("KW"));
   return null;
 }
 
@@ -114,9 +133,9 @@ async function fetchGulfIndicators(country: GulfCountryCode): Promise<GulfRawInd
 
   const [cpi, fx, ca, realEstate, policy] = await Promise.all([
     fetchCpi(country),
-    settle(`${country} FX reserves`, fetchFxReservesMonths(iso3)),
-    settle(`${country} current account`, fetchCurrentAccountPctGdp(iso3)),
-    country === "QA" ? settle("Qatar real estate", fetchQatarRealEstate()) : Promise.resolve(null),
+    settle(`${country} FX reserves`, () => fetchFxReservesMonths(iso3)),
+    settle(`${country} current account`, () => fetchCurrentAccountPctGdp(iso3)),
+    country === "QA" ? settle("Qatar real estate", () => fetchQatarRealEstate()) : Promise.resolve(null),
     fetchPolicyRate(country),
   ]);
 
@@ -177,9 +196,48 @@ export async function GET(request: Request) {
     });
   }
 
+  // The last stored row per country, for carry-forward. One query for
+  // all six rather than one each: the refresh runs inside a 60-second
+  // function and six round trips to buy what one buys is time taken
+  // from the fetches that actually matter.
+  //
+  // Ordered newest-first and bucketed by country, so each country reads
+  // its own most recent row regardless of how the rows interleave.
+  const previousByCountry = new Map<string, StoredGulfRow>();
+  {
+    const since = new Date(Date.now() - MAX_GULF_CARRY_DAYS * 86_400_000).toISOString();
+    const { data: prevRows } = await supabase
+      .from("gulf_indicators")
+      .select(
+        "country_code, cpi_yoy, cpi_observation_date, fx_reserves_months_imports, fx_reserves_observation_date, " +
+        "current_account_pct_gdp, current_account_observation_date, real_estate_value, real_estate_metric_label, " +
+        "real_estate_observation_date, policy_rate, policy_rate_label, policy_rate_observation_date, fetched_at",
+      )
+      .in("country_code", pending)
+      .gte("fetched_at", since)
+      .order("fetched_at", { ascending: false });
+    for (const row of prevRows ?? []) {
+      const code = (row as unknown as { country_code: string }).country_code;
+      if (!previousByCountry.has(code)) previousByCountry.set(code, row as unknown as StoredGulfRow);
+    }
+  }
+
   for (const country of pending) {
     try {
-      const raw = await fetchGulfIndicators(country);
+      const fetched = await fetchGulfIndicators(country);
+
+      // A source that blinks must not wipe a good number. Values are
+      // only ever carried INTO a null, and each carried value brings its
+      // own reporting date with it, so the card keeps saying the period
+      // the figure actually belongs to. See lib/gulfCarryForward.ts.
+      const { merged: raw, carried, expired } = carryForwardGulf(
+        fetched,
+        previousByCountry.get(country) ?? null,
+        new Date(),
+      );
+      if (carried.length > 0) {
+        console.warn(`Gulf [${country}]: carried forward ${carried.join(", ")}`);
+      }
       // Policy rate counts toward PARTIAL only for the countries that
 // actually have a source. Ignoring it entirely would let SOURCE_NOTES
       // keep claiming "+ BIS (live)" on a day the BIS fetch failed;
@@ -192,7 +250,17 @@ export async function GET(request: Request) {
         raw.currentAccountPctGdp == null ||
         (expectsPolicyRate && raw.policyRate == null);
       const baseNote = SOURCE_NOTES[country];
-      const sourceNote = partial ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)` : baseNote;
+      // Three states, and they are not the same thing. A carried value
+      // is a source that blinked and a number a reader can still trust;
+      // PARTIAL is a genuine hole; expired means a source has been down
+      // longer than carry-forward will cover, which is the one that
+      // needs somebody to look.
+      const expiredNote = expired
+        ? ` — a source has now been unavailable for more than ${MAX_GULF_CARRY_DAYS} days, so nothing was carried forward`
+        : "";
+      const sourceNote = partial
+        ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)${carryNote(carried)}${expiredNote}`
+        : `${baseNote}${carryNote(carried)}${expiredNote}`;
 
       const { error } = await supabase.from("gulf_indicators").insert({
         country_code: country,
