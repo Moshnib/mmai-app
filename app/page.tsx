@@ -5,7 +5,7 @@ import Link from "next/link";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
-import DimensionCards from "@/components/DimensionCards";
+import DimensionAxis from "@/components/DimensionAxis";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import WorldMap from "@/components/WorldMap";
 import GulfCard from "@/components/GulfCard";
@@ -431,20 +431,23 @@ export default function OverviewPage() {
             <p className="eyebrow">WHAT DRIVES THE SCORE</p>
             <h2>What is holding {market.name} up, and what is dragging</h2>
             <p>
-              Every score is a rank against the same 148 market-years — so 80 means better than 80% of
-              the record, not a mark out of 100. The bar shows which side of the historical average it
-              falls on, and by how far.
+              All three sit on one axis, so they can be read against each other rather than one at a
+              time. Each is a rank against the same 148 market-years — 80 means better than 80% of the
+              record, not a mark out of 100 — and the centre line is the historical average.
             </p>
           </div>
-          {/* ONE VISUAL, NOT TWO. This section used to show a ring grid and
-              then a diverging bar chart: the same three numbers drawn twice,
-              one after the other. The ring gave the rank but not the
-              direction — an arc at 9 and an arc at 100 are both just arcs —
-              and the bar gave the direction but not the rank. The card does
-              both, once. The arithmetic behind each dimension lives on the
-              Trends page; a front page should make the shape understood, not
-              make someone do the sum. */}
-          <DimensionCards
+          {/* ONE AXIS, NOT THREE. The heading above asks what is holding a
+              country up and what is dragging — a question about the three
+              dimensions RELATIVE TO EACH OTHER. Three cards side by side,
+              each centring its own average, is the one arrangement that
+              cannot answer it: every dimension looked measured on its own
+              terms, and comparing them meant comparing bars across two card
+              borders. Japan reads 100 / 15 / 9 and composites to 50.7, a
+              number that is meaningless without the spread behind it. On one
+              axis the spread is the picture. The arithmetic still lives on
+              the Trends page; a front page should make the shape understood,
+              not make someone do the sum. */}
+          <DimensionAxis
             standardised={dimensions}
             percentiles={dimensionPercentiles}
             market={market.code}
