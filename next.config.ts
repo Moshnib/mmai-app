@@ -1,5 +1,18 @@
 import type { NextConfig } from "next";
 
+/** Derived rather than hardcoded, so that changing Supabase projects cannot
+ *  leave the policy naming the old one -- which would block every data
+ *  fetch and leave the site rendering with no numbers and no visible error.
+ *  The anon URL is already public: it ships inside the client bundle, so
+ *  naming it in a header discloses nothing that isn't already served. */
+const SUPABASE_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    return "";
+  }
+})();
+
 /**
  * SECURITY HEADERS
  *
@@ -10,6 +23,85 @@ import type { NextConfig } from "next";
  *
  * Each one is here for a stated reason, not because a checklist named it.
  */
+/**
+ * THE CONTENT SECURITY POLICY.
+ *
+ * Every origin below was MEASURED, not assumed. Loading each page on the
+ * live site and recording what the browser actually requested gives four
+ * destinations and no others:
+ *
+ *   self                     the pages, their scripts and stylesheets
+ *   fonts.googleapis.com     the stylesheet for Space Grotesk / IBM Plex
+ *   fonts.gstatic.com        the font files it pulls in
+ *   <project>.supabase.co    the live indicator data, fetched client-side
+ *
+ * No analytics, no ad network, no third-party script of any kind. The
+ * blockchain and statistics APIs are called from the SERVER, so a browser
+ * never contacts them and they must not be listed here.
+ *
+ * ── WHY script-src ALLOWS 'unsafe-inline', WHICH LOOKS WRONG ──
+ *
+ * The stronger policy is a per-request nonce with 'strict-dynamic'. It was
+ * built, and then measured against a real production build of THIS site,
+ * and it broke every page:
+ *
+ *   "Loading the script /_next/static/chunks/310vm2bl3xxpt.js violates the
+ *    following Content Security Policy directive... The action has been
+ *    blocked."
+ *
+ * The cause is structural, not a mistake in the policy. A nonce has to be
+ * generated per request and stamped into the HTML, so it requires DYNAMIC
+ * rendering -- Next's own guide says so. Seven of this site's nine routes
+ * are statically prerendered at build time, so their cached HTML carries
+ * no nonce and never can. The pages still rendered their text, because
+ * that is server-rendered, but nothing hydrated: no score, no daily feed,
+ * no Gulf cards, no charts. A site that looks fine and does nothing.
+ *
+ * Forcing every route dynamic would fix the nonce and break something
+ * else. /stablecoins caches for ten minutes precisely so that visitor
+ * traffic never reaches the public blockchain endpoints -- rendering it
+ * per request would call them on every page view, which the page itself
+ * documents as staying inside fair use.
+ *
+ * So: no nonce, and 'unsafe-inline' stated openly rather than disguised.
+ * What that costs is narrow -- an injected INLINE script would run. What
+ * it still buys is most of the real protection:
+ *
+ *   - no script can be loaded from any other origin
+ *   - connect-src blocks exfiltration to anywhere but Supabase
+ *   - base-uri stops a <base> tag redirecting every relative URL
+ *   - form-action stops a form being repointed at an attacker
+ *   - frame-ancestors stops the site being framed and passed off as someone else's
+ *
+ * And the inline vector needs an attacker to inject HTML in the first
+ * place. This site renders no user-generated content, has no accounts, no
+ * sessions and no cookies. Someone able to inject inline script here
+ * already has the server.
+ *
+ * IF THIS IS EVER TIGHTENED: check the build output first. The moment
+ * every route reports as dynamic, the nonce becomes available -- and
+ * anyone reaching for it before then will white-screen the site exactly
+ * as described above.
+ */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  // blob: for the CSV export buttons, which build the file in the browser
+  // and hand it over as an object URL. data: for the generated favicon.
+  "img-src 'self' data: blob:",
+  `connect-src 'self'${SUPABASE_ORIGIN ? ` ${SUPABASE_ORIGIN}` : ""}`,
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "frame-src 'none'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const SECURITY_HEADERS = [
   // Tells browsers to reach this site over HTTPS only, for two years, and
   // to apply the same rule to subdomains. Without it the very first visit
@@ -31,13 +123,8 @@ const SECURITY_HEADERS = [
   // index whose value is its provenance is the attack that actually matters.
   { key: "X-Frame-Options", value: "DENY" },
 
-  // The modern equivalent, plus the two directives worth setting even
-  // without a full CSP: block plugin content, and stop the page being
-  // framed. A complete script-src policy is deliberately NOT set here --
-  // Next.js injects inline bootstrap scripts, so it needs per-request
-  // nonces via middleware to avoid breaking hydration. Doing that badly is
-  // worse than not doing it, so it is left as a separate, tested change.
-  { key: "Content-Security-Policy", value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'" },
+  // Content-Security-Policy — see the note above CSP below.
+  { key: "Content-Security-Policy", value: CSP },
 
   // The site asks for none of these, so deny them outright rather than
   // leaving the defaults to whatever a browser decides next year.
