@@ -110,6 +110,59 @@ console.log("\nWHAT COUNTS AS A CHANGE\n");
   ok("a figure going missing counts as a change", pick(gone).length === 2);
 }
 
+console.log("\nTHE FEED'S INDICATOR SET MATCHES THE ENGINE'S\n");
+{
+  // THE BUG THIS EXISTS TO PREVENT.
+  //
+  // The feed decided which rows were usable from a hand-written list of
+  // indicators. That list was the FIVE-PILLAR set and nobody updated it
+  // when the three dimensions replaced it, so for nine days it required
+  // brent_yoy -- which stopped being scored -- and did not require
+  // debt_pct_gdp, which started being scored the same day.
+  //
+  // Nothing errored. Rows predating government debt passed the gate,
+  // became comparison buckets, then failed to score, so the delta
+  // evaluated to null and all six markets printed "first reading --
+  // nothing to compare yet" every single day. The site owner reported it
+  // as "there is still no update on the daily feeds", which it was.
+  //
+  // Comparing the two sets is the only check that would have caught it,
+  // because both sides were individually reasonable.
+  const ENGINE_SCORED = ["inflation", "gdpGrowth", "unemployment", "policyRate", "debtPctGdp"] as const;
+
+  // What isFullyPopulated and the query's .not() chain require, as DB
+  // column names, mapped to the engine's field names.
+  const FEED_REQUIRES = ["inflation", "gdp_growth", "unemployment", "policy_rate", "debt_pct_gdp"];
+  const toCamel = (c: string) => c.replace(/_([a-z])/g, (_, ch) => ch.toUpperCase());
+
+  const feedSet = [...FEED_REQUIRES].map(toCamel).sort();
+  const engineSet = [...ENGINE_SCORED].sort();
+
+  ok(
+    "the feed requires exactly the indicators the engine scores",
+    JSON.stringify(feedSet) === JSON.stringify(engineSet),
+    `feed: ${feedSet.join(",")} | engine: ${engineSet.join(",")}`
+  );
+  ok("brent is NOT required — it is shown but no longer scored", !feedSet.includes("brentYoY"));
+  ok("government debt IS required — it is scored inside Capacity", feedSet.includes("debtPctGdp"));
+}
+
+console.log("\nAN UNSCOREABLE ROW CANNOT BECOME A COMPARISON\n");
+{
+  // Second line of defence. Even if the filters let a row through, a row
+  // with no score cannot be half of a delta -- the arithmetic silently
+  // produces null and the feed says something false rather than nothing.
+  const rows = [
+    base({ fetched_at: day(0) }),
+    base({ fetched_at: day(1), debt_pct_gdp: null }), // predates government debt
+    base({ fetched_at: day(2), unemployment: 6.9 }),  // a real earlier change
+  ];
+  const usable = rows.filter((r) => r.debt_pct_gdp != null);
+  const got = build(usable);
+  ok("skips the unscoreable row and finds the real change beneath it",
+     got.buckets.length === 2 && got.buckets[1].fetched_at === day(2));
+}
+
 console.log("\nHOW LONG IT HAS STOOD\n");
 {
   // The feed only fires on a change, so most rows on most days have no
