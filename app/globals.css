@@ -1041,3 +1041,17 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 .ind-track-fill { position: absolute; top: 0; bottom: 0; }
 
 .ind-card-note { font-size: var(--t-micro); color: var(--slate); line-height: 1.5; }
+
+/* The Learn page's common questions. Same disclosure device as the
+   judgment calls above them, so the page has one way of folding
+   something away rather than two. */
+.faq-item > summary { margin-bottom: 0; }
+.faq-answer { margin-top: 12px; }
+.faq-answer p {
+  font-size: var(--t-small);
+  color: var(--ink-soft);
+  line-height: 1.75;
+  margin: 0 0 11px;
+}
+.faq-answer p:last-child { margin-bottom: 0; }
+.faq-answer b { color: var(--ink); }

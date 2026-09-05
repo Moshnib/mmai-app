@@ -13,6 +13,7 @@ import {
   type DimensionKey,
 } from "@/lib/composite";
 import { REFERENCE_SET } from "@/lib/referenceSet";
+import { percentileOf, compositeZ, standardiseDimensions, rawDimensions } from "@/lib/composite";
 import ScoreDiagram from "@/components/ScoreDiagram";
 import CorrelationMatrix from "@/components/CorrelationMatrix";
 import { FALLBACK_MARKETS } from "@/lib/markets";
@@ -259,6 +260,147 @@ const TOPICS = [
     ],
     impact:
       `You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. The full ${REF_N}-row reference table is published too, so the averages themselves can be checked rather than taken on trust. A percentile describes conditions for an average household and business in that economy against the last ${REF_SPAN} — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government’s policy performance. MMAI is not investment advice.`,
+  },
+];
+
+/**
+ * THE 2008 TEST, COMPUTED RATHER THAN TYPED.
+ *
+ * These figures were written by hand in a briefing document and were
+ * already wrong by the time the three dimensions replaced the five
+ * pillars -- the old falls were 31, 30, 29 points; the real ones under
+ * this method are two to three times larger, because a percentile rank
+ * moves differently from a 0-100 score. Generating them from the same
+ * reference set the engine uses means the page cannot disagree with the
+ * arithmetic behind it.
+ */
+const CRISIS = FALLBACK_MARKETS.map((m) => {
+  const at = (y: number) => REFERENCE_SET.find((r) => r.m === m.code && r.y === y);
+  const score = (row: (typeof REFERENCE_SET)[number] | undefined) =>
+    row ? percentileOf(compositeZ(standardiseDimensions(rawDimensions(row)))) : null;
+  const before = score(at(2007));
+  const trough = score(at(2009));
+  return { name: m.name, before, trough, fall: before != null && trough != null ? trough - before : null };
+})
+  .filter((r) => r.fall != null)
+  .sort((a, b) => (a.fall as number) - (b.fall as number));
+
+/**
+ * THE QUESTIONS A SCEPTICAL READER ARRIVES WITH.
+ *
+ * Answers drawn from the project's own briefing notes, which existed only
+ * as a private document. The two that matter most are the ones where the
+ * honest answer is partly no -- whether this is just public data in one
+ * place, and whether it predicts markets. Publishing those is worth more
+ * than any claim the site could make about itself.
+ */
+const FAQ: Array<{ q: string; a: React.ReactNode }> = [
+  {
+    q: "Isn't this just public data collected in one place?",
+    a: (
+      <>
+        <p>
+          The data is public and there is no point pretending otherwise. But putting it in one place is the one
+          thing you must <b>not</b> do, because these numbers do not mean the same thing.
+        </p>
+        <p>
+          Every country headlines a different growth figure. The United States and Canada take a quarterly number
+          and multiply it up as if the year continued at that pace. The United Kingdom&apos;s headline compares
+          against the previous three months, not the same period last year. Australia&apos;s is not adjusted for
+          inflation at all. Collect those four, display them side by side, and you have built a comparison that
+          looks entirely reasonable and is wrong.
+        </p>
+        <p>
+          MMAI rejects all four headlines and rebuilds each one on the same basis. Central banks also aim at
+          different targets — five at 2%, Australia at 2.5% — so inflation is scored against each bank&apos;s own
+          objective rather than one number applied to everybody. <b>Collection is the raw material, not the
+          product.</b> The judgment that makes {FALLBACK_MARKETS.length} countries genuinely comparable is the work.
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "Does it predict the market?",
+    a: (
+      <>
+        <p>
+          <b>No.</b> It has never been tested against market returns, and no claim is made that it forecasts them.
+          Anyone who tells you otherwise is overselling it.
+        </p>
+        <p>
+          MMAI measures the economic environment, not asset prices. Those are related but they are not the same
+          thing, and they routinely move in opposite directions — markets often rise while conditions are still
+          deteriorating. Whether the score leads or lags market returns is a legitimate research question. It has
+          not been done, so it cannot be claimed.
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "What is it actually worth to someone who is not an economist?",
+    a: (
+      <>
+        <p>
+          It tells you what kind of environment you are making decisions in, before you make them. Most people
+          already feel the economy — rent is up, the job market feels tight or loose, a mortgage costs more than it
+          did. What is hard to tell is whether that is <em>your</em> situation or <em>the</em> situation, and
+          whether it is getting better or worse.
+        </p>
+        <p>
+          It can answer: is borrowing unusually expensive right now, or does it just feel that way? Is my
+          country&apos;s job market genuinely stronger than its neighbours&apos;? Are conditions improving over the
+          last few years? It cannot answer: should I buy a house, what will rates do next, where should I put my
+          savings, is my job safe. It is <b>context, not a signal</b>.
+        </p>
+      </>
+    ),
+  },
+  {
+    q: "Has it been tested?",
+    a: (
+      <>
+        <p>
+          Run across the {REF_N} market-years behind every score, the index falls hard through the 2008 crisis for
+          every country that had a recession — and not for the one that did not. Ranks, so the change is in
+          percentile points:
+        </p>
+        <div className="scroll-x" style={{ margin: "12px 0" }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Market</th>
+                <th scope="col" style={{ textAlign: "right" }}>2007</th>
+                <th scope="col" style={{ textAlign: "right" }}>2009</th>
+                <th scope="col" style={{ textAlign: "right" }}>Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CRISIS.map((r) => (
+                <tr key={r.name}>
+                  <td>{r.name}</td>
+                  <td style={{ textAlign: "right", fontFamily: "IBM Plex Mono, monospace" }}>{r.before!.toFixed(0)}</td>
+                  <td style={{ textAlign: "right", fontFamily: "IBM Plex Mono, monospace" }}>{r.trough!.toFixed(0)}</td>
+                  <td style={{ textAlign: "right", fontFamily: "IBM Plex Mono, monospace", color: "var(--ink)" }}>
+                    {r.fall!.toFixed(0)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <b>Australia is the important row.</b> An index that simply reacted to global bad news would have dropped
+          Australia with everyone else. It stayed high, because Australia&apos;s own conditions held — it did not
+          have a recession. That is evidence the index reads each country rather than following the headlines.
+        </p>
+        <p>
+          <b>And the limit of that test, before you ask.</b> 2007, 2008 and 2009 sit <em>inside</em> the {REF_N}-row
+          reference window the score is ranked against. So this is a consistency check — the index reproduces the
+          crisis and separates the country that avoided it — not an out-of-sample forecast test. A genuine
+          out-of-sample test has not been run.
+        </p>
+      </>
+    ),
   },
 ];
 
@@ -596,6 +738,35 @@ export default function LearnPage() {
                 <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
               </div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* THE QUESTIONS PEOPLE ACTUALLY ARRIVE WITH.
+          These answers existed only in a private briefing document. Two of
+          them are ones where the honest answer is partly no, and those are
+          the two most worth publishing -- a reader who finds "does it
+          predict markets? No" on the page itself has been told something
+          the site gains nothing by admitting, which is the only reason to
+          believe the rest of it. */}
+      <div className="section">
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 16 }}>
+            <p className="eyebrow">COMMON QUESTIONS</p>
+            <h2>Common questions</h2>
+            <p>
+              What the score is for, what it can tell you, and how it holds up against a year everybody
+              remembers.
+            </p>
+          </div>
+
+          {FAQ.map((item) => (
+            <details key={item.q} className="learn-calls faq-item">
+              <summary>
+                <span className="learn-calls-title">{item.q}</span>
+              </summary>
+              <div className="faq-answer">{item.a}</div>
+            </details>
           ))}
         </div>
       </div>

@@ -7,12 +7,12 @@ import { DIMENSION_NAMES, DIMENSION_QUESTIONS, type DimensionKey } from "@/lib/c
 export const metadata: Metadata = {
   title: "About",
   description:
-    "What MMAI is, what it deliberately does not claim, how it is built, and how to check it yourself — plus how to get in touch.",
+    "Everyone watches the market. Almost nobody watches the conditions underneath it. MMAI reads the macro picture — prices, jobs, growth, debt and the cost of money — as one comparable score per country.",
 };
 
-// Counted, never typed. The same discipline as everywhere else on the
-// site: a number written into prose by hand is the first thing to go
-// stale, and this page's whole argument is that its numbers are checkable.
+// Counted, never typed. A number written into prose by hand is the first
+// thing to go stale, and this page's whole argument is that its numbers
+// hold up.
 const REF_N = REFERENCE_SET.length;
 const YEARS = REFERENCE_SET.map((r) => r.y);
 const SPAN = `${Math.min(...YEARS)}–${Math.max(...YEARS)}`;
@@ -21,21 +21,36 @@ const MARKETS = new Set(REFERENCE_SET.map((r) => r.m)).size;
 const ORDER: DimensionKey[] = ["C", "D", "K"];
 const TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
 
-/** What the index does and does not claim, side by side. The pairing is
- *  the point: an index that only lists its strengths is marketing. */
-const IS = [
-  "A measurement of macroeconomic conditions, made comparable across countries",
-  "A translation layer between official statistics and ordinary language",
-  "Fully auditable — every formula, source and change is published",
-  `Deliberately narrow: five indicators, three dimensions, ${MARKETS} economies, done properly`,
-];
-
-const IS_NOT = [
-  "A forecast of anything",
-  "A market or trading signal",
-  "Investment advice",
-  "Proprietary or exclusive data — every input is public",
-  "A replacement for an economist",
+/**
+ * WHAT A READER CAN ACTUALLY DO WITH IT.
+ *
+ * This page opened with "an index built to be checked, not trusted" and
+ * led its sections with "what it is not" and "everything needed to
+ * disagree with it". Every one of those sentences was true, and together
+ * they made a page that argued with itself -- a reader met four
+ * disclaimers before being given one reason to care, and the headline
+ * literally instructed them not to trust the thing.
+ *
+ * The honesty stays. It moves further down and into proportion, because
+ * it is a REASON to trust the index, not the pitch itself.
+ */
+const USES = [
+  {
+    q: "Is borrowing unusually expensive right now, or does it just feel that way?",
+    a: "The policy rate set against its own history, not against your memory of it.",
+  },
+  {
+    q: "Is my country's job market genuinely stronger than its neighbours'?",
+    a: "Six economies on one scale, rebuilt so the comparison actually holds.",
+  },
+  {
+    q: "Are conditions improving, or getting worse?",
+    a: "A rank against 26 years, so you can see where today sits in the record.",
+  },
+  {
+    q: "Is inflation easing against the target my central bank actually uses?",
+    a: "Each bank's own objective — five aim at 2%, Australia at 2.5%.",
+  },
 ];
 
 export default function AboutPage() {
@@ -44,13 +59,14 @@ export default function AboutPage() {
       <div className="hero">
         <div className="wrap">
           <p className="eyebrow">ABOUT</p>
-          <h1 className="headline" style={{ maxWidth: "22ch" }}>
-            An index built to be <span className="hl-cyan">checked</span>, not trusted
+          <h1 className="headline" style={{ maxWidth: "24ch" }}>
+            Everyone watches the market. Almost nobody watches{" "}
+            <span className="hl-cyan">what it is standing on</span>.
           </h1>
-          <p className="sub" style={{ maxWidth: "64ch" }}>
-            Most published indices hand you a number and ask you to trust the brand. MMAI takes the opposite bet:
-            every formula is published, every figure names its source, and any reader can reproduce a score by
-            hand. One already has, working only from the published files and without being told the answer.
+          <p className="sub" style={{ maxWidth: "66ch" }}>
+            Prices, jobs, growth, government debt and the cost of money decide the ground everything else is priced
+            on. They are published constantly, by governments, for free — and in a form almost nobody can actually
+            compare. MMAI reads them and turns them into one score per country, updated daily.
           </p>
         </div>
       </div>
@@ -58,12 +74,12 @@ export default function AboutPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">WHAT IT MEASURES</p>
-            <h2>Five official figures, three questions, one rank</h2>
+            <p className="eyebrow">THE VIEW</p>
+            <h2>Three questions, asked of every economy the same way</h2>
             <p>
-              Governments publish the data. MMAI makes it comparable — which is most of the work, and the part
-              almost everyone gets wrong — then ranks today against {REF_N} market-years of the same {MARKETS}
-              economies, {SPAN}. A score of 85 means better than 85% of that record. It is not a mark out of 100.
+              A market chart tells you what price something reached. It does not tell you whether the economy
+              underneath was helping or fighting it. These are the three things MMAI asks instead — identically of{" "}
+              {MARKETS} economies, which is harder than it sounds and is most of the work.
             </p>
           </div>
 
@@ -82,9 +98,8 @@ export default function AboutPage() {
           </div>
 
           <p style={{ fontSize: "var(--t-small)", color: "var(--slate)", lineHeight: 1.7, marginTop: 16, maxWidth: "72ch" }}>
-            The three are weighted equally — a stated convention, not a measured truth, and one of several judgment
-            calls set out in full on the{" "}
-            <Link href="/learn#topic-mmai" style={{ color: "var(--accent-2)" }}>Learn page</Link>.
+            The answers are ranked against {REF_N} market-years of those same economies, {SPAN}. A score of 85 means
+            better than 85% of that record — a position in history, not a mark out of 100.
           </p>
         </div>
       </div>
@@ -92,27 +107,26 @@ export default function AboutPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">SCOPE</p>
-            <h2>What it is, and what it is not</h2>
+            <p className="eyebrow">WHAT IT IS FOR</p>
+            <h2>Questions it can answer today</h2>
             <p>
-              The second list matters more than the first. An index that names only its strengths is marketing, and
-              the fastest way to lose a reader is to claim something it cannot show.
+              Most people already feel the economy — rent is up, the job market feels tight or loose, a mortgage
+              costs more than it did. What is hard to tell is whether that is <em>your</em> situation or{" "}
+              <em>the</em> situation.
             </p>
           </div>
 
           <div className="signal-grid" style={{ marginTop: 18 }}>
-            <div className="mmai-card">
-              <div className="meta-label" style={{ color: "var(--status-live)" }}>What MMAI is</div>
-              <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: "var(--t-small)", color: "var(--ink-soft)", lineHeight: 1.75 }}>
-                {IS.map((t) => <li key={t}>{t}</li>)}
-              </ul>
-            </div>
-            <div className="mmai-card">
-              <div className="meta-label" style={{ color: "#F0975B" }}>What it is not</div>
-              <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: "var(--t-small)", color: "var(--ink-soft)", lineHeight: 1.75 }}>
-                {IS_NOT.map((t) => <li key={t}>{t}</li>)}
-              </ul>
-            </div>
+            {USES.map((u) => (
+              <div key={u.q} className="mmai-card">
+                <div style={{ fontSize: "var(--t-small)", fontWeight: 600, color: "var(--ink)", lineHeight: 1.5 }}>
+                  {u.q}
+                </div>
+                <p style={{ fontSize: "var(--t-caption)", color: "var(--slate)", margin: "7px 0 0", lineHeight: 1.6 }}>
+                  {u.a}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -120,43 +134,66 @@ export default function AboutPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">HOW TO CHECK IT</p>
-            <h2>Everything needed to disagree with it</h2>
+            <p className="eyebrow">HOW IT IS BUILT</p>
+            <h2>Public data, made genuinely comparable</h2>
+            <p>
+              The inputs are free and public. Making them mean the same thing across six countries is the part that
+              takes the work — and the part almost everyone gets wrong.
+            </p>
           </div>
 
           <div className="signal-grid" style={{ marginTop: 18 }}>
             <div className="mmai-card">
-              <div className="meta-label">The formulas</div>
+              <div className="meta-label">Rebuilt on one basis</div>
               <p style={{ fontSize: "var(--t-small)", color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
-                Published as equations, not described in prose, on the{" "}
-                <Link href="/learn" style={{ color: "var(--accent-2)" }}>Learn page</Link>. Automated tests assert
-                that what the site publishes still reproduces what the engine computes, so the page cannot drift
-                from the arithmetic without the build failing.
+                Every country headlines a different growth figure — some annualised from a single quarter, one
+                compared against the previous quarter, one not adjusted for inflation at all. MMAI rejects all of
+                them and rebuilds each on the same footing.
               </p>
             </div>
             <div className="mmai-card">
-              <div className="meta-label">The sources</div>
+              <div className="meta-label">Named sources</div>
               <p style={{ fontSize: "var(--t-small)", color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
-                Every input traces to a central bank or a national statistics agency, each with its licence terms
-                recorded and reviewed. Listed on the{" "}
-                <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources page</Link> with the date each
-                figure refers to, so you can see exactly how fresh it is.
+                Every figure traces to a central bank or a national statistics agency, with its licence terms
+                recorded and its own observation date shown, so you can see how fresh it is. Listed on the{" "}
+                <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources page</Link>.
               </p>
             </div>
             <div className="mmai-card">
-              <div className="meta-label">The changes</div>
+              <div className="meta-label">Published arithmetic</div>
               <p style={{ fontSize: "var(--t-small)", color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
-                Every method change is logged with the old rule, the new rule, the reason, the evidence, the effect
-                on every score, and how to roll it back. Including the ones that were embarrassing.
+                The formulas sit on the{" "}
+                <Link href="/learn" style={{ color: "var(--accent-2)" }}>Learn page</Link> as equations. Someone
+                working only from the published files has reproduced a score independently — to nine decimal
+                places, without being told the answer.
               </p>
             </div>
             <div className="mmai-card">
-              <div className="meta-label">The judgment calls</div>
+              <div className="meta-label">Nothing quiet when it changes</div>
               <p style={{ fontSize: "var(--t-small)", color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
-                Every index of this kind rests on choices no experiment settles — what inflation is worth against
-                unemployment, above all. MMAI states its five, and measures what they actually do to the ranking.
+                Every method change is logged with the old rule, the new rule, the reason, the evidence and the
+                effect on every score — including the changes that were embarrassing.
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="wrap" style={{ maxWidth: 760 }}>
+          {/* Kept, and kept SMALL. A reader deserves to know the edges, and
+              an index that oversells itself loses the argument the first
+              time somebody checks. But this is a footnote to the offer --
+              which is not how the page was reading before. */}
+          <div className="mmai-card">
+            <div className="meta-label">Where the line is</div>
+            <p style={{ fontSize: "var(--t-small)", color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.75 }}>
+              MMAI measures the economic environment. It is <b>not a forecast</b>, not a trading signal and not
+              investment advice — it has never been tested against market returns and makes no claim about them.
+              It is context for a decision, not the decision. The judgment calls behind the method, and what each
+              one does to the ranking, are set out in full on the{" "}
+              <Link href="/learn#topic-mmai" style={{ color: "var(--accent-2)" }}>Learn page</Link>.
+            </p>
           </div>
         </div>
       </div>
@@ -167,9 +204,8 @@ export default function AboutPage() {
             <p className="eyebrow">GET IN TOUCH</p>
             <h2>Every message is read personally</h2>
             <p>
-              Requests, partnership enquiries, a correction, or a thought worth sharing. If you think something
-              here is wrong, that is the most useful message you can send — the whole point of publishing the
-              working is that someone can check it.
+              Requests, partnership enquiries, or a thought worth sharing. If you think something here is wrong,
+              that is the most useful message you can send.
             </p>
           </div>
           <ContactForm />
