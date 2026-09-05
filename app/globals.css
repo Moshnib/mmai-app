@@ -883,9 +883,37 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 
 /* A contents line. The per-card anchors already existed; nothing
    linked to them, so arriving from a search result meant scrolling. */
+/* The contents line is grouped by dimension, because it says it is.
+   It used to be one wrapping row of every topic in source order, so the
+   coloured dots ran red, orange, red, cyan, cyan, grey, purple -- the two
+   Conditions indicators split apart by GDP growth, under a sentence
+   promising they were grouped. The dots made the contradiction visible
+   before anyone read a word. */
 .learn-index {
-  display: flex; flex-wrap: wrap; gap: 8px;
+  display: flex; flex-direction: column; gap: 12px;
   margin: 0 0 22px;
+}
+.learn-index-group {
+  display: grid;
+  grid-template-columns: minmax(min(96px, 30%), 116px) minmax(0, 1fr);
+  gap: 10px 14px; align-items: baseline;
+}
+.learn-index-group-name {
+  font-size: var(--t-micro); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+/* The two topics that are not among the scored indicators. Grey label,
+   and a rule above it, so the separation is structural rather than a
+   thing a reader has to infer from the wording. */
+.learn-index-group--aside { border-top: 1px solid var(--hair); padding-top: 12px; }
+.learn-index-group--aside .learn-index-group-name { color: var(--slate); }
+.learn-index-chips { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+
+/* On a phone the label sits above its chips rather than beside them --
+   a 96px label column beside wrapping chips leaves the chips too little
+   room, and each group is short enough that a stacked label reads fine. */
+@media (max-width: 640px) {
+  .learn-index-group { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 }
 .learn-index-link {
   display: inline-flex; align-items: center; gap: 8px;

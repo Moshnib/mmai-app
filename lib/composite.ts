@@ -57,6 +57,33 @@ const B_UNEMPLOYMENT = 0.0146;
 
 export const W_INFLATION = B_INFLATION / (B_INFLATION + B_UNEMPLOYMENT);
 export const W_UNEMPLOYMENT = B_UNEMPLOYMENT / (B_INFLATION + B_UNEMPLOYMENT);
+
+/** THE CONDITIONS SPLIT AS AN EXACT FRACTION, for publication.
+ *
+ *  The weights above are an exact ratio of two published coefficients, but
+ *  the Learn page printed them as percentages rounded to one decimal --
+ *  38.1% and 61.9% -- beside a promise that a reader can reproduce "the
+ *  exact score ... no hidden adjustments".
+ *
+ *  Those are not compatible. Rounding at one decimal shifts the composite
+ *  by about 2.1e-4, and the tightest gap between two rungs of the 148-rung
+ *  ladder is 1.3e-5 -- fifteen times smaller. Every market happens to land
+ *  on the right rung today, so nothing published is wrong; but it is luck
+ *  rather than arithmetic, and it would break silently as the data moves.
+ *
+ *  Publishing the fraction removes the rounding instead of chasing it with
+ *  more decimals. scripts/verify-published-formulas.ts holds the line. */
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+
+export const COND_WEIGHT_FRACTION: { inflation: string; unemployment: string } = (() => {
+  // The coefficients are given to four decimals, so ten-thousandths make
+  // them integers exactly, with no floating-point residue to round away.
+  const i = Math.round(B_INFLATION * 1e4);
+  const u = Math.round(B_UNEMPLOYMENT * 1e4);
+  const total = i + u;
+  const g = gcd(gcd(i, u), total);
+  return { inflation: `${i / g}/${total / g}`, unemployment: `${u / g}/${total / g}` };
+})();
 export const W_DEBT = 0.5;
 export const W_RATE = 0.5;
 export const W_DIMENSION = 1 / 3;
