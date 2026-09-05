@@ -137,7 +137,12 @@ export default function TimeSliderScatter({
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+      {/* Wraps rather than overflowing. The play button, the track and
+          the year need about 130px of fixed width between them, so on a
+          very narrow phone the year was pushed past the card edge.
+          Letting it drop to a second line costs one row of height and
+          keeps every control reachable. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18, flexWrap: "wrap" }}>
         <button
           onClick={togglePlay}
           aria-label={playing ? "Pause" : "Play"}
@@ -167,7 +172,13 @@ export default function TimeSliderScatter({
             aria-valuetext={currentYear}
             style={{ width: "100%", accentColor: "var(--accent)", cursor: "pointer" }}
           />
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>
+          {/* One tick per year. Eight of them do not fit on a very narrow
+              phone, and space-between cannot shrink text, so they spilled
+              out of the card. Below 640 only the first and last survive --
+              the year being scrubbed to is already displayed large beside
+              the slider, so the ticks in between are orientation rather
+              than information. */}
+          <div className="scrub-years">
             {years.map((y, i) => (
               <span key={y} style={i === safeYearIndex ? { color: "var(--accent)", fontWeight: 700 } : undefined}>{y}</span>
             ))}

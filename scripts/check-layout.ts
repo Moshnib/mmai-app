@@ -53,6 +53,12 @@ const PAGES = [
  *  breakpoints the stylesheet happens to declare -- testing a layout at
  *  its own breakpoints is how you miss everything between them. */
 const VIEWPORTS = [
+  // 320 is narrower than any phone still in use -- an iPhone SE is 375 --
+  // and it is here as a floor rather than a target. Everything that broke
+  // at 320 was text with nowhere to wrap, and each fix made the layout
+  // better at every width, not just this one. Keeping it means the site
+  // degrades rather than tears.
+  { name: "w320", width: 320, height: 800 },
   { name: "phone", width: 375, height: 812 },
   // Either side of the 640 breakpoint, and either side of 900. Testing a
   // layout only at its own breakpoints is how you miss everything
