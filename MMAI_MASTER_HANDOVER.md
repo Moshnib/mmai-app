@@ -576,7 +576,22 @@ Built: `lib/fetchers/bis.ts` → `fetchBisPolicyRate("SA" | "KW")`. Saudi = SAMA
 
 **Copy that had to change in the same commit** (it asserted the opposite of what the page now shows): `GulfCard`'s footer said *"No composite score — policy rate data isn't available for this country"* — now conditional, since that sentence would otherwise sit directly beneath a displayed policy rate on the Saudi and Kuwait cards. `app/sources/page.tsx` said no policy-rate source existed *for any of these six*. Gulf Watch still scores nobody; for those two that is now a deliberate design choice rather than a missing input.
 
-**Deliberately out of scope:** composite scoring for Gulf countries (with a policy rate, Saudi and Kuwait would in principle have all 5 pillars available — a much larger decision), Qatar/Oman rates from IMF, and the IMF inflation upgrade.
+**Deliberately out of scope:** composite scoring for Gulf countries (with a policy rate, Saudi and Kuwait would in principle have all 5 pillars available — a much larger decision), Qatar rates from IMF, and the IMF inflation upgrade.
+
+**Oman's policy rate is not "unwired", it is absent.** Checked against IMF `MFS_IR` on 6 September 2026, because two places in the codebase claimed Qatar's and Oman's rates were both available and merely unwired. Only half of that was true:
+
+| | series | latest | value |
+|---|---|---|---|
+| Qatar | `MFS166` Monetary policy-related, Rate | **2026-M07** | 4.35% |
+| Oman | no `MFS166` at all | — | — |
+| Oman | best rate series (`MFS135`/`MFS162`/`MMRT`) | 2022-M04 | stale |
+| Oman | discount rate (`DISR`) | 2018-M10 | stale |
+
+So no amount of wiring produces an Oman policy rate, and publishing a four-year-old figure beside Saudi's from last week would be worse than the gap. Qatar is genuinely current and blocked only on the IMF permission email below.
+
+Useful cross-check found while doing this: IMF's Kuwait discount rate reads **3.5**, matching the BIS figure already on the site exactly — two independent sources agreeing on a number MMAI publishes.
+
+**IMF's terms pages cannot be read by machine at all** — `imf.org/en/About/copyright-and-terms` returns 403 to curl with a browser user-agent, and the in-app browser gets "Access Denied". The licence therefore cannot be re-verified from here; the `copyright@imf.org` note above stands as the record of it, and a human has to close that loop.
 
 ---
 *End of handover document.*
@@ -635,6 +650,18 @@ Vercel Hobby crons are **best-effort** — they may be delayed hours or skipped 
 - **Neutral rates per market.** The 2.5% applied to both Japan and the US is the least defensible number in V1.
 - Nine unsourced coefficients, and the band thresholds (charter §15 requires they be researched).
 - **Buy a domain** — unblocks IMF permission (UAE/Kuwait/Oman inflation are still on year-old figures), Gulf debt, and Resend email.
+
+### Gulf carry-forward (6 September 2026)
+
+Bahrain's inflation was disappearing from Gulf Watch on roughly four days in ten. Not missing data — `data.gov.bh` publishes monthly and its July 2026 reading of 3.0% was the *freshest inflation figure of the six countries*. The endpoint is intermittent, the refresh had no memory, and a failed fetch wrote null over the previous good value.
+
+`lib/gulfCarryForward.ts` now fills a null indicator from the most recent stored row that has it, within 14 days. Three things about it are load-bearing and should not be "simplified":
+
+1. **The reporting date travels with the value.** Stamping a carried number with today's date would invent a period that never existed — the exact defect the per-indicator date columns were added to fix.
+2. **It scans per field, not per row.** The first version took only the newest row and did nothing whenever a source failed on consecutive days, which is the normal failure mode. Fields may therefore come from different days; that is intended, and harmless, because every figure already carries its own date.
+3. **The 14-day bound measures the row actually used**, not the newest row in the window. Gulf refreshes daily, so measuring against the newest row would never expire anything.
+
+`lib/retryFetch.ts` retries a source three times first. `scripts/test-gulf-carry-forward.ts` covers all of it and runs in CI; both failure modes above were verified to fail it before being fixed.
 
 ### 15.7 Rules this period added
 - **Verify, do not recall.** Two reasonable assumptions were wrong in the same session: that CPI runs above PCE (it did not), and that 2.5% for Australia was MMAI's design choice (it is the RBA's). Both were caught only by reading the source.
