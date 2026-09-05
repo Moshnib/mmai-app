@@ -1055,3 +1055,26 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 }
 .faq-answer p:last-child { margin-bottom: 0; }
 .faq-answer b { color: var(--ink); }
+
+/* ============================================================
+   THE CONTACT FORM'S PAIRED FIELDS
+
+   These were inline `gridTemplateColumns: "1fr 1fr"`, which cannot
+   carry a media query, so the two columns never collapsed on a
+   phone. Worse, a grid column defaults to min-width:auto and so
+   refuses to shrink below its content -- the email field's label,
+   "(optional — leave it if you want a reply)", forced its column
+   wider than its share and pushed the field 118px past the edge of
+   the card on a 375px screen, taking the page's horizontal scroll
+   with it.
+
+   auto-fit collapses to one column when two no longer fit, and
+   min-width:0 lets a long label wrap instead of shoving.
+   ============================================================ */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.form-row > * { min-width: 0; }

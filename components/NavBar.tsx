@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/learn", label: "Learn More" },
   { href: "/sources", label: "Sources" },
   { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export default function NavBar() {

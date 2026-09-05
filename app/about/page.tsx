@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ContactForm from "@/components/ContactForm";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 import { DIMENSION_NAMES, DIMENSION_QUESTIONS, type DimensionKey } from "@/lib/composite";
 
@@ -208,7 +207,9 @@ export default function AboutPage() {
               that is the most useful message you can send.
             </p>
           </div>
-          <ContactForm />
+          <Link className="tap" href="/contact" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999, background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+            Send a message →
+          </Link>
         </div>
       </div>
     </>

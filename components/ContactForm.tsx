@@ -64,7 +64,7 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} style={{ background: "var(--glass)", border: "1px solid var(--hair)", borderRadius: 18, padding: "28px 32px", backdropFilter: "blur(14px)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="form-row">
         <label style={fieldLabelStyle}>
           Who are you?
           <select required value={senderType} onChange={(e) => setSenderType(e.target.value)} style={selectStyle}>
@@ -82,7 +82,7 @@ export default function ContactForm() {
         </label>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="form-row">
         <label style={fieldLabelStyle}>
           Name <span style={{ color: "var(--slate)", fontWeight: 400 }}>(optional)</span>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />

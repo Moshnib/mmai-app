@@ -149,7 +149,13 @@ export default function TimeSliderScatter({
         >
           {playing ? "❙❙" : "▶"}
         </button>
-        <div style={{ flex: 1 }}>
+        {/* minWidth 0: a flex item keeps min-width:auto, and a range
+            input has an intrinsic minimum width the browser will not go
+            below. Without this the track refused to shrink on a phone and
+            pushed the year label 3px past the viewport, which is small
+            enough to look like nothing and still gives the whole page a
+            horizontal scrollbar. */}
+        <div style={{ flex: 1, minWidth: 0 }}>
           <input
             type="range"
             min={0}
