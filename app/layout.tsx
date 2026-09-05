@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
 import SiteFooter from "@/components/SiteFooter";
+import { SITE_URL } from "@/lib/siteUrl";
 
-const SITE_URL = "https://mmai-app.vercel.app";
 const DESCRIPTION =
   "A transparent macro-market intelligence index — every formula published, every source licensed, no black box.";
 
 export const metadata: Metadata = {
   // Required before any URL-based metadata (like the OG image below) will
-  // resolve to an absolute address. Update this if the site moves to a
-  // custom domain.
+  // resolve to an absolute address. Driven by NEXT_PUBLIC_SITE_URL so a
+  // domain move cannot silently leave the canonical URL on the old host --
+  // which would tell search engines the new site is a duplicate of it.
   metadataBase: new URL(SITE_URL),
   title: {
     // The charter (§17) records "Measuring the Pulse of the Economy" as a

@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { SITE_URL, ALERT_FROM } from "@/lib/siteUrl";
 
 // Lazily constructed so this file can be imported even when RESEND_API_KEY
 // isn't set yet (e.g. during local dev before that key is added) — the
@@ -27,7 +28,7 @@ function emailHtml(crossing: BandCrossing, unsubscribeUrl: string): string {
     <p style="font-size:15px;color:#C7C9D9;line-height:1.6;">
       The MMAI composite score for ${crossing.marketName} is now <b style="color:#fff;">${crossing.score.toFixed(1)}</b>.
     </p>
-    <a href="https://mmai-app.vercel.app/trends?market=${crossing.marketCode}"
+    <a href="${SITE_URL}/trends?market=${crossing.marketCode}"
        style="display:inline-block;margin-top:16px;padding:10px 20px;background:#8B5CF6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
       View the chart →
     </a>
@@ -40,9 +41,12 @@ function emailHtml(crossing: BandCrossing, unsubscribeUrl: string): string {
 
 export async function sendBandCrossingEmail(to: string, crossing: BandCrossing, unsubscribeToken: string) {
   const resend = getResendClient();
-  const unsubscribeUrl = `https://mmai-app.vercel.app/api/unsubscribe?token=${unsubscribeToken}`;
+  const unsubscribeUrl = `${SITE_URL}/api/unsubscribe?token=${unsubscribeToken}`;
   return resend.emails.send({
-    from: "MMAI Alerts <alerts@mmai-app.vercel.app>", // update once a custom domain is verified in Resend
+    // Follows the site domain, but the SENDING domain still has to be
+    // verified with Resend separately -- pointing the site at a new domain
+    // does not by itself make email work from it.
+    from: ALERT_FROM,
     to,
     subject: `${crossing.marketName}: ${crossing.oldBand} → ${crossing.newBand}`,
     html: emailHtml(crossing, unsubscribeUrl),
