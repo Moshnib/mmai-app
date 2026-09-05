@@ -43,24 +43,26 @@ Japan is the case that forced it. Live values on this date:
 50.7 is the average of the widest disagreement in the record. Published alone it
 tells a reader nothing true about Japan. The composite has always been sensitive
 to the equal-thirds convention, and §14 of the Charter treats a reader's ability
-to see the components and disagree with the convention as part of the method, not
-as presentation. A layout that makes the spread hard to assemble weakens that.
+to see the components and disagree with the convention as part of the method,
+not as presentation. A layout that makes the spread hard to assemble weakens
+that.
 
 ### Data used
 
-Live  for all six scored markets, 2026-09-05, run through
- and  unchanged.
+Live `raw_indicators` for all six scored markets, 2026-09-05, run through
+`computeMmai` and `dimensionPercentiles` unchanged.
 
 ### Test results
 
 - Rendered values checked against the engine in a browser for two markets:
-  Japan ; Australia . Exact match in both.
+  Japan `100 / +2.20`, `15 / −0.52`, `9 / −1.47`; Australia `80 / +0.82`,
+  `51 / +0.16`, `84 / +1.06`. Exact match in both.
 - Axis geometry measured rather than eyeballed: one centre line shared by all
   three rows, and offsets of 368 / −88 / −246 px against +2.20 / −0.52 / −1.47
   sd — a constant 167 px per standard deviation, confirming a genuinely shared
   scale.
-- : 54 page-widths pass, 320px to 1280px.
-- Full verification suite green, including , which still pins
+- `scripts/check-layout.ts`: 54 page-widths pass, 320px to 1280px.
+- Full verification suite green, including `verify-composite`, which still pins
   Australia 2026 at 85.135135135.
 - No console errors.
 
@@ -88,7 +90,7 @@ PR #20.
 
 ### Rollback
 
- of PR #20 restores  and its stylesheet block.
+`git revert` of PR #20 restores `DimensionCards.tsx` and its stylesheet block.
 Self-contained: one component, one CSS block, one import and two paragraphs of
 page copy. No data, schema or engine dependency.
 
