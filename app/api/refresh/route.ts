@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
-import { computePillarScores, computeComposite, bandFor, type RawIndicators, type PillarScores } from "@/lib/scoring";
-import { computeMmai } from "@/lib/composite";
+import { type RawIndicators } from "@/lib/scoring";
+import { computeMmai, percentileBandLabel, dimensionPercentiles, DIMENSION_CROSS_MARKET_SD, type DimensionKey } from "@/lib/composite";
 
 /** Which engine produces the `band` column that subscriber alerts compare.
- *  Still v1.0: the three-dimension score is written beside it but is not
- *  yet the published headline. Changing this to "v2.0" is the cutover, and
- *  the comparability guard below will correctly suppress the one-off wave
- *  of band changes that causes. */
-const ALERT_ENGINE = "v1.0";
+ *  The cutover happened on 5 September 2026: v2.0 is the only engine, the
+ *  five-pillar composite is retired, and this constant is kept solely so the
+ *  suppression log can name the engine it is talking about. */
+const ALERT_ENGINE = "v2.0";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
@@ -38,7 +37,10 @@ import { IS_VERCEL_DOMAIN, ALERT_FROM } from "@/lib/siteUrl";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourceForPillar, sourceNoteFor } from "@/lib/sources";
 import { stalenessOf, quarterToDate, describeStale } from "@/lib/freshness";
-import { RAW_FIELD, PILLAR_CROSS_MARKET_SD, type PillarKey } from "@/lib/scoring";
+// PillarKey and RAW_FIELD are the SOURCE taxonomy, not the retired scoring
+// engine: lib/sources.ts keys every source by pillar code, and that mapping
+// is still how a stale figure is traced back to the institution behind it.
+import { RAW_FIELD, type PillarKey } from "@/lib/scoring";
 
 const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
@@ -586,7 +588,9 @@ export async function GET(request: Request) {
 
   // Every market's live pillar scores, used after the loop to check the
   // statistics this project PUBLISHES about itself. See below.
-  const livePillars: PillarScores[] = [];
+  // Per-market dimension percentiles, collected to check the figures the
+  // Learn page publishes against what the live markets actually produce.
+  const liveDimPercentiles: Array<Record<DimensionKey, number>> = [];
 
   const debtResult = await settle("Government debt (BIS)", fetchGovernmentDebt());
   const debtByMarket = new Map((debtResult ?? []).map((d) => [d.market, d]));
@@ -605,21 +609,27 @@ export async function GET(request: Request) {
       const debt = debtByMarket.get(market) ?? null;
       raw.debtPctGdp = debt?.debtPctGdp ?? null;
 
-      const pillars = computePillarScores(raw, market);
-      livePillars.push(pillars);
-      const { composite, coverage } = computeComposite(pillars);
-      const band = bandFor(composite);
-
-      // ENGINE v2.0 runs alongside v1.0 during the migration. Both are
-      // written, so a page can move over one at a time and the two can be
-      // compared on the same row. v2 withholds rather than reweighting, so
-      // its percentile is null on a run where any indicator failed --
-      // which the mmai_scores check constraint also enforces.
+      // ENGINE v2.0 IS NOW THE ONLY ENGINE. The five-pillar composite that
+      // used to run alongside it is retired: it no longer computes, no
+      // longer writes its columns, and its code is gone from the tree.
+      //
+      // v2 withholds rather than reweighting, so percentile is null on a
+      // run where any indicator failed. That is a row with no score and no
+      // band, which is the intended behaviour and what the mmai_scores
+      // check constraint enforces -- not an error to paper over.
       const v2 = computeMmai(raw, market);
-      // Describes WHAT THE ROW HOLDS, not which engine is published. A run
-      // where an indicator failed carries no v2 score, because v2 withholds
-      // rather than reweighting.
-      const formulaVersion = v2.percentile != null ? "v1.0+v2.0" : "v1.0";
+      const composite = v2.percentile;
+      const coverage = v2.percentile != null ? 1 : 0;
+      const band = composite != null ? { label: percentileBandLabel(composite) } : null;
+
+      // Collected for the published-statistics drift check at the end of
+      // the run. Only scorable markets contribute: a market that withheld
+      // its score has no dimensions to spread.
+      if (v2.dimensions) liveDimPercentiles.push(dimensionPercentiles(v2.dimensions));
+
+      // One engine, one stamp. This is what makes the cutover safe -- see
+      // the comparability guard below.
+      const formulaVersion = "v2.0";
 
       const observationDate = new Date().toISOString().slice(0, 10);
 
@@ -627,7 +637,7 @@ export async function GET(request: Request) {
       // the only way to know whether the band actually changed.
       const { data: previousRows } = await supabase
         .from("mmai_scores")
-        .select("band, composite, observation_date, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_fr, formula_version")
+        .select("band, composite, observation_date, dim_conditions, dim_direction, dim_capacity, percentile, composite_z, formula_version")
         .eq("market", market)
         .order("observation_date", { ascending: false })
         .order("computed_at", { ascending: false })
@@ -650,10 +660,15 @@ export async function GET(request: Request) {
       // Same reasoning as isFullyPopulated() in lib/weeklyChanges.ts,
       // which exists to stop exactly this class of fake delta on the
       // homepage feed. The email path never got the equivalent guard.
+      // Now over the five SCORED INDICATORS rather than the five retired
+      // pillars. Largely belt-and-braces under v2, which withholds the
+      // score entirely when an indicator is missing -- so a row that has a
+      // band necessarily had all five. Kept anyway: it costs nothing and
+      // stays correct if the withholding rule is ever relaxed.
       const shapeOf = (vals: Array<number | null | undefined>) => vals.map((v) => (v == null ? "0" : "1")).join("");
-      const currentShape = shapeOf([pillars.PS, pillars.GM, pillars.LM, pillars.MC, pillars.FR]);
+      const currentShape = shapeOf([raw.inflation, raw.gdpGrowth, raw.unemployment, raw.policyRate, raw.debtPctGdp]);
       const previousShape = previousRow
-        ? shapeOf([previousRow.pillar_ps, previousRow.pillar_gm, previousRow.pillar_lm, previousRow.pillar_mc, previousRow.pillar_fr])
+        ? shapeOf([previousRow.dim_conditions, previousRow.dim_direction, previousRow.dim_capacity, previousRow.percentile, previousRow.composite_z])
         : null;
       // A BAND MOVE CAUSED BY CHANGING THE ENGINE IS NOT AN ECONOMIC MOVE.
       //
@@ -667,23 +682,29 @@ export async function GET(request: Request) {
       // The shape signature cannot catch it: pillar coverage is unchanged,
       // it is the formula that moved.
       //
-      // WHAT IS COMPARED IS THE ENGINE BEHIND THE BAND, not everything the
-      // row happens to hold. During the migration each row carries both
-      // scores while `band` still comes from v1.0, so a row stamped
-      // "v1.0+v2.0" and one stamped "v1.0" are perfectly comparable for
-      // alerting -- comparing the raw stamp would suppress real v1 alerts
-      // every time a source hiccup dropped the v2 score.
+      // THE STAMPS ARE NOW COMPARED EXACTLY, and that change is the whole
+      // reason the cutover is safe.
       //
-      // At cutover, `band` moves to percentileBandLabel() and ALERT_ENGINE
-      // becomes "v2.0". The guard then fires exactly once, for the right
-      // reason, and stops.
+      // The previous version normalised the stamp: any row whose
+      // formula_version CONTAINED the alert engine was treated as that
+      // engine. That was right during the migration, when the stamp
+      // flapped between "v1.0" and "v1.0+v2.0" depending on whether v2
+      // managed to compute, and the band came from v1 either way.
+      //
+      // It would have failed at the cutover itself. By this point every
+      // recent row is stamped "v1.0+v2.0", and once ALERT_ENGINE became
+      // "v2.0" the normaliser would read BOTH yesterday's row and today's
+      // as "v2.0" -- identical, therefore comparable -- and cheerfully
+      // email every subscriber about a band change that was the formula
+      // moving, not the economy. Six markets, every subscriber, at once:
+      // exactly the wave this guard exists to prevent.
+      //
+      // With one engine the stamp cannot flap, so exact comparison is both
+      // correct and simpler. Yesterday's "v1.0+v2.0" does not equal today's
+      // "v2.0", the wave is suppressed once, and alerting resumes the next
+      // day when both rows read "v2.0".
       const previousVersion = (previousRow?.formula_version as string | undefined) ?? null;
-      const engineBehindBand = (version: string | null) => {
-        if (version === null) return null;
-        return version.includes(ALERT_ENGINE) ? ALERT_ENGINE : version;
-      };
-      const sameEngine =
-        previousVersion === null || engineBehindBand(previousVersion) === engineBehindBand(formulaVersion);
+      const sameEngine = previousVersion === null || previousVersion === formulaVersion;
       const comparableToPrevious = previousShape !== null && previousShape === currentShape && sameEngine;
 
       // SOURCE_NOTES describes what a fully-successful run looks like --
@@ -797,20 +818,14 @@ export async function GET(request: Request) {
         supabase.from("mmai_scores").insert({
           market,
           observation_date: observationDate,
-          pillar_ps: pillars.PS,
-          pillar_gm: pillars.GM,
-          pillar_lm: pillars.LM,
-          pillar_mc: pillars.MC,
-          // pillar_ec is deliberately left unwritten. Rows before
-          // 2026-09-01 hold real External & Commodities scores and those
-          // stay as they are; writing a Fiscal Resilience value into a
-          // column named for a different pillar would corrupt the record
-          // the export button hands to readers.
-          pillar_fr: pillars.FR,
+          // The pillar_* columns are no longer written. Rows from before
+          // 5 September 2026 keep the five-pillar scores they were built
+          // with -- that is the historical record and the export button
+          // still hands it to readers -- but nothing new is added to a
+          // scheme the site no longer runs.
           composite,
           coverage,
-          band: band.label,
-          // Engine v2.0, written beside v1.0 rather than instead of it.
+          band: band?.label ?? null,
           dim_conditions: v2.dimensions?.C ?? null,
           dim_direction: v2.dimensions?.D ?? null,
           dim_capacity: v2.dimensions?.K ?? null,
@@ -828,7 +843,7 @@ export async function GET(request: Request) {
       // Band actually changed (and there WAS a previous band to compare
       // against, i.e. this isn't the market's very first-ever row) --
       // notify every subscriber watching this market.
-      if (previousBand && previousBand !== band.label && composite !== null && !comparableToPrevious) {
+      if (band && previousBand && previousBand !== band.label && composite !== null && !comparableToPrevious) {
         // Deliberately silent to subscribers, loud in the logs: the band
         // moved, but the two readings were built from different pillars,
         // so there is nothing honest to tell anyone.
@@ -841,7 +856,7 @@ export async function GET(request: Request) {
         );
       }
 
-      if (previousBand && previousBand !== band.label && composite !== null && comparableToPrevious) {
+      if (band && previousBand && previousBand !== band.label && composite !== null && comparableToPrevious) {
         const { data: subscribers } = await supabase
           .from("subscribers")
           .select("email, unsubscribe_token, markets");
@@ -973,16 +988,20 @@ export async function GET(request: Request) {
   // point at which the published ordering starts to change, which is
   // when a reader would be told something untrue.
   const publishedDrift: string[] = [];
-  if (livePillars.length >= 4) {
-    for (const key of Object.keys(PILLAR_CROSS_MARKET_SD) as PillarKey[]) {
-      const vals = livePillars.map((p) => p[key]).filter((v): v is number => v != null);
+  // REPOINTED AT THE DIMENSIONS. This compared live PILLAR spreads against
+  // the pillar figures the Learn page used to publish. The Learn page now
+  // publishes DIMENSION_CROSS_MARKET_SD, so the old check was guarding a
+  // statistic no reader can see -- dead code that looked alive.
+  if (liveDimPercentiles.length >= 4) {
+    for (const key of Object.keys(DIMENSION_CROSS_MARKET_SD) as DimensionKey[]) {
+      const vals = liveDimPercentiles.map((p) => p[key]).filter((v): v is number => v != null);
       if (vals.length < 4) continue;
       const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
       const liveSd = Math.sqrt(vals.reduce((acc, v) => acc + (v - mean) ** 2, 0) / vals.length);
-      const gap = Math.abs(liveSd - PILLAR_CROSS_MARKET_SD[key]);
+      const gap = Math.abs(liveSd - DIMENSION_CROSS_MARKET_SD[key]);
       if (gap > 1.0) {
         publishedDrift.push(
-          `${key}: Learn page publishes ${PILLAR_CROSS_MARKET_SD[key].toFixed(1)}, live is ${liveSd.toFixed(1)}`
+          `${key}: Learn page publishes ${DIMENSION_CROSS_MARKET_SD[key].toFixed(1)}, live is ${liveSd.toFixed(1)}`
         );
       }
     }

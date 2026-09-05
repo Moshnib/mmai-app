@@ -1,4 +1,4 @@
-import { computePillarScores, computeComposite, type RawIndicators, type PillarScores } from "./scoring";
+import { type RawIndicators } from "./scoring";
 import { computeMmai, dimensionPercentiles, type MmaiResult, type DimensionKey } from "./composite";
 
 export interface MarketData {
@@ -65,11 +65,8 @@ export const FALLBACK_MARKETS: MarketData[] = [
   { code: "AU", name: "Australia", raw: { inflation: 3.45, gdpGrowth: 2.14, unemployment: 4.46, policyRate: 4.35, brentYoY: 17.91, debtPctGdp: 50.7 } },
 ];
 
-export function scoreMarket(market: MarketData): { pillars: PillarScores; composite: number | null; coverage: number; coveragePillars: number } {
-  const pillars = computePillarScores(market.raw, market.code);
-  const { composite, coverage, coveragePillars } = computeComposite(pillars);
-  return { pillars, composite, coverage, coveragePillars };
-}
+// scoreMarket() -- the five-pillar scorer -- was removed at the cutover on
+// 5 September 2026. scoreMarketV2 below is the only scorer.
 
 /** ENGINE v2.0 — the three-dimension composite.
  *
