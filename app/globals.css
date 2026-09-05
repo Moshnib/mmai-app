@@ -705,37 +705,103 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
   border: 0;
 }
 
-/* ---- Dimension cards ----
-   Replaces the ring grid AND the diverging bar chart. Those drew the same
-   three numbers twice in a row: the ring gave the rank but not the
-   direction (an arc at 9 and an arc at 100 are both just arcs), the bar
-   gave the direction but not the rank. One card gives both, once. */
-.dim-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 14px; margin-top: 22px; }
-.dim-card {
-  display: block; text-decoration: none; color: inherit;
+/* ---- The three dimensions, on ONE axis ----
+   Replaces three separate cards, which replaced a ring grid and a
+   diverging bar chart. The cards were an improvement and still got the
+   central question wrong: the section asks what is holding a country up
+   and what is dragging, which is a comparison BETWEEN the three, and
+   three cards each centring their own average is the one arrangement
+   that cannot show it. Japan reads 100 / 15 / 9 and composites to 50.7 --
+   a number that means nothing without the spread behind it. One axis,
+   drawn once, and the eye does the subtraction. */
+.dim-axis {
   background: var(--glass); border: 1px solid var(--hair); border-radius: 16px;
-  padding: 18px 18px 16px; backdrop-filter: blur(10px);
-  transition: border-color .2s ease, transform .2s ease;
+  padding: 16px 20px 14px; backdrop-filter: blur(10px); margin-top: 22px;
 }
-a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
-.dim-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.dim-card-name { font-size: var(--t-body); font-weight: 700; color: var(--ink); }
-.dim-card-q { font-size: var(--t-caption); color: var(--accent-2); font-style: italic; margin-top: 3px; line-height: 1.45; }
-.dim-card-num {
-  font-family: "Space Grotesk", sans-serif; font-size: var(--t-h1); font-weight: 700;
-  line-height: 1; font-variant-numeric: tabular-nums; flex: none;
+
+/* Three columns, shared by the head, every row and the foot -- that is
+   what makes the centre line continuous down the panel instead of three
+   marks that happen to line up. */
+.dim-axis-head, .dim-axis-row, .dim-axis-foot {
+  display: grid;
+  grid-template-columns: minmax(min(116px, 34%), 148px) minmax(0, 1fr) 78px;
+  gap: 14px; align-items: center;
 }
-.dim-track { position: relative; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; margin: 16px 0 7px; }
-.dim-track-mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: rgba(255,255,255,0.3); }
-.dim-track-fill { position: absolute; top: 0; bottom: 0; transition: left .7s cubic-bezier(.22,1,.36,1), width .7s cubic-bezier(.22,1,.36,1); }
-.dim-track-labels {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: var(--t-micro); color: var(--slate); font-family: "IBM Plex Mono", monospace;
+.dim-axis-head { height: 15px; }
+.dim-axis-lab {
+  grid-column: 2; justify-self: center;
+  font-size: var(--t-micro); color: var(--slate); white-space: nowrap;
 }
-.dim-track-sd { font-size: var(--t-micro); font-weight: 700; }
-.dim-card-of {
-  font-size: var(--t-caption); color: var(--slate); margin-top: 12px;
-  padding-top: 10px; border-top: 1px solid var(--hair);
+
+.dim-axis-row {
+  padding: 11px 0; border-top: 1px solid var(--hair);
+  text-decoration: none; color: inherit;
+  transition: background-color .18s ease;
+  margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: 8px;
+}
+a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
+.dim-axis-name { min-width: 0; }
+.dim-axis-title { display: block; font-size: var(--t-body); font-weight: 700; color: var(--ink); }
+.dim-axis-of { display: block; font-size: var(--t-micro); color: var(--slate); margin-top: 2px; }
+
+.dim-axis-track { position: relative; height: 20px; min-width: 0; }
+/* The rule is the axis; the stem is this row reaching back to it. The
+   stem is what lets three rows be read as one comparison -- length from
+   a shared origin, rather than three unanchored dots. */
+.dim-axis-rule { position: absolute; left: 0; right: 0; top: 9px; height: 2px; background: rgba(255,255,255,0.07); border-radius: 1px; }
+.dim-axis-mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.28); }
+.dim-axis-stem {
+  position: absolute; top: 9px; height: 2px; border-radius: 1px;
+  transition: left .7s cubic-bezier(.22,1,.36,1), width .7s cubic-bezier(.22,1,.36,1);
+}
+.dim-axis-dot {
+  position: absolute; top: 4px; width: 12px; height: 12px; margin-left: -6px;
+  border-radius: 50%; border: 2px solid var(--bg);
+  transition: left .7s cubic-bezier(.22,1,.36,1);
+}
+
+.dim-axis-read { text-align: right; min-width: 0; }
+.dim-axis-pct {
+  display: block; font-family: "Space Grotesk", sans-serif;
+  font-size: var(--t-h3); font-weight: 700; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.dim-axis-sd {
+  display: block; font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); color: var(--slate); white-space: nowrap;
+}
+
+.dim-axis-foot { border-top: 1px solid var(--hair); padding-top: 7px; }
+.dim-axis-foot > span {
+  grid-column: 2; font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); color: var(--slate);
+}
+.dim-axis-foot > span:first-child { justify-self: start; }
+.dim-axis-foot > span:last-child { justify-self: end; }
+
+/* The questions each dimension asks. They used to sit inside the cards;
+   a row has no room for one, and three questions in sequence read as a
+   description of the method -- which is what they always were. */
+.dim-axis-qs {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+  gap: 10px 20px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--hair);
+}
+.dim-axis-qs dt { font-size: var(--t-micro); font-weight: 700; color: var(--ink); letter-spacing: .04em; text-transform: uppercase; }
+.dim-axis-qs dd { margin: 2px 0 0; font-size: var(--t-caption); color: var(--accent-2); font-style: italic; line-height: 1.45; }
+
+/* On a phone the name and the reading go above the axis, so the axis
+   itself keeps the full width. Squeezing three columns into 320px would
+   leave the track about 90px wide, which is not enough to show a
+   difference between +0.16 and +0.82 sd -- the whole point of it. */
+@media (max-width: 640px) {
+  .dim-axis-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px; align-items: baseline;
+  }
+  .dim-axis-track { grid-column: 1 / -1; margin-top: 4px; }
+  .dim-axis-read { display: flex; align-items: baseline; gap: 8px; }
+  .dim-axis-head, .dim-axis-foot { grid-template-columns: minmax(0, 1fr); }
+  .dim-axis-lab, .dim-axis-foot > span { grid-column: 1; }
 }
 
 /* ============================================================
