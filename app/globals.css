@@ -950,3 +950,75 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 @media (prefers-reduced-motion: reduce) {
   .learn-calls-title::before { transition: none; }
 }
+
+/* ============================================================
+   THE FIVE INDICATORS, GROUPED BY DIMENSION
+
+   This strip used to show three of the five in a flat row --
+   inflation, policy rate, unemployment -- which maps onto the
+   dimensions as Conditions, Capacity, Conditions, with all of
+   Direction and half of Capacity missing. The same numbers then
+   appeared again below, grouped properly. Two incompatible
+   groupings of one dataset on one page.
+
+   Deliberately the SAME card language and the SAME diverging
+   track as .dim-card below it, so the two read as one system at
+   two levels of detail rather than as two separate charts.
+   ============================================================ */
+.ind-groups { display: grid; gap: 18px; margin: 20px 0 10px; }
+
+.ind-group-head {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+.ind-group-name {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase;
+}
+.ind-group-name > i { width: 7px; height: 7px; border-radius: 50%; }
+.ind-group-q { font-size: var(--t-caption); color: var(--slate); }
+
+.ind-cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+.ind-card {
+  background: var(--glass);
+  border: 1px solid var(--hair);
+  border-left: 3px solid;          /* colour set inline, per dimension */
+  border-radius: 12px;
+  padding: 13px 15px;
+  backdrop-filter: blur(10px);
+}
+.ind-card-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--slate);
+}
+.ind-card-value {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700; font-size: var(--t-h2); line-height: 1.15;
+  color: var(--ink); margin-top: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.ind-card-unit {
+  font-size: var(--t-caption); font-weight: 500;
+  color: var(--slate); margin-left: 5px; letter-spacing: 0;
+}
+
+/* The same device as .dim-track, scaled down. Centre is the
+   historical average; right is better, whichever direction the
+   raw figure happens to run. */
+.ind-track {
+  position: relative; height: 6px; border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 10px 0 7px; overflow: hidden;
+}
+.ind-track-mid {
+  position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: rgba(255, 255, 255, 0.22);
+}
+.ind-track-fill { position: absolute; top: 0; bottom: 0; }
+
+.ind-card-note { font-size: var(--t-micro); color: var(--slate); line-height: 1.5; }
