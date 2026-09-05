@@ -138,14 +138,6 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   poweredByHeader: false, // stops advertising the framework version
 
-  // /contact was folded into /about, which now carries the same form.
-  // Redirected rather than deleted: the address has been live and may be
-  // linked from outside, and a 404 on a contact page is the worst kind --
-  // someone trying to reach you, failing, and not trying again.
-  async redirects() {
-    return [{ source: "/contact", destination: "/about", permanent: true }];
-  },
-
   async headers() {
     return [
       // Everything, including the API routes and the CSV exports.

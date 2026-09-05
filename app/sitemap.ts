@@ -9,6 +9,7 @@ const ROUTES = [
   { path: "/learn", priority: 0.6, changeFrequency: "monthly" as const },
   { path: "/sources", priority: 0.6, changeFrequency: "weekly" as const },
   { path: "/about", priority: 0.5, changeFrequency: "monthly" as const },
+  { path: "/contact", priority: 0.4, changeFrequency: "yearly" as const },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
