@@ -133,6 +133,32 @@ jobs:
       - name: Every font size is on the scale
         run: npx tsx scripts/check-type-scale.ts
 
+      # THE ONE THAT WOULD HAVE CAUGHT THE CONTACT FORM.
+      #
+      # Loads every page in a real browser at phone, tablet and desktop
+      # width and fails if anything escapes the box holding it. The contact
+      # form's email field ended 118px past the edge of its card on a
+      # phone, and was reported as verified, because the manual sweep
+      # behind that claim covered seven pages out of eight and asked "does
+      # the page scroll sideways" rather than "does anything overflow".
+      #
+      # Layout is the one thing on this site that cannot be checked by
+      # reading the source: it only exists once a browser has laid it out
+      # at a particular width. So this is the one check that needs a real
+      # browser, and it is worth the ninety seconds it costs.
+      - name: Every page holds its layout
+        run: |
+          npx playwright install --with-deps chromium
+          npm run build
+          npx next start -p 3123 &
+          # Plain retry rather than another dependency just to wait for a port.
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:3123/ && break
+            sleep 1
+          done
+          curl -sf -o /dev/null http://localhost:3123/ || { echo "server never came up"; exit 1; }
+          npx tsx scripts/check-layout.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
       # Eurostat retired the euro area HICP dataset that day. It kept
       # answering and kept returning December 2025, so every check the
