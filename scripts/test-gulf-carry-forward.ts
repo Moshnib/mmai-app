@@ -36,6 +36,13 @@ const goodRow = (fetchedAt: string): StoredGulfRow => ({
   fetched_at: fetchedAt,
 });
 
+/** A stored row from a day the source ALSO failed -- null CPI, but the
+ *  World Bank fields intact, which is exactly what Bahrain's bad days
+ *  look like in the table. */
+const rowMissingCpi = (fetchedAt: string): StoredGulfRow => ({
+  ...goodRow(fetchedAt), cpi_yoy: null, cpi_observation_date: null,
+});
+
 /** What the refresh produces on a day data.gov.bh does not answer. */
 const failedFetch = () => ({
   cpiYoy: null as number | null, cpiObservationDate: null as string | null,
@@ -50,7 +57,7 @@ const failedFetch = () => ({
 
 console.log("\nBAHRAIN, the case this was built for\n");
 {
-  const r = carryForwardGulf(failedFetch(), goodRow(daysAgo(1)), NOW);
+  const r = carryForwardGulf(failedFetch(), [goodRow(daysAgo(1))], NOW);
   ok("inflation survives a failed fetch", r.merged.cpiYoy === 3, `got ${r.merged.cpiYoy}`);
   ok("the reporting date comes with it", r.merged.cpiObservationDate === "2026-07-01",
      `got ${r.merged.cpiObservationDate}`);
@@ -63,7 +70,7 @@ console.log("\nTHE DATE IS NEVER REFRESHED — the rule that keeps this honest\n
   // Stamping a carried value with today would invent a reporting period
   // that never existed, and a reader would read a 2026-07 figure as
   // current. This is the single most important assertion in the file.
-  const r = carryForwardGulf(failedFetch(), goodRow(daysAgo(3)), NOW);
+  const r = carryForwardGulf(failedFetch(), [goodRow(daysAgo(3))], NOW);
   ok("does NOT stamp the carried value with today", r.merged.cpiObservationDate !== "2026-09-06");
   ok("keeps the original period exactly", r.merged.cpiObservationDate === "2026-07-01");
 }
@@ -71,7 +78,7 @@ console.log("\nTHE DATE IS NEVER REFRESHED — the rule that keeps this honest\n
 console.log("\nA LIVE FETCH IS NEVER OVERWRITTEN\n");
 {
   const fresh = { ...failedFetch(), cpiYoy: 3.4, cpiObservationDate: "2026-08-01" };
-  const r = carryForwardGulf(fresh, goodRow(daysAgo(1)), NOW);
+  const r = carryForwardGulf(fresh, [goodRow(daysAgo(1))], NOW);
   ok("today's value wins", r.merged.cpiYoy === 3.4, `got ${r.merged.cpiYoy}`);
   ok("today's date wins", r.merged.cpiObservationDate === "2026-08-01");
   ok("nothing reported as carried", r.carried.length === 0);
@@ -79,18 +86,68 @@ console.log("\nA LIVE FETCH IS NEVER OVERWRITTEN\n");
 
 console.log(`\nIT EXPIRES AFTER ${MAX_GULF_CARRY_DAYS} DAYS\n`);
 {
-  const justInside = carryForwardGulf(failedFetch(), goodRow(daysAgo(MAX_GULF_CARRY_DAYS - 1)), NOW);
+  const justInside = carryForwardGulf(failedFetch(), [goodRow(daysAgo(MAX_GULF_CARRY_DAYS - 1))], NOW);
   ok("carries at the edge of the window", justInside.merged.cpiYoy === 3);
 
-  const tooOld = carryForwardGulf(failedFetch(), goodRow(daysAgo(MAX_GULF_CARRY_DAYS + 1)), NOW);
+  const tooOld = carryForwardGulf(failedFetch(), [goodRow(daysAgo(MAX_GULF_CARRY_DAYS + 1))], NOW);
   ok("a dead source shows the gap instead", tooOld.merged.cpiYoy === null);
   ok("and says so", tooOld.expired);
   ok("nothing claimed as carried", tooOld.carried.length === 0);
 }
 
+console.log("\nCONSECUTIVE FAILURES — the case that broke the first version\n");
+{
+  // Bahrain went down on 1 AND 2 September. A carry-forward that looks
+  // only at the single most recent row finds another null and gives up,
+  // which means it does nothing on precisely the days a flaky source
+  // makes it necessary. Consecutive failures are the normal case.
+  const history = [
+    rowMissingCpi(daysAgo(1)),   // yesterday also failed
+    rowMissingCpi(daysAgo(2)),   // and the day before
+    goodRow(daysAgo(3)),         // the last day that actually worked
+  ];
+  const r = carryForwardGulf(failedFetch(), history, NOW);
+  ok("reaches past two failed days", r.merged.cpiYoy === 3, `got ${r.merged.cpiYoy}`);
+  ok("brings that day's reporting date", r.merged.cpiObservationDate === "2026-07-01");
+  ok("reports it as carried", r.carried.includes("inflation"));
+}
+
+console.log("\nEACH FIELD LOOKS BACK ON ITS OWN\n");
+{
+  // FX reserves present yesterday, inflation only the day before. One
+  // row cannot supply both, and neither should be sacrificed.
+  const history = [
+    { ...rowMissingCpi(daysAgo(1)), fx_reserves_months_imports: 1.4165 },
+    goodRow(daysAgo(2)),
+  ];
+  const r = carryForwardGulf(
+    { ...failedFetch(), fxReservesMonths: null, fxReservesObservationDate: null },
+    history,
+    NOW,
+  );
+  ok("inflation comes from the older row", r.merged.cpiYoy === 3);
+  ok("FX reserves come from the newer one", r.merged.fxReservesMonths === 1.4165);
+  ok("both are named", r.carried.includes("inflation") && r.carried.includes("FX reserves"));
+}
+
+console.log("\nTHE BOUND FOLLOWS THE ROW ACTUALLY USED\n");
+{
+  // Refreshed daily, so the newest row is hours old -- but the last row
+  // holding an inflation figure is well outside the window. Measuring
+  // age against the newest row would call that fresh.
+  const history = [
+    rowMissingCpi(daysAgo(1)),
+    rowMissingCpi(daysAgo(2)),
+    goodRow(daysAgo(MAX_GULF_CARRY_DAYS + 3)),
+  ];
+  const r = carryForwardGulf(failedFetch(), history, NOW);
+  ok("does not carry a value older than the bound", r.merged.cpiYoy === null, `got ${r.merged.cpiYoy}`);
+  ok("reports the expiry", r.expired);
+}
+
 console.log("\nNO PREVIOUS ROW AT ALL\n");
 {
-  const r = carryForwardGulf(failedFetch(), null, NOW);
+  const r = carryForwardGulf(failedFetch(), [], NOW);
   ok("passes straight through", r.merged.cpiYoy === null);
   ok("not an expiry", !r.expired);
 }
@@ -104,7 +161,7 @@ console.log("\nA LABEL TRAVELS WITH ITS VALUE\n");
     ...goodRow(daysAgo(1)),
     policy_rate: 4.25, policy_rate_label: "Policy rate (repo)", policy_rate_observation_date: "2026-08-30",
   };
-  const r = carryForwardGulf(failedFetch(), prev, NOW);
+  const r = carryForwardGulf(failedFetch(), [prev], NOW);
   ok("the rate carries", r.merged.policyRate === 4.25);
   ok("the label carries with it", r.merged.policyRateLabel === "Policy rate (repo)");
   ok("and its date", r.merged.policyRateObservationDate === "2026-08-30");
@@ -114,7 +171,7 @@ console.log("\nA COUNTRY WITH NO SOURCE IS NOT GIVEN ONE\n");
 {
   // Four of six have no policy-rate source. Carry-forward must not
   // invent one from a previous row that also had none.
-  const r = carryForwardGulf(failedFetch(), goodRow(daysAgo(1)), NOW);
+  const r = carryForwardGulf(failedFetch(), [goodRow(daysAgo(1))], NOW);
   ok("policy rate stays absent", r.merged.policyRate === null);
   ok("real estate stays absent", r.merged.realEstateValue === null);
   ok("neither is claimed as carried", !r.carried.includes("policy rate") && !r.carried.includes("real estate"));

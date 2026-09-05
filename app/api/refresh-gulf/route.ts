@@ -203,7 +203,7 @@ export async function GET(request: Request) {
   //
   // Ordered newest-first and bucketed by country, so each country reads
   // its own most recent row regardless of how the rows interleave.
-  const previousByCountry = new Map<string, StoredGulfRow>();
+  const historyByCountry = new Map<string, StoredGulfRow[]>();
   {
     const since = new Date(Date.now() - MAX_GULF_CARRY_DAYS * 86_400_000).toISOString();
     const { data: prevRows } = await supabase
@@ -216,9 +216,15 @@ export async function GET(request: Request) {
       .in("country_code", pending)
       .gte("fetched_at", since)
       .order("fetched_at", { ascending: false });
+    // Every row in the window, newest first, not just the newest one.
+    // Carry-forward scans per field, because a flaky source usually
+    // fails on consecutive days and the most recent row is then just as
+    // empty as today's.
     for (const row of prevRows ?? []) {
       const code = (row as unknown as { country_code: string }).country_code;
-      if (!previousByCountry.has(code)) previousByCountry.set(code, row as unknown as StoredGulfRow);
+      const list = historyByCountry.get(code);
+      if (list) list.push(row as unknown as StoredGulfRow);
+      else historyByCountry.set(code, [row as unknown as StoredGulfRow]);
     }
   }
 
@@ -232,7 +238,7 @@ export async function GET(request: Request) {
       // the figure actually belongs to. See lib/gulfCarryForward.ts.
       const { merged: raw, carried, expired } = carryForwardGulf(
         fetched,
-        previousByCountry.get(country) ?? null,
+        historyByCountry.get(country) ?? [],
         new Date(),
       );
       if (carried.length > 0) {
