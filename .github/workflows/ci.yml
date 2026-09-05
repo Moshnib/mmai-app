@@ -142,6 +142,20 @@ jobs:
       - name: Change feed finds the real change
         run: npx tsx scripts/test-change-feed.ts
 
+      # Bahrain inflation vanished from Gulf Watch on roughly four days in
+      # ten -- not missing data, but an intermittent endpoint whose failure
+      # wrote null straight over yesterday's perfectly good number. The six
+      # scored markets already guard against this via latestComplete, which
+      # cannot work for Gulf: a Gulf row is legitimately incomplete, so
+      # "most recent COMPLETE row" would never match.
+      #
+      # These pin the two rules that make carrying a value forward honest
+      # rather than a quiet fabrication -- the reporting date travels with
+      # the value, and the carry expires -- plus that a live fetch is never
+      # overwritten and a country with no source is never given one.
+      - name: A blinking Gulf source keeps its number, a dead one shows the gap
+        run: npx tsx scripts/test-gulf-carry-forward.ts
+
       # The site reached twenty-seven distinct font sizes without anyone
       # deciding to have twenty-seven -- each was a reasonable local
       # choice, and 12, 12.5 and 13 ended up coexisting. A comment saying
