@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Flag from "@/components/Flag";
-import { colorForScore, type PillarKey } from "@/lib/indicators";
+import { colorForScore, type PillarKey, type RawIndicators } from "@/lib/indicators";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { RAW_DECIMALS } from "@/components/KeyRatesRow";
 import { fetchAllWeeklyChanges, floorFor, type WeeklyChangesResult } from "@/lib/weeklyChanges";
@@ -30,6 +30,37 @@ function delta(now: number | null, then: number | null): { symbol: string; text:
   const diff = now - then;
   const symbol = Math.abs(diff) < 0.05 ? "—" : diff > 0 ? "↑" : "↓";
   return { symbol, text: `${symbol} ${Math.abs(diff).toFixed(1)}` };
+}
+
+/**
+ * WHICH FIGURES ACTUALLY MOVED, from what to what.
+ *
+ * "Unchanged since 2 September" says a change happened and then refuses to
+ * say what it was. A reader looking at a still feed wants the last real
+ * move -- the number before, the number after -- not just its date.
+ *
+ * Decimals come from RAW_DECIMALS rather than a blanket toFixed(1),
+ * because a policy rate is set to the quarter-point: printing 4.35 as
+ * "4.3" invents a rate the central bank never set.
+ */
+const MOVED: Array<{ field: keyof RawIndicators; label: string; pillar: PillarKey }> = [
+  { field: "inflation", label: "Inflation", pillar: "PS" },
+  { field: "gdpGrowth", label: "GDP growth", pillar: "GM" },
+  { field: "unemployment", label: "Unemployment", pillar: "LM" },
+  { field: "policyRate", label: "Policy rate", pillar: "MC" },
+  { field: "debtPctGdp", label: "Govt debt", pillar: "FR" },
+];
+
+function whatMoved(now: RawIndicators, then: RawIndicators): string[] {
+  const out: string[] = [];
+  for (const { field, label, pillar } of MOVED) {
+    const a = now[field];
+    const b = then[field];
+    if (a == null || b == null || a === b) continue;
+    const d = RAW_DECIMALS[pillar];
+    out.push(`${label} ${b.toFixed(d)}% → ${a.toFixed(d)}%`);
+  }
+  return out;
 }
 
 // The old wide-table layout's cell components were removed when this
@@ -96,14 +127,27 @@ export default function WeeklyFeed() {
             {(() => {
               const waiting = (results ?? []).filter((r) => !r.isStale && r.buckets.length < 2);
               const names = waiting.map((r) => r.marketName).join(", ");
-              const soonest = Math.min(...waiting.map((r) => floorFor(r.marketCode)));
+
+              // THE DATE THE FIGURES ACTUALLY STOPPED MOVING, not the date
+              // a source was swapped. This used to print floorFor(market) --
+              // the comparability floor -- and call it "when their sources
+              // last changed". Those are different things and had drifted
+              // three days apart, so the banner named 29 August while every
+              // row beneath it correctly said 2 September.
+              const stamps = waiting
+                .map((r) => (r.steadySince ? new Date(r.steadySince).getTime() : null))
+                .filter((t): t is number => t != null);
+              const since = stamps.length > 0 ? Math.max(...stamps) : null;
+
               return (
                 <>
-                  Nothing has moved for <b style={{ color: "var(--ink)" }}>{names}</b> since{" "}
-                  <b style={{ color: "var(--ink)" }}>{formatDate(soonest)}</b>, when{" "}
-                  {waiting.length === 1 ? "its source" : "their sources"} last changed. Inflation and unemployment
-                  are published monthly, growth and debt quarterly, and policy rates only when a committee sits — so
-                  a still reading is the normal state between releases, not a gap in the data.
+                  Nothing has moved for <b style={{ color: "var(--ink)" }}>{names}</b>
+                  {since != null && (
+                    <> since <b style={{ color: "var(--ink)" }}>{formatDate(since)}</b></>
+                  )}
+                  . Inflation and unemployment are published monthly, growth and debt quarterly, and policy rates
+                  only when a committee sits — so a still reading is the normal state between releases, not a gap
+                  in the data.
                 </>
               );
             })()}
@@ -184,8 +228,17 @@ export default function WeeklyFeed() {
                       <b style={{ color: colorForScore(now.composite), fontFamily: "Space Grotesk, sans-serif" }}>
                         {now.composite != null ? now.composite.toFixed(1) : "—"}
                       </b>
-                      {scoreDelta ? (
-                        <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>
+                      {scoreDelta && then ? (
+                        <>
+                          <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>
+                          {/* WHEN it moved, and that it has been still
+                              since. A bare arrow says a change happened
+                              and leaves the reader to guess whether it
+                              was this morning or three weeks ago. */}
+                          <span style={{ color: "var(--slate)", marginLeft: 8, fontWeight: 500 }}>
+                            moved {formatDate(new Date(then.fetchedAt).getTime())}, steady since
+                          </span>
+                        </>
                       ) : (
                         // ALWAYS SAYS SOMETHING. This read "no weekly
                         // comparison yet", which reports the state of the
@@ -202,6 +255,15 @@ export default function WeeklyFeed() {
                         </span>
                       )}
                     </span>
+                    {/* WHAT MOVED, when anything did. The row used to show
+                        the current figures and nothing else, so a reader
+                        was told a change had happened and then left to
+                        work out which number it was. */}
+                    {then && whatMoved(now.raw, then.raw).length > 0 && (
+                      <span className="signal-detail" style={{ color: "var(--ink-soft)" }}>
+                        {whatMoved(now.raw, then.raw).join("  ·  ")}
+                      </span>
+                    )}
                     <span className="signal-detail">
                       {/* Per-field precision (RAW_DECIMALS), not a
                           blanket one decimal: a policy rate is set to
@@ -212,6 +274,7 @@ export default function WeeklyFeed() {
                         ["GDP", now.raw.gdpGrowth, "GM"],
                         ["Unemp", now.raw.unemployment, "LM"],
                         ["Rate", now.raw.policyRate, "MC"],
+                        ["Debt", now.raw.debtPctGdp, "FR"],
                       ] as Array<[string, number | null, PillarKey]>)
                         .map(([label, v, p]) => `${label} ${v != null ? `${v.toFixed(RAW_DECIMALS[p])}%` : "—"}`)
                         .join("  ·  ")}
