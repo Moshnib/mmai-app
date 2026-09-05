@@ -548,6 +548,19 @@ h1.headline {
    also ignored, which is why the 3px gap never appeared. */
 .signal-headline { display: block; font-size: var(--t-small); font-weight: 600; color: var(--ink); line-height: 1.35; }
 .signal-detail { display: block; font-size: var(--t-micro); color: var(--slate); font-family: "IBM Plex Mono", monospace; margin-top: 3px; }
+
+/* THE ROW STACKS ON A NARROW PHONE.
+   Three columns of "auto 1fr auto" works down to about 375px and then
+   stops: the market name column is sized to its content, so on a 320px
+   screen "United Kingdom" plus the flag claims 104px, the state circle
+   takes 26, and the 1fr body is left with 37px to hold a sentence. The
+   text then overflowed the card rather than wrapping inside it.
+   Stacking gives the sentence the full width, which is what it needs,
+   and keeps the market and its arrow together on the line above. */
+@media (max-width: 640px) {
+  .signal-row { grid-template-columns: 1fr auto; row-gap: 8px; }
+  .signal-body { grid-column: 1 / -1; }
+}
 .signal-state {
   width: 26px; height: 26px; border-radius: 50%; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
@@ -1076,3 +1089,41 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
   margin-bottom: 16px;
 }
 .form-row > * { min-width: 0; }
+
+/* ============================================================
+   ONE LINE OF THE DIMENSION ARITHMETIC
+
+   Label, value, standardised score, weight, contribution — four
+   columns of monospace, which needs about 350px. Below that the
+   three arithmetic columns are sized to their own content and
+   cannot give way, so the row spilled out of the card instead of
+   reflowing. On a narrow phone the sum stacks under its label,
+   which is how anyone would write it out by hand anyway.
+   ============================================================ */
+.breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(min(120px, 100%), 1.4fr) auto auto auto;
+  gap: 10px;
+  align-items: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-caption);
+  color: var(--slate);
+}
+@media (max-width: 640px) {
+  .breakdown-row { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* The scatter scrubber's year ticks. One per year is fine with room;
+   at phone width eight of them cannot fit and space-between has no
+   way to shrink text, so they escaped the card. The year being
+   scrubbed to is shown large beside the slider, so on a narrow
+   screen only the endpoints are kept — enough to say what range the
+   track covers, which is all the ticks were doing. */
+.scrub-years {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); color: var(--slate);
+}
+@media (max-width: 640px) {
+  .scrub-years > span:not(:first-child):not(:last-child) { display: none; }
+}

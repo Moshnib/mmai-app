@@ -87,16 +87,7 @@ export default function DimensionBreakdown({
                 from two is visibly built from two. */}
             <div style={{ display: "grid", gap: 8 }}>
               {parts.map((p) => (
-                <div
-                  key={p.key}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(120px,1.4fr) auto auto auto",
-                    gap: 10, alignItems: "center",
-                    fontFamily: "IBM Plex Mono, monospace", fontSize: 12,
-                    color: "var(--slate)",
-                  }}
-                >
+                <div key={p.key} className="breakdown-row">
                   <span style={{ color: "var(--ink-soft)" }}>{p.label}</span>
                   <span style={{ color: "#fff", fontVariantNumeric: "tabular-nums" }}>
                     {p.raw == null ? "—" : `${p.raw.toFixed(p.decimals)}${p.unit.startsWith("%") ? "%" : ""}`}
