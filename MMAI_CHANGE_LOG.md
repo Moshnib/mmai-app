@@ -6,6 +6,94 @@ Entries are newest first. The frozen V1 record is in [`MMAI_V1_FROZEN_BENCHMARK.
 
 ---
 
+## 2026-09-05 — Presentation: the three dimensions moved onto one shared axis
+
+**Category:** Presentation. **No rule changes.** No score, weight, constant or
+formula was touched; this entry records a change to how the existing numbers
+are drawn, logged because §14 requires the reason and the impact on record.
+
+### Old presentation
+
+Three cards side by side, one per dimension. Each card drew its own diverging
+track, and each track centred its own historical average.
+
+### New presentation
+
+One panel, three rows, a single axis with a continuous centre line. Each row
+reaches back to the centre with a stem and terminates in a dot. Scale is fixed
+at ±2.5 standard deviations and does not fit itself to the market on screen.
+
+### Reason
+
+The section asks what is holding a country up and what is dragging — a question
+about the three dimensions **relative to each other**. Three separately centred
+tracks is the one arrangement that cannot answer it: each dimension appeared to
+be measured on its own terms, and comparing them meant comparing bars across two
+card borders.
+
+Japan is the case that forced it. Live values on this date:
+
+| Dimension | Percentile | Standardised |
+|---|---|---|
+| Conditions | 100 | +2.20 sd |
+| Direction | 15 | −0.52 sd |
+| Capacity | 9 | −1.47 sd |
+| **Composite** | **50.7** | |
+
+50.7 is the average of the widest disagreement in the record. Published alone it
+tells a reader nothing true about Japan. The composite has always been sensitive
+to the equal-thirds convention, and §14 of the Charter treats a reader's ability
+to see the components and disagree with the convention as part of the method, not
+as presentation. A layout that makes the spread hard to assemble weakens that.
+
+### Data used
+
+Live  for all six scored markets, 2026-09-05, run through
+ and  unchanged.
+
+### Test results
+
+- Rendered values checked against the engine in a browser for two markets:
+  Japan ; Australia . Exact match in both.
+- Axis geometry measured rather than eyeballed: one centre line shared by all
+  three rows, and offsets of 368 / −88 / −246 px against +2.20 / −0.52 / −1.47
+  sd — a constant 167 px per standard deviation, confirming a genuinely shared
+  scale.
+- : 54 page-widths pass, 320px to 1280px.
+- Full verification suite green, including , which still pins
+  Australia 2026 at 85.135135135.
+- No console errors.
+
+### Impact
+
+**No score changes.** Every published figure is identical. The change is that
+the relationship between the three is now visible in one reading. Nothing was
+removed to make room — rank, standardised value, constituent indicators, the
+question each dimension asks and the link to the arithmetic on Trends all
+remain; the space came from drawing one axis instead of three.
+
+### Known limitation, recorded deliberately
+
+Direction is momentum and is drawn as a static dot. A sparkline per dimension
+would be the stronger chart and was **not** built: Capacity depends on the debt
+figure, first collected 2 September 2026, so a dimension history is three
+observations. Drawing three points as a trend line would misrepresent the
+record. To be revisited once a year of history exists.
+
+### Approval status
+
+Requested by the site owner ("i feel there is better charts to represent
+condition direction capacity"), design shown and then implemented, merged in
+PR #20.
+
+### Rollback
+
+ of PR #20 restores  and its stylesheet block.
+Self-contained: one component, one CSS block, one import and two paragraphs of
+page copy. No data, schema or engine dependency.
+
+---
+
 ## 2026-09-05 — How the new method was verified before it went live
 
 **Category:** Verification. **No rule changes.** This entry records how the three-dimension composite was checked, and on what basis it was published.
