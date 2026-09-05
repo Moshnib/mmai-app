@@ -34,6 +34,7 @@ import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/b
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
 import { sendBandCrossingEmail } from "@/lib/notify";
+import { IS_VERCEL_DOMAIN, ALERT_FROM } from "@/lib/siteUrl";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourceForPillar, sourceNoteFor } from "@/lib/sources";
 import { stalenessOf, quarterToDate, describeStale } from "@/lib/freshness";
@@ -859,11 +860,12 @@ export async function GET(request: Request) {
         // ALL failing is the sender being broken. Only the second is
         // escalated, so a genuinely dead mailbox cannot cry wolf.
         //
-        // Worth checking when this fires: emails send from
-        // alerts@mmai-app.vercel.app, and a vercel.app address CANNOT be
-        // verified as a sending domain in Resend -- verification needs
-        // DNS records on a domain you own. If that is the cause, no
-        // amount of retrying fixes it; it needs a real domain.
+        // Worth checking when this fires: a vercel.app address CANNOT be
+        // verified as a sending domain in Resend -- verification needs DNS
+        // records on a domain you own. While the site is still on its
+        // vercel.app address that is almost certainly the cause, and no
+        // amount of retrying fixes it. IS_VERCEL_DOMAIN below says so in
+        // the log rather than asserting it forever after a domain move.
         let sent = 0;
         let failed = 0;
         for (const sub of watchers) {
@@ -884,7 +886,9 @@ export async function GET(request: Request) {
           notificationsBroken = true;
           console.error(
             `ALL ${failed} notification(s) for ${market} failed. This is the sender, not the recipients. ` +
-              `Check that the Resend sending domain is verified — alerts@mmai-app.vercel.app cannot be.`
+              (IS_VERCEL_DOMAIN
+                ? `The site is still on a vercel.app address, which cannot be verified as a Resend sending domain. That is the likely cause.`
+                : `Check that ${ALERT_FROM} is on a domain verified in Resend.`)
           );
         }
       }

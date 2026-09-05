@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const SITE_URL = "https://mmai-app.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 
 const ROUTES = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
