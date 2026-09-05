@@ -5,7 +5,7 @@ import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
 import { useLiveHistory } from "@/lib/useLiveHistory";
-import { type RawIndicators } from "@/lib/scoring";
+import { type RawIndicators } from "@/lib/indicators";
 import {
   DIMENSION_NAMES, computeMmai, dimensionPercentiles,
   SOURCE_BREAK_UNCERTAINTY_PTS, type DimensionKey,

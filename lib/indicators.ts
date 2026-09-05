@@ -1,0 +1,115 @@
+// ============================================================
+//  THE INDICATORS, AND HOW THEY ARE LABELLED AND COLOURED
+//
+//  THIS FILE DOES NOT SCORE ANYTHING. It used to: it was lib/scoring.ts,
+//  and it held the five-pillar engine -- Price Stability, Growth Momentum,
+//  Labour Market, Monetary Conditions, Fiscal Resilience, their weights,
+//  their bands, and the arithmetic that combined them.
+//
+//  That engine was retired on 5 September 2026 and replaced by the
+//  three-dimension composite in lib/composite.ts, which is now the only
+//  scorer on the site. Everything the old engine consisted of is gone from
+//  here; what survived is the handful of things that were never really
+//  part of it:
+//
+//    PillarKey / PILLAR_CODES   the SOURCE taxonomy. lib/sources.ts files
+//                               every source by pillar code, and that
+//                               mapping is still how a stale figure is
+//                               traced back to the institution behind it.
+//    RawIndicators              the shape of a market's readings.
+//    RAW_FIELD                  how each reading is labelled and united.
+//    INFLATION_TARGET           each central bank's own published target.
+//    colorForScore              the one colour ramp used site-wide.
+//
+//  The file is named for what it holds now. Keeping "scoring" on it would
+//  have sent the next person looking for the engine to a colour function.
+//  The retired engine is in git history and at the tag v1.0-five-pillar.
+// ============================================================
+
+/** Kept as the SOURCE taxonomy, not a scoring concept. lib/sources.ts
+ *  keys every data source by one of these five codes. */
+export type PillarKey = "PS" | "GM" | "LM" | "MC" | "FR";
+
+/** The five codes, in reading order. This replaces PILLAR_WEIGHTS, which
+ *  the one remaining caller used only via Object.keys() -- it never read a
+ *  single weight. Enumerating them honestly is better than keeping a table
+ *  of retired numbers alive just to be counted. */
+export const PILLAR_CODES: readonly PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
+
+export interface RawIndicators {
+  inflation?: number | null; // % YoY
+  gdpGrowth?: number | null; // % (convention varies by market — see notes)
+  unemployment?: number | null; // %
+  policyRate?: number | null; // %
+  /** NO LONGER SCORED as of 2026-09-01. Still fetched and still shown
+   *  in the daily feed, because the oil price is genuine information --
+   *  it is just not a valid basis for comparing one country with
+   *  another, which is what a scored indicator has to do. */
+  brentYoY?: number | null; // % YoY change, shared across markets
+  /** Credit to general government from all sectors at market value, as a
+   *  % of GDP. BIS dataflow WS_TC, quarterly. Market-specific, which is
+   *  the whole point of the change. */
+  debtPctGdp?: number | null;
+}
+
+/** Which reading each source code refers to, and how to label it. */
+export const RAW_FIELD: Record<PillarKey, { key: keyof RawIndicators; label: string; unit: string }> = {
+  PS: { key: "inflation", label: "Inflation (YoY)", unit: "%" },
+  GM: { key: "gdpGrowth", label: "GDP Growth", unit: "%" },
+  LM: { key: "unemployment", label: "Unemployment Rate", unit: "%" },
+  MC: { key: "policyRate", label: "Policy Interest Rate", unit: "%" },
+  FR: { key: "debtPctGdp", label: "Government Debt (% of GDP)", unit: "%" },
+};
+
+/** EACH CENTRAL BANK'S OWN PUBLISHED TARGET, not one number applied to
+ *  everyone. Five aim at 2%. Australia is the exception: the Reserve Bank
+ *  targets a 2-3% range and sets policy so inflation returns to the
+ *  midpoint, so MMAI scores Australia against 2.5%.
+ *
+ *  Read from here everywhere rather than typed into copy. On 2026-08-31
+ *  Australia's target moved and the Learn page still said 2% for every
+ *  market, which quietly broke the promise that a reader can reproduce
+ *  any published score by hand. */
+export const INFLATION_TARGET: Record<string, number> = {
+  US: 2.0,
+  EA: 2.0,
+  UK: 2.0,
+  CA: 2.0,
+  JP: 2.0,
+  AU: 2.5,
+};
+
+export function inflationTargetFor(market: string): number {
+  return INFLATION_TARGET[market] ?? 2.0;
+}
+
+// ------------------------------------------------------------------
+//  ONE COLOUR RAMP, USED EVERYWHERE
+// ------------------------------------------------------------------
+
+const COLOR_STOPS = ["#E14B4B", "#F0975B", "#8B5CF6", "#22D3EE"];
+const NA_COLOR = "#6B7086";
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  return "#" + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("");
+}
+
+/** Continuous colour for any 0-100 score. Used everywhere a score needs a
+ *  colour: the score display, dimension cards, the world map and the
+ *  Trends charts -- one function, one gradient, no per-market identity
+ *  colours anywhere that a score is being shown. */
+export function colorForScore(score: number | null): string {
+  if (score === null) return NA_COLOR;
+  const t = Math.max(0, Math.min(100, score)) / 100;
+  const n = COLOR_STOPS.length - 1;
+  const pos = t * n;
+  const i = Math.min(n - 1, Math.floor(pos));
+  const localT = pos - i;
+  const [r1, g1, b1] = hexToRgb(COLOR_STOPS[i]);
+  const [r2, g2, b2] = hexToRgb(COLOR_STOPS[i + 1]);
+  return rgbToHex(r1 + (r2 - r1) * localT, g1 + (g2 - g1) * localT, b1 + (b2 - b1) * localT);
+}

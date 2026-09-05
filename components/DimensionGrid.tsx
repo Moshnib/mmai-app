@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { colorForScore } from "@/lib/scoring";
+import { colorForScore } from "@/lib/indicators";
 import {
   DIMENSION_NAMES, DIMENSION_QUESTIONS, percentileReading,
   type DimensionKey, type Dimensions,

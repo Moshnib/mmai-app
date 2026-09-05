@@ -1,7 +1,7 @@
 "use client";
 
 import { getPublicSupabaseClient } from "@/lib/supabase";
-import { type RawIndicators } from "@/lib/scoring";
+import { type RawIndicators } from "@/lib/indicators";
 import { computeMmai } from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
@@ -168,11 +168,12 @@ interface RawIndicatorRow {
 }
 
 function isFullyPopulated(row: RawIndicatorRow): boolean {
-  // A row with any null indicator has a different pillar coverage than a
-  // full row -- computeComposite reweights across whatever's populated,
-  // so a 4-pillar composite and a 5-pillar composite from the same
-  // market aren't the same measurement. Comparing them reports a fake
-  // delta with zero real change behind it (confirmed live: a real
+  // A row with any null indicator is not the same measurement as a full
+  // row. Under the retired engine that was because it reweighted around
+  // whatever was populated, making a four-input score quietly
+  // incomparable with a five-input one; under v2 such a row has no score
+  // at all. Either way, comparing them reports a fake delta with zero
+  // real change behind it (confirmed live: a real
   // gdp_growth-null row exists for the US, tagged "PARTIAL this run" by
   // the refresh route itself). Only fully-populated rows are usable here.
   return (

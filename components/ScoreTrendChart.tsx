@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { colorForScore } from "@/lib/scoring";
+import { colorForScore } from "@/lib/indicators";
 import { computeMmai, percentileBandLabel } from "@/lib/composite";
 import { useLiveHistory } from "@/lib/useLiveHistory";
 
