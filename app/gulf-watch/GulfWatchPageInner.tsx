@@ -28,7 +28,7 @@ export default function GulfWatchPageInner() {
               <p style={{ maxWidth: "68ch" }}>
                 Track key economic indicators across the six GCC economies and see how the region is performing.
                 Every figure is fetched daily and traced back to its source on the{" "}
-                <Link href="/sources" style={{ color: "var(--gold-deep)" }}>Sources</Link> page, same as everywhere
+                <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources</Link> page, same as everywhere
                 else on the site.
               </p>
             </div>
@@ -37,16 +37,16 @@ export default function GulfWatchPageInner() {
                 what is and isn't covered -- no regional commentary. */}
             <div className="insight-card">
               <h2>
-                <span aria-hidden="true" style={{ color: "var(--gold-deep)" }}>◈</span>
+                <span aria-hidden="true" style={{ color: "var(--accent-2)" }}>◈</span>
                 The Gulf at a glance
               </h2>
               <ul>
                 <li>
-                  <i style={{ background: "var(--gold)" }} />
+                  <i style={{ background: "var(--accent)" }} />
                   <span>{glance.withInflation} of {countries.length} report an inflation figure.</span>
                 </li>
                 <li>
-                  <i style={{ background: "var(--gold-deep)" }} />
+                  <i style={{ background: "var(--accent-2)" }} />
                   <span>
                     {glance.withPolicyRate === 0
                       ? "No policy rate is currently available."

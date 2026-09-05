@@ -57,7 +57,7 @@ export default function TimeRangeFilter({
       <span
         style={{
           fontFamily: "IBM Plex Mono, monospace",
-          fontSize: 10.5,
+          fontSize: 11,
           letterSpacing: "0.1em",
           color: "var(--slate)",
           marginRight: 2,

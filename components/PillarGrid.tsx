@@ -86,7 +86,7 @@ export default function PillarGrid({ pillars, market, observationDates }: { pill
       {ORDER.map((key) => {
         const val = pillars[key];
         const excluded = val == null;
-        const band = excluded ? { color: "#8A93A6" } : bandFor(val);
+        const band = excluded ? { color: "var(--slate)" } : bandFor(val);
         const circumference = 2 * Math.PI * 23;
         const pct = excluded ? 0 : val / 100;
 
@@ -130,7 +130,7 @@ export default function PillarGrid({ pillars, market, observationDates }: { pill
               <div
                 style={{
                   position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26,
+                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 27,
                   color: excluded ? "var(--slate)" : band.color,
                   textShadow: excluded ? undefined : `0 0 14px ${band.color}70`,
                   filter: excluded ? undefined : "brightness(1.12) saturate(1.05)",
@@ -143,7 +143,7 @@ export default function PillarGrid({ pillars, market, observationDates }: { pill
             <div className="pillar-desc">{PILLAR_DESC[key]}</div>
             <div className="pillar-weight" style={{ marginTop: 6 }}>{formatWeightPct(key)} weight</div>
             {observedLabel(observationDates?.[key]) && (
-              <div style={{ marginTop: 3, fontSize: 10.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace" }}>
+              <div style={{ marginTop: 3, fontSize: 11, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace" }}>
                 {observedLabel(observationDates?.[key])}
               </div>
             )}

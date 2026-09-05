@@ -1,7 +1,8 @@
 "use client";
 
 import { getPublicSupabaseClient } from "@/lib/supabase";
-import { computePillarScores, computeComposite, type RawIndicators } from "@/lib/scoring";
+import { type RawIndicators } from "@/lib/scoring";
+import { computeMmai } from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
 
@@ -74,25 +75,39 @@ const EARLIEST_FLOOR = Math.min(COMPARABILITY_FLOOR, ...Object.values(COMPARABIL
 // correctly show "not enough history yet" for a few days, which is the
 // intended honest behaviour.
 
-// Bucket window: an older bucket must be at least MIN days and at most
-// MAX days older than the bucket before it. The lower bound is what
-// makes a bucket "a week old" rather than "yesterday, roughly a week
-// old". The upper bound is what stops a stalled market's very old rows
-// from being labeled "last week" just because they're the next-oldest
-// thing sitting in the table -- confirmed live that retired/paused
-// markets (AE, NO) still have rows in raw_indicators indefinitely.
-export const BUCKET_MIN_GAP_DAYS = 6;
-const BUCKET_MAX_GAP_DAYS = 10;
+// THE COMPARISON IS EVENT-DRIVEN, NOT CALENDAR-DRIVEN.
+//
+// This used to compare "this week" against "a week ago", with a bucket
+// having to be 6-10 days older than the one before it. That window was
+// arbitrary against how the data actually arrives. Measured over 30 days
+// of live rows: something moved on 27 of 92 market-days, and on 7 of the
+// last 16 days NOTHING changed in ANY market. Inflation and unemployment
+// are monthly, GDP and debt quarterly, policy rates only when a committee
+// sits -- so the releases are bursty, and any fixed window is either
+// empty or lumps unrelated events together.
+//
+// So the older bucket is now simply THE MOST RECENT READING THAT WAS
+// DIFFERENT. The feed updates the day something lands, never shows an
+// empty week, and every item can state the date it actually changed
+// rather than being filed under "this week".
+//
+// The upper bound survives as a sanity limit: a difference against a row
+// from months ago is not news, it is a stalled market, and isStale
+// already reports that.
+const MAX_LOOKBACK_DAYS = 45;
 
 // Query window: bounded, not "last 60 days" -- an unbounded window is
 // unbounded in row count too, and the real write cadence is bursty
 // (confirmed live: 30-53 rows written on a single busy day), so an
 // open-ended window eventually approaches Supabase's 1000-row default
 // response cap and silently truncates the oldest rows -- exactly the
-// ones a "last week" comparison needs. 12 days comfortably covers
-// weeksBack up to ~2 with real headroom.
+// ones the comparison needs. The event search looks further back than a
+// week-over-week one did -- a quarterly figure can genuinely sit still
+// for a month -- so the row budget rises with it. Measured live at 30-53
+// rows on a busy day across all markets, 45 days needs roughly 700 in the
+// worst case, which stays clear of Supabase's 1000-row default cap.
 const QUERY_WINDOW_DAYS = 12;
-const QUERY_ROW_LIMIT = 200;
+const QUERY_ROW_LIMIT = 800;
 
 // Nothing below cancels a hung request on its own: a Supabase call that
 // never settles (unreachable host, DNS stall, captive portal) left the
@@ -130,6 +145,15 @@ export interface WeeklyMarketResult {
    *  sitting right there. So this drives the display, and `buckets`
    *  drives the delta. */
   latest: WeeklyBucket | null;
+  /** When there is no second bucket, the date of the OLDEST reading
+   *  inside the lookback that still read identically -- so the feed can
+   *  say "unchanged since 12 August" instead of leaving the row blank.
+   *
+   *  A row with nothing to report is still a fact about the data, and
+   *  the feed was printing "no weekly comparison yet", which tells the
+   *  reader only that the software has nothing, not that the economy has
+   *  been still. Null when the newest reading is the only one in range. */
+  steadySince: string | null;
 }
 
 interface RawIndicatorRow {
@@ -171,30 +195,49 @@ function toRawIndicators(row: RawIndicatorRow): RawIndicators {
   };
 }
 
-function buildBuckets(rowsDesc: RawIndicatorRow[], weeksBack: number): WeeklyBucket[] {
-  const buckets: WeeklyBucket[] = [];
-  let cursorTime: number | null = null;
+/** The five scored fields. brent_yoy is deliberately absent: it is still
+ *  fetched and still shown in the feed, but it stopped being scored on
+ *  1 September, so a change in it is not a change in anything the index
+ *  reports and must not trigger "what changed". */
+function scoredDiffers(a: RawIndicatorRow, b: RawIndicatorRow): boolean {
+  return (
+    a.inflation !== b.inflation ||
+    a.gdp_growth !== b.gdp_growth ||
+    a.unemployment !== b.unemployment ||
+    a.policy_rate !== b.policy_rate ||
+    a.debt_pct_gdp !== b.debt_pct_gdp
+  );
+}
 
-  for (const row of rowsDesc) {
-    if (buckets.length >= weeksBack) break;
-    const rowTime = new Date(row.fetched_at).getTime();
+/** Newest reading, and the most recent one before it that read
+ *  differently. Two buckets or one -- one means nothing has moved inside
+ *  the lookback, which the feed states plainly rather than hiding. */
+function buildBuckets(rowsDesc: RawIndicatorRow[]): { buckets: WeeklyBucket[]; steadySince: string | null } {
+  if (rowsDesc.length === 0) return { buckets: [], steadySince: null };
+  const mk = (row: RawIndicatorRow): WeeklyBucket => ({
+    fetchedAt: row.fetched_at,
+    raw: toRawIndicators(row),
+    composite: computeMmai(toRawIndicators(row), row.market).percentile,
+  });
 
-    if (cursorTime === null) {
-      // First (newest) bucket -- no gap requirement.
-      buckets.push({ fetchedAt: row.fetched_at, raw: toRawIndicators(row), composite: computeComposite(computePillarScores(toRawIndicators(row), row.market)).composite });
-      cursorTime = rowTime;
-      continue;
-    }
+  const newest = rowsDesc[0];
+  const newestTime = new Date(newest.fetched_at).getTime();
 
-    const gapDays = (cursorTime - rowTime) / (1000 * 60 * 60 * 24);
-    if (gapDays < BUCKET_MIN_GAP_DAYS) continue; // too close to the previous bucket -- keep looking further back
-    if (gapDays > BUCKET_MAX_GAP_DAYS) break; // gap too large -- a stalled market's old row, not "last week"
+  // The oldest row seen so far that still read the same as now. Rows are
+  // newest-first, so this walks backwards in time and the last one
+  // assigned is the furthest back the current figures reach.
+  let steadySince: string | null = null;
 
-    buckets.push({ fetchedAt: row.fetched_at, raw: toRawIndicators(row), composite: computeComposite(computePillarScores(toRawIndicators(row), row.market)).composite });
-    cursorTime = rowTime;
+  for (const row of rowsDesc.slice(1)) {
+    const ageDays = (newestTime - new Date(row.fetched_at).getTime()) / (1000 * 60 * 60 * 24);
+    if (ageDays > MAX_LOOKBACK_DAYS) break;
+    // Rows are newest-first, so the first difference found IS the most
+    // recent change. Anything between it and now read identically.
+    if (scoredDiffers(newest, row)) return { buckets: [mk(newest), mk(row)], steadySince: null };
+    steadySince = row.fetched_at;
   }
 
-  return buckets;
+  return { buckets: [mk(newest)], steadySince };
 }
 
 // "Couldn't reach the database" and "every market has stopped
@@ -211,10 +254,10 @@ export type WeeklyChangesResult =
 
 /** Fetches weekly-bucketed history for every FALLBACK_MARKETS market in
  *  one query (not one round-trip per market), applying every gate above.
- *  `weeksBack=2` is "this week vs last week" (the homepage feed);
- *  a future Trends-page weekly table would call this with a larger
- *  weeksBack instead of a second implementation. */
-export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyChangesResult> {
+ *  Returns the newest reading per market and the most recent one that
+ *  read differently, so the caller can say WHAT changed and WHEN rather
+ *  than forcing every release into a fixed calendar window. */
+export async function fetchAllWeeklyChanges(): Promise<WeeklyChangesResult> {
   const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
   const marketCodes = FALLBACK_MARKETS.map((m) => m.code);
 
@@ -294,17 +337,16 @@ export async function fetchAllWeeklyChanges(weeksBack: number): Promise<WeeklyCh
         ? {
             fetchedAt: newest.fetched_at,
             raw: toRawIndicators(newest),
-            composite: computeComposite(computePillarScores(toRawIndicators(newest), newest.market)).composite,
+            composite: computeMmai(toRawIndicators(newest), newest.market).percentile,
           }
         : null;
 
       // Comparison: floor applied, because a delta spanning a source
       // swap would report a fetcher change as an economic move.
-      const buckets = buildBuckets(
-        marketRows.filter((r) => new Date(r.fetched_at).getTime() >= marketFloor),
-        weeksBack
+      const { buckets, steadySince } = buildBuckets(
+        marketRows.filter((r) => new Date(r.fetched_at).getTime() >= marketFloor)
       );
-      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets, latest };
+      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets, latest, steadySince };
     });
 
     return { ok: true, markets };

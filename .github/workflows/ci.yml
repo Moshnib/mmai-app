@@ -83,6 +83,58 @@ jobs:
       - name: Stored history still reproduces
         run: npx tsx scripts/verify-history.ts
 
+      # ---------- ENGINE v2.0, the three-dimension composite ----------
+      # Recomputes every published constant from the 148-row reference set
+      # with its own arithmetic -- indicator means and standard deviations,
+      # the three dimension sds, the percentile ladder -- and fails if any
+      # drifts from the documented value.
+      #
+      # The engine this replaces shipped a defect that made two of six
+      # rankings wrong, and it survived because the constants were copied
+      # by hand and never re-checked. It also pins the acceptance case,
+      # Australia 2026 = 85.135135135, which a third party reproduced blind
+      # from the published files alone: if this fails, the engine has moved
+      # away from the thing that was externally verified.
+      - name: Composite engine reproduces its published constants
+        run: npx tsx scripts/verify-composite.ts
+
+      # The Learn page publishes what the three dimensions ACTUALLY do --
+      # effective influence and how far each spreads the six markets --
+      # measured, not asserted. Equal thirds is the declared weight; the
+      # effective spread is 14 points. This fails if those published
+      # figures drift, AND if the dimensions ever converge on equal
+      # influence, because the page's copy would then be wrong the other
+      # way round.
+      - name: Dimension influence still matches what the page claims
+        run: npx tsx scripts/measure-dimension-influence.ts --check
+
+      # The missing-data rule: a failed fetch must fall back to the most
+      # recent COMPLETE observation and say so, never interpolate, and
+      # never reach past the 14-day bound.
+      - name: Observation fallback behaves
+        run: npx tsx scripts/test-latest-complete.ts
+
+      # The guard that stops the cutover emailing every subscriber about
+      # every market at once.
+      - name: Subscriber alert guard survives the engine change
+        run: npx tsx scripts/test-alert-guard.ts
+
+      # The change feed is event-driven, not calendar-driven: it compares
+      # against the most recent DIFFERENT reading. These pin that it reaches
+      # past still days, refuses a stale comparison, and ignores the one
+      # indicator that is shown but no longer scored.
+      - name: Change feed finds the real change
+        run: npx tsx scripts/test-change-feed.ts
+
+      # The site reached twenty-seven distinct font sizes without anyone
+      # deciding to have twenty-seven -- each was a reasonable local
+      # choice, and 12, 12.5 and 13 ended up coexisting. A comment saying
+      # "use the scale" would have stopped none of it, because the drift
+      # came from copying a neighbouring component rather than from
+      # reading the stylesheet. So the scale fails the build instead.
+      - name: Every font size is on the scale
+        run: npx tsx scripts/check-type-scale.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT 31 AUGUST.
       # Parses the formulas the site publishes to readers, executes them,
       # and asserts they reproduce lib/scoring.ts across ~9,600

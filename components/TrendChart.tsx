@@ -243,16 +243,16 @@ export default function TrendChart({
           dataKey="year"
           ticks={smartTicks}
           tickFormatter={isDateAxis ? formatTick : undefined}
-          minTickGap={isDateAxis ? 24 : 5} tick={{ fontSize: 11.5, fill: "#9296AB" }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
+          minTickGap={isDateAxis ? 24 : 5} tick={{ fontSize: 12, fill: "var(--slate)" }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
         <YAxis
           domain={yDomain ?? ["auto", "auto"]}
-          tick={{ fontSize: 11, fill: "#9296AB" }}
+          tick={{ fontSize: 11, fill: "var(--slate)" }}
           axisLine={false}
           tickLine={false}
-          label={yLabel ? { value: yLabel, angle: -90, position: "insideLeft", fontSize: 11, fill: "#9296AB" } : undefined}
+          label={yLabel ? { value: yLabel, angle: -90, position: "insideLeft", fontSize: 11, fill: "var(--slate)" } : undefined}
         />
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "#12121A", fontSize: 12.5, fontFamily: "monospace" }}
+          contentStyle={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "#12121A", fontSize: 13, fontFamily: "IBM Plex Mono, monospace" }}
           labelStyle={{ fontWeight: 700, color: "#F5F6FA" }}
           itemStyle={{ color: "#C7C9D9" }}
         />

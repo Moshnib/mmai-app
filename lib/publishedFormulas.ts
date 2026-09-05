@@ -1,3 +1,19 @@
+// RETIRE THIS FILE AT CUTOVER.
+//
+// Nothing imports it any more except its own CI check. It existed because
+// the Learn page carried HAND-TYPED formulas that drifted from the engine
+// -- the 31 August failure. That class of bug is gone: Learn now generates
+// every formula from lib/composite.ts, so there is no published string
+// left to drift.
+//
+// It is kept only while the five-pillar engine still runs and still writes
+// pillar columns on every refresh. Delete this file and
+// scripts/verify-published-formulas.ts, and remove that CI step, on the
+// day ALERT_ENGINE in app/api/refresh/route.ts moves to v2.0.
+//
+// A verifier that guards nothing still reports green, which is worse than
+// not existing -- it implies a coverage that is not there.
+
 // ============================================================
 // THE FORMULAS AS PUBLISHED TO READERS.
 //

@@ -72,7 +72,7 @@ function MiniChart({
   return (
     <div style={CARD_STYLE}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)" }}>{title}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{title}</span>
         {granularity && (
           <span className="micro-note" style={{ textTransform: "uppercase" }}>{granularity}</span>
         )}
@@ -107,7 +107,7 @@ function ComparisonCell({ lp, kind, noSourceHint }: { lp: LatestPoint | null; ki
   }
   return (
     <div>
-      <div style={{ fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
+      <div style={{ fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
         {formatValue(lp.point.value as number, kind)}
       </div>
       <div className="micro-note">
@@ -190,7 +190,7 @@ function buildRelationshipSeries(): { series: TimeSliderSeriesData[]; years: str
     }
     const byYear = new Map(paired.map((p) => [p.period, { x: p.x, y: p.y }]));
     paired.forEach((p) => yearSet.add(p.period));
-    series.push({ key: c.code, name: c.name, color: COUNTRY_COLORS[c.code] ?? "#9296AB", byYear });
+    series.push({ key: c.code, name: c.name, color: COUNTRY_COLORS[c.code] ?? "var(--slate)", byYear });
   }
   return { series, years: Array.from(yearSet).sort(), excluded };
 }
@@ -260,7 +260,7 @@ function buildCrossSeries(indicator: CrossIndicatorKey): { series: Series[]; exc
     series.push({
       key: c.code,
       name: c.name,
-      color: COUNTRY_COLORS[c.code] ?? "#9296AB",
+      color: COUNTRY_COLORS[c.code] ?? "var(--slate)",
       data: years.map((y) => ({ year: y, value: byYear.get(y) ?? null })),
     });
   }
@@ -306,7 +306,7 @@ export default function GulfTrends() {
 
   return (
     <>
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           {/* Primary analytical block (brief §18): one large chart, all
               six countries, switched by indicator tab -- rather than a
@@ -423,7 +423,7 @@ export default function GulfTrends() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">SNAPSHOT COMPARISON</p>
@@ -437,7 +437,7 @@ export default function GulfTrends() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">COST OF LIVING VS. CURRENCY STABILITY</p>

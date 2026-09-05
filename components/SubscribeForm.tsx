@@ -40,8 +40,8 @@ export default function SubscribeForm() {
   if (status === "done") {
     return (
       <div style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 16, padding: "20px 24px", textAlign: "center" }}>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--gold-deep)" }}>You&apos;re subscribed ✓</div>
-        <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "6px 0 0" }}>
+        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--accent-2)" }}>You&apos;re subscribed ✓</div>
+        <p style={{ fontSize: 13, color: "var(--slate)", margin: "6px 0 0" }}>
           We&apos;ll only email you when a watched market&apos;s band actually changes — not every day.
         </p>
       </div>
@@ -50,10 +50,10 @@ export default function SubscribeForm() {
 
   return (
     <form onSubmit={handleSubmit} style={{ background: "var(--glass)", border: "1px solid var(--hair)", borderRadius: 16, padding: "20px 24px", backdropFilter: "blur(10px)" }}>
-      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10.5, fontWeight: 700, color: "var(--gold-deep)", letterSpacing: 1, marginBottom: 10 }}>
+      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--accent-2)", letterSpacing: 1, marginBottom: 10 }}>
         GET NOTIFIED
       </div>
-      <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "0 0 14px" }}>
+      <p style={{ fontSize: 13, color: "var(--slate)", margin: "0 0 14px" }}>
         Alert me only when a market&apos;s status actually changes (e.g. Balanced → Supportive) — not a daily digest.
       </p>
 
@@ -66,7 +66,7 @@ export default function SubscribeForm() {
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
               padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer",
-              border: selected.includes(m.code) ? "1px solid var(--gold)" : "1px solid var(--hair)",
+              border: selected.includes(m.code) ? "1px solid var(--accent)" : "1px solid var(--hair)",
               background: selected.includes(m.code) ? "rgba(139,92,246,0.18)" : "transparent",
               color: selected.includes(m.code) ? "#fff" : "var(--slate)",
             }}
@@ -94,7 +94,7 @@ export default function SubscribeForm() {
           disabled={status === "loading"}
           style={{
             padding: "9px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: "linear-gradient(135deg, var(--gold-deep), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13,
+            background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13,
             opacity: status === "loading" ? 0.6 : 1,
           }}
         >

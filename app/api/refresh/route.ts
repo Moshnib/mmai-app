@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { computePillarScores, computeComposite, bandFor, type RawIndicators, type PillarScores } from "@/lib/scoring";
+import { computeMmai } from "@/lib/composite";
+
+/** Which engine produces the `band` column that subscriber alerts compare.
+ *  Still v1.0: the three-dimension score is written beside it but is not
+ *  yet the published headline. Changing this to "v2.0" is the cutover, and
+ *  the comparability guard below will correctly suppress the one-off wave
+ *  of band changes that causes. */
+const ALERT_ENGINE = "v1.0";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
@@ -600,13 +608,25 @@ export async function GET(request: Request) {
       livePillars.push(pillars);
       const { composite, coverage } = computeComposite(pillars);
       const band = bandFor(composite);
+
+      // ENGINE v2.0 runs alongside v1.0 during the migration. Both are
+      // written, so a page can move over one at a time and the two can be
+      // compared on the same row. v2 withholds rather than reweighting, so
+      // its percentile is null on a run where any indicator failed --
+      // which the mmai_scores check constraint also enforces.
+      const v2 = computeMmai(raw, market);
+      // Describes WHAT THE ROW HOLDS, not which engine is published. A run
+      // where an indicator failed carries no v2 score, because v2 withholds
+      // rather than reweighting.
+      const formulaVersion = v2.percentile != null ? "v1.0+v2.0" : "v1.0";
+
       const observationDate = new Date().toISOString().slice(0, 10);
 
       // Look up the previous score BEFORE writing the new one — this is
       // the only way to know whether the band actually changed.
       const { data: previousRows } = await supabase
         .from("mmai_scores")
-        .select("band, composite, observation_date, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_fr")
+        .select("band, composite, observation_date, pillar_ps, pillar_gm, pillar_lm, pillar_mc, pillar_fr, formula_version")
         .eq("market", market)
         .order("observation_date", { ascending: false })
         .order("computed_at", { ascending: false })
@@ -634,7 +654,36 @@ export async function GET(request: Request) {
       const previousShape = previousRow
         ? shapeOf([previousRow.pillar_ps, previousRow.pillar_gm, previousRow.pillar_lm, previousRow.pillar_mc, previousRow.pillar_fr])
         : null;
-      const comparableToPrevious = previousShape !== null && previousShape === currentShape;
+      // A BAND MOVE CAUSED BY CHANGING THE ENGINE IS NOT AN ECONOMIC MOVE.
+      //
+      // On the day the three-dimension composite becomes the published
+      // headline, every market's band changes at once because the method
+      // changed -- Japan moves from 82.2 to 50.7 without anything happening
+      // in Japan. Emailing subscribers about that is the same class of
+      // false alert the pillar-shape signature exists to prevent, except
+      // hitting every subscriber and every market simultaneously.
+      //
+      // The shape signature cannot catch it: pillar coverage is unchanged,
+      // it is the formula that moved.
+      //
+      // WHAT IS COMPARED IS THE ENGINE BEHIND THE BAND, not everything the
+      // row happens to hold. During the migration each row carries both
+      // scores while `band` still comes from v1.0, so a row stamped
+      // "v1.0+v2.0" and one stamped "v1.0" are perfectly comparable for
+      // alerting -- comparing the raw stamp would suppress real v1 alerts
+      // every time a source hiccup dropped the v2 score.
+      //
+      // At cutover, `band` moves to percentileBandLabel() and ALERT_ENGINE
+      // becomes "v2.0". The guard then fires exactly once, for the right
+      // reason, and stops.
+      const previousVersion = (previousRow?.formula_version as string | undefined) ?? null;
+      const engineBehindBand = (version: string | null) => {
+        if (version === null) return null;
+        return version.includes(ALERT_ENGINE) ? ALERT_ENGINE : version;
+      };
+      const sameEngine =
+        previousVersion === null || engineBehindBand(previousVersion) === engineBehindBand(formulaVersion);
+      const comparableToPrevious = previousShape !== null && previousShape === currentShape && sameEngine;
 
       // SOURCE_NOTES describes what a fully-successful run looks like --
       // if any live indicator actually came back null this run (a source
@@ -760,6 +809,13 @@ export async function GET(request: Request) {
           composite,
           coverage,
           band: band.label,
+          // Engine v2.0, written beside v1.0 rather than instead of it.
+          dim_conditions: v2.dimensions?.C ?? null,
+          dim_direction: v2.dimensions?.D ?? null,
+          dim_capacity: v2.dimensions?.K ?? null,
+          composite_z: v2.composite,
+          percentile: v2.percentile,
+          formula_version: formulaVersion,
         }),
       ]);
 
@@ -776,7 +832,11 @@ export async function GET(request: Request) {
         // moved, but the two readings were built from different pillars,
         // so there is nothing honest to tell anyone.
         console.warn(
-          `${market}: band ${previousBand} -> ${band.label} SUPPRESSED — pillar coverage changed (${previousShape} -> ${currentShape}). Not an economic move; no email sent.`
+          `${market}: band ${previousBand} -> ${band.label} SUPPRESSED — ` +
+            (sameEngine
+              ? `pillar coverage changed (${previousShape} -> ${currentShape})`
+              : `scoring engine changed (${previousVersion} -> ${formulaVersion}; band engine ${ALERT_ENGINE})`) +
+            `. Not an economic move; no email sent.`
         );
       }
 

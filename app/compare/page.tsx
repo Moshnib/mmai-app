@@ -7,7 +7,7 @@ import GovernmentDebtRow from "@/components/GovernmentDebtRow";
 export const metadata: Metadata = {
   title: "Compare Markets",
   description:
-    "Every tracked market side by side over any year range — composite scores, individual pillar scores, and the raw underlying rates, on one chart.",
+    "Every tracked market side by side over any year range — composite scores, the three dimension rankings, and the raw underlying rates, on one chart.",
 };
 
 // The methodology footer lives HERE rather than inside ComparePageInner
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default function ComparePage() {
   return (
     <>
-      <Suspense fallback={<div style={{ padding: 60, textAlign: "center", color: "#9296AB" }}>Loading…</div>}>
+      <Suspense fallback={<div style={{ padding: 60, textAlign: "center", color: "var(--slate)" }}>Loading…</div>}>
         <ComparePageInner />
       </Suspense>
 
@@ -38,22 +38,23 @@ export default function ComparePage() {
           put an error block on a page whose main content is fine. */}
       <GovernmentDebtRow />
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           {/* Short methodology footer (brief §13, item 5) */}
           <div
             className="mmai-card"
             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}
           >
-            <span style={{ fontSize: 12.5, color: "var(--slate)", lineHeight: 1.6, maxWidth: "70ch" }}>
-              MMAI is a composite index (0–100) built from five weighted pillars. A higher score means a more supportive
+            <span style={{ fontSize: 13, color: "var(--slate)", lineHeight: 1.6, maxWidth: "70ch" }}>
+              MMAI is a percentile rank (0–100) against 148 market-years of the same six economies, built from three equally weighted dimensions. A higher score means a more supportive
               macro backdrop. Not investment advice.
             </span>
             <Link
               href="/learn#topic-mmai"
+              className="tap"
               style={{
-                fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5, fontWeight: 700,
-                color: "var(--gold-deep)", textDecoration: "none", whiteSpace: "nowrap",
+                fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700,
+                color: "var(--accent-2)", textDecoration: "none", whiteSpace: "nowrap",
               }}
             >
               How MMAI is calculated →

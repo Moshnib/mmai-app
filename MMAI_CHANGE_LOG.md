@@ -6,6 +6,98 @@ Entries are newest first. The frozen V1 record is in [`MMAI_V1_FROZEN_BENCHMARK.
 
 ---
 
+## 2026-09-04 — The composite is rebuilt: three standardised dimensions, read as a percentile
+
+**Category:** Method. **Every published score changes.** Awaiting approval — PR #1, branch `composite-three-dimensions`, not merged and not live.
+
+### Old rule
+
+Five pillars, each mapped to 0–100 by a hand-chosen linear transform, combined on fixed weights that reweight around anything missing, published above a 70% coverage threshold.
+
+```
+PILLAR_WEIGHTS = { PS: 0.25, GM: 0.25, LM: 0.1875, MC: 0.1875, FR: 0.125 }
+MMAI = (Σ weight × pillar_score) / (Σ active weights)
+```
+
+### New rule
+
+```
+CONDITIONS = w_pi·Q(|pi-pi*|) + w_u·Q(unemployment)
+DIRECTION  = Q(GDP growth)
+CAPACITY   = 0.5·Q(debt) + 0.5·Q(policy rate)
+
+Q = ±(X - mu)/sigma, signs aligned so positive is always better
+MMAI_Z = (C' + D' + K')/3, each dimension standardised across the history
+published score = percentile rank of MMAI_Z against 148 market-years
+```
+
+Weights: w_pi = 0.381355932, w_u = 0.618644068, the rest 0.5 within dimensions and an equal third across them. Missing data withholds the composite rather than reweighting.
+
+### Reason
+
+**The old weights were never calibrated against anything.** 18.75% is not a decision — it is 15 ÷ 0.8, the arithmetic left over when a sixth pillar was dropped and the rest were scaled up. The charter already recorded that the constants were not scientifically justified. Asked "why 18.75?", there was no answer that survived the question, and the owner declined to defend the index publicly until there was one.
+
+**The transforms were equally arbitrary.** `100 − 15 × |inflation − target|` chooses 15 for no stated reason; so do the 10s and the 12. Standardising against the actual historical distribution replaces every one of those invented multipliers with a measured mean and standard deviation.
+
+**A percentile is a claim the method can support.** "Better than 85% of the last 26 years" is checkable. "82.8 out of 100, Strongly Supportive" was an editorial verdict the arithmetic never entitled anyone to give.
+
+### Reference
+
+- Blanchflower, D. (2007), *Is Unemployment More Costly Than Inflation?*, NBER WP 13505 — the 0.0090 : 0.0146 ratio behind the Conditions split, **with the qualification in "Impact" below**.
+- Di Tella, MacCulloch & Oswald (2001), *AER* 91(1), 335–341 — replicates at 1.66.
+- OECD/JRC (2008), *Handbook on Constructing Composite Indicators* — equal weighting as the standard default; the nominal-versus-effective weight distinction.
+- European Central Bank, Monetary Policy Strategy Statement, July 2021 — the stated symmetry that inflation-gap symmetry now rests on.
+- Nobay & Peel (2003); Ruge-Murcia (2003, 2004) — asymmetric central-bank loss, considered and not adopted.
+- Federal Reserve, Statement on Longer-Run Goals, revised August 2020 — the opposite asymmetry, also not adopted.
+
+### Data used
+
+148 market-years: six economies, 2000–2025. Inflation, GDP growth and unemployment from World Bank annual series to 2018 and the national statistical agencies from 2019; policy rate from BIS to 2018 and the central banks after; government debt from BIS WS_TC throughout.
+
+Published as `MMAI_reference_set_148.csv`, SHA-256 `ca37d6edf9174d211b4669c86ef0f3a437048d66e2da1694dad6cd88a423b256`, and generated into `lib/referenceSet.ts` so the code and the public file cannot diverge.
+
+**Japan carries 18 rows, not 26.** For 2001–2005 and 2013–2015 the Bank of Japan targeted the monetary base rather than a rate, so no policy rate exists. Absent at source, not dropped.
+
+### Test results
+
+| Test | Result |
+|---|---|
+| **Blind external reproduction** | **PASS.** Australia 2026 = 85.135135135 reproduced from the published CSV and specification alone by a party with no knowledge of the expected result. Every figure matched to floating-point precision. |
+| Constants recomputed independently | PASS — all five indicator means and sds, all three dimension sds, both ladder endpoints |
+| Robustness, 2 Capacity weights, ±50% | Ranking holds 99.5% of 4,000 draws; worst move 12.8 points |
+| Robustness, all 5 non-measured weights, ±30% | Ranking holds 71.0%; worst move 25.7 points |
+| Source-break test, 41 overlapping market-years | Ranking identical; largest score move 2.3 points |
+| Inflation symmetry bracket, 3:1 both directions | Largest move 6.1 points; ranking survives one direction, not the other |
+| Missing-data fallback and its 14-day bound | PASS, against Canada's real rows |
+| Subscriber-alert guard across the cutover | PASS in all three phases |
+| Typecheck, lint, production build, full CI | PASS |
+
+### Impact
+
+**Every published score changes.** Australia 82.8 → 85.1 · US 79.1 → 64.2 · UK 78.2 → 60.8 · **Japan 82.2 → 50.7** · Canada 73.5 → 39.9 · Euro Area 75.6 → 38.5.
+
+Japan is the substantive change. Its Conditions score is the highest of every market-year in the record and its Capacity close to the lowest; those offset, and the old headline described neither.
+
+**Three findings that must be published with the score, not buried:**
+
+1. **No weight in this method is measured.** Blanchflower's coefficient is estimated on the inflation *rate*; MMAI applies it to distance from target. On the 45.3% of rows below target the two disagree about which direction is an improvement. Reclassified from measured to a declared judgment informed by the evidence. Accounting: 0 measured, 4 judgments, 3 conventions.
+2. **Equal thirds is not equal in effect** — measured at 25.5 / 39.6 / 34.9. Standardising equalised the dimensions' spread, not their influence.
+3. **Scores carry ±2.3 percentile points** from the 2019 source break. Countries closer than that are published as tied; Canada and the Euro Area currently are.
+
+**Also retired:** the neutral-rate estimates, including Australia's nine-year-old figure that the old method itself called its weakest number. Nothing in the score now depends on anyone's estimate of neutral. The yield-curve data stays collected but unscored — its standing is as a *predictor*, and the index disclaims forecasting.
+
+### Approval status
+
+**Not approved. Not merged. Not live.** The five-pillar engine still produces every published number. PR #1 open; CI green; Vercel preview deployed. The migration `2026-09-04-three-dimension-composite.sql` is applied but additive — the old composite column is left null on new rows so an unmigrated page fails visibly rather than quietly showing a different number.
+
+### Rollback method
+
+Before cutover: close PR #1. Nothing published changes, because nothing published uses it.
+
+After cutover: revert the four switches — `ALERT_ENGINE` to `"v1.0"`, `band` back to `bandFor`, restore `lib/publishedFormulas.ts` and its CI step, re-enable the five-pillar path. `mmai_scores` keeps every pillar column and every historical row, so no data is lost in either direction and both engines can be recomputed from `raw_indicators` at any time. The v2 columns can be left in place; they are additive and unread by the old engine.
+
+---
+
 ## 2026-09-02 — Provenance is generated, and the published statistics guard themselves
 
 **Category:** Control. Two holes closed that had each already caused a real error. No equation, weight, band or threshold changed; **no composite score changed.**

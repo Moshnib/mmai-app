@@ -135,12 +135,12 @@ export default function SourcesTable({
     <>
       {groups.map((group) => (
         <div key={group.name} style={{ marginBottom: 28 }}>
-          <h2 style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
+          <h2 style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: 17, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
             {codeForName[group.name] && <Flag code={codeForName[group.name]} size={22} />}
             {group.name}
           </h2>
           <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden", backdropFilter: "blur(14px)" }}>
-            <div className="sources-head" style={{ background: "rgba(139,92,246,0.18)", fontFamily: "monospace", fontWeight: 700, color: "var(--gold)", letterSpacing: 0.5 }}>
+            <div className="sources-head" style={{ background: "rgba(139,92,246,0.18)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 700, color: "var(--accent)", letterSpacing: 0.5 }}>
               <span>INDICATOR</span>
               <span>INSTITUTION</span>
               <span>LICENCE</span>
@@ -162,7 +162,7 @@ export default function SourcesTable({
                       rel="noopener noreferrer"
                       style={{ color: "var(--ink-soft)", textDecoration: "underline", textDecorationColor: "var(--hair)", textUnderlineOffset: 3 }}
                     >
-                      {e.institution} <span style={{ color: "var(--slate)", fontSize: 10 }}>↗</span>
+                      {e.institution} <span style={{ color: "var(--slate)", fontSize: 11 }}>↗</span>
                     </a>
                   ) : (
                     e.institution
@@ -170,18 +170,18 @@ export default function SourcesTable({
                 </span>
                 <span data-label="Licence" style={{ color: "var(--slate)" }}>
                   {e.license}
-                  {e.note && <div style={{ fontSize: 10.5, fontStyle: "italic", color: "var(--gold-deep)", marginTop: 2 }}>{e.note}</div>}
+                  {e.note && <div style={{ fontSize: 11, fontStyle: "italic", color: "var(--accent-2)", marginTop: 2 }}>{e.note}</div>}
                 </span>
                 <span data-label="Status">
                   <span
                     style={{
-                      fontFamily: "monospace",
-                      fontSize: 10.5,
+                      fontFamily: "IBM Plex Mono, monospace",
+                      fontSize: 11,
                       fontWeight: 700,
                       padding: "3px 9px",
                       borderRadius: 999,
-                      background: e.status === "live" ? "var(--teal-bg)" : e.status === "manual" ? "var(--gold-bg)" : "rgba(255,255,255,0.06)",
-                      color: e.status === "live" ? "var(--teal)" : e.status === "manual" ? "var(--gold-deep)" : "var(--slate)",
+                      background: e.status === "live" ? "var(--status-live-bg)" : e.status === "manual" ? "var(--status-manual-bg)" : "rgba(255,255,255,0.06)",
+                      color: e.status === "live" ? "var(--status-live)" : e.status === "manual" ? "var(--accent-2)" : "var(--slate)",
                     }}
                   >
                     {e.status === "live" ? "LIVE" : e.status === "manual" ? "MANUAL" : "UNAVAILABLE"}
@@ -190,12 +190,12 @@ export default function SourcesTable({
                       figure is current. A World Bank annual series fetched
                       today is working, not new. Cadence separates the two. */}
                   {e.status === "live" && e.cadence && (
-                    <span style={{ fontFamily: "monospace", fontSize: 10.5, color: "var(--slate)", marginLeft: 7 }}>
+                    <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)", marginLeft: 7 }}>
                       {cadenceLabel(e.cadence)}
                     </span>
                   )}
                 </span>
-                <span data-label="Last refreshed" style={{ fontFamily: "monospace", fontSize: 11, color: "var(--slate)" }}>
+                <span data-label="Last refreshed" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>
                   {refreshedFor(group.name, e)}
                 </span>
               </div>

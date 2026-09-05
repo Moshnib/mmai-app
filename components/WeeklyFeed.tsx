@@ -5,7 +5,7 @@ import Flag from "@/components/Flag";
 import { colorForScore, type PillarKey } from "@/lib/scoring";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { RAW_DECIMALS } from "@/components/KeyRatesRow";
-import { fetchAllWeeklyChanges, floorFor, BUCKET_MIN_GAP_DAYS, type WeeklyChangesResult } from "@/lib/weeklyChanges";
+import { fetchAllWeeklyChanges, floorFor, type WeeklyChangesResult } from "@/lib/weeklyChanges";
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -18,8 +18,6 @@ function formatDate(ms: number): string {
 // and printing one date for all six would have told a reader the US had
 // no comparable history when it had a week of it.
 const trackingSince = (market: string) => formatDate(floorFor(market));
-const firstComparison = (market: string) =>
-  formatDate(floorFor(market) + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000);
 
 // Matches lib/scoring.ts's COLOR_STOPS[1] (the orange stop) -- not
 // imported since scoring.ts doesn't export the raw stops, only
@@ -49,7 +47,7 @@ export default function WeeklyFeed() {
     // .catch as well as .then: fetchAllWeeklyChanges swallows its own
     // errors today, but a future edit that let one escape would have
     // left this stuck on the skeleton forever with no way to tell.
-    fetchAllWeeklyChanges(2)
+    fetchAllWeeklyChanges()
       .then((r) => alive && setData(r))
       .catch(() => alive && setData({ ok: false, reason: "unavailable" }));
     return () => {
@@ -80,7 +78,7 @@ export default function WeeklyFeed() {
     <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "20px 24px", backdropFilter: "blur(14px)" }}>
       {brentNow != null && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, paddingBottom: 14, borderBottom: "1px dashed var(--hair)", fontFamily: "IBM Plex Mono, monospace" }}>
-          <span style={{ fontSize: 10.5, color: "var(--slate)", textTransform: "uppercase", letterSpacing: 0.5 }}>Brent crude, YoY (shared across all markets)</span>
+          <span style={{ fontSize: 11, color: "var(--slate)", textTransform: "uppercase", letterSpacing: 0.5 }}>Brent crude, YoY (shared across all markets)</span>
           <span style={{ fontSize: 13, color: "var(--ink)" }}>
             {brentNow.toFixed(1)}% <span style={{ color: "var(--slate)", marginLeft: 6 }}>{brentDeltaText}</span>
           </span>
@@ -101,15 +99,11 @@ export default function WeeklyFeed() {
               const soonest = Math.min(...waiting.map((r) => floorFor(r.marketCode)));
               return (
                 <>
-                  A week-over-week comparison needs two readings at least {BUCKET_MIN_GAP_DAYS} days apart from the
-                  same source. <b style={{ color: "var(--ink)" }}>{names}</b>{" "}
-                  {waiting.length === 1 ? "changed source" : "changed source"} on{" "}
-                  <b style={{ color: "var(--ink)" }}>{formatDate(soonest)}</b>, so{" "}
-                  {waiting.length === 1 ? "its" : "their"} first real change appears around{" "}
-                  <b style={{ color: "var(--ink)" }}>
-                    {formatDate(soonest + BUCKET_MIN_GAP_DAYS * 24 * 60 * 60 * 1000)}
-                  </b>{" "}
-                  — not a gap in the data, just how recently that source changed.
+                  Nothing has moved for <b style={{ color: "var(--ink)" }}>{names}</b> since{" "}
+                  <b style={{ color: "var(--ink)" }}>{formatDate(soonest)}</b>, when{" "}
+                  {waiting.length === 1 ? "its source" : "their sources"} last changed. Inflation and unemployment
+                  are published monthly, growth and debt quarterly, and policy rates only when a committee sits — so
+                  a still reading is the normal state between releases, not a gap in the data.
                 </>
               );
             })()}
@@ -125,7 +119,7 @@ export default function WeeklyFeed() {
           currently refreshing", which blamed the data pipeline for what
           is almost always a connection problem on the reader's side. */}
       {data && !data.ok && (
-        <div style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "12px 14px", background: "rgba(240,151,91,0.06)", border: "1px solid rgba(240,151,91,0.22)", borderRadius: 10, fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.6 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "12px 14px", background: "rgba(240,151,91,0.06)", border: "1px solid rgba(240,151,91,0.22)", borderRadius: 10, fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6 }}>
           <span aria-hidden="true">●</span>
           <span>
             {data.reason === "unconfigured"
@@ -160,7 +154,7 @@ export default function WeeklyFeed() {
           const hasFigures = !!now;
           const scoreDelta = r.buckets[0] && then ? delta(r.buckets[0].composite, then.composite) : null;
           const stateColor =
-            scoreDelta?.symbol === "↑" ? "var(--teal)" : scoreDelta?.symbol === "↓" ? COMPOSITE_DOWN_COLOR : "var(--slate)";
+            scoreDelta?.symbol === "↑" ? "var(--status-live)" : scoreDelta?.symbol === "↓" ? COMPOSITE_DOWN_COLOR : "var(--slate)";
 
           return (
             <div key={r.marketCode} className="signal-row">
@@ -180,7 +174,7 @@ export default function WeeklyFeed() {
                       Tracking since {trackingSince(r.marketCode)}
                     </span>
                     <span className="signal-detail">
-                      First comparison expected ~{firstComparison(r.marketCode)}
+                      No change yet since its source was swapped
                     </span>
                   </>
                 ) : (
@@ -193,11 +187,18 @@ export default function WeeklyFeed() {
                       {scoreDelta ? (
                         <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>
                       ) : (
-                        // Says WHY there is no delta rather than leaving a
-                        // blank the reader has to interpret. The figure
-                        // beside it is live either way.
+                        // ALWAYS SAYS SOMETHING. This read "no weekly
+                        // comparison yet", which reports the state of the
+                        // software rather than the state of the economy --
+                        // and on a feed that only fires when a figure
+                        // moves, most rows on most days land here.
+                        // "Unchanged since 12 August" is the same absence
+                        // stated as the fact it actually is, and unlike
+                        // the old label it is checkable.
                         <span style={{ color: "var(--slate)", marginLeft: 8, fontWeight: 500 }}>
-                          no weekly comparison yet
+                          {r.steadySince
+                            ? `unchanged since ${formatDate(new Date(r.steadySince).getTime())}`
+                            : "first reading — nothing to compare yet"}
                         </span>
                       )}
                     </span>
@@ -232,10 +233,12 @@ export default function WeeklyFeed() {
       </div>
 
       <p style={{ fontSize: 11, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.6 }}>
-        Compares each market&apos;s latest figures to the closest available reading from roughly a week earlier — the raw
-        numbers only, no interpretation. An annual-frequency indicator (GDP growth or unemployment for most markets
-        outside the US) showing no change most weeks is expected — it only updates when a new annual figure is published,
-        not every week.
+        Each market is compared against the most recent reading that was actually <em>different</em>, not against a
+        fixed week ago — official figures arrive on release schedules, so a fixed window is either empty or lumps
+        unrelated releases together. Where nothing has moved, the row says how long the current figures have stood.
+        Raw numbers only, no interpretation. Inflation and unemployment are published monthly, growth and debt
+        quarterly, and policy rates only when a committee sits, so a steady reading between releases is the normal
+        state rather than a gap in the data.
       </p>
     </div>
   );

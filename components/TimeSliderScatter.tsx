@@ -103,7 +103,7 @@ export default function TimeSliderScatter({
   }, [series]);
 
   if (years.length === 0) {
-    return <p style={{ fontSize: 12.5, color: "var(--slate)" }}>Not enough overlapping years yet to compare.</p>;
+    return <p style={{ fontSize: 13, color: "var(--slate)" }}>Not enough overlapping years yet to compare.</p>;
   }
 
   const currentYear = years[safeYearIndex];
@@ -143,7 +143,7 @@ export default function TimeSliderScatter({
           aria-label={playing ? "Pause" : "Play"}
           style={{
             width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--hair)",
-            background: "rgba(34,211,238,0.1)", color: "var(--gold)", cursor: "pointer",
+            background: "rgba(34,211,238,0.1)", color: "var(--accent)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", flex: "none", fontSize: 13,
           }}
         >
@@ -159,15 +159,15 @@ export default function TimeSliderScatter({
             onChange={handleSliderChange}
             aria-label="Year"
             aria-valuetext={currentYear}
-            style={{ width: "100%", accentColor: "var(--gold)", cursor: "pointer" }}
+            style={{ width: "100%", accentColor: "var(--accent)", cursor: "pointer" }}
           />
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: "var(--slate)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>
             {years.map((y, i) => (
-              <span key={y} style={i === safeYearIndex ? { color: "var(--gold)", fontWeight: 700 } : undefined}>{y}</span>
+              <span key={y} style={i === safeYearIndex ? { color: "var(--accent)", fontWeight: 700 } : undefined}>{y}</span>
             ))}
           </div>
         </div>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 20, color: "var(--gold)", minWidth: 56, textAlign: "center", flex: "none" }}>
+        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 21, color: "var(--accent)", minWidth: 56, textAlign: "center", flex: "none" }}>
           {currentYear}
         </div>
       </div>
@@ -210,7 +210,7 @@ export default function TimeSliderScatter({
           does). This legend is the one place the real x/y values for the
           current year are readable as text, not just visible as a dot
           position. */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 14, fontFamily: "IBM Plex Mono, monospace", fontSize: 11.5 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 14, fontFamily: "IBM Plex Mono, monospace", fontSize: 12 }}>
         {series.map((s) => {
           const point = s.byYear.get(currentYear);
           return (

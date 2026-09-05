@@ -6,7 +6,7 @@ import Link from "next/link";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
 import KeyRatesRow from "@/components/KeyRatesRow";
-import PillarGrid from "@/components/PillarGrid";
+import DimensionCards from "@/components/DimensionCards";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import WorldMap from "@/components/WorldMap";
 import GulfCard from "@/components/GulfCard";
@@ -14,8 +14,13 @@ import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
 import CountryGlyph from "@/components/CountryGlyph";
-import { narrativeDrivers, bandFor, PILLAR_NAMES, TOTAL_PILLARS, type RawIndicators , inflationTargetFor , maskedPillar, colorForScore } from "@/lib/scoring";
-import { FALLBACK_MARKETS, scoreMarket, type MarketData } from "@/lib/markets";
+import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/scoring";
+import {
+  DIMENSION_NAMES, dimensionDrivers, maskedDimension, percentileBandLabel,
+  UNCERTAINTY_NOTE, CONVENTION_NOTE,
+} from "@/lib/composite";
+import { FALLBACK_MARKETS, scoreMarketV2, type MarketData } from "@/lib/markets";
+import { latestCompleteObservation, fallbackNote, type ObservationPick } from "@/lib/latestComplete";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
@@ -29,14 +34,16 @@ function formatUpdatedAt(iso: string): string {
 }
 
 function narrativeFor(market: MarketData): string {
-  const { pillars, coveragePillars, coverage } = scoreMarket(market);
-  const drivers = narrativeDrivers(pillars);
-  if (coverage < 0.7 || !drivers) {
-    return `${market.name} currently has only ${coveragePillars} of ${TOTAL_PILLARS} structural pillars populated (${(coverage * 100).toFixed(1)}% coverage), below the 70% publication threshold. Rather than compute a score from incomplete data, MMAI shows N/A.`;
+  const { percentile, dimensionPercentiles, missing } = scoreMarketV2(market);
+  if (percentile == null || dimensionPercentiles == null) {
+    const names = missing.join(", ");
+    return `${market.name} has no score right now: ${names} is missing. MMAI withholds the composite rather than reweighting around a gap, because a country scored on four indicators is not comparable with one scored on five.`;
   }
-  const bestVal = pillars[drivers.best]!;
-  const worstVal = pillars[drivers.worst]!;
-  return `${market.name}'s strongest pillar right now is ${PILLAR_NAMES[drivers.best]} (${bestVal.toFixed(1)}), while ${PILLAR_NAMES[drivers.worst]} (${worstVal.toFixed(1)}) is doing the most to hold the composite back.`;
+  const drivers = dimensionDrivers(dimensionPercentiles);
+  if (!drivers) return `${market.name} sits at ${percentile.toFixed(1)} — ${percentileBandLabel(percentile).toLowerCase()} of the last 26 years, with its three dimensions evenly matched.`;
+  const best = dimensionPercentiles[drivers.best];
+  const worst = dimensionPercentiles[drivers.worst];
+  return `${market.name}'s strongest dimension is ${DIMENSION_NAMES[drivers.best]}, above ${best.toFixed(0)}% of the historical record, while ${DIMENSION_NAMES[drivers.worst]} sits above only ${worst.toFixed(0)}%. The headline averages the three equally.`;
 }
 
 // Rule-based, not AI-generated -- every sentence below is a direct,
@@ -92,6 +99,12 @@ function rateNarrativeFor(raw: RawIndicators, marketCode: string): string | null
 export default function OverviewPage() {
   const router = useRouter();
   const [markets, setMarkets] = useState<MarketData[]>(FALLBACK_MARKETS);
+  // Which observation each market's score came from, so the page can say
+  // "scored on 3 September data" when today's row was incomplete rather
+  // than either blanking the country or quietly showing an older figure.
+  const [observationPicks, setObservationPicks] = useState<
+    Record<string, ObservationPick<RawIndicatorRow & { fetched_at: string }>>
+  >({});
   const [current, setCurrent] = useState("US");
   const [dataSource, setDataSource] = useState<"live" | "fallback">("fallback");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -110,10 +123,17 @@ export default function OverviewPage() {
           .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
         if (error || !data || data.length === 0) return;
 
-        const latestByMarket = new Map<string, RawIndicatorRow & { fetched_at: string }>();
-        for (const row of data as Array<RawIndicatorRow & { fetched_at: string }>) {
-          if (!latestByMarket.has(row.market)) latestByMarket.set(row.market, row);
+        type Row = RawIndicatorRow & { fetched_at: string };
+        // Every row per market, newest first — the composite is scored on
+        // the most recent COMPLETE observation, so one row is not enough.
+        const rowsByMarket = new Map<string, Row[]>();
+        for (const row of data as Row[]) {
+          const list = rowsByMarket.get(row.market);
+          if (list) list.push(row);
+          else rowsByMarket.set(row.market, [row]);
         }
+        const latestByMarket = new Map<string, Row>();
+        for (const [code, list] of rowsByMarket) latestByMarket.set(code, list[0]);
         // Oldest of the *displayed* markets' latest fetches, not the newest --
         // if one market's refresh stalled, "last updated" should say so rather
         // than claim everything is as fresh as the one market that ran.
@@ -132,8 +152,20 @@ export default function OverviewPage() {
         if (oldestOfLatestFetches) setLastUpdated(oldestOfLatestFetches);
 
         const now = Date.now();
+        const picks: Record<string, ObservationPick<Row>> = {};
         const live: MarketData[] = FALLBACK_MARKETS.map((m) => {
-          const row = latestByMarket.get(m.code);
+          const all = rowsByMarket.get(m.code) ?? [];
+          // Score the most recent complete observation rather than the
+          // newest row. A single failed fetch should not blank a country,
+          // and interpolating one would be inventing data -- so this uses a
+          // real earlier observation and shows its date.
+          const pick = latestCompleteObservation(
+            all,
+            ["inflation", "gdp_growth", "unemployment", "policy_rate", "debt_pct_gdp"],
+            (r) => r.observation_date
+          );
+          picks[m.code] = pick;
+          const row = pick.row ?? latestByMarket.get(m.code);
           const isStale = !row || now - new Date(row.fetched_at).getTime() > STALE_THRESHOLD_MS;
           if (isStale) {
             // No row, or the row is too old to trust: show this market
@@ -162,6 +194,7 @@ export default function OverviewPage() {
             },
           };
         });
+        setObservationPicks(picks);
         setMarkets(live);
         setDataSource("live");
       } catch {
@@ -171,12 +204,17 @@ export default function OverviewPage() {
     loadLiveData();
   }, []);
 
+  const pick = observationPicks[current] ?? null;
+  const observationNote = pick ? fallbackNote(pick, (iso) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" })) : null;
+
   const market = markets.find((m) => m.code === current)!;
-  const { pillars, composite, coveragePillars } = scoreMarket(market);
-  // Audit finding H-1: MMAI aggregates linearly, so a collapsed pillar can
-  // be masked by the other four. When that is happening, say so next to the
-  // score rather than leaving a reader to discover it in the pillar grid.
-  const masked = maskedPillar(pillars, composite);
+  const { percentile, dimensions, dimensionPercentiles } = scoreMarketV2(market);
+  const composite = percentile;
+  // Averaging three dimensions is fully compensatory, so a collapse in one
+  // can be offset without limit by the other two. Publishing all three
+  // makes that visible, which is most of the fix -- but a reader who takes
+  // in only the headline still deserves to be told. Japan is the live case.
+  const masked = maskedDimension(dimensionPercentiles, percentile);
   const rateNarrative = rateNarrativeFor(market.raw, market.code);
 
   return (
@@ -190,7 +228,7 @@ export default function OverviewPage() {
             MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
           </p>
           {dataSource === "live" && lastUpdated && (
-            <p style={{ fontSize: 11.5, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>
+            <p style={{ fontSize: 12, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>
               Last updated {formatUpdatedAt(lastUpdated)} (oldest of the {markets.length} markets) · scheduled to refresh daily at 06:00 UTC
             </p>
           )}
@@ -200,7 +238,7 @@ export default function OverviewPage() {
               what "macro environment" means to them personally. This
               line answers "what even is this" before asking the
               headline's more evocative question. */}
-          <p style={{ fontSize: 14, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px auto 0", lineHeight: 1.6 }}>
+          <p style={{ fontSize: 15, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px auto 0", lineHeight: 1.6 }}>
             MMAI reads public government data — inflation, jobs, interest rates — and turns it into one plain-language
             score per country, updated daily. Not investment advice, just the honest picture.
           </p>
@@ -208,7 +246,7 @@ export default function OverviewPage() {
             Is today&apos;s macro environment <span className="hl-cyan">supportive</span> — or{" "}
             <span className="hl-violet">working against you?</span>
           </h1>
-          <p className="sub">One composite score. Five economic pillars. Verified market signals.</p>
+          <p className="sub">One composite score. Three economic dimensions. Verified market signals.</p>
 
           <div className="tabs">
             {markets.map((m) => (
@@ -240,7 +278,7 @@ export default function OverviewPage() {
             <div style={{ width: "100%", maxWidth: 260 }}>
               <p className="meta-label" style={{ margin: "0 0 4px" }}>MMAI Composite Score</p>
               <p style={{ fontSize: 12, color: "var(--slate)", margin: "0 0 14px", lineHeight: 1.5 }}>
-                Composite view of the current macro backdrop
+                Rank against 148 market-years, 2000–2025 — not a mark out of 100
               </p>
               <ScoreDisplay score={composite} />
             </div>
@@ -254,35 +292,52 @@ export default function OverviewPage() {
                     lineHeight: 1.6,
                     margin: "10px 0 0",
                     padding: "11px 14px",
-                    borderLeft: `3px solid ${colorForScore(masked.score)}`,
+                    borderLeft: `3px solid ${colorForScore(masked.percentile)}`,
                     background: "var(--glass)",
                     borderRadius: "0 8px 8px 0",
                     color: "var(--ink-soft)",
                   }}
                 >
-                  <b>Read this score with care.</b> {PILLAR_NAMES[masked.pillar]} is at{" "}
-                  <b>{masked.score.toFixed(1)}</b> — {masked.gap.toFixed(0)} points below the composite. MMAI
-                  averages its five pillars, so strength elsewhere is offsetting a weak one here. The
-                  headline alone understates this.
+                  <b>Read this score with care.</b> {DIMENSION_NAMES[masked.key]} sits at{" "}
+                  <b>{masked.percentile.toFixed(1)}</b> — {masked.gap.toFixed(0)} points below the headline.
+                  MMAI averages its three dimensions equally, so strength elsewhere is offsetting a
+                  collapse here. The headline alone does not tell you this; the three rings below do.
+                </p>
+              )}
+              {observationNote && (
+                <p
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    margin: '10px 0 0',
+                    padding: '10px 13px',
+                    borderLeft: '3px solid var(--accent-2)',
+                    background: 'var(--glass)',
+                    borderRadius: '0 8px 8px 0',
+                    color: 'var(--ink-soft)',
+                    fontFamily: 'IBM Plex Mono, monospace',
+                  }}
+                >
+                  {observationNote}
                 </p>
               )}
               <ScoreTrendChart marketCode={current} currentScore={composite} />
               <div className="meta-row" style={{ marginTop: 14 }}>
-                <span>Coverage: <b>{((coveragePillars / TOTAL_PILLARS) * 100).toFixed(1)}%</b></span>
-                <span>Pillars active: <b>{coveragePillars} of {TOTAL_PILLARS}</b></span>
+                <span>Band: <b>{percentileBandLabel(composite)}</b></span>
+                <span>Ranked against: <b>148 market-years, 2000–2025</b></span>
                 {/* Source COUNT, not the licence-review date -- that date is
                     maintenance metadata (see lib/sources.ts) and reads as
                     staleness here. Data freshness is the line above the
                     headline and in the footer. */}
-                <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--gold-deep)" }}>view all</Link></span>
+                <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--accent-2)" }}>view all</Link></span>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-                <Link
+                <Link className="tap"
                   href="/learn#topic-mmai"
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
-                    color: "var(--gold)", textDecoration: "none", padding: "7px 14px",
+                    color: "var(--accent)", textDecoration: "none", padding: "7px 14px",
                     border: "1px solid rgba(34,211,238,0.35)", borderRadius: 999, background: "rgba(34,211,238,0.08)",
                   }}
                 >
@@ -299,7 +354,7 @@ export default function OverviewPage() {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
-                    color: "var(--gold-deep)", textDecoration: "none", padding: "7px 14px",
+                    color: "var(--accent-2)", textDecoration: "none", padding: "7px 14px",
                     border: "1px solid rgba(139,92,246,0.35)", borderRadius: 999, background: "rgba(139,92,246,0.08)",
                   }}
                 >
@@ -320,19 +375,33 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">WHAT DRIVES THE SCORE</p>
-            <h2>Five pillars, weighted and shown in full</h2>
-            <p>Every ring below is a real 0–100 pillar score computed from the raw indicator behind it. Click one to see its history.</p>
+            <h2>Three dimensions, and where {market.name} sits on each</h2>
+            <p>
+              Every score is a rank against the same 148 market-years — so 80 means better than 80% of
+              the record, not a mark out of 100. The bar shows which side of the historical average it
+              falls on, and by how far.
+            </p>
           </div>
-          <PillarGrid
-            pillars={pillars}
+          {/* ONE VISUAL, NOT TWO. This section used to show a ring grid and
+              then a diverging bar chart: the same three numbers drawn twice,
+              one after the other. The ring gave the rank but not the
+              direction — an arc at 9 and an arc at 100 are both just arcs —
+              and the bar gave the direction but not the rank. The card does
+              both, once. The arithmetic behind each dimension lives on the
+              Trends page; a front page should make the shape understood, not
+              make someone do the sum. */}
+          <DimensionCards
+            standardised={dimensions}
+            percentiles={dimensionPercentiles}
             market={current}
-            observationDates={{
-              PS: market.observationDates?.inflation,
-              GM: market.observationDates?.gdpGrowth,
-              LM: market.observationDates?.unemployment,
-              MC: market.observationDates?.policyRate,
-            }}
           />
+
+          <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 16, maxWidth: "72ch" }}>
+            {CONVENTION_NOTE}
+          </p>
+          <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 8, maxWidth: "72ch" }}>
+            {UNCERTAINTY_NOTE}
+          </p>
         </div>
       </div>
 
@@ -349,8 +418,8 @@ export default function OverviewPage() {
               navigation aid rather than the dominant element. */}
           <div className="compare-strip">
             {markets.map((m) => {
-              const { composite: mScore } = scoreMarket(m);
-              const mBand = bandFor(mScore);
+              const { percentile: mScore } = scoreMarketV2(m);
+              const mBand = { color: colorForScore(mScore), label: percentileBandLabel(mScore) };
               return (
                 <Link key={m.code} href={`/trends?market=${m.code}`} className="compare-chip">
                   <span className="cc-name">{m.name}</span>
@@ -389,18 +458,21 @@ export default function OverviewPage() {
       {/* Weekly Signals sits BEFORE Gulf Watch, per the brief's page
           flow (§8): situation -> drivers -> comparison -> what changed
           -> Gulf context. */}
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
-            <p className="eyebrow">WEEKLY SIGNALS</p>
-            <h2>What changed this week</h2>
-            <p>Movement for each market since roughly a week ago — the raw numbers, no interpretation.</p>
+            <p className="eyebrow">LATEST SIGNALS</p>
+            <h2>What changed, and when</h2>
+            <p>
+              Every market&apos;s most recent move — what changed, and the day it changed. Where nothing has moved,
+              how long the current figures have stood.
+            </p>
           </div>
           <WeeklyFeed />
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">GULF WATCH</p>
@@ -412,7 +484,7 @@ export default function OverviewPage() {
               <GulfCard key={c.code} country={c} compact />
             ))}
           </div>
-          <Link href="/gulf-watch" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--gold-deep)", textDecoration: "none" }}>
+          <Link href="/gulf-watch" className="tap" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 12, fontWeight: 700, color: "var(--accent-2)", textDecoration: "none" }}>
             See history and comparison →
           </Link>
         </div>
@@ -421,7 +493,7 @@ export default function OverviewPage() {
       {/* Closing call-to-action (brief §8, item 7). Points at the two
           things that actually answer "where does this come from" --
           methodology and sources -- rather than a marketing link. */}
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="cta-band">
             <div>
@@ -431,20 +503,22 @@ export default function OverviewPage() {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link
                 href="/learn"
+                className="tap"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
-                  background: "linear-gradient(135deg, var(--gold-deep), #6D28D9)", color: "#fff",
-                  fontWeight: 700, fontSize: 13.5, textDecoration: "none",
+                  background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff",
+                  fontWeight: 700, fontSize: 13, textDecoration: "none",
                 }}
               >
                 How MMAI is calculated →
               </Link>
               <Link
                 href="/sources"
+                className="tap"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
                   border: "1px solid var(--hair)", color: "var(--ink-soft)",
-                  fontWeight: 700, fontSize: 13.5, textDecoration: "none",
+                  fontWeight: 700, fontSize: 13, textDecoration: "none",
                 }}
               >
                 Sources
@@ -454,7 +528,7 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }} id="subscribe">
+      <div className="section" id="subscribe">
         <div className="wrap" style={{ maxWidth: 560 }}>
           <SubscribeForm />
         </div>

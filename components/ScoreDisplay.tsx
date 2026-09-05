@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { bandFor } from "@/lib/scoring";
+import { colorForScore } from "@/lib/scoring";
+import { percentileBandLabel, percentileReading } from "@/lib/composite";
 
 // Replaces the old semicircle "speedometer" Gauge -- that design had a
 // real geometry bug (the animated arc traced the wrong half-circle,
@@ -11,7 +12,9 @@ import { bandFor } from "@/lib/scoring";
 // that depends on SVG arc math at all. Simpler shape, same information
 // (score, band, and a sense of where it sits between 0 and 100).
 export default function ScoreDisplay({ score }: { score: number | null }) {
-  const band = bandFor(score);
+  // The label has to come from the same place the meta row beneath it
+  // reads, or the page shows two different words for one number.
+  const band = { color: colorForScore(score), label: percentileBandLabel(score) };
   const target = score === null ? 0 : Math.min(100, Math.max(0, score));
 
   // Starts at 0 on every fresh mount (a page load, or navigating to a
@@ -35,8 +38,8 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
     // would overflow the card exactly like the old Gauge's 260px SVG
     // box risked doing before .score-panel's own mobile stacking was
     // added.
-    <div style={{ width: "100%", maxWidth: 260 }}>
-      <div className="gauge-label">MMAI Score</div>
+    <div style={{ width: "100%", maxWidth: 260 }} title={percentileReading(score)}>
+      <div className="gauge-label">MMAI Score · percentile</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "8px 0 18px" }}>
         <span
           className="gauge-num"
@@ -74,7 +77,7 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
           }}
         />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--slate)", marginTop: 6, fontFamily: "IBM Plex Mono, monospace" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--slate)", marginTop: 6, fontFamily: "IBM Plex Mono, monospace" }}>
         <span>0</span>
         <span>100</span>
       </div>

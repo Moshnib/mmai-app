@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { computePillarScores, computeComposite, bandFor } from "@/lib/scoring";
+import { colorForScore } from "@/lib/scoring";
+import { computeMmai, percentileBandLabel } from "@/lib/composite";
 import { useLiveHistory } from "@/lib/useLiveHistory";
 
 // ============================================================
@@ -36,12 +37,17 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
 
   const points = history
     .map((h) => {
-      const { composite } = computeComposite(computePillarScores(h.indicators, marketCode));
-      return { year: h.year, value: composite };
+      // Recomputed through the SAME engine that produces the headline.
+      // Reading stored v1.0 composites here would draw a five-pillar
+      // history underneath a three-dimension number — two different
+      // measurements sharing one line, which is the exact mistake that
+      // made two of six rankings wrong the last time.
+      const { percentile } = computeMmai(h.indicators, marketCode);
+      return { year: h.year, value: percentile };
     })
     .filter((p): p is { year: string; value: number } => p.value !== null);
 
-  const band = bandFor(currentScore);
+  const band = { color: colorForScore(currentScore), label: percentileBandLabel(currentScore) };
 
   if (points.length < 2) {
     return (
@@ -147,7 +153,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
       </svg>
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
-        <Link href={`/trends?market=${marketCode}`} style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--gold-deep)", textDecoration: "none" }}>
+        <Link href={`/trends?market=${marketCode}`} className="tap" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--accent-2)", textDecoration: "none" }}>
           More score detail →
         </Link>
       </div>

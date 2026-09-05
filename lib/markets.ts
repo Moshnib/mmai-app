@@ -1,4 +1,5 @@
 import { computePillarScores, computeComposite, type RawIndicators, type PillarScores } from "./scoring";
+import { computeMmai, dimensionPercentiles, type MmaiResult, type DimensionKey } from "./composite";
 
 export interface MarketData {
   code: string;
@@ -68,4 +69,18 @@ export function scoreMarket(market: MarketData): { pillars: PillarScores; compos
   const pillars = computePillarScores(market.raw, market.code);
   const { composite, coverage, coveragePillars } = computeComposite(pillars);
   return { pillars, composite, coverage, coveragePillars };
+}
+
+/** ENGINE v2.0 — the three-dimension composite.
+ *
+ *  Runs beside scoreMarket() rather than replacing it, so a page can move
+ *  over one at a time and the two can be compared while they coexist.
+ *  Both read the same market.raw, so any difference between them is the
+ *  method and nothing else. */
+export function scoreMarketV2(market: MarketData): MmaiResult & { dimensionPercentiles: Record<DimensionKey, number> | null } {
+  const result = computeMmai(market.raw, market.code);
+  return {
+    ...result,
+    dimensionPercentiles: result.dimensions ? dimensionPercentiles(result.dimensions) : null,
+  };
 }

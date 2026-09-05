@@ -238,7 +238,13 @@ Norway's technical notes, preserved for when it returns:
 
 ---
 
-## 5. METHODOLOGY (exact, from `lib/scoring.ts` — verified 2026-08-24)
+## 5. METHODOLOGY (five-pillar engine — **SUPERSEDED, see §23**)
+
+> **This section describes the engine being replaced.** It still runs and still
+> produces every published number, so it is accurate for what is live today —
+> but the three-dimension composite in §23 is what the branch
+> `composite-three-dimensions` ships, and it is what a new session should
+> build against. Do not extend the five pillars.
 
 ```
 PILLAR_WEIGHTS = { PS: 0.25, GM: 0.25, LM: 0.1875, MC: 0.1875, EC: 0.125 }
@@ -1092,3 +1098,201 @@ The CSV export is the best-built thing in the repo: quote/comma/newline escaping
 ### 22.5 Clean
 
 0 dependency vulnerabilities. No real `any` (the one match is the word in a comment). All 28 `@ts-ignore` are in Next.js generated files, none in ours.
+
+---
+
+## 23. The composite was rebuilt from scratch (2026-09-03 → 2026-09-04)
+
+**Branch `composite-three-dimensions`, PR #1. Not merged, not live.** The
+five-pillar engine still produces every published number. This section is the
+one to build against; §5 describes what is being replaced.
+
+### 23.1 Why
+
+The five weights — 25 / 25 / 18.75 / 18.75 / 12.5 — were never calibrated
+against anything. 18.75% is not a decision, it is 15 ÷ 0.8: a sixth pillar was
+dropped and the rest were scaled up to fill the gap. Asked "why 18.75?", there
+was no answer that survived the question, and the project's own charter already
+said the constants were not scientifically justified.
+
+Four alternatives were tested before the rebuild. Equal weights (refuted for
+the inflation/unemployment pair by Blanchflower, who tests it directly), PCA
+(unstable — growth's weight swings 31 points depending on which half of history
+you use), a central-bank loss function (costs 40% of recession detection), and
+wellbeing coefficients. Only the last survived, and only partly — see 23.5.
+
+### 23.2 The design
+
+```
+CONDITIONS  =  w_pi · Q(|pi - pi*|)  +  w_u · Q(unemployment)
+DIRECTION   =  Q(GDP growth)                      -- one indicator, no weight
+CAPACITY    =  0.5 · Q(debt)         +  0.5 · Q(policy rate)
+
+Q = ±(X - mu) / sigma          sign aligned so positive always means better
+C' = C / sd_C, and likewise    each dimension standardised across the history
+MMAI_Z = (C' + D' + K') / 3    then read as a PERCENTILE of 148 market-years
+```
+
+**Why the dimensions are standardised before averaging.** They do not vary
+equally — Conditions moves about a third less than Direction. Averaging raw
+would hand Direction the larger voice whatever the 1/3 beside it said. That is
+the nominal-versus-effective weight trap, and it is the error the five-pillar
+design actually contained.
+
+**The published score is a rank, not a mark out of 100.** 148 market-years, six
+economies, 2000–2025, pooled. Strictly-less-than, so ties resolve downward. One
+step is 0.675676 points; nothing finer is meaningful.
+
+### 23.3 What it produces
+
+| Market | Old | New | Conditions | Direction | Capacity |
+|---|---|---|---|---|---|
+| Australia | 82.8 | **85.1** | 80.4 | 50.7 | 83.8 |
+| United States | 79.1 | **64.2** | 70.9 | 48.6 | 54.7 |
+| United Kingdom | 78.2 | **60.8** | 71.6 | 19.6 | 68.9 |
+| Japan | 82.2 | **50.7** | **100.0** | 14.9 | **9.5** |
+| Canada | 73.5 | **39.9** | 41.2 | 25.7 | 48.6 |
+| Euro Area | 75.6 | **38.5** | 37.2 | 23.0 | 52.7 |
+
+Japan is the case the old index concealed: the best Conditions of every
+market-year on record, Capacity in the 9th percentile. Those genuinely offset,
+and "82.2, second best overall" told a reader neither fact.
+
+### 23.4 A defect that made two of six rankings wrong
+
+The first version of the analysis scored every historical row's Direction as
+**GDP growth alone**, because the bond-yield history was collected and stored
+but never joined onto the annual panel — while the six live markets scored it
+as growth blended with the yield slope. Two different quantities compared on
+one scale.
+
+Found by one number: the historical Direction series reported a standard
+deviation of **exactly 1.0000**, which is only possible for an untouched
+z-score. Corrected, the US and UK swapped and Canada and the Euro Area swapped.
+
+**Under the new design sd(D) = 1.0000 is CORRECT** — Direction is a single
+z-score and carries no internal weight. `lib/composite.ts` and
+`verify-composite.ts` both say so. Do not "fix" it.
+
+### 23.5 No weight in this method is measured
+
+The Conditions split comes from Blanchflower (2007), NBER WP 13505. Read
+directly from the paper: the coefficient is estimated on the **inflation
+RATE**, evaluated around a sample mean of 4.9%, and the paper contains no
+mention of a target, a deviation or a gap. MMAI applies it to |pi - pi*|.
+
+Those are not the same quantity. |pi - pi*| is V-shaped — below target it rises
+as inflation falls — while Blanchflower's relationship is linear and monotone.
+**67 of the 148 rows (45.3%) sit below target**, and on every one of them MMAI
+penalises what the cited source calls a benefit.
+
+Scoring inflation on the level restores the coefficient's legitimacy (ranking
+unchanged, scores move ≤9.5 points) but makes nine deflation rows best-in-sample
+and turns Japan's deflation decade into its strongest period. Not defensible
+either.
+
+**Decision: keep the gap, reclassify the weights.** 0.381355932 / 0.618644068
+is a **declared judgment informed by** the evidence, not measured by it. That
+qualification travels with the weight wherever it is published. A search for a
+source estimating the welfare cost of deviation *from a target* found nothing
+that fits — the wellbeing literature uses levels throughout, and welfare loss
+functions weigh a gap against an *output* gap, which MMAI has no equivalent of.
+
+Accounting: **0 measured, 4 declared judgments, 3 conventions.**
+
+### 23.6 Equal thirds is a convention, and is not equal in effect
+
+Declared 33.3% each. Measured across the reference history: **Conditions 25.5%,
+Direction 39.6%, Capacity 34.9%** — a 14-point spread. The dimensions correlate
+with each other (Direction × Capacity = 0.34; Conditions is nearly independent
+of both), so the composite tracks some more closely than others.
+
+This is the nominal-versus-effective gap one level up. Standardising equalised
+their **spread**, which is what it was for. It does not equalise their
+**influence**, and nothing can while they stay correlated. Published on Learn,
+not hidden, and re-measured in CI.
+
+### 23.7 Three publication decisions, adopted and binding
+
+1. **The ±2.3 percentile-point source-break uncertainty is disclosed.**
+   Rebuilding the whole reference history on a single source moves any score by
+   up to that much; the ranking is unaffected.
+2. **Equal thirds is described as a stated methodological convention**, never as
+   an empirical finding.
+3. **Countries closer together than the measured uncertainty are shown as tied.**
+   Canada and the Euro Area currently are, at 1.4 points apart.
+
+### 23.8 Verified by a third party, blind
+
+Australia 2026 = **85.135135135** was reproduced from the published CSV and
+specification alone, by a party with no knowledge of the expected result, using
+executed code and a second implementation as a cross-check. Every figure matched
+to floating-point precision — the three dimension standard deviations, the
+composite, the ladder count, the percentile.
+
+It found two real drafting defects, both fixed: the specification said 11
+columns when the CSV had 12, and the brief simplified the standardisation step
+in a way that described a different algorithm from the spec.
+
+**That case is pinned in `verify-composite.ts` and runs in CI.** If it ever
+fails, the engine has drifted away from the thing that was externally verified.
+
+### 23.9 Missing data
+
+The composite is **all-or-nothing** — a missing indicator withholds it rather
+than reweighting, because a country scored on four indicators is not comparable
+with one scored on five, and that comparison is the product.
+
+Taken literally that blanks a country whenever one government website has a bad
+morning. It happened on 4 September: Statistics Canada's unemployment fetch
+failed and Canada had no score while the previous day's row was complete.
+
+So the score comes from the most recent **complete** observation and the page
+says which: *"Scored on 3 September data — the latest complete observation.
+Today's figures are missing unemployment."* Nothing is interpolated.
+
+**Bounded at 14 days** (`lib/latestComplete.ts`). Without a limit a permanently
+broken source would freeze a stale score on screen and the site would look
+healthy while being wrong.
+
+### 23.10 Files
+
+| | |
+|---|---|
+| `lib/referenceSet.ts` | The 148 rows, generated from the published CSV, carrying its SHA-256 |
+| `lib/composite.ts` | The engine. Every constant DERIVED at load, never typed |
+| `lib/latestComplete.ts` | The complete-observation rule and its bound |
+| `scripts/verify-composite.ts` | Recomputes every constant independently; pins the acceptance case |
+| `scripts/measure-dimension-influence.ts` | Effective influence and separation; `--check` in CI |
+| `scripts/test-latest-complete.ts` | The fallback rule |
+| `scripts/test-alert-guard.ts` | The cutover alert guard |
+| `supabase/migrations/2026-09-04-three-dimension-composite.sql` | **Already applied** |
+
+### 23.11 Cutover — four switches, when PR #1 is approved
+
+1. `ALERT_ENGINE` → `"v2.0"` in `app/api/refresh/route.ts`
+2. `band` reads `percentileBandLabel` instead of `bandFor`
+3. Delete `lib/publishedFormulas.ts`, `scripts/verify-published-formulas.ts`, and that CI step
+4. Retire the five-pillar engine and its columns
+
+**The alert guard matters most.** On cutover every market's band changes at once
+because the method changed — Japan 82.2 → 50.7 with nothing happening in Japan.
+The pillar-shape signature cannot catch that (coverage is unchanged, the formula
+moved), so the guard compares the engine **behind the band** — deliberately not
+the row's raw version stamp, which would silently suppress real alerts every
+time a source hiccup dropped the v2 score. Tested across all three phases.
+
+### 23.12 What a new session must not do
+
+- **Do not reintroduce the five pillars**, or extend them.
+- **Do not "fix" sd(Direction) = 1.0000.** It is correct by construction now.
+- **Do not describe any weight as measured.** None are. The site says so.
+- **Do not hand-type a constant or a formula into a page.** Learn generates
+  every one from the engine, because a hand-typed formula drifted once already
+  (31 August) and the page promises a reader can reproduce a score by hand.
+- **Do not reweight around missing data.** Withhold, fall back to the last
+  complete observation, or show N/A.
+- **Do not grep source to check copy.** Every remaining "five pillars" in the
+  repo is inside a comment, so source greps come back clean while a page still
+  displays it. Fetch the rendered HTML — that is how the Trends eyebrow and the
+  Compare meta description were caught.

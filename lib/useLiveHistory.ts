@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { HISTORY, type HistoryPoint } from "@/lib/history";
+import { latestCompleteObservation } from "@/lib/latestComplete";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 
 export interface RawIndicatorRow {
@@ -58,14 +59,31 @@ export function useLiveHistory(): { history: Record<string, HistoryPoint[]>; dat
           .limit(200);
         if (error || !data || data.length === 0) return;
 
-        const latestByMarket = new Map<string, RawIndicatorRow>();
+        // ALL rows per market, newest first. The point that replaces the
+        // last historical year has to be the most recent COMPLETE
+        // observation, not simply the newest row.
+        //
+        // Taking the newest row unconditionally put a gap on every chart
+        // the moment one indicator failed: on 4 September Statistics
+        // Canada's unemployment fetch came back empty, the 2026 point went
+        // null, and Canada's line just stopped -- while the headline beside
+        // it fell back to the 3 September reading and showed a score. The
+        // page disagreed with itself about whether Canada had a number.
+        const rowsByMarket = new Map<string, RawIndicatorRow[]>();
         for (const row of data as RawIndicatorRow[]) {
-          if (!latestByMarket.has(row.market)) latestByMarket.set(row.market, row);
+          const list = rowsByMarket.get(row.market);
+          if (list) list.push(row);
+          else rowsByMarket.set(row.market, [row]);
         }
 
         const merged: Record<string, HistoryPoint[]> = {};
         for (const [market, points] of Object.entries(HISTORY)) {
-          const row = latestByMarket.get(market);
+          const pick = latestCompleteObservation(
+            rowsByMarket.get(market) ?? [],
+            ["inflation", "gdp_growth", "unemployment", "policy_rate", "debt_pct_gdp"],
+            (r) => r.observation_date
+          );
+          const row = pick.row;
           if (!row || points.length === 0) {
             merged[market] = points;
             continue;

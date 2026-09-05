@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
+import { INFLATION_TARGET } from "@/lib/scoring";
 import {
-  PILLAR_NAMES,
-  formatWeightPct,
-  formatInfluencePct,
-  PILLAR_INFLUENCE_MEASURED,
-  PILLAR_CROSS_MARKET_SD,
-  INFLATION_TARGET,
-  NEUTRAL_RATE,
-  type PillarKey,
-} from "@/lib/scoring";
+  DIMENSION_NAMES,
+  DIMENSION_EFFECTIVE_INFLUENCE,
+  DIMENSION_CROSS_MARKET_SD,
+  DIMENSION_INFLUENCE_MEASURED,
+  W_INFLATION,
+  W_UNEMPLOYMENT,
+  W_DEBT,
+  W_RATE,
+  SOURCE_BREAK_UNCERTAINTY_PTS,
+  type DimensionKey,
+} from "@/lib/composite";
+import { REFERENCE_SET } from "@/lib/referenceSet";
+import ScoreDiagram from "@/components/ScoreDiagram";
+import CorrelationMatrix from "@/components/CorrelationMatrix";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { formulaLine } from "@/lib/publishedFormulas";
+import { indicatorFormula, INDICATOR_READING } from "@/lib/composite";
 
 // Rendered FROM INFLATION_TARGET rather than typed out as prose.
 //
@@ -23,29 +29,56 @@ const TARGET_LIST = FALLBACK_MARKETS
   .map((m) => `${m.name} ${INFLATION_TARGET[m.code] ?? 2}%`)
   .join("  ·  ");
 
-// Same discipline as TARGET_LIST: rendered FROM the engine, so the
-// published neutral rate cannot drift from the one that scores.
-const NEUTRAL_LIST = FALLBACK_MARKETS
-  .map((m) => `${m.name} ${NEUTRAL_RATE[m.code] ?? 2.5}%`)
-  .join("  ·  ");
+// The reference window, read from the data rather than typed. Every score
+// on the site is a rank against these rows, so the count and the years are
+// load-bearing facts, not decoration.
+const REF_YEARS = REFERENCE_SET.map((r) => r.y);
+const REF_SPAN = `${Math.min(...REF_YEARS)}–${Math.max(...REF_YEARS)}`;
+const REF_N = REFERENCE_SET.length;
+// Japan carries fewer rows than the others, and a reader comparing Japan
+// is owed that fact. Counted, not asserted.
+const REF_BY_MARKET = FALLBACK_MARKETS
+  .map((m) => ({ name: m.name, n: REFERENCE_SET.filter((r) => r.m === m.code).length }))
+  .sort((a, b) => a.n - b.n);
+const REF_SHORTEST = REF_BY_MARKET[0];
 
-// Which pillars actually separate one country from another, ranked.
+// Which dimensions actually separate one country from another, ranked.
 //
-// GENERATED, NOT WRITTEN, and that is the whole point. On 1 September
-// this page stated in prose that Growth Momentum separated the markets
-// least. It did not -- Monetary Conditions did -- and the sentence went
-// out backwards because the underlying measurement had been taken from a
-// stale snapshot. A hand-written ranking is a claim nobody re-checks when
-// the numbers move; a generated one cannot disagree with them.
-const SEPARATION_RANKED = (Object.keys(PILLAR_CROSS_MARKET_SD) as PillarKey[])
-  .sort((a, b) => PILLAR_CROSS_MARKET_SD[b] - PILLAR_CROSS_MARKET_SD[a]);
+// GENERATED, NOT WRITTEN, and that is the whole point. On 1 September this
+// page stated in prose which pillar separated the markets least. It had it
+// backwards, because the measurement behind the sentence had gone stale. A
+// hand-written ranking is a claim nobody re-checks when the numbers move;
+// a generated one cannot disagree with them.
+const DIM_ORDER: DimensionKey[] = ["C", "D", "K"];
+
+const SEPARATION_RANKED = [...DIM_ORDER]
+  .sort((a, b) => DIMENSION_CROSS_MARKET_SD[b] - DIMENSION_CROSS_MARKET_SD[a]);
 
 const SEPARATION_LIST = SEPARATION_RANKED
-  .map((k) => `${PILLAR_NAMES[k]} ${PILLAR_CROSS_MARKET_SD[k].toFixed(1)}`)
+  .map((k) => `${DIMENSION_NAMES[k]} ${DIMENSION_CROSS_MARKET_SD[k].toFixed(1)}`)
   .join("  ·  ");
 
-const MOST_SEPARATING = PILLAR_NAMES[SEPARATION_RANKED[0]];
-const LEAST_SEPARATING = PILLAR_NAMES[SEPARATION_RANKED[SEPARATION_RANKED.length - 1]];
+const MOST_SEPARATING = DIMENSION_NAMES[SEPARATION_RANKED[0]];
+const LEAST_SEPARATING = DIMENSION_NAMES[SEPARATION_RANKED[SEPARATION_RANKED.length - 1]];
+
+// Declared weight against measured influence. Both generated, because the
+// entire point of the pair is that they DISAGREE -- and a hand-typed
+// version of that claim would be the first thing to go stale.
+const INFLUENCE_LIST = DIM_ORDER
+  .map((k) => `${DIMENSION_NAMES[k]} ${DIMENSION_EFFECTIVE_INFLUENCE[k].toFixed(1)}%`)
+  .join("  ·  ");
+const INFLUENCE_SPREAD = (
+  Math.max(...DIM_ORDER.map((k) => DIMENSION_EFFECTIVE_INFLUENCE[k])) -
+  Math.min(...DIM_ORDER.map((k) => DIMENSION_EFFECTIVE_INFLUENCE[k]))
+).toFixed(1);
+const MOST_INFLUENTIAL = DIMENSION_NAMES[
+  [...DIM_ORDER].sort((a, b) => DIMENSION_EFFECTIVE_INFLUENCE[b] - DIMENSION_EFFECTIVE_INFLUENCE[a])[0]
+];
+
+// The Conditions split, from the engine's own fraction rather than a
+// rounded copy of it.
+const COND_SPLIT = `inflation ${(W_INFLATION * 100).toFixed(1)}%  ·  unemployment ${(W_UNEMPLOYMENT * 100).toFixed(1)}%`;
+const CAP_SPLIT = `debt ${(W_DEBT * 100).toFixed(0)}%  ·  policy rate ${(W_RATE * 100).toFixed(0)}%`;
 
 export const metadata: Metadata = {
   title: "Learn More",
@@ -53,14 +86,59 @@ export const metadata: Metadata = {
     "Inflation, GDP growth, unemployment, policy rates, and government debt — plus Gulf Watch's cost-of-living, investment-confidence, and currency-stability figures — what each one actually means for you, in plain language.",
 };
 
-const ORDER: PillarKey[] = ["PS", "GM", "LM", "MC", "FR"];
+/**
+ * Which dimension each indicator feeds, so the reader meets that fact on
+ * the card itself.
+ *
+ * The three dimensions are the whole structure of the score, and this
+ * page explained five indicators one after another without ever saying,
+ * on the card, which of the three each one belongs to. A reader could
+ * finish "Government Debt" without learning it is half of Capacity.
+ *
+ * Keyed by topic id and checked against the engine below, so adding an
+ * indicator without placing it here fails the build rather than shipping
+ * an untagged card.
+ */
+const TOPIC_DIMENSION: Record<string, DimensionKey | "none" | "all"> = {
+  cpi: "C",
+  unemployment: "C",
+  gdp: "D",
+  debt: "K",
+  rate: "K",
+  oil: "none",
+  mmai: "all",
+};
+
+const DIM_TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
+
+/** The pill that carries it: colour and name, matching the colours the
+ *  dimensions already use in the diagram above and on the front page. */
+function DimensionTag({ topicId }: { topicId: string }) {
+  const d = TOPIC_DIMENSION[topicId];
+  if (!d) return null;
+
+  const [label, tone] =
+    d === "all"
+      ? ["All three dimensions", "var(--accent-2)"]
+      : d === "none"
+        ? ["Shown, not scored", "var(--slate)"]
+        : [`Part of ${DIMENSION_NAMES[d]}`, DIM_TONE[d]];
+
+  return (
+    <span className="learn-tag" style={{ color: tone, borderColor: tone }}>
+      <i style={{ background: tone }} />
+      {label}
+    </span>
+  );
+}
 
 const TOPICS = [
   {
     id: "cpi",
     title: "Inflation & CPI — the price of everything you buy",
     def: "The Consumer Price Index (CPI) tracks the price of a representative basket of everyday goods and services. Inflation is how fast that basket's total cost is rising year over year.",
-    formula: formulaLine("PS"),
+    formula: indicatorFormula("infGap"),
+    formulaNote: INDICATOR_READING.infGap,
     targets: TARGET_LIST,
     targetNote:
       "The target is each central bank's own published objective, not one number applied to everyone. Five of the six aim at 2%. Australia is the exception: the Reserve Bank targets a 2–3% range and sets policy so inflation returns to the midpoint, so MMAI scores Australia against 2.5%. The United States is measured on the PCE price index rather than CPI, because that is the index the Federal Reserve defines its 2% target on.",
@@ -70,31 +148,34 @@ const TOPICS = [
     id: "gdp",
     title: "GDP Growth — is the economy actually expanding?",
     def: "Gross Domestic Product (GDP) is the total value of everything a country produces. GDP growth measures whether that total is expanding or shrinking.",
-    formula: formulaLine("GM"),
+    formula: indicatorFormula("gdp"),
+    formulaNote: INDICATOR_READING.gdp,
     impact: "When growth is strong, businesses hire more and wages tend to rise. When it shrinks for two consecutive quarters, that's a recession.",
   },
   {
     id: "unemployment",
     title: "Unemployment Rate — how easy is it to find or keep work?",
     def: "The share of people actively looking for work who can't find it, as a percentage of the labour force.",
-    formula: formulaLine("LM"),
+    formula: indicatorFormula("une"),
+    formulaNote: INDICATOR_READING.une,
     impact: "Low unemployment means workers have leverage — more job offers, easier to negotiate a raise. High unemployment flips that.",
   },
   {
     id: "rate",
     title: "Policy Interest Rate — the cost of borrowing money",
     def: "The benchmark rate set by a central bank. It ripples out to set the tone for every other interest rate in the economy.",
-    formula: formulaLine("MC"),
-    targets: NEUTRAL_LIST,
+    formula: indicatorFormula("rate"),
+    formulaNote: INDICATOR_READING.rate,
     targetNote:
-      "The neutral rate is the interest rate that neither speeds up nor slows down an economy, and it differs by country. Until 1 September 2026 MMAI used a single 2.5% for all six, which was the least defensible number in the method. Each market now uses a published estimate: the New York Federal Reserve for the US, Canada and the euro area; the Bank of Japan for Japan; the Bank of England for the UK. Australia is the weakest of the six -- its figure comes from a 2017 Reserve Bank study, because the RBA publishes its current estimates in charts rather than text.",
+      "The policy rate is no longer measured against an estimated neutral rate. It is scored against its own history across the six economies, inside Capacity, where the question is how much room a central bank has to cut if trouble arrives. That removed the least defensible number in the old method: a neutral-rate estimate for Australia dating from a 2017 study, because the Reserve Bank publishes its current figures only in charts. Nothing in the score now depends on anyone’s estimate of neutral.",
     impact: "This number sets the floor for mortgage rates, car loans, and credit card APRs — when it rises, borrowing gets more expensive.",
   },
   {
     id: "debt",
     title: "Government Debt — how much room a country has left",
     def: "What a government owes, measured against the size of its economy. A country with low debt can borrow to cushion a recession; a country with high debt has less room to act and spends more of its budget on interest instead of services.",
-    formula: formulaLine("FR"),
+    formula: indicatorFormula("debt"),
+    formulaNote: INDICATOR_READING.debt,
     targetNote:
       "The 60% mark is not our invention: it is the reference value written into the European Union's treaties, which is why it already applies to the euro area. It is a reference point, not a danger line — no such universal line exists. Debt at or below 60% scores full marks, and the penalty above it is deliberately gentle. Japan is the clearest reason why: its debt is the highest of the six by a wide margin, but it is owed almost entirely to its own citizens, in its own currency, at near-zero interest rates. That is a genuinely different situation from the same number elsewhere, and a harsh penalty would pretend otherwise.",
     impact: "High government debt tends to show up in your life slowly — as higher taxes, tighter public spending, or less help from the state when the next downturn arrives.",
@@ -110,54 +191,65 @@ const TOPICS = [
   {
     id: "mmai",
     title: "How MMAI Combines All of This Into One Score",
-    def: "Each indicator becomes a 0–100 pillar score, capped to that range. MMAI combines them using fixed weights — the same formula for every market, every time. If a market is missing an indicator, that pillar drops out and the remaining weights are rescaled to still total 100% (that's the \"÷ Σ active weights\" part). Below 70% coverage — fewer than 4 of the 5 pillars — no score is published at all.",
-    formula: "MMAI = (Σ weight × pillar score) ÷ (Σ active weights)",
-    // Weights are read from PILLAR_WEIGHTS rather than typed as a string, so
-    // the published numbers can never drift out of sync with the engine.
-    weights: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatWeightPct(k)}`).join("  ·  "),
-    // What those weights actually DO, measured rather than asserted, by
-    // scripts/measure-pillar-influence.ts -- which runs in CI and fails if
-    // these published figures drift from the panel.
-    influence: ORDER.map((k) => `${PILLAR_NAMES[k]} ${formatInfluencePct(k)}`).join("  ·  "),
+    def:
+      "Every indicator is first expressed as how unusual it is against one historical record — how far from average, in standard deviations, across " +
+      `${REF_N} market-years from these same six economies, ${REF_SPAN}. The signs are aligned so that positive always means better. Those five numbers form three dimensions: Conditions (inflation and unemployment), Direction (GDP growth), and Capacity (government debt and room to cut rates). Each dimension is standardised against the same history, the three are averaged equally, and the result is published as a percentile — a rank, not a mark out of 100. A score of 85 means better than 85% of that record.`,
+    formula: "MMAI = percentile of ( C′ + D′ + K′ ) ÷ 3",
+    weights: `Conditions: ${COND_SPLIT}  ·  Direction: GDP growth 100%  ·  Capacity: ${CAP_SPLIT}  ·  across the three: equal thirds`,
+    influence: INFLUENCE_LIST,
     influenceNote:
-      `A pillar's real influence is its weight multiplied by how much it actually moves. Measured across all six markets since 2019 (as of ${PILLAR_INFLUENCE_MEASURED}), Monetary Conditions is weighted 18.75% but does 11% of the work, because policy rates change only a few times a year. Fiscal Resilience is weighted 12.5% and does 9%, because government debt moves slowly.`,
+      `Equal thirds is what the method DECLARES. Measured across the reference history (as of ${DIMENSION_INFLUENCE_MEASURED}), the effective influence is ${INFLUENCE_LIST} — a spread of ${INFLUENCE_SPREAD} points where the declared spread is zero, with ${MOST_INFLUENTIAL} doing the most work. The dimensions move together to different degrees, so the composite tracks some more closely than others. Standardising them equalised how much each VARIES, which is what it was for; it does not equalise how much each MATTERS, and nothing can while they stay correlated.`,
     ecNote:
-      `A caveat worth knowing when comparing countries, and it has changed. Until 1 September 2026 the fifth pillar was the global oil price, which gave every country an identical score and so could not separate them at all. It is now each country's own government debt, which does. The same question is worth asking of every pillar, so here is the honest answer for the current six — how far apart the pillar spreads the countries, highest first: ${SEPARATION_LIST}. ${MOST_SEPARATING} does the most to distinguish one country from another; ${LEAST_SEPARATING} does the least, despite carrying more weight. That will shift as economic cycles diverge, and these figures are re-measured rather than assumed.`,
-    // Audit findings H-1, H-2 and M-1. Stated on the page a reader
-    // actually reads, not only in an internal document.
+      `A measure every country scores alike cannot tell them apart, whatever weight it carries — the reason the global oil price stopped being scored. Asked of the three dimensions, for the current six, highest first: ${SEPARATION_LIST}. ${MOST_SEPARATING} does the most to distinguish one country from another; ${LEAST_SEPARATING} does the least. Re-measured rather than assumed, and it will shift as cycles diverge.`,
     limitations: [
       {
-        head: "A strong pillar can hide a weak one",
+        head: "It measures conditions, it does not forecast",
         body:
-          "MMAI averages its five pillars, so a very low score in one can be offset by high scores in the others. In 2013 the Euro Area's Labour Market pillar fell to zero — unemployment above 12% — and the composite still read 59.9, \"Balanced\". Where that is happening now, the site says so beside the score. It is a property of averaging, disclosed rather than hidden.",
+          "Every figure describes what has already been published by an official source. MMAI contains no prediction, no model and no view about what happens next. It is also why the yield curve is not scored despite the data being collected: its standing in economics is almost entirely as a predictor of future recessions, and an index that disclaims forecasting cannot lean on one.",
       },
       {
-        head: "Australia's neutral rate is nine years old",
+        head: "Read the three dimensions, not just the headline",
         body:
-          "Every market is now measured against a neutral interest rate published for its own economy, which was not true before 1 September 2026 — until then a single 2.5% was applied to all six. Five of the six figures are current. Australia's is not: it derives from a 2017 Reserve Bank study, because the RBA publishes its current estimates in charts rather than in text. Neutral rates have generally risen since 2017, so Australia's is more likely too low than too high — which makes Australia look further from neutral than it probably is, scoring it conservatively rather than flatteringly.",
+          "Averaging three numbers means a collapse in one can be offset without limit by the other two. Japan is the live case: its Conditions score is the highest of every market-year in the record — inflation on target, unemployment near 2% — while its Capacity is close to the lowest, with debt near 180% of GDP and almost no room to cut rates. Those genuinely offset, and a headline near the middle describes neither. Where that is happening the site says so beside the score, and all three dimensions are always shown.",
       },
       {
-        head: "The five pillars are less independent than they look",
+        head: "A high interest rate is scored as a good thing here",
         body:
-          "MMAI's pillars correlate weakly with each other, which is usually read as evidence they measure different things. Part of that is a measurement choice: Growth is a rate of change while Labour is a level, and the well-established relationship between them only appears when both are expressed the same way. The pillars are distinct, but less so than the raw correlations suggest.",
+          "Inside Capacity a higher policy rate scores better, which is the opposite of how a rate is usually read. That is deliberate, and it only makes sense alongside the question Capacity asks: how much room is there to respond to trouble. A central bank at 4% can cut; one at 0.5% cannot. Read without that framing the sign looks simply wrong, which is why the question appears beside the number everywhere it is shown.",
       },
       {
-        head: "Full employment is treated as the same number everywhere",
+        head: "The score carries a measured margin of error",
         body:
-          "The Labour Market pillar scores unemployment against a single 2% benchmark for all six markets. Economies differ in what full employment actually means for them -- Japan and the euro area do not plausibly share one -- so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Using each country own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
+          `The historical record changes data source partway through: figures to 2018 come from the World Bank’s annual series, and from 2019 onward from each country’s own statistics office. Rebuilding the entire history on a single source moves any published score by up to ${SOURCE_BREAK_UNCERTAINTY_PTS} percentile points, though it does not change the order. Countries closer together than that are reported as level rather than ranked, so the site never claims a lead it cannot support. GDP growth is where the two sources disagree most, by about a quarter of a point on average — later revisions, not a mistake by either.`,
+      },
+      {
+        head: "The weights are stated judgments, not measurements",
+        body:
+          "No index of this kind can measure what inflation is worth against unemployment, because there is no experiment that would settle it — so every one of them declares a weighting instead. MMAI does too, and says which is which. The inflation-to-unemployment split follows published research on the wellbeing cost of each, though that research measures the cost of a higher inflation RATE while MMAI applies it to distance from a target; those are not the same quantity, so the split is described as informed by that evidence rather than measured for this use. The two weights inside Capacity are declared outright. Nothing was fitted to MMAI’s own data, which is what would make a score circular.",
+      },
+      {
+        head: "Equal thirds is a convention, and it is not equal in effect",
+        body:
+          "Weighting the three dimensions equally is the most common approach for an index like this and the default in the OECD’s handbook. That is a reason to adopt it, not evidence the three matter equally. Testing shows it is also the choice the ranking is most sensitive to: vary the other weights by half and the order never changes, but vary these and it does. And as measured above, equal weighting does not produce equal influence, because the three dimensions move together to different degrees. All three are published beside the score so a reader who disagrees can weigh them differently.",
       },
       {
         head: "Inflation above and below target are treated the same",
         body:
-          "MMAI subtracts the same number of points whether inflation is one point above target or one point below. Central banks do not see it that way: the US framework is explicitly asymmetric, and when interest rates are near zero, inflation falling too low is harder to fix than inflation running slightly high. MMAI also penalises a large miss in a straight line, where the economic literature generally treats big misses as disproportionately worse than small ones.",
+          "MMAI penalises inflation one point above target exactly as much as one point below. The evidence does not support that, and does not agree on the alternative either: estimates of what central banks actually do find overshoots penalised about three times as heavily, while work on what happens when interest rates are near zero implies the opposite. Adopting either would mean picking a side of a live argument. Symmetry is kept because the European Central Bank states it in its own published strategy — negative and positive deviations equally undesirable — a citation to a stated objective rather than a measurement. Choosing differently would move scores by around six percentile points.",
       },
       {
-        head: "It measures conditions, it does not forecast",
+        head: "Full employment is treated as the same number everywhere",
         body:
-          "Every figure describes what has already been published by an official source. MMAI contains no prediction, no model and no view about what happens next.",
+          "Unemployment is scored against one historical distribution for all six markets, so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Japan and the euro area do not plausibly share a single definition of full employment. Using each country’s own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
+      },
+      {
+        head: `${REF_SHORTEST.name} is under-represented in the record`,
+        body:
+          `The reference distribution holds ${REF_N} market-years rather than a clean 26 for each of the six. ${REF_SHORTEST.name} contributes ${REF_SHORTEST.n}, because for eight of those years its central bank targeted the quantity of money rather than an interest rate, so no policy rate exists to record. Those years are absent at source, not dropped for convenience — but it does mean ${REF_SHORTEST.name} shapes the historical average slightly less than the others, and the years missing are its most unusual ones.`,
       },
     ],
-    impact: "You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. \"Supportive\" and \"Challenging\" describe conditions for an average household and business in that economy — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government's policy performance. MMAI is not investment advice.",
+    impact:
+      `You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. The full ${REF_N}-row reference table is published too, so the averages themselves can be checked rather than taken on trust. A percentile describes conditions for an average household and business in that economy against the last ${REF_SPAN} — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government’s policy performance. MMAI is not investment advice.`,
   },
 ];
 
@@ -201,12 +293,77 @@ export default function LearnPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 10 }}>
+      {/* The whole method on one screen, before any of the detail. A
+          reader who takes in only this should still know what a score is
+          and where it came from. */}
+      <div className="section">
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 18 }}>
+            <p className="eyebrow">THE METHOD AT A GLANCE</p>
+            <h2>How five published figures become one rank</h2>
+            <p>
+              Nothing here is hidden and nothing is estimated by us. Each step is shown below, and every
+              constant it uses is published further down this page.
+            </p>
+          </div>
+          <ScoreDiagram />
+        </div>
+      </div>
+
+      {/* Grouping five numbers into three buckets is a CLAIM -- that the
+          things in a bucket belong together and the buckets measure
+          different things. This is the evidence for it, including the part
+          that is not flattering. */}
+      <div className="section">
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 18 }}>
+            <p className="eyebrow">DOES THE GROUPING HOLD UP?</p>
+            <h2>How the indicators actually relate to each other</h2>
+            <p>
+              Putting five figures into three dimensions asserts that each group belongs together and that the
+              groups measure different things. Measured across the whole reference record, here is whether that
+              is true.
+            </p>
+          </div>
+          <CorrelationMatrix />
+        </div>
+      </div>
+
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">SCORED MARKETS</p>
-            <h2>The five pillars behind every MMAI score</h2>
+            <h2>The five indicators behind every MMAI score</h2>
+            <p>
+              One card each, grouped by the dimension it feeds. Jump straight to any of them.
+            </p>
           </div>
+
+          {/* A CONTENTS LINE, because this is a long page.
+              Seven full-width cards stacked in sequence gave a reader
+              arriving from a link no way to see what was on the page or
+              to reach the one thing they came for without scrolling past
+              everything else. The anchors already existed on every card;
+              nothing linked to them. */}
+          <nav className="learn-index" aria-label="Jump to an indicator">
+            {TOPICS.map((t) => {
+              const d = TOPIC_DIMENSION[t.id];
+              const tone =
+                d === "all" ? "var(--accent-2)"
+                  : d === "none" ? "var(--slate)"
+                    : DIM_TONE[d as DimensionKey];
+              // The title carries a long explanatory clause after the dash
+              // that belongs on the card, not in a contents line. One title
+              // has no dash to cut at and needs naming outright.
+              const shortTitle = t.id === "mmai" ? "Putting it together" : t.title.split(" — ")[0];
+              return (
+                <a key={t.id} href={`#topic-${t.id}`} className="learn-index-link">
+                  <i style={{ background: tone }} />
+                  {shortTitle}
+                </a>
+              );
+            })}
+          </nav>
           {TOPICS.map((t) => (
             <div
               key={t.id}
@@ -221,12 +378,13 @@ export default function LearnPage() {
                 backdropFilter: "blur(14px)",
               }}
             >
-              <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>{t.title}</h3>
-              <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
+              <DimensionTag topicId={t.id} />
+              <h3 className="learn-h3">{t.title}</h3>
+              <p style={{ fontSize: 15, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{
-                  fontFamily: "monospace",
-                  fontSize: 14,
+                  fontFamily: "IBM Plex Mono, monospace",
+                  fontSize: 15,
                   background: "var(--paper)",
                   border: "1px solid var(--hair)",
                   borderRadius: 8,
@@ -236,11 +394,19 @@ export default function LearnPage() {
               >
                 {t.formula}
               </div>
+              {/* A z-score is not self-explanatory the way a 0-100 pillar score
+                  pretended to be, so every transform gets a line saying what
+                  zero means and which way is better. */}
+              {"formulaNote" in t && t.formulaNote && (
+                <p style={{ fontSize: 13, color: "var(--slate)", lineHeight: 1.6, margin: "-6px 0 14px" }}>
+                  {t.formulaNote as string}
+                </p>
+              )}
               {"weights" in t && t.weights && (
                 <div
                   style={{
-                    fontFamily: "monospace",
-                    fontSize: 12.5,
+                    fontFamily: "IBM Plex Mono, monospace",
+                    fontSize: 13,
                     background: "var(--paper)",
                     border: "1px solid var(--hair)",
                     borderRadius: 8,
@@ -269,7 +435,7 @@ export default function LearnPage() {
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 8 }}>
                     Each market’s own target
                   </div>
-                  <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.8 }}>
+                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.8 }}>
                     {t.targets}
                   </div>
                 </div>
@@ -287,11 +453,19 @@ export default function LearnPage() {
               {(() => { const lims = (t as { limitations?: Array<{ head: string; body: string }> }).limitations; return lims ? (
                 <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 10 }}>
-                    What this score does not tell you
+                    How to read this score, and where the judgment calls are
                   </div>
+                  <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 14px" }}>
+                    <b>The data and the arithmetic are checkable.</b> Every figure comes from a named official source,
+                    the {REF_N}-row reference table is published in full, and any reader can reproduce a score by hand —
+                    one already has, working only from the published files and without being told the answer. What
+                    follows is the layer above that: the choices about how those figures are combined. <b>Every index
+                    of this kind rests on choices like these</b>, because no experiment settles what inflation is worth
+                    against unemployment. What is unusual here is stating them, and measuring what they actually do.
+                  </p>
                   {lims.map((lim: { head: string; body: string }) => (
                     <div key={lim.head} style={{ marginBottom: 11 }}>
-                      <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 2 }}>{lim.head}</div>
+                      <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 2 }}>{lim.head}</div>
                       <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.65 }}>{lim.body}</p>
                     </div>
                   ))}
@@ -325,8 +499,8 @@ export default function LearnPage() {
                   </div>
                   <div
                     style={{
-                      fontFamily: "monospace",
-                      fontSize: 12.5,
+                      fontFamily: "IBM Plex Mono, monospace",
+                      fontSize: 13,
                       color: "var(--ink-soft)",
                       lineHeight: 1.8,
                       marginBottom: 10,
@@ -358,22 +532,22 @@ export default function LearnPage() {
               <div
                 style={{
                   padding: "14px 16px",
-                  borderLeft: "3px solid var(--teal)",
-                  background: "var(--teal-bg)",
+                  borderLeft: "3px solid var(--status-live)",
+                  background: "var(--status-live-bg)",
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
+                <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">GULF WATCH (NON-SCORED)</p>
@@ -393,20 +567,20 @@ export default function LearnPage() {
                 backdropFilter: "blur(14px)",
               }}
             >
-              <h3 style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>{t.title}</h3>
-              <p style={{ fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
+              <h3 className="learn-h3">{t.title}</h3>
+              <p style={{ fontSize: 15, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
               <div
                 style={{
                   padding: "14px 16px",
-                  borderLeft: "3px solid var(--teal)",
-                  background: "var(--teal-bg)",
+                  borderLeft: "3px solid var(--status-live)",
+                  background: "var(--status-live-bg)",
                   borderRadius: "0 10px 10px 0",
                 }}
               >
-                <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 700, color: "var(--teal)", letterSpacing: 1, marginBottom: 6 }}>
+                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
                   WHY THIS AFFECTS YOU
                 </div>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
+                <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
               </div>
             </div>
           ))}

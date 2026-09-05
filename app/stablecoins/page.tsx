@@ -3,6 +3,7 @@ import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import { fetchAllStablecoinSupplies, STABLECOINS, type StablecoinSupply, type StablecoinChain } from "@/lib/fetchers/stablecoins";
 import { ETHEREUM_STABLECOIN_HISTORY } from "@/lib/stablecoinHistory";
+import StablecoinTokens from "@/components/StablecoinTokens";
 
 export const metadata: Metadata = {
   title: "Stablecoins",
@@ -34,11 +35,6 @@ const CHAIN_NOTE: Record<StablecoinChain, string> = {
   solana: "A faster, lower-cost network that has taken a growing share of stablecoin activity.",
 };
 
-const BACKING_LABEL: Record<string, string> = {
-  "fiat-backed": "Cash & short-term government debt",
-  "crypto-backed": "Over-collateralised with crypto assets",
-  synthetic: "Hedged derivatives position",
-};
 
 function money(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
@@ -109,13 +105,13 @@ export default async function StablecoinsPage() {
             <div
               style={{
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 46, lineHeight: 1.05,
-                margin: "10px 0 6px", color: "var(--teal)", fontVariantNumeric: "tabular-nums",
+                margin: "10px 0 6px", color: "var(--status-live)", fontVariantNumeric: "tabular-nums",
                 textShadow: "0 0 26px rgba(34,211,238,0.35)",
               }}
             >
               {money(total)}
             </div>
-            <p style={{ fontSize: 12.5, color: "var(--slate)", margin: 0, lineHeight: 1.6, maxWidth: "70ch" }}>
+            <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.6, maxWidth: "70ch" }}>
               Counting {rows.length} dollar-pegged tokens across three networks. Read directly from each
               blockchain when this page was last built, and refreshed at most every ten minutes.
               {missing > 0 && ` ${missing} of ${STABLECOINS.length} could not be read on this build and are excluded rather than estimated.`}
@@ -130,61 +126,29 @@ export default async function StablecoinsPage() {
             {chainTotals.map((c) => (
               <div key={c.chain} className="mmai-card">
                 <div className="meta-label">{CHAIN_LABEL[c.chain]}</div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26, margin: "6px 0 4px", fontVariantNumeric: "tabular-nums" }}>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 27, margin: "6px 0 4px", fontVariantNumeric: "tabular-nums" }}>
                   {money(c.total)}
                 </div>
-                <div style={{ fontSize: 11.5, color: "var(--slate)", lineHeight: 1.5 }}>{CHAIN_NOTE[c.chain]}</div>
+                <div style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.5 }}>{CHAIN_NOTE[c.chain]}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 10 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">BY TOKEN</p>
             <h2>Each stablecoin, and where it lives</h2>
             <p>
-              The same token runs on several networks at once, holding a separate supply on each. Those are
-              shown split out rather than merged, because they are not one pool of money.
+              Bar length is each token&apos;s size against the largest one, and the coloured segments are the
+              networks it lives on. The same token runs on several at once, holding a separate supply on each,
+              shown split out rather than merged because they are not one pool of money.
             </p>
           </div>
 
-          <div className="scroll-x" style={{ marginTop: 20 }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th scope="col">Token</th>
-                  <th scope="col">Issuer</th>
-                  <th scope="col" style={{ textAlign: "right" }}>Total supply</th>
-                  <th scope="col">Split by network</th>
-                  <th scope="col">Backed by</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coins.map((c) => (
-                  <tr key={c.symbol}>
-                    <td>
-                      <b style={{ color: "#fff" }}>{c.symbol}</b>
-                      <div style={{ fontSize: 11, color: "var(--slate)" }}>{c.name}</div>
-                    </td>
-                    <td style={{ fontSize: 12.5 }}>{c.issuer}</td>
-                    <td style={{ textAlign: "right", fontFamily: "IBM Plex Mono, monospace", fontVariantNumeric: "tabular-nums", color: "#fff" }}>
-                      {money(c.total)}
-                    </td>
-                    <td style={{ fontSize: 11.5, color: "var(--slate)" }}>
-                      {c.chains
-                        .sort((a, b) => b.supply - a.supply)
-                        .map((s) => `${CHAIN_LABEL[s.chain]} ${money(s.supply)}`)
-                        .join("  ·  ")}
-                    </td>
-                    <td style={{ fontSize: 11.5, color: "var(--slate)" }}>{BACKING_LABEL[c.backing] ?? c.backing}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StablecoinTokens coins={coins} />
         </div>
       </div>
 
@@ -194,7 +158,7 @@ export default async function StablecoinsPage() {
           They are not -- the supply moved chains. Context first, then the
           chart, and the heading names the chain rather than saying
           "stablecoin supply". */}
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">OVER TIME · ETHEREUM ONLY</p>
@@ -224,7 +188,7 @@ export default async function StablecoinsPage() {
         </div>
       </div>
 
-      <div className="section" style={{ paddingTop: 0 }}>
+      <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">WHY THIS IS HERE</p>
@@ -253,14 +217,14 @@ export default async function StablecoinsPage() {
 
           <div className="mmai-card" style={{ marginTop: 12 }}>
             <div className="meta-label">Where these numbers come from</div>
-            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
+            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "8px 0 0", lineHeight: 1.7 }}>
               Each figure is read from the token&apos;s own contract on the network named — Ethereum and Tron are
               asked directly for their total supply, Solana for its mint supply. This is public ledger data, not a
               data provider&apos;s product, so there is no estimate and no intermediary between the chain and this
               page. Backing type is the one hand-maintained field here, and describes the kind of asset an issuer
               says stands behind the token, not an audit of it.
             </p>
-            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: "10px 0 0", lineHeight: 1.7 }}>
+            <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "10px 0 0", lineHeight: 1.7 }}>
               <b>Why these figures differ from a crypto data site.</b> This page counts every token that{" "}
               <b style={{ color: "var(--ink)" }}>exists</b> on each chain. Most aggregators publish{" "}
               <b style={{ color: "var(--ink)" }}>circulating</b> supply, which subtracts tokens an issuer has
@@ -269,11 +233,11 @@ export default async function StablecoinsPage() {
               blockchain can answer without anybody&apos;s estimate. Coverage differs too: the tokens listed above
               are the ones tracked here, and euro-pegged coins are excluded because this page counts dollars.
             </p>
-            <p style={{ fontSize: 12.5, color: "var(--slate)", margin: "10px 0 0", lineHeight: 1.7 }}>
+            <p style={{ fontSize: 13, color: "var(--slate)", margin: "10px 0 0", lineHeight: 1.7 }}>
               Deliberately absent: the live peg price. It is readable, but no source for it has cleared this
               site&apos;s licensing bar yet, and MMAI would rather show nothing than publish a number it cannot
               republish cleanly. The same rule is applied on the{" "}
-              <Link href="/sources" style={{ color: "var(--gold-deep)" }}>Sources</Link> page for every market.
+              <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources</Link> page for every market.
             </p>
           </div>
         </div>
