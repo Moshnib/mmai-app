@@ -165,7 +165,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
           // too, not just the navigation action, so it folds the score
           // and band back in. This is the one keyboard/screen-reader
           // target per market on the map (see the country paths above).
-          const actionLabel = `View ${m.name}, score ${label}, ${band.label}, on the Data Over Time page`;
+          const actionLabel = `Show ${m.name}, score ${label}, ${band.label}`;
 
           return (
             <text
@@ -221,7 +221,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
           // Visible text includes the score (below), so the accessible
           // name does too -- same Label in Name reasoning as the map's
           // score labels above.
-          const actionLabel = `View ${m.name}, score ${label}, ${band.label}, on the Data Over Time page`;
+          const actionLabel = `Show ${m.name}, score ${label}, ${band.label}`;
           return (
             <span
               key={m.code}

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import MarketSnapshotStrip from "@/components/MarketSnapshotStrip";
@@ -103,7 +102,6 @@ function rateNarrativeFor(raw: RawIndicators, marketCode: string): string | null
 }
 
 export default function OverviewPage() {
-  const router = useRouter();
   const [markets, setMarkets] = useState<MarketData[]>(FALLBACK_MARKETS);
   // Which observation each market's score came from, so the page can say
   // "scored on 3 September data" when today's row was incomplete rather
@@ -111,10 +109,34 @@ export default function OverviewPage() {
   const [observationPicks, setObservationPicks] = useState<
     Record<string, ObservationPick<RawIndicatorRow & { fetched_at: string }>>
   >({});
-  const [current, setCurrent] = useState("US");
+  // NOTHING IS SELECTED UNTIL THE VISITOR SELECTS IT. The page used to
+  // open on the United States, which is an odd thing for an index that
+  // covers six markets to assert, and it meant a first-time reader met a
+  // country's score before being told what the score was.
+  const [current, setCurrent] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<"live" | "fallback">("fallback");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const { countries: gulfCountries, loaded: gulfLoaded } = useGulfIndicators();
+
+  // The detail appears BELOW the chooser, so the first selection has to
+  // take the reader to it -- otherwise clicking a country on the map
+  // appears to do nothing. Only on the first choice: once the detail is
+  // on screen, switching markets should swap the numbers under the
+  // reader's eyes, not yank the page around.
+  const detailRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToDetail = useRef(false);
+
+  function selectMarket(code: string) {
+    setCurrent(code);
+    if (hasScrolledToDetail.current) return;
+    hasScrolledToDetail.current = true;
+    // The panel does not exist yet at click time; wait for the render.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      )
+    );
+  }
 
   useEffect(() => {
     async function loadLiveData() {
@@ -210,18 +232,24 @@ export default function OverviewPage() {
     loadLiveData();
   }, []);
 
-  const pick = observationPicks[current] ?? null;
+  const pick = current ? observationPicks[current] ?? null : null;
   const observationNote = pick ? fallbackNote(pick, (iso) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" })) : null;
 
-  const market = markets.find((m) => m.code === current)!;
-  const { percentile, dimensions, dimensionPercentiles } = scoreMarketV2(market);
+  // null until a market is chosen. Everything downstream is guarded on it
+  // rather than defaulted, so "nothing chosen" cannot quietly become
+  // "the United States" again.
+  const market = markets.find((m) => m.code === current) ?? null;
+  const scored = market ? scoreMarketV2(market) : null;
+  const percentile = scored?.percentile ?? null;
+  const dimensions = scored?.dimensions ?? null;
+  const dimensionPercentiles = scored?.dimensionPercentiles ?? null;
   const composite = percentile;
   // Averaging three dimensions is fully compensatory, so a collapse in one
   // can be offset without limit by the other two. Publishing all three
   // makes that visible, which is most of the fix -- but a reader who takes
   // in only the headline still deserves to be told. Japan is the live case.
   const masked = maskedDimension(dimensionPercentiles, percentile);
-  const rateNarrative = rateNarrativeFor(market.raw, market.code);
+  const rateNarrative = market ? rateNarrativeFor(market.raw, market.code) : null;
 
   return (
     <>
@@ -233,33 +261,45 @@ export default function OverviewPage() {
           <p className="eyebrow">
             MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
           </p>
-          {dataSource === "live" && lastUpdated && (
-            <p style={{ fontSize: 12, color: "var(--slate)", fontFamily: "IBM Plex Mono, monospace", margin: "4px 0 0" }}>
-              Last updated {formatUpdatedAt(lastUpdated)} (oldest of the {markets.length} markets) · scheduled to refresh daily at 06:00 UTC
-            </p>
-          )}
-          {/* One plain sentence for a visitor who has never heard of MMAI
-              before landing here -- the headline right below is a hook,
-              not an explanation, and assumes the reader already knows
-              what "macro environment" means to them personally. This
-              line answers "what even is this" before asking the
-              headline's more evocative question. */}
-          <p style={{ fontSize: 15, color: "var(--ink-soft)", maxWidth: "62ch", margin: "10px auto 0", lineHeight: 1.6 }}>
-            MMAI reads public government data — inflation, jobs, interest rates — and turns it into one plain-language
-            score per country, updated daily. Not investment advice, just the honest picture.
-          </p>
+          {/* ORDER: hook, then explanation, then the choice.
+              It used to run the other way about -- a refresh timestamp,
+              then an explanation, then the headline the explanation was
+              explaining. A reader met "Last updated 06:27 UTC" before
+              being told what was updated, and read what MMAI does before
+              being given a reason to care.
+
+              The timestamp is gone rather than moved: the snapshot card
+              below already carries "Verified <time>" beside the score it
+              belongs to, so this was a second copy of it in the one place
+              it could not mean anything yet. */}
           <h1 className="headline">
             Is today&apos;s macro environment <span className="hl-cyan">supportive</span> — or{" "}
             <span className="hl-violet">working against you?</span>
           </h1>
-          <p className="sub">One composite score. Three economic dimensions. Verified market signals.</p>
+          {/* One plain answer to "what even is this", for a visitor who
+              has never heard of MMAI. It also absorbs the old strapline
+              ("One composite score. Three economic dimensions. Verified
+              market signals.") -- three fragments that promised what this
+              says outright, and said "verified" without saying of what. */}
+          <p className="sub" style={{ maxWidth: "64ch", margin: "0 auto 28px" }}>
+            MMAI reads the economic figures governments publish about themselves — inflation, jobs, growth, debt
+            and interest rates — and turns them into one score per country, updated daily. That score is a rank
+            against 148 market-years, built from three dimensions you can open up and check. It is not
+            investment advice.
+          </p>
 
+          {/* Says what the row is for. With nothing preselected, six
+              unlit buttons need a sentence or a reader has to guess
+              whether they are navigation, filters, or decoration. */}
+          <p className="meta-label" style={{ margin: "0 0 10px" }}>
+            {current ? "Showing" : "Choose a market"}
+          </p>
           <div className="tabs">
             {markets.map((m) => (
               <button
                 key={m.code}
                 className={`tab${m.code === current ? " active" : ""}`}
-                onClick={() => setCurrent(m.code)}
+                onClick={() => selectMarket(m.code)}
                 aria-pressed={m.code === current}
                 style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
@@ -269,10 +309,15 @@ export default function OverviewPage() {
           </div>
           </div>
 
-          {/* One card: context strip, score beside its trend chart, then
-              the three headline indicators -- matching the design
-              reference, rather than four separate floating panels. */}
-          <div className="snapshot-card">
+          {/* NOTHING BELOW EXISTS UNTIL A MARKET IS CHOSEN.
+              The chooser -- the compare strip and the map -- sits further
+              down the page, so while nothing is selected these sections
+              are simply absent and the chooser rises to meet the reader.
+              No reordering and no empty state to design: the page asks a
+              question, then answers the one they pick. */}
+          {market && (
+            <>
+          <div className="snapshot-card" ref={detailRef}>
           <MarketSnapshotStrip
             marketName={market.name}
             composite={composite}
@@ -327,7 +372,7 @@ export default function OverviewPage() {
                   {observationNote}
                 </p>
               )}
-              <ScoreTrendChart marketCode={current} currentScore={composite} />
+              <ScoreTrendChart marketCode={market.code} currentScore={composite} />
               <div className="meta-row" style={{ marginTop: 14 }}>
                 <span>Band: <b>{percentileBandLabel(composite)}</b></span>
                 <span>Ranked against: <b>148 market-years, 2000–2025</b></span>
@@ -374,9 +419,12 @@ export default function OverviewPage() {
           </div>
 
           {rateNarrative && <p className="score-narrative" style={{ maxWidth: "68ch", marginTop: 18 }}>{rateNarrative}</p>}
+            </>
+          )}
         </div>
       </div>
 
+      {market && (
       <div className="section">
         <div className="wrap">
           <div className="section-head">
@@ -399,7 +447,7 @@ export default function OverviewPage() {
           <DimensionCards
             standardised={dimensions}
             percentiles={dimensionPercentiles}
-            market={current}
+            market={market.code}
           />
 
           <p style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.6, marginTop: 16, maxWidth: "72ch" }}>
@@ -410,13 +458,17 @@ export default function OverviewPage() {
           </p>
         </div>
       </div>
+      )}
 
       <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">COMPARE MARKETS</p>
             <h2>How every market scores right now</h2>
-            <p>Click a market to open its full history on the Data Over Time page.</p>
+            <p>
+              Pick a market to see its full picture, without leaving this page. Every score is a rank against the
+              same 148 market-years, so they are directly comparable.
+            </p>
           </div>
 
           {/* Primary cross-market read: name, score, status, nothing
@@ -427,7 +479,13 @@ export default function OverviewPage() {
               const { percentile: mScore } = scoreMarketV2(m);
               const mBand = { color: colorForScore(mScore), label: percentileBandLabel(mScore) };
               return (
-                <Link key={m.code} href={`/trends?market=${m.code}`} className="compare-chip">
+                <button
+                  key={m.code}
+                  type="button"
+                  onClick={() => selectMarket(m.code)}
+                  aria-pressed={m.code === current}
+                  className={`compare-chip${m.code === current ? " on" : ""}`}
+                >
                   <span className="cc-name">{m.name}</span>
                   <span className="cc-glyph">
                     <CountryGlyph code={m.code} color={mBand.color} size={124} />
@@ -436,13 +494,17 @@ export default function OverviewPage() {
                     {mScore === null ? "—" : mScore.toFixed(1)}
                   </span>
                   <span className="cc-band">{mBand.label}</span>
-                </Link>
+                </button>
               );
             })}
           </div>
 
           <div className="world-map-wrap" style={{ marginTop: 24, marginBottom: 24 }}>
-            <WorldMap markets={markets} current={current} onSelect={(code) => router.push(`/trends?market=${code}`)} />
+            {/* Selects in place. It used to router.push() to the Trends
+                page, so clicking a country on the map left the homepage
+                entirely -- which is the opposite of what a map on an
+                overview is for. */}
+            <WorldMap markets={markets} current={current ?? ""} onSelect={selectMarket} />
           </div>
           {/* Text fallback for the map's mobile-hidden state (illegible
               at phone width) -- Heatmap used to be the mobile-friendly
@@ -453,9 +515,14 @@ export default function OverviewPage() {
               .map-mobile-links so it doesn't duplicate the map on desktop. */}
           <div className="map-mobile-links">
             {markets.filter((m) => m.code !== current).map((m) => (
-              <Link key={m.code} href={`/trends?market=${m.code}`} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--ink-soft)", textDecoration: "none", fontSize: 13 }}>
+              <button
+                key={m.code}
+                type="button"
+                onClick={() => selectMarket(m.code)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--ink-soft)", background: "none", border: "none", padding: 0, font: "inherit", fontSize: 13, cursor: "pointer" }}
+              >
                 <Flag code={m.code} size={16} /> {m.name}
-              </Link>
+              </button>
             ))}
           </div>
         </div>
