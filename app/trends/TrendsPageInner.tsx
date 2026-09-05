@@ -337,8 +337,8 @@ export default function TrendsPageInner({
                 How the score — and everything behind it — has moved
               </h1>
               <p className="sub" style={{ marginLeft: 0 }}>
-                Start with the composite, then open any one of the three dimensions to see its own trend and the raw
-                indicator underneath it.
+                Every score MMAI has published, and the figures underneath it. Open a dimension to see what it has been
+                doing on its own, and the raw indicator it is built from.
               </p>
               {/* Inside the left column, beside the panel -- matching
                   the design reference. Full-width below the header (as
@@ -478,7 +478,7 @@ export default function TrendsPageInner({
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">2 — EXPLORE THE THREE DIMENSIONS</p>
-            <h2>Pick a dimension to drive the two charts below</h2>
+            <h2>Follow one dimension through the record</h2>
             <p>Each card shows how that dimension ranks right now against the 148 market-years the headline uses, and what it measures.</p>
           </div>
 

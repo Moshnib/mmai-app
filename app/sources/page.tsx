@@ -32,7 +32,7 @@ export default function SourcesPage() {
         <div className="wrap">
           <p className="eyebrow">SOURCES &amp; FRESHNESS</p>
           <h1 className="headline" style={{ maxWidth: "22ch" }}>Every number, traced back to where it actually came from</h1>
-          <p className="sub">Institution, licence, live-or-manual status, and when the data last came in — for every chart and widget in MMAI, not just the ones that make the index look good.</p>
+          <p className="sub">Institution, licence, live-or-manual status, and the date each figure actually refers to — for every chart and widget on the site, including the ones MMAI decided it could not use.</p>
         </div>
       </div>
 
@@ -46,7 +46,7 @@ export default function SourcesPage() {
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 8 }}>
             <p className="eyebrow">GULF WATCH (NON-SCORED)</p>
-            <h2>Six more countries, without a composite score</h2>
+            <h2>Six more countries, tracked but deliberately unscored</h2>
             <p style={{ maxWidth: "68ch" }}>
               UAE, Bahrain, Qatar, Saudi Arabia, Kuwait, and Oman appear on the{" "}
               <Link href="/gulf-watch" style={{ color: "var(--accent-2)" }}>Gulf Watch</Link> page with real, live
