@@ -96,6 +96,24 @@ jobs:
       - name: Composite engine reproduces its published constants
         run: npx tsx scripts/verify-composite.ts
 
+      # THE PAGE HAS TO REPRODUCE THE ENGINE, not merely agree with it.
+      # The Learn page tells a reader they can take the raw numbers, run
+      # them through the formulas shown, and get the exact published score.
+      # That is the strongest claim the site makes, and from the cutover on
+      # 5 September 2026 until this was added, NOTHING tested it: the old
+      # verify-published-formulas went with the five-pillar engine and no
+      # replacement was written. verify-composite above checks the engine
+      # against its own constants, which would stay green while the page
+      # printed something else entirely.
+      #
+      # This parses the numbers back OUT of the published strings and
+      # rebuilds all six live scores from those alone. It caught the
+      # Conditions weights being published rounded to one decimal, which
+      # shifted the composite fifteen times further than the tightest rung
+      # of the ladder -- right today, but by luck rather than arithmetic.
+      - name: A reader can reproduce the score from the page alone
+        run: npx tsx scripts/verify-published-formulas.ts
+
       # The Learn page publishes what the three dimensions ACTUALLY do --
       # effective influence and how far each spreads the six markets --
       # measured, not asserted. Equal thirds is the declared weight; the

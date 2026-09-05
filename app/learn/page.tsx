@@ -7,6 +7,7 @@ import {
   DIMENSION_INFLUENCE_MEASURED,
   W_INFLATION,
   W_UNEMPLOYMENT,
+  COND_WEIGHT_FRACTION,
   W_DEBT,
   W_RATE,
   SOURCE_BREAK_UNCERTAINTY_PTS,
@@ -78,7 +79,12 @@ const MOST_INFLUENTIAL = DIMENSION_NAMES[
 
 // The Conditions split, from the engine's own fraction rather than a
 // rounded copy of it.
-const COND_SPLIT = `inflation ${(W_INFLATION * 100).toFixed(1)}%  ·  unemployment ${(W_UNEMPLOYMENT * 100).toFixed(1)}%`;
+// The percentage is what a reader reads; the fraction is what a reader
+// REPRODUCES with. Printing only the rounded percentage left the page
+// promising an exact reproduction it did not supply the numbers for --
+// rounding at one decimal moves the composite fifteen times further than
+// the tightest rung of the ladder.
+const COND_SPLIT = `inflation ${(W_INFLATION * 100).toFixed(1)}% (exactly ${COND_WEIGHT_FRACTION.inflation})  ·  unemployment ${(W_UNEMPLOYMENT * 100).toFixed(1)}% (exactly ${COND_WEIGHT_FRACTION.unemployment})`;
 const CAP_SPLIT = `debt ${(W_DEBT * 100).toFixed(0)}%  ·  policy rate ${(W_RATE * 100).toFixed(0)}%`;
 
 export const metadata: Metadata = {
@@ -111,6 +117,30 @@ const TOPIC_DIMENSION: Record<string, DimensionKey | "none" | "all"> = {
 };
 
 const DIM_TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
+
+/** WHICH TOPICS ARE ACTUALLY THE SCORE, derived rather than counted by
+ *  hand. The heading used to say "five indicators" beside a list that
+ *  rendered all seven topics -- the five scored ones, plus Brent, which
+ *  is on the page precisely BECAUSE it is no longer scored, plus the
+ *  method section. A reader counting the chips found seven under a
+ *  heading promising five, which is the kind of small contradiction that
+ *  makes someone doubt the arithmetic further down the page.
+ *
+ *  It drifted because "five" was typed once and the list grew past it.
+ *  Deriving the number from the same record the list is built from means
+ *  it cannot drift again: add a sixth scored indicator and the heading
+ *  says six by itself. */
+const SCORED_TOPIC_IDS = Object.keys(TOPIC_DIMENSION).filter(
+  (id) => TOPIC_DIMENSION[id] !== "none" && TOPIC_DIMENSION[id] !== "all",
+);
+
+const COUNT_WORD: Record<number, string> = {
+  3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight",
+};
+
+/** Spelled out when there is a word for it, digits beyond that rather
+ *  than an invented one. */
+const SCORED_COUNT_WORD = COUNT_WORD[SCORED_TOPIC_IDS.length] ?? String(SCORED_TOPIC_IDS.length);
 
 /** The pill that carries it: colour and name, matching the colours the
  *  dimensions already use in the diagram above and on the front page. */
@@ -485,36 +515,64 @@ export default function LearnPage() {
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">SCORED MARKETS</p>
-            <h2>The five indicators behind every MMAI score</h2>
+            <h2>The {SCORED_COUNT_WORD} indicators behind every MMAI score</h2>
             <p>
-              One card each, grouped by the dimension it feeds. Jump straight to any of them.
+              One card each, under the dimension it feeds. Oil and the method section are on this
+              page too, listed separately because neither is one of the {SCORED_COUNT_WORD}.
             </p>
           </div>
 
-          {/* A CONTENTS LINE, because this is a long page.
-              Seven full-width cards stacked in sequence gave a reader
-              arriving from a link no way to see what was on the page or
-              to reach the one thing they came for without scrolling past
-              everything else. The anchors already existed on every card;
-              nothing linked to them. */}
+          {/* A CONTENTS LINE, because this is a long page, and GROUPED,
+              because it said it was.
+
+              It used to render TOPICS in source order into one wrapping
+              row: Conditions, Direction, Conditions, Capacity, Capacity,
+              unscored, method. The copy above promised "grouped by the
+              dimension it feeds" and the coloured dot on each chip made
+              the failure to do so unmissable -- red, orange, red, cyan,
+              cyan, grey, purple, with the two Conditions indicators split
+              apart by GDP growth. A reader who trusted the dots read the
+              grouping as broken, which it was.
+
+              Now each dimension is a labelled row of its own, so the dots
+              are a second reading of the heading rather than the only
+              clue, and the two topics that are NOT among the scored
+              indicators sit visibly outside them. */}
           <nav className="learn-index" aria-label="Jump to an indicator">
-            {TOPICS.map((t) => {
-              const d = TOPIC_DIMENSION[t.id];
-              const tone =
-                d === "all" ? "var(--accent-2)"
-                  : d === "none" ? "var(--slate)"
-                    : DIM_TONE[d as DimensionKey];
-              // The title carries a long explanatory clause after the dash
-              // that belongs on the card, not in a contents line. One title
-              // has no dash to cut at and needs naming outright.
-              const shortTitle = t.id === "mmai" ? "Putting it together" : t.title.split(" — ")[0];
-              return (
-                <a key={t.id} href={`#topic-${t.id}`} className="learn-index-link">
-                  <i style={{ background: tone }} />
-                  {shortTitle}
-                </a>
-              );
-            })}
+            {DIM_ORDER.map((d) => (
+              <div key={d} className="learn-index-group">
+                <span className="learn-index-group-name" style={{ color: DIM_TONE[d] }}>
+                  {DIMENSION_NAMES[d]}
+                </span>
+                <div className="learn-index-chips">
+                  {TOPICS.filter((t) => TOPIC_DIMENSION[t.id] === d).map((t) => (
+                    <a key={t.id} href={`#topic-${t.id}`} className="learn-index-link">
+                      <i style={{ background: DIM_TONE[d] }} />
+                      {t.title.split(" — ")[0]}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Kept apart on purpose. Brent is on this page BECAUSE it is
+                no longer scored, and folding it in beside the five would
+                undo the point the page spends a card making. */}
+            <div className="learn-index-group learn-index-group--aside">
+              <span className="learn-index-group-name">Also on this page</span>
+              <div className="learn-index-chips">
+                {TOPICS.filter((t) => {
+                  const d = TOPIC_DIMENSION[t.id];
+                  return d === "none" || d === "all";
+                }).map((t) => (
+                  <a key={t.id} href={`#topic-${t.id}`} className="learn-index-link">
+                    <i style={{ background: TOPIC_DIMENSION[t.id] === "all" ? "var(--accent-2)" : "var(--slate)" }} />
+                    {/* One title has no dash to cut at and needs naming outright. */}
+                    {t.id === "mmai" ? "Putting it together" : t.title.split(" — ")[0]}
+                  </a>
+                ))}
+              </div>
+            </div>
           </nav>
           {TOPICS.map((t) => (
             <div
