@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const IS_DEV = process.env.NODE_ENV === "development";
+
 /** Derived rather than hardcoded, so that changing Supabase projects cannot
  *  leave the policy naming the old one -- which would block every data
  *  fetch and leave the site rendering with no numbers and no visible error.
@@ -13,16 +15,6 @@ const SUPABASE_ORIGIN = (() => {
   }
 })();
 
-/**
- * SECURITY HEADERS
- *
- * The site was serving none of these. That was survivable on a vercel.app
- * address nobody links to; it is not what you want on a public domain that
- * publishes financial figures, because the whole claim of the project is
- * that the numbers you read are the numbers MMAI published.
- *
- * Each one is here for a stated reason, not because a checklist named it.
- */
 /**
  * THE CONTENT SECURITY POLICY.
  *
@@ -85,7 +77,19 @@ const SUPABASE_ORIGIN = (() => {
  */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  // 'unsafe-eval' IS DEVELOPMENT ONLY, and never reaches production.
+  //
+  // React uses eval() in development for debugging features -- most
+  // usefully, reconstructing a server-side error's callstack in the
+  // browser. Without it the dev server still runs, but React reports
+  // "eval() is not supported in this environment" and those features go
+  // quiet, which is a miserable thing to debug precisely because the site
+  // otherwise looks fine.
+  //
+  // Caught by opening the local site after adding this policy and reading
+  // the console, rather than by testing production alone. React never uses
+  // eval in production, so the deployed policy stays strict.
+  `script-src 'self' 'unsafe-inline'${IS_DEV ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   // blob: for the CSV export buttons, which build the file in the browser
