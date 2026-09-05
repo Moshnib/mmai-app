@@ -192,7 +192,7 @@ export default async function StablecoinsPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">WHY THIS IS HERE</p>
-            <h2>What stablecoin supply does and doesn&apos;t tell you</h2>
+            <h2>What this number is actually telling you</h2>
           </div>
 
           <div className="signal-grid" style={{ marginTop: 18 }}>

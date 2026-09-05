@@ -245,8 +245,8 @@ export default function ComparePageInner() {
               {/* h1, not h2 -- this is the page's top-level subject. Every other
                   page has one; without it this page reads to a search engine and
                   a screen reader as sections with no subject. */}
-              <h1>Compare Markets Over Time</h1>
-              <p>Track how the MMAI score and its three dimensions evolve across major economies.</p>
+              <h1>Six economies on one scale</h1>
+              <p>The same five official figures, rebuilt so the comparison actually holds — then ranked against the same 148 market-years. Every line here means the same thing.</p>
             </div>
 
             {/* "What stands out now" (brief §9). Deliberately factual --
@@ -329,7 +329,7 @@ export default function ComparePageInner() {
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">2. EXPLORE BY DIMENSION</p>
-            <h2>Pick a dimension to compare</h2>
+            <h2>Where each economy is strong, and where it is not</h2>
             <p>
               Each line is that dimension&rsquo;s rank against the same 148 market-years the headline
               uses. Switch to the raw view for the underlying indicator on its own units.

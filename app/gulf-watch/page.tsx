@@ -12,7 +12,7 @@ import GulfWatchPageInner from "./GulfWatchPageInner";
 export const metadata: Metadata = {
   title: "Gulf Watch",
   description:
-    "Live cost-of-living, investment-confidence, and currency-stability data for six Gulf countries — shown honestly, with no composite score where the data doesn't support one.",
+    "Cost of living, investment activity and currency stability across the six GCC economies — the figures their own governments publish, fetched daily, and deliberately not compressed into a score.",
 };
 
 export default function GulfWatchPage() {

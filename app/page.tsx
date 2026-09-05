@@ -429,7 +429,7 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">WHAT DRIVES THE SCORE</p>
-            <h2>Three dimensions, and where {market.name} sits on each</h2>
+            <h2>What is holding {market.name} up, and what is dragging</h2>
             <p>
               Every score is a rank against the same 148 market-years — so 80 means better than 80% of
               the record, not a mark out of 100. The bar shows which side of the historical average it
@@ -549,7 +549,7 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">GULF WATCH</p>
-            <h2>The six GCC economies</h2>
+            <h2>The Gulf, tracked the same way — and not scored</h2>
             <p>Verified indicators only — no composite score for these countries yet. Tap a country for its full data.</p>
           </div>
           <div className="gulf-strip" style={{ opacity: gulfLoaded ? 1 : 0.5, transition: "opacity 0.3s ease", marginBottom: 16 }}>
@@ -570,8 +570,8 @@ export default function OverviewPage() {
         <div className="wrap">
           <div className="cta-band">
             <div>
-              <h2>Turn macro data into clear signals.</h2>
-              <p>Every number traced to a named source, with its real reporting period. Not investment advice.</p>
+              <h2>See the conditions before you read the headlines.</h2>
+              <p>Six economies, five official figures each, one comparable score — updated daily and traced to the institution that published it. Not investment advice.</p>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link

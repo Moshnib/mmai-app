@@ -24,10 +24,10 @@ export default function GulfWatchPageInner() {
           <div className="page-head-row" style={{ marginBottom: 24 }}>
             <div className="section-head">
               <p className="eyebrow">GCC MACRO MONITOR</p>
-              <h1>Gulf Watch</h1>
+              <h1>The Gulf, in the same detail as everywhere else</h1>
               <p style={{ maxWidth: "68ch" }}>
-                Track key economic indicators across the six GCC economies and see how the region is performing.
-                Every figure is fetched daily and traced back to its source on the{" "}
+                Six economies that rarely appear side by side, with the figures their own governments publish —
+                cost of living, investment activity, currency stability. Fetched daily and traced to their source on the{" "}
                 <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources</Link> page, same as everywhere
                 else on the site.
               </p>

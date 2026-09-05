@@ -84,7 +84,7 @@ const CAP_SPLIT = `debt ${(W_DEBT * 100).toFixed(0)}%  ·  policy rate ${(W_RATE
 export const metadata: Metadata = {
   title: "Learn More",
   description:
-    "Inflation, GDP growth, unemployment, policy rates, and government debt — plus Gulf Watch's cost-of-living, investment-confidence, and currency-stability figures — what each one actually means for you, in plain language.",
+    "What inflation, growth, unemployment, interest rates and government debt actually mean for you — and the exact arithmetic that turns them into one comparable score.",
 };
 
 /**
@@ -440,7 +440,7 @@ export default function LearnPage() {
           <h1 className="headline" style={{ maxWidth: "22ch" }}>
             What these numbers actually mean — and why they affect you
           </h1>
-          <p className="sub">Every indicator behind the MMAI score, plus Gulf Watch&apos;s cost-of-living, investment-confidence, and currency-stability figures — explained in plain language, with the exact formula used where a formula applies.</p>
+          <p className="sub">Every figure behind the score, in plain language, with the exact arithmetic beside it — so you can follow how five published numbers become one rank, or check it yourself.</p>
         </div>
       </div>
 
@@ -468,8 +468,8 @@ export default function LearnPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 18 }}>
-            <p className="eyebrow">DOES THE GROUPING HOLD UP?</p>
-            <h2>How the indicators actually relate to each other</h2>
+            <p className="eyebrow">WHY THESE THREE GROUPS</p>
+            <h2>The indicators that move together, and the ones that do not</h2>
             <p>
               Putting five figures into three dimensions asserts that each group belongs together and that the
               groups measure different things. Measured across the whole reference record, here is whether that
@@ -775,7 +775,7 @@ export default function LearnPage() {
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
             <p className="eyebrow">GULF WATCH (NON-SCORED)</p>
-            <h2>Six more countries, shown honestly without a score</h2>
+            <h2>Six more countries, tracked but deliberately unscored</h2>
           </div>
           {GULF_TOPICS.map((t) => (
             <div
