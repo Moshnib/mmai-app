@@ -192,7 +192,7 @@ nav {
 }
 .navpanel-link.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
 
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .navlinks { display: none; }
   .navburger { display: flex; }
   .navpanel.open { display: flex; }
@@ -265,7 +265,7 @@ h1.headline {
   padding: 24px 0 20px;
 }
 .score-panel > .score-right { border-left: 1px solid var(--hair); padding-left: 34px; }
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .score-panel { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 24px; }
   .score-panel > .score-right { border-left: none; padding-left: 0; border-top: 1px solid var(--hair); padding-top: 22px; width: 100%; }
 }
@@ -309,9 +309,7 @@ h1.headline {
 .section-head h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h2); font-weight: 600; margin: 0 0 8px; }
 .section-head p { color: var(--slate); font-size: var(--t-body); margin: 0; max-width: 64ch; }
 
-.pillar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
-@media (max-width: 980px) { .pillar-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 560px) { .pillar-grid { grid-template-columns: repeat(2, 1fr); } }
+.pillar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; margin-top: 24px; }
 .pillar-card { background: var(--glass); border: 1px solid var(--hair); border-radius: 16px; padding: 22px 16px 18px; text-align: center; backdrop-filter: blur(10px); transition: border-color 0.2s ease, transform 0.2s ease; }
 .pillar-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
 .pillar-name { font-size: var(--t-small); font-weight: 700; margin: 14px 0 2px; color: var(--ink); }
@@ -325,7 +323,6 @@ h1.headline {
    would leave each ring about 90px wide with the label wrapping to four
    lines. */
 .dimension-grid { grid-template-columns: repeat(3, 1fr); }
-@media (max-width: 720px) { .dimension-grid { grid-template-columns: 1fr; } }
 .dimension-question { font-size: var(--t-micro); color: var(--accent-2); font-style: italic; margin-top: 6px; line-height: 1.4; }
 
 /* ===== Featured Market Snapshot strip (brief §2) =====
@@ -353,7 +350,7 @@ h1.headline {
   white-space: nowrap;
 }
 .chip i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-@media (max-width: 720px) {
+@media (max-width: 640px) {
   .snapshot-chips { margin-left: 0; width: 100%; }
 }
 
@@ -362,11 +359,9 @@ h1.headline {
    score, status, nothing else. The map stays below as a secondary,
    de-emphasised navigation aid rather than the dominant element. */
 .compare-strip {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 10px;
   margin-top: 20px;
 }
-@media (max-width: 900px) { .compare-strip { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 520px) { .compare-strip { grid-template-columns: repeat(2, 1fr); } }
 /* Sized to sit proportionally alongside the five pillar cards above:
    comparable padding, a shape block close to the pillar ring's 92px,
    and the same score type size. */
@@ -414,6 +409,10 @@ h1.headline {
 .page-head-row {
   display: grid; grid-template-columns: 1fr minmax(280px, 380px); gap: 28px; align-items: start;
 }
+/* KEPT, and deliberately. auto-fit fits interchangeable columns; this is
+   a content column beside a narrower sidebar, so the point at which the
+   sidebar stops fitting has to be stated. Same for .detail-split below,
+   and both use 900 so there is one tablet breakpoint rather than two. */
 @media (max-width: 900px) { .page-head-row { grid-template-columns: 1fr; } }
 .insight-card {
   background: var(--card-bg); border: 1px solid var(--hair);
@@ -498,9 +497,7 @@ h1.headline {
 /* Breakpoints deliberately match .pillar-grid above -- the two are the
    same five-across layout on two different pages, so they must reflow
    at the same widths. */
-.pillar-select-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-@media (max-width: 980px) { .pillar-select-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 560px) { .pillar-select-grid { grid-template-columns: repeat(2, 1fr); } }
+.pillar-select-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; }
 .pillar-select-card {
   display: block; width: 100%; text-align: left; cursor: pointer;
   padding: 16px 16px 14px; border-radius: 16px;
@@ -534,8 +531,7 @@ h1.headline {
 
 /* ===== Weekly Signals rows (design reference: a two-column grid of
    compact rows, not a wide table) ===== */
-.signal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-@media (max-width: 900px) { .signal-grid { grid-template-columns: 1fr; } }
+.signal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 10px; }
 .signal-row {
   display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
   padding: 12px 14px;
@@ -572,9 +568,7 @@ h1.headline {
 /* The only remaining user is the 6-card Gulf Watch grid (/gulf-watch and
    the homepage's Gulf Watch section) -- 3 columns divides 6 evenly with no
    orphaned card, unlike the 5-column layout this was originally built for. */
-.compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
-@media (max-width: 900px) { .compare-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .compare-grid { grid-template-columns: repeat(1, 1fr); } }
+.compare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 14px; margin-top: 24px; }
 .compare-card {
   background: var(--glass); border: 1px solid var(--hair); border-radius: 16px;
   padding: 16px 18px; cursor: pointer; transition: all .2s ease; backdrop-filter: blur(10px);
@@ -584,9 +578,14 @@ h1.headline {
 
 /* Homepage Gulf strip: all six countries across one row, condensed,
    with the full indicator set on /gulf-watch (design reference). */
-.gulf-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 20px; }
-@media (max-width: 1080px) { .gulf-strip { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 620px) { .gulf-strip { grid-template-columns: repeat(2, 1fr); } }
+/* auto-fit, not a column count at a breakpoint. These grids used to
+   declare how many columns they wanted and then restate it at two or
+   three widths -- which is where most of this stylesheet's eleven
+   breakpoints came from. auto-fit asks the browser to fit as many as
+   will fit, so the grid reflows at every width instead of jumping at
+   the three somebody picked, and the breakpoints disappear rather than
+   moving. */
+.gulf-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; margin-top: 20px; }
 .gulf-compact { display: block; text-decoration: none; color: inherit; cursor: pointer; }
 .gulf-compact .compare-name { font-size: var(--t-small); }
 
@@ -594,7 +593,7 @@ h1.headline {
    world-map-wrap rule below) -- without this, a phone user has no way
    to reach any market other than the one currently selected above. */
 .map-mobile-links { display: none; }
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   /* The world map's viewBox scales its per-market score labels down
      with it -- confirmed illegible at phone width. */
   .world-map-wrap { display: none; }
@@ -617,7 +616,7 @@ h1.headline {
    without the grid) hidden and each field labeled via the data-label
    attribute already on every span (a classic CSS-only responsive-table
    technique -- content: attr(), no markup duplication, no JS). */
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .sources-head { display: none; }
   .sources-row { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
   .sources-row > span[data-label]::before {
@@ -698,8 +697,7 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
    three numbers twice in a row: the ring gave the rank but not the
    direction (an arc at 9 and an arc at 100 are both just arcs), the bar
    gave the direction but not the rank. One card gives both, once. */
-.dim-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
-@media (max-width: 820px) { .dim-cards { grid-template-columns: 1fr; } }
+.dim-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 14px; margin-top: 22px; }
 .dim-card {
   display: block; text-decoration: none; color: inherit;
   background: var(--glass); border: 1px solid var(--hair); border-radius: 16px;
@@ -791,7 +789,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 .coin-chip > i { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
 .coin-chip-backing { margin-left: auto; font-weight: 600; letter-spacing: 0.02em; }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .coin-row-head { flex-wrap: wrap; }
   .coin-figs { text-align: left; width: 100%; padding-left: 55px; margin-top: -4px; }
   .coin-chip-backing { margin-left: 0; }
@@ -999,7 +997,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
 .ind-group-name > i { width: 7px; height: 7px; border-radius: 50%; }
 .ind-group-q { font-size: var(--t-caption); color: var(--slate); }
 
-.ind-cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.ind-cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); }
 
 .ind-card {
   background: var(--glass);
@@ -1073,7 +1071,7 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
    ============================================================ */
 .form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 16px;
   margin-bottom: 16px;
 }

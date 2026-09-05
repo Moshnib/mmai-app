@@ -54,7 +54,13 @@ const PAGES = [
  *  its own breakpoints is how you miss everything between them. */
 const VIEWPORTS = [
   { name: "phone", width: 375, height: 812 },
-  { name: "tablet", width: 768, height: 1024 },
+  // Either side of the 640 breakpoint, and either side of 900. Testing a
+  // layout only at its own breakpoints is how you miss everything
+  // between them -- but testing just below and just above each one is
+  // where a consolidated breakpoint would show its seams if it had any.
+  { name: "small", width: 620, height: 800 },
+  { name: "tablet", width: 700, height: 1024 },
+  { name: "wide-tab", width: 880, height: 900 },
   { name: "desktop", width: 1280, height: 900 },
 ];
 
