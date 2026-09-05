@@ -163,13 +163,14 @@ const TOPICS = [
   },
   {
     id: "rate",
-    title: "Policy Interest Rate — the cost of borrowing money",
+    title: "Policy Interest Rate — the cost of money, and the room to move it",
     def: "The benchmark rate set by a central bank. It ripples out to set the tone for every other interest rate in the economy.",
     formula: indicatorFormula("rate"),
     formulaNote: INDICATOR_READING.rate,
     targetNote:
       "The policy rate is no longer measured against an estimated neutral rate. It is scored against its own history across the six economies, inside Capacity, where the question is how much room a central bank has to cut if trouble arrives. That removed the least defensible number in the old method: a neutral-rate estimate for Australia dating from a 2017 study, because the Reserve Bank publishes its current figures only in charts. Nothing in the score now depends on anyone’s estimate of neutral.",
-    impact: "This number sets the floor for mortgage rates, car loans, and credit card APRs — when it rises, borrowing gets more expensive.",
+    impact:
+      "This number sets the floor for mortgage rates, car loans and credit card rates, so a rise makes borrowing more expensive for you. Inside the score it reads the other way round: a central bank at 4% can cut if trouble arrives, and one at 0.5% has almost nothing left to give. Both are true at once — one is what a high rate costs you today, the other is what it buys the economy later.",
   },
   {
     id: "debt",
