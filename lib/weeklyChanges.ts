@@ -168,20 +168,30 @@ interface RawIndicatorRow {
 }
 
 function isFullyPopulated(row: RawIndicatorRow): boolean {
-  // A row with any null indicator is not the same measurement as a full
-  // row. Under the retired engine that was because it reweighted around
-  // whatever was populated, making a four-input score quietly
-  // incomparable with a five-input one; under v2 such a row has no score
-  // at all. Either way, comparing them reports a fake delta with zero
-  // real change behind it (confirmed live: a real
-  // gdp_growth-null row exists for the US, tagged "PARTIAL this run" by
-  // the refresh route itself). Only fully-populated rows are usable here.
+  // THE FIVE SCORED INDICATORS, and exactly those.
+  //
+  // This asked the wrong question for nine days and broke the whole feed
+  // with it. It was written for the five-pillar engine and never updated
+  // when the three dimensions replaced it, so it required brent_yoy --
+  // which stopped being scored on 1 September -- and did NOT require
+  // debt_pct_gdp, which started being scored at the same time.
+  //
+  // The consequence was not a missing row, it was a wrong sentence. Rows
+  // written before government debt existed have debt_pct_gdp null. They
+  // passed this gate, so they became comparison buckets; scoredDiffers
+  // correctly saw null vs 111 and called it a change; then computeMmai
+  // withheld the score for the older row, so the delta could not be
+  // computed, and every market fell through to "first reading -- nothing
+  // to compare yet". Six markets, every day, since 2 September.
+  //
+  // A row with any scored indicator missing has no score under v2, so it
+  // can never be one half of a comparison.
   return (
     row.inflation != null &&
     row.gdp_growth != null &&
     row.unemployment != null &&
     row.policy_rate != null &&
-    row.brent_yoy != null
+    row.debt_pct_gdp != null
   );
 }
 
@@ -224,6 +234,14 @@ function buildBuckets(rowsDesc: RawIndicatorRow[]): { buckets: WeeklyBucket[]; s
   const newest = rowsDesc[0];
   const newestTime = new Date(newest.fetched_at).getTime();
 
+  // A row that cannot be scored cannot be half of a comparison, whatever
+  // the filters above let through. This is the second line of defence for
+  // the bug described in isFullyPopulated: the delta silently evaluated
+  // to null and the feed reported "first reading" instead of admitting it
+  // had a row it could not use.
+  const scoreable = (row: RawIndicatorRow) =>
+    computeMmai(toRawIndicators(row), row.market).percentile != null;
+
   // The oldest row seen so far that still read the same as now. Rows are
   // newest-first, so this walks backwards in time and the last one
   // assigned is the furthest back the current figures reach.
@@ -234,6 +252,7 @@ function buildBuckets(rowsDesc: RawIndicatorRow[]): { buckets: WeeklyBucket[]; s
     if (ageDays > MAX_LOOKBACK_DAYS) break;
     // Rows are newest-first, so the first difference found IS the most
     // recent change. Anything between it and now read identically.
+    if (!scoreable(row)) continue;
     if (scoredDiffers(newest, row)) return { buckets: [mk(newest), mk(row)], steadySince: null };
     steadySince = row.fetched_at;
   }
@@ -296,11 +315,16 @@ export async function fetchAllWeeklyChanges(): Promise<WeeklyChangesResult> {
         .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, debt_pct_gdp, fetched_at")
         .in("market", marketCodes)
         .gte("fetched_at", new Date(EARLIEST_FLOOR).toISOString())
+        // Must match isFullyPopulated exactly -- the five SCORED
+        // indicators. brent_yoy is deliberately NOT required: it stopped
+        // being scored on 1 September, so demanding it would discard
+        // perfectly comparable rows, and debt_pct_gdp is required because
+        // it started being scored on the same day.
         .not("inflation", "is", null)
         .not("gdp_growth", "is", null)
         .not("unemployment", "is", null)
         .not("policy_rate", "is", null)
-        .not("brent_yoy", "is", null)
+        .not("debt_pct_gdp", "is", null)
         .order("fetched_at", { ascending: false })
         .limit(QUERY_ROW_LIMIT),
       ]),
