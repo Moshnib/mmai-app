@@ -259,7 +259,7 @@ export default function OverviewPage() {
               score panel below keeps its left-aligned reading order. */}
           <div className="hero-centered">
           <p className="eyebrow">
-            MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "DEMO DATA — CONNECT SUPABASE FOR LIVE VALUES"}
+            MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "SHOWING LAST KNOWN FIGURES — LIVE DATA UNREACHABLE"}
           </p>
           {/* ORDER: hook, then explanation, then the choice.
               It used to run the other way about -- a refresh timestamp,
@@ -409,7 +409,7 @@ export default function OverviewPage() {
                     border: "1px solid rgba(139,92,246,0.35)", borderRadius: 999, background: "rgba(139,92,246,0.08)",
                   }}
                 >
-                  🔔 Notify me when {market.name}&apos;s status changes →
+                  🔔 Join the alert list for {market.name} →
                 </a>
               </div>
             </div>
