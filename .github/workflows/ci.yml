@@ -74,14 +74,12 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Pinned expected composites. Catches any change to the equations,
-      # weights, coverage rule or bands that moves a known result.
-      - name: Scoring produces the expected known results
-        run: npx tsx scripts/verify-scoring.ts
-
-      # The stored history still reproduces under the current spec.
-      - name: Stored history still reproduces
-        run: npx tsx scripts/verify-history.ts
+      # The five-pillar verifiers (verify-scoring, verify-history,
+      # verify-published-formulas, measure-pillar-influence) were removed
+      # at the cutover on 5 September 2026 along with the engine they
+      # tested. verify-composite below covers the engine that replaced it,
+      # and recomputes every published constant rather than pinning
+      # outputs -- which is the stronger check of the two.
 
       # ---------- ENGINE v2.0, the three-dimension composite ----------
       # Recomputes every published constant from the 148-row reference set
@@ -134,24 +132,6 @@ jobs:
       # reading the stylesheet. So the scale fails the build instead.
       - name: Every font size is on the scale
         run: npx tsx scripts/check-type-scale.ts
-
-      # THE ONE THAT WOULD HAVE CAUGHT 31 AUGUST.
-      # Parses the formulas the site publishes to readers, executes them,
-      # and asserts they reproduce lib/scoring.ts across ~9,600
-      # comparisons -- plus that every inflation target still matches the
-      # central-bank source it was verified against.
-      - name: Published formulas match the engine
-        run: npx tsx scripts/verify-published-formulas.ts
-
-      # The Learn page publishes what each weight ACTUALLY does, measured
-      # rather than asserted. Those figures were computed by hand and
-      # pasted in, so nothing noticed when they went stale -- and one of
-      # them was actively misleading: the retired oil pillar measured
-      # 15.0% "effective influence" while being incapable of changing any
-      # ranking. This recomputes both that figure and the cross-market
-      # spread from the panel, and fails if lib/scoring.ts disagrees.
-      - name: Published pillar influence still matches the panel
-        run: npx tsx scripts/measure-pillar-influence.ts
 
       # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
       # Eurostat retired the euro area HICP dataset that day. It kept
