@@ -878,3 +878,75 @@ a.dim-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-
     align-items: center;
   }
 }
+
+/* ============================================================
+   THE NOTES ON THE METHOD
+
+   Nine paragraphs used to sit in one grey box under one heading.
+   Three are guidance, one is a measurement most indices never
+   publish, and five are genuine judgment calls -- but at equal
+   weight in a single block, nine notes read as nine defects and
+   made the score look shakier than the evidence says it is.
+
+   Three treatments now, matching what each group actually is.
+   ============================================================ */
+.learn-note {
+  border: 1px dashed var(--hair);
+  border-radius: 10px;
+  padding: 13px 16px;
+  margin-bottom: 12px;
+}
+.learn-note-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate);
+  margin-bottom: 10px;
+}
+
+/* The five real choices. Behind a disclosure so a reader who wanted
+   to know what the number means is not handed an audit -- but the
+   summary states the COUNT, so nothing looks concealed and the
+   sceptic is one click from all of it. */
+.learn-calls {
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--accent-2);
+  border-radius: 10px;
+  padding: 13px 16px;
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.learn-calls > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.learn-calls > summary::-webkit-details-marker { display: none; }
+.learn-calls-title {
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+/* The triangle is drawn rather than inherited, so it can sit against
+   the title at a size that matches the type instead of the browser's. */
+.learn-calls-title::before {
+  content: "▸";
+  color: var(--accent-2);
+  margin-right: 8px;
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.learn-calls[open] .learn-calls-title::before { transform: rotate(90deg); }
+.learn-calls-sub {
+  font-size: var(--t-caption);
+  color: var(--slate);
+  padding-left: 20px;
+}
+.learn-calls > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .learn-calls-title::before { transition: none; }
+}
