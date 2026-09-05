@@ -98,50 +98,61 @@ export interface CarryResult<T> {
 }
 
 /**
- * Fill this run's null indicators from the last run that had them.
+ * Fill this run's null indicators from the most recent run that had them.
  *
- * `previous` is the most recent stored row for the country, or null if
- * there is none. Values are only ever carried INTO a null -- a
- * successful fetch is never overwritten, so a source coming back to life
- * takes effect immediately.
+ * `history` is the country's stored rows, NEWEST FIRST. Values are only
+ * ever carried INTO a null -- a successful fetch is never overwritten,
+ * so a source coming back to life takes effect immediately.
+ *
+ * SCANS PER FIELD, NOT PER ROW, and that distinction is the whole point.
+ * An earlier version of this took only the single most recent row, which
+ * quietly failed in the exact case it was written for: Bahrain went down
+ * on 1 AND 2 September, so on the second day the previous row was itself
+ * null and nothing was carried. Consecutive failures are not the
+ * unusual case for a flaky source, they are the normal one. Each field
+ * now looks back independently until it finds a row that actually has
+ * that indicator.
  */
 export function carryForwardGulf<T>(
   fresh: T,
-  previous: StoredGulfRow | null,
+  history: readonly StoredGulfRow[],
   now: Date,
 ): CarryResult<T> {
-  if (!previous) return { merged: fresh, carried: [], expired: false };
+  if (history.length === 0) return { merged: fresh, carried: [], expired: false };
 
-  // Read and written through a Record view. The caller passes a typed
+  // Rows are read through a Record view. The caller passes a typed
   // interface, which has no index signature by design, so the widening
   // happens once here rather than being forced on every call site.
-
-  const ageDays = (now.getTime() - new Date(previous.fetched_at).getTime()) / 86_400_000;
-  if (!Number.isFinite(ageDays) || ageDays > MAX_GULF_CARRY_DAYS) {
-    // Only report expiry if there was in fact something worth carrying,
-    // so a country whose sources are all healthy never claims one.
-    const hadSomething = CARRIED_FIELDS.some((f) => previous[COLUMN[f.value]] != null);
-    return { merged: fresh, carried: [], expired: hadSomething };
-  }
-
   const merged: Record<string, unknown> = { ...(fresh as Record<string, unknown>) };
   const carried: string[] = [];
+  let sawTooOld = false;
 
   for (const field of CARRIED_FIELDS) {
     if (merged[field.value] != null) continue;              // fetched fine
-    const prevValue = previous[COLUMN[field.value]];
-    if (prevValue == null) continue;                        // nothing to carry
 
-    merged[field.value] = prevValue;
-    // The date is not optional. A value without the period it belongs to
-    // is a number with no meaning, and worse, one a reader would assume
-    // is current.
-    merged[field.date] = previous[COLUMN[field.date]] ?? null;
-    if (field.label) merged[field.label] = previous[COLUMN[field.label]] ?? null;
-    carried.push(field.name);
+    for (const row of history) {
+      const value = row[COLUMN[field.value]];
+      if (value == null) continue;                          // this row lacks it too
+
+      // The bound is measured against the row actually being used, not
+      // against the newest row in the window -- a country refreshed
+      // daily would otherwise always look fresh no matter how long ago
+      // the indicator itself last arrived.
+      const ageDays = (now.getTime() - new Date(row.fetched_at).getTime()) / 86_400_000;
+      if (!Number.isFinite(ageDays) || ageDays > MAX_GULF_CARRY_DAYS) { sawTooOld = true; break; }
+
+      merged[field.value] = value;
+      // The date is not optional. A value without the period it belongs
+      // to is a number with no meaning, and worse, one a reader would
+      // assume is current.
+      merged[field.date] = row[COLUMN[field.date]] ?? null;
+      if (field.label) merged[field.label] = row[COLUMN[field.label]] ?? null;
+      carried.push(field.name);
+      break;
+    }
   }
 
-  return { merged: merged as T, carried, expired: false };
+  return { merged: merged as T, carried, expired: sawTooOld };
 }
 
 /** What to append to the source note, so the row says what happened
