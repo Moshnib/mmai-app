@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
-import { type RawIndicators } from "@/lib/scoring";
+import { type RawIndicators } from "@/lib/indicators";
 import { computeMmai, percentileBandLabel, dimensionPercentiles, DIMENSION_CROSS_MARKET_SD, type DimensionKey } from "@/lib/composite";
 
 /** Which engine produces the `band` column that subscriber alerts compare.
@@ -40,7 +40,7 @@ import { stalenessOf, quarterToDate, describeStale } from "@/lib/freshness";
 // PillarKey and RAW_FIELD are the SOURCE taxonomy, not the retired scoring
 // engine: lib/sources.ts keys every source by pillar code, and that mapping
 // is still how a stale figure is traced back to the institution behind it.
-import { RAW_FIELD, type PillarKey } from "@/lib/scoring";
+import { RAW_FIELD, type PillarKey } from "@/lib/indicators";
 
 const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
@@ -62,14 +62,20 @@ export const maxDuration = 60;
  *
  * Each per-indicator fetch is wrapped in settle() so one source having a
  * bad day (rate-limited, temporarily down, schema change) doesn't blank
- * out the whole market — computeComposite() already reweights around
- * missing pillars and only withholds a score below 70% coverage, so a
- * single null indicator here still produces a valid, published score.
+ * out the whole ROW -- the readings that did arrive are still stored, and
+ * still shown.
+ *
+ * It does not save the SCORE. The retired five-pillar engine reweighted
+ * around a missing pillar and published anyway above 70% coverage; v2
+ * withholds instead, because a country scored on four indicators is not
+ * comparable with one scored on five. So a null here means no score for
+ * that market on that run, deliberately, and the site says so.
  *
  * UAE was removed 2026-08-19 (no verified policy-rate source, never
  * cleared the 70% coverage threshold). Market Momentum was removed the
  * same day (no licensed equity source) — its weight was redistributed
- * into the remaining five pillars in lib/scoring.ts.
+ * into the remaining five pillars. Both that redistribution and the
+ * pillars themselves were retired with the five-pillar engine.
  */
 // Set by fetchRawIndicators when Japan falls back to the World Bank, and
 // read when composing that row source note. Safe as module state only
@@ -240,10 +246,14 @@ async function fetchRawIndicators(
     // fails from Vercel -- the same shape as the Saudi central bank being
     // unreachable from Vercel while fine locally (handover 11.2).
     //
-    // The symptom was not a missing number, it was a MOVED SCORE. With
-    // the Labour Market pillar null, computeComposite reweights across
-    // the remaining four and Japan published 75.35 instead of ~79.1 for
-    // two days -- a 3.8 point drop caused by a fetcher, not by Japan.
+    // The symptom was not a missing number, it was a MOVED SCORE. Under
+    // the old engine a null unemployment reading was reweighted around,
+    // and Japan published 75.35 instead of ~79.1 for two days -- a 3.8
+    // point drop caused by a fetcher rather than by Japan.
+    //
+    // v2 cannot produce that particular lie: it withholds the score
+    // rather than reweighting. The fallback below still matters, because
+    // withholding Japan for two days is its own kind of wrong.
     //
     // So: prefer OECD's monthly figure, fall back to the World Bank
     // annual series that served Japan reliably for months. A slightly
@@ -645,11 +655,17 @@ export async function GET(request: Request) {
       const previousRow = previousRows?.[0];
       const previousBand = previousRow?.band as string | undefined;
 
-      // WHICH pillars contributed, as a 5-character signature ("11111" =
-      // all five). computeComposite reweights across whatever is
-      // populated, so a composite built from four pillars is not the
-      // same measurement as one built from five -- comparing them
-      // reports a band change with no economic content behind it.
+      // WHICH indicators contributed, as a 5-character signature
+      // ("11111" = all five). This mattered enormously under the old
+      // engine, which reweighted around whatever was populated, so a
+      // score built from four inputs was not the same measurement as one
+      // built from five and comparing them reported a band change with no
+      // economic content behind it.
+      //
+      // Under v2 it is belt-and-braces: a row missing any indicator has
+      // no score and no band, so it cannot reach the comparison at all.
+      // Kept because it costs nothing and stays correct if the
+      // withholding rule is ever relaxed.
       //
       // This is not hypothetical. If Labour Market alone goes null for
       // Canada, the reweighting lifts its composite from 76.5 to 81.2

@@ -7,7 +7,7 @@ import TimeRangeFilter, { ANNUAL_RANGES } from "@/components/TimeRangeFilter";
 import Flag from "@/components/Flag";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
 import { useLiveHistory } from "@/lib/useLiveHistory";
-import { colorForScore } from "@/lib/scoring";
+import { colorForScore } from "@/lib/indicators";
 import DimensionBreakdown from "@/components/DimensionBreakdown";
 import {
   computeMmai, dimensionPercentiles, percentileBandLabel,
@@ -58,7 +58,7 @@ const MOVE_EPSILON = 0.05;
 // precision, and so a renamed RawIndicators key is a compile error here
 // rather than a blank cell -- the same reasoning as KeyRatesRow.
 // Colours match KeyRatesRow exactly, from the Ember-to-Ice palette in
-// lib/scoring.ts, so these three read as the same three things sitewide.
+// lib/indicators.ts, so these three read as the same three things sitewide.
 const RATE_INDICATORS: Array<{ indicator: IndicatorKey; color: string }> = [
   { indicator: "infGap", color: "#E14B4B" },
   { indicator: "rate", color: "#8B5CF6" },
@@ -277,7 +277,7 @@ export default function TrendsPageInner({
 
   // Fixed colors here, not score-based — these are raw rates, not 0-100
   // scores, so there's no "band" to color by. Picked from the same
-  // Ember-to-Ice palette used everywhere else in the app (lib/scoring.ts),
+  // Ember-to-Ice palette used everywhere else in the app (lib/indicators.ts),
   // so nothing new is introduced and green is still never used.
   // ONE CHART PER INDICATOR, not three lines sharing an axis.
   //

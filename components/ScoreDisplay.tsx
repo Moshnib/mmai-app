@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { colorForScore } from "@/lib/scoring";
+import { colorForScore } from "@/lib/indicators";
 import { percentileBandLabel, percentileReading } from "@/lib/composite";
 
 // Replaces the old semicircle "speedometer" Gauge -- that design had a

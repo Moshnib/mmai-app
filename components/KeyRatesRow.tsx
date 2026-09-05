@@ -1,10 +1,10 @@
-import { RAW_FIELD, type PillarKey, type RawIndicators, inflationTargetFor } from "@/lib/scoring";
+import { RAW_FIELD, type PillarKey, type RawIndicators, inflationTargetFor } from "@/lib/indicators";
 
 // Same three colors used on the Trends page's "How They Move Together"
 // chart (app/trends/TrendsPageInner.tsx) -- kept identical here so a
 // reader recognizes Inflation/Policy Rate/Unemployment as the same three
 // things wherever they appear on the site. Pulled from the existing
-// Ember-to-Ice palette in lib/scoring.ts, so nothing new is introduced
+// Ember-to-Ice palette in lib/indicators.ts, so nothing new is introduced
 // and green is still never used.
 //
 // Keyed by PillarKey (not a reverse-scan over RAW_FIELD by field name) so

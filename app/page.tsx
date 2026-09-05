@@ -14,7 +14,7 @@ import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
 import CountryGlyph from "@/components/CountryGlyph";
-import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/scoring";
+import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
   DIMENSION_NAMES, dimensionDrivers, maskedDimension, percentileBandLabel,
   UNCERTAINTY_NOTE, CONVENTION_NOTE,

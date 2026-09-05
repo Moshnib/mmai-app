@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { INFLATION_TARGET } from "@/lib/scoring";
+import { INFLATION_TARGET } from "@/lib/indicators";
 import {
   DIMENSION_NAMES,
   DIMENSION_EFFECTIVE_INFLUENCE,
@@ -528,7 +528,7 @@ export default function LearnPage() {
               {/* What those weights actually DO. A pillar's influence is its
                   weight times how much it moves, so the weight table above
                   describes intent and this describes behaviour. Measured, not
-                  asserted -- see PILLAR_EFFECTIVE_INFLUENCE in lib/scoring.ts. */}
+                  asserted -- see DIMENSION_EFFECTIVE_INFLUENCE in lib/composite.ts. */}
               {"influence" in t && t.influence && (
                 <div
                   style={{

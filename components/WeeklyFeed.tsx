@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Flag from "@/components/Flag";
-import { colorForScore, type PillarKey } from "@/lib/scoring";
+import { colorForScore, type PillarKey } from "@/lib/indicators";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { RAW_DECIMALS } from "@/components/KeyRatesRow";
 import { fetchAllWeeklyChanges, floorFor, type WeeklyChangesResult } from "@/lib/weeklyChanges";
@@ -19,9 +19,9 @@ function formatDate(ms: number): string {
 // no comparable history when it had a week of it.
 const trackingSince = (market: string) => formatDate(floorFor(market));
 
-// Matches lib/scoring.ts's COLOR_STOPS[1] (the orange stop) -- not
-// imported since scoring.ts doesn't export the raw stops, only
-// colorForScore()/bandFor(). Used here purely as a fixed "down" indicator
+// Matches lib/indicators.ts's COLOR_STOPS[1] (the orange stop) -- not
+// imported, because that module exports colorForScore() rather than the
+// raw stops. Used here purely as a fixed "down" indicator
 // for the composite delta, not as a score-derived color.
 const COMPOSITE_DOWN_COLOR = "#F0975B";
 

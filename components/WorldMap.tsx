@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import worldPaths from "@/lib/mapdata/world-paths.json";
-import { colorForScore } from "@/lib/scoring";
+import { colorForScore } from "@/lib/indicators";
 import { percentileBandLabel } from "@/lib/composite";
 import { scoreMarketV2, type MarketData } from "@/lib/markets";
 

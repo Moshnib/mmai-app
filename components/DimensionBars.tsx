@@ -1,6 +1,6 @@
 "use client";
 
-import { colorForScore } from "@/lib/scoring";
+import { colorForScore } from "@/lib/indicators";
 import {
   DIMENSION_NAMES, DIMENSION_INDICATORS, INDICATOR_FIELD,
   type DimensionKey, type Dimensions,

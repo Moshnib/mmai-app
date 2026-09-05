@@ -3,7 +3,7 @@ import {
   computeMmai, dimensionPercentiles, explainDimension, standardiseDimensions,
   rawDimensions, type DimensionKey, type IndicatorKey,
 } from "@/lib/composite";
-import { inflationTargetFor } from "@/lib/scoring";
+import { inflationTargetFor } from "@/lib/indicators";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 

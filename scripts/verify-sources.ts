@@ -29,9 +29,12 @@
 
 import { SOURCES, sourcesForMarket, sourceForPillar, sourceNoteFor } from "../lib/sources";
 import { FALLBACK_MARKETS } from "../lib/markets";
-import { PILLAR_WEIGHTS, type PillarKey } from "../lib/scoring";
+import { PILLAR_CODES, type PillarKey } from "../lib/indicators";
 
-const KEYS = Object.keys(PILLAR_WEIGHTS) as PillarKey[];
+// PILLAR_CODES is already the list. It replaced PILLAR_WEIGHTS, which was
+// an object this line used to enumerate -- Object.keys() on the array would
+// return ["0","1","2","3","4"], and the cast below would have hidden that.
+const KEYS: readonly PillarKey[] = PILLAR_CODES;
 
 let failures = 0;
 function check(name: string, actual: unknown, expected: unknown) {

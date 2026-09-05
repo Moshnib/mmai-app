@@ -1,4 +1,4 @@
-import type { RawIndicators } from "./scoring";
+import type { RawIndicators } from "./indicators";
 import { FALLBACK_MARKETS } from "./markets";
 
 export interface HistoryPoint {

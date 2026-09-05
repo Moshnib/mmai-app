@@ -1,6 +1,6 @@
 "use client";
 
-import { colorForScore, type RawIndicators } from "@/lib/scoring";
+import { colorForScore, type RawIndicators } from "@/lib/indicators";
 
 // ============================================================
 // "Featured Market Snapshot" context bar (design brief §2): a compact

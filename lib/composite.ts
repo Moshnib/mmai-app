@@ -28,7 +28,7 @@
 // ============================================================
 
 import { REFERENCE_SET } from "./referenceSet";
-import { inflationTargetFor } from "./scoring";
+import { inflationTargetFor } from "./indicators";
 
 export type DimensionKey = "C" | "D" | "K";
 
@@ -537,7 +537,8 @@ export const DIMENSION_INDICATORS: Record<DimensionKey, readonly IndicatorKey[]>
 };
 
 /** The raw field each indicator reads, with how to label it. Mirrors
- *  RAW_FIELD in lib/scoring.ts, which is keyed by pillar and cannot be
+ *  RAW_FIELD in lib/indicators.ts, which is keyed by source code and
+ *  cannot be
  *  reused once pillars are gone. */
 export const INDICATOR_FIELD: Record<
   IndicatorKey,

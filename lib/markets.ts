@@ -1,4 +1,4 @@
-import { type RawIndicators } from "./scoring";
+import { type RawIndicators } from "./indicators";
 import { computeMmai, dimensionPercentiles, type MmaiResult, type DimensionKey } from "./composite";
 
 export interface MarketData {
@@ -16,7 +16,7 @@ export interface MarketData {
   };
 }
 
-// Verified fallback values — matches lib/scoring.ts test cases exactly.
+// Verified fallback values, checked against the reference set.
 // Used when Supabase isn't configured yet (e.g. local dev before setup),
 // so the app is fully functional out of the box, then swaps to live
 // database values once NEXT_PUBLIC_SUPABASE_URL is set.

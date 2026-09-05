@@ -22,7 +22,7 @@
 // ============================================================
 
 import { HISTORY } from "../lib/history";
-import { INFLATION_TARGET } from "../lib/scoring";
+import { INFLATION_TARGET } from "../lib/indicators";
 
 const MARKETS = ["US", "EA", "UK", "CA", "JP", "AU"];
 
