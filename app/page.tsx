@@ -49,12 +49,18 @@ function narrativeFor(market: MarketData): string {
 // Rule-based, not AI-generated -- every sentence below is a direct,
 // deterministic read of the same three numbers shown in KeyRatesRow, so
 // it updates the moment live data changes, with nothing to hallucinate.
-// The 2% and 2.5% thresholds match the exact baselines lib/scoring.ts's
-// own formulas already use (priceStabilityScore, monetaryConditionsScore)
-// -- but real central banks don't all target a flat 2% (the RBA's own
-// site states its target as 2-3%, for example), so the copy below
-// explicitly attributes "2%" to MMAI's own formula, never to "central
-// banks" generally, to stay accurate for every market.
+// The inflation threshold is each central bank's OWN published target,
+// read from INFLATION_TARGET rather than typed, so this sentence cannot
+// drift from the engine -- real banks don't all target a flat 2% (the
+// RBA's own site states 2-3%). The copy attributes the target to MMAI's
+// scoring, never to "central banks" generally, to stay accurate for
+// every market.
+//
+// It used to attribute it to "MMAI's Price Stability formula". That
+// pillar stopped existing when the three dimensions replaced it, and the
+// sentence went on naming it on the live homepage -- found by reading the
+// deployed page rather than the source, which is the only place it looked
+// wrong.
 //
 // Only inflation and the policy rate BOTH sitting at least INTERPRETIVE_GAP
 // points past target/neutral, in the same direction, gets an interpretive
@@ -88,10 +94,10 @@ function rateNarrativeFor(raw: RawIndicators, marketCode: string): string | null
   const unempStr = unemployment.toFixed(1);
 
   if (bothAbove) {
-    return `Inflation is at ${inflStr}%, above the ${INFLATION_TARGET}% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally raise rates to cool inflation, and that same move tends to slow hiring — though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
+    return `Inflation is at ${inflStr}%, above the ${INFLATION_TARGET}% target MMAI scores inflation against. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally raise rates to cool inflation, and that same move tends to slow hiring — though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
   }
   if (bothBelow) {
-    return `Inflation is at ${inflStr}%, below the ${INFLATION_TARGET}% target MMAI's Price Stability formula uses. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally cut rates to support hiring and growth, though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
+    return `Inflation is at ${inflStr}%, below the ${INFLATION_TARGET}% target MMAI scores inflation against. The policy rate is at ${rateStr}% and unemployment is at ${unempStr}%. Central banks generally cut rates to support hiring and growth, though each bank sets its rate for its own reasons and against its own target, so these numbers alone don't tell you which way it's currently moving.`;
   }
   return `Inflation is at ${inflStr}%, the policy rate is at ${rateStr}%, and unemployment is at ${unempStr}%. These are the same three numbers central banks generally weigh when setting policy — trying to keep prices near target without pushing unemployment too high.`;
 }
