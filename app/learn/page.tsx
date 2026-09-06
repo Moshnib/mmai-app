@@ -591,19 +591,31 @@ export default function LearnPage() {
               <DimensionTag topicId={t.id} />
               <h3 className="learn-h3">{t.title}</h3>
               <p style={{ fontSize: 15, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
-              <div
-                style={{
-                  fontFamily: "IBM Plex Mono, monospace",
-                  fontSize: 15,
-                  background: "var(--paper)",
-                  border: "1px solid var(--hair)",
-                  borderRadius: 8,
-                  padding: "10px 14px",
-                  marginBottom: 14,
-                }}
-              >
-                {t.formula}
-              </div>
+              {/* ONLY IF THERE IS A FORMULA TO SHOW.
+                  This box rendered unconditionally, and Brent Crude has no
+                  formula -- it is on this page precisely BECAUSE it is no
+                  longer scored, so there is no transform to print. The
+                  result was an empty black rectangle sitting under the oil
+                  card's description, which reads as something that failed
+                  to load rather than something that does not exist.
+                  The formulaNote directly below was already guarded the
+                  same way, so the pattern was known here and this box was
+                  simply missed. */}
+              {"formula" in t && t.formula && (
+                <div
+                  style={{
+                    fontFamily: "IBM Plex Mono, monospace",
+                    fontSize: 15,
+                    background: "var(--paper)",
+                    border: "1px solid var(--hair)",
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                    marginBottom: 14,
+                  }}
+                >
+                  {t.formula}
+                </div>
+              )}
               {/* A z-score is not self-explanatory the way a 0-100 pillar score
                   pretended to be, so every transform gets a line saying what
                   zero means and which way is better. */}
