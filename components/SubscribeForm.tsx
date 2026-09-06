@@ -41,18 +41,20 @@ export default function SubscribeForm() {
     return (
       <div style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 16, padding: "20px 24px", textAlign: "center" }}>
         <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--accent-2)" }}>You&apos;re on the list ✓</div>
-        {/* THIS USED TO SAY "You're subscribed" AND PROMISE EMAIL.
-            It could not keep that promise. Alerts send through Resend,
-            which will not verify a vercel.app address as a sending
-            domain -- so every send fails, and the only trace is a line in
-            a server log. People had signed up and been told they would
-            hear about band changes they were never going to hear about.
-            Saying so is not a caveat, it is the difference between a
-            waiting list and a lie. */}
+        {/* THIS ONCE SAID "You're subscribed" AND PROMISED EMAIL, which
+            it could not keep: alerts send through Resend, which will not
+            verify a vercel.app address as a sending domain, so every
+            send fails and the only trace is a line in a server log.
+            People had been told they would hear about band changes they
+            were never going to hear about.
+            The correction over-corrected. It named the provider, the
+            domain problem and the failure, which is an engineer writing
+            to himself. A reader needs one thing from this screen: when
+            email starts, and that nothing comes before it. Both are
+            still here. */}
         <p style={{ fontSize: 13, color: "var(--slate)", margin: "6px 0 0", lineHeight: 1.6 }}>
-          <b style={{ color: "var(--ink-soft)" }}>Alerts are not sending yet.</b> MMAI needs its own domain before
-          an email provider will let it send, and it does not have one. You are on the list and will be included in
-          the first alert that goes out. Nothing arrives before then.
+          Alerts begin when MMAI moves to its own domain. You will be included in the first one, and nothing will
+          arrive before it.
         </p>
       </div>
     );
@@ -72,11 +74,22 @@ export default function SubscribeForm() {
           A stale example is the same class of bug as the "Price Stability"
           sentence on the homepage: correct-looking, and describing a
           method the site no longer runs. */}
+      {/* SAY WHAT THE READER GETS, NOT WHAT WE HAVE NOT BUILT.
+          This used to read "Not sending yet: MMAI needs its own domain
+          first" -- true, and the wrong thing to put in front of someone
+          deciding whether to trust the work. Explaining our own
+          infrastructure gap to a reader is an apology, not information;
+          it tells them nothing they can act on and quietly suggests the
+          rest of the site might be half-finished too.
+          The honest part is kept and has to be: alerts do not start
+          today, and nobody should hand over an address expecting one
+          tomorrow. That is now stated as a start date rather than a
+          confession. */}
       <p style={{ fontSize: 13, color: "var(--slate)", margin: "0 0 14px", lineHeight: 1.6 }}>
-        When a market moves from one band to another — say <b style={{ color: "var(--ink-soft)" }}>Middle of the
-        range</b> to <b style={{ color: "var(--ink-soft)" }}>Above average</b> — you get one email. Never a daily
-        digest. <b style={{ color: "var(--ink-soft)" }}>Not sending yet:</b> MMAI needs its own domain first, so
-        this is a waiting list rather than a live alert.
+        One email when a market changes band — <b style={{ color: "var(--ink-soft)" }}>Middle of the range</b> to{" "}
+        <b style={{ color: "var(--ink-soft)" }}>Above average</b>, for instance. No daily digest, no marketing, and
+        you can leave at any time. Alerts begin when MMAI moves to its own domain; join now and you are on the list
+        for the first one.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>

@@ -574,7 +574,13 @@ export default function OverviewPage() {
           <div className="cta-band">
             <div>
               <h2>See the conditions before you read the headlines.</h2>
-              <p>Six economies, five official figures each, one comparable score — updated daily and traced to the institution that published it. Not investment advice.</p>
+              {/* The count has to survive the scroll that reaches it. This
+                  band sits directly below the Gulf cards, so a reader has
+                  just passed six more economies when it says "six". Both
+                  numbers are now stated, along with the fact that only one
+                  set is scored -- which is the site's own position, not a
+                  shortfall to be glossed over. */}
+              <p>Six economies scored on five official figures each, and six Gulf economies tracked without a score — updated daily, every figure traced to the institution that published it. Not investment advice.</p>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link
