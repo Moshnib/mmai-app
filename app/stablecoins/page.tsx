@@ -4,6 +4,9 @@ import TrendChart, { type Series } from "@/components/TrendChart";
 import { fetchAllStablecoinSupplies, STABLECOINS, type StablecoinSupply, type StablecoinChain } from "@/lib/fetchers/stablecoins";
 import { ETHEREUM_STABLECOIN_HISTORY } from "@/lib/stablecoinHistory";
 import StablecoinTokens from "@/components/StablecoinTokens";
+import StablecoinMacroLink from "@/components/StablecoinMacroLink";
+import { measureMacroLink, type YieldPoint } from "@/lib/stablecoinMacro";
+import { getPublicSupabaseClient } from "@/lib/supabase";
 
 export const metadata: Metadata = {
   title: "Stablecoins",
@@ -44,8 +47,33 @@ function money(n: number): string {
 
 const CHAIN_ORDER: StablecoinChain[] = ["ethereum", "tron", "solana"];
 
+/** The US 10-year, from the same bond_yields table the rest of the site
+ *  reads. Long enough to cover the supply history, and the only macro
+ *  series the project holds that does.
+ *
+ *  Failure is not fatal: the macro panel renders "not enough history to
+ *  measure", which is a different statement from "measured, found
+ *  nothing", and the rest of the page is unaffected. */
+async function fetchUsYields(): Promise<YieldPoint[]> {
+  try {
+    const { data, error } = await getPublicSupabaseClient()
+      .from("bond_yields")
+      .select("observation_date, yield_10y")
+      .eq("market", "US")
+      .gte("observation_date", "2023-01-01")
+      .order("observation_date", { ascending: true });
+    if (error || !data) return [];
+    return data
+      .filter((r) => r.yield_10y != null)
+      .map((r) => ({ date: r.observation_date as string, yield10y: Number(r.yield_10y) }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function StablecoinsPage() {
-  const results = await fetchAllStablecoinSupplies();
+  const [results, usYields] = await Promise.all([fetchAllStablecoinSupplies(), fetchUsYields()]);
+  const macroLink = measureMacroLink(usYields);
   const rows = results.filter((r): r is StablecoinSupply => r !== null);
 
   const total = rows.reduce((sum, r) => sum + r.supply, 0);
@@ -185,6 +213,18 @@ export default async function StablecoinsPage() {
               publish no comparable history, so this chart covers Ethereum alone.
             </p>
           </div>
+
+          {/* THE ANSWER TO "WHAT HAS THIS GOT TO DO WITH THE ECONOMY?"
+              The page showed a total, three chain cards and this line,
+              none of which connected to anything the rest of MMAI
+              measures — on a site whose entire premise is the macro
+              level. The hero calls the total "a read on demand for
+              dollars outside the banking system", which implies a
+              relationship without testing one.
+              This tests it against the US 10-year and prints the result
+              whichever way it falls. It currently falls null, and that is
+              the more useful thing to tell a reader. */}
+          <StablecoinMacroLink link={macroLink} />
         </div>
       </div>
 
