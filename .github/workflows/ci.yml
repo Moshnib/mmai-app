@@ -153,6 +153,18 @@ jobs:
       # rather than a quiet fabrication -- the reporting date travels with
       # the value, and the carry expires -- plus that a live fetch is never
       # overwritten and a country with no source is never given one.
+      # /stablecoins was in the navigation on every page, linked from the
+      # 404 page, and covered by both browser checks -- and absent from the
+      # sitemap for as long as it existed. Search engines were never told
+      # about a page on a site whose whole purpose is to be found.
+      #
+      # It survived because there were THREE route lists and each was
+      # individually plausible. There is one now, in lib/routes.ts, and
+      # this compares it against what is actually on disk -- a list can
+      # fall behind a new page, the filesystem cannot.
+      - name: Every page is declared once, indexed, and checked
+        run: npx tsx scripts/check-routes.ts
+
       # Retrying was added to the Gulf refresh because data.gov.bh answers
       # four days in ten -- and adding it without a budget quietly made a
       # worse failure likely. Six countries run one after another inside a
