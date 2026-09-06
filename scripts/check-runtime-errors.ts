@@ -18,16 +18,14 @@
 // ============================================================
 
 import { chromium, type Page } from "playwright";
+import { SITE_PATHS } from "@/lib/routes";
 
 const BASE = process.env.LAYOUT_TEST_URL ?? "http://localhost:3123";
 
-/** Every page on the site — the same list check-layout.ts polices, and
- *  for the same reason: a route missing from it is a route nobody
- *  checks. */
-const PAGES = [
-  "/", "/trends", "/compare", "/gulf-watch", "/stablecoins",
-  "/sources", "/learn", "/about", "/contact",
-];
+/** Every page on the site, from lib/routes.ts -- the same list the
+ *  sitemap and the layout check read. A route missing from it is a route
+ *  nobody checks and nobody indexes. */
+const PAGES = SITE_PATHS;
 
 /** Requests that are ALLOWED to fail, with the reason.
  *

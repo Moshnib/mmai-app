@@ -32,21 +32,15 @@
 // ============================================================
 
 import { chromium, type Page } from "playwright";
+import { SITE_PATHS } from "@/lib/routes";
 
 const BASE = process.env.LAYOUT_TEST_URL ?? "http://localhost:3123";
 
-/** Every page on the site. Adding a route means adding it here. */
-const PAGES = [
-  "/",
-  "/trends",
-  "/compare",
-  "/gulf-watch",
-  "/stablecoins",
-  "/sources",
-  "/learn",
-  "/about",
-  "/contact",
-];
+/** Every page on the site, from the one list the sitemap also reads.
+ *  Kept in lib/routes.ts rather than here because a second copy is how
+ *  /stablecoins came to be checked by this script and missing from the
+ *  sitemap at the same time. */
+const PAGES = SITE_PATHS;
 
 /** The widths that actually matter: the narrowest phone still in wide use,
  *  a tablet, and a desktop. Chosen as the sizes readers hold, not as the

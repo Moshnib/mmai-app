@@ -1,20 +1,14 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/siteUrl";
+import { SITE_ROUTES } from "@/lib/routes";
 
-const ROUTES = [
-  { path: "", priority: 1.0, changeFrequency: "daily" as const },
-  { path: "/trends", priority: 0.8, changeFrequency: "daily" as const },
-  { path: "/compare", priority: 0.8, changeFrequency: "daily" as const },
-  { path: "/gulf-watch", priority: 0.7, changeFrequency: "daily" as const },
-  { path: "/learn", priority: 0.6, changeFrequency: "monthly" as const },
-  { path: "/sources", priority: 0.6, changeFrequency: "weekly" as const },
-  { path: "/about", priority: 0.5, changeFrequency: "monthly" as const },
-  { path: "/contact", priority: 0.4, changeFrequency: "yearly" as const },
-];
-
+/** Reads the one route list rather than keeping a second copy of it.
+ *  The copy is how /stablecoins ended up linked from every page in the
+ *  navigation and absent from the sitemap for as long as it existed. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  return ROUTES.map((r) => ({
-    url: `${SITE_URL}${r.path}`,
+  return SITE_ROUTES.map((r) => ({
+    // "/" would produce a trailing slash the other entries do not have.
+    url: r.path === "/" ? SITE_URL : `${SITE_URL}${r.path}`,
     changeFrequency: r.changeFrequency,
     priority: r.priority,
   }));
