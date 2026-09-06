@@ -283,9 +283,9 @@ export default function OverviewPage() {
               says outright, and said "verified" without saying of what. */}
           <p className="sub" style={{ maxWidth: "64ch", margin: "0 auto 28px" }}>
             MMAI reads the economic figures governments publish about themselves — inflation, jobs, growth, debt
-            and interest rates — and turns them into one score per country, updated daily. That score is a rank
-            against 148 market-years, built from three dimensions you can open up and check. It is not
-            investment advice.
+            and interest rates — and turns them into one score per country, rechecked every day and republished
+            whenever a source moves. That score is a rank against 148 market-years, built from three dimensions
+            you can open up and check. It is not investment advice.
           </p>
 
           {/* Says what the row is for. With nothing preselected, six
@@ -580,7 +580,17 @@ export default function OverviewPage() {
                   numbers are now stated, along with the fact that only one
                   set is scored -- which is the site's own position, not a
                   shortfall to be glossed over. */}
-              <p>Six economies scored on five official figures each, and six Gulf economies tracked without a score — updated daily, every figure traced to the institution that published it. Not investment advice.</p>
+              {/* "Checked daily", not "updated daily". Both were written
+                  here and only one is true. The sources are re-read every
+                  day, three times; the FIGURES change when their publisher
+                  changes them, which for a current account is once a year.
+                  This band sits directly beneath Gulf cards reading "as of
+                  2024", so "updated daily" was making a claim the numbers
+                  a centimetre above it visibly contradicted.
+                  It is also the same confusion that cost this project nine
+                  months on the Euro Area: measuring when we last ASKED and
+                  reporting it as when the data last MOVED. */}
+              <p>Six economies scored on five official figures each, and six Gulf economies tracked without a score — sources checked daily, every figure carrying its own reporting date and traced to the institution that published it. Not investment advice.</p>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link

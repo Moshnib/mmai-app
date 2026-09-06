@@ -65,7 +65,7 @@ export default function AboutPage() {
           <p className="sub" style={{ maxWidth: "66ch" }}>
             Prices, jobs, growth, government debt and the cost of money decide the ground everything else is priced
             on. They are published constantly, by governments, for free — and in a form almost nobody can actually
-            compare. MMAI reads them and turns them into one score per country, updated daily.
+            compare. MMAI reads them and turns them into one score per country, rechecked every day.
           </p>
         </div>
       </div>
