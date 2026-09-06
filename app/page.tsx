@@ -16,8 +16,7 @@ import CountryGlyph from "@/components/CountryGlyph";
 import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
   DIMENSION_NAMES, dimensionDrivers, maskedDimension, percentileBandLabel,
-  UNCERTAINTY_NOTE, CONVENTION_NOTE,
-} from "@/lib/composite";
+  UNCERTAINTY_NOTE, CONVENTION_NOTE, REFERENCE_COUNT, REFERENCE_SPAN } from "@/lib/composite";
 import { FALLBACK_MARKETS, scoreMarketV2, type MarketData } from "@/lib/markets";
 import { latestCompleteObservation, fallbackNote, type ObservationPick } from "@/lib/latestComplete";
 import { getPublicSupabaseClient } from "@/lib/supabase";
@@ -284,7 +283,7 @@ export default function OverviewPage() {
           <p className="sub" style={{ maxWidth: "64ch", margin: "0 auto 28px" }}>
             MMAI reads the economic figures governments publish about themselves — inflation, jobs, growth, debt
             and interest rates — and turns them into one score per country, rechecked every day and republished
-            whenever a source moves. That score is a rank against 148 market-years, built from three dimensions
+            whenever a source moves. That score is a rank against {REFERENCE_COUNT} market-years, built from three dimensions
             you can open up and check. It is not investment advice.
           </p>
 
@@ -329,7 +328,7 @@ export default function OverviewPage() {
             <div style={{ width: "100%", maxWidth: 260 }}>
               <p className="meta-label" style={{ margin: "0 0 4px" }}>MMAI Composite Score</p>
               <p style={{ fontSize: 12, color: "var(--slate)", margin: "0 0 14px", lineHeight: 1.5 }}>
-                Rank against 148 market-years, 2000–2025 — not a mark out of 100
+                Rank against {REFERENCE_COUNT} market-years, {REFERENCE_SPAN} — not a mark out of 100
               </p>
               <ScoreDisplay score={composite} />
             </div>
@@ -375,7 +374,7 @@ export default function OverviewPage() {
               <ScoreTrendChart marketCode={market.code} currentScore={composite} />
               <div className="meta-row" style={{ marginTop: 14 }}>
                 <span>Band: <b>{percentileBandLabel(composite)}</b></span>
-                <span>Ranked against: <b>148 market-years, 2000–2025</b></span>
+                <span>Ranked against: <b>{REFERENCE_COUNT} market-years, {REFERENCE_SPAN}</b></span>
                 {/* Source COUNT, not the licence-review date -- that date is
                     maintenance metadata (see lib/sources.ts) and reads as
                     staleness here. Data freshness is the line above the
@@ -432,7 +431,7 @@ export default function OverviewPage() {
             <h2>What is holding {market.name} up, and what is dragging</h2>
             <p>
               All three sit on one axis, so they can be read against each other rather than one at a
-              time. Each is a rank against the same 148 market-years — 80 means better than 80% of the
+              time. Each is a rank against the same {REFERENCE_COUNT} market-years — 80 means better than 80% of the
               record, not a mark out of 100 — and the centre line is the historical average.
             </p>
           </div>
@@ -470,7 +469,7 @@ export default function OverviewPage() {
             <h2>How every market scores right now</h2>
             <p>
               Pick a market to see its full picture, without leaving this page. Every score is a rank against the
-              same 148 market-years, so they are directly comparable.
+              same {REFERENCE_COUNT} market-years, so they are directly comparable.
             </p>
           </div>
 

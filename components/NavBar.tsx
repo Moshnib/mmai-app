@@ -47,7 +47,7 @@ export default function NavBar() {
     // so the dropdown still positions correctly with the nav now actually
     // sticking to the top of the viewport while scrolling, as the
     // stylesheet already intended.
-    <nav>
+    <nav className="sitenav">
       <div className="navrow">
         <Link href="/" className="brand"><span className="dot" />MMAI</Link>
 

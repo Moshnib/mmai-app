@@ -13,8 +13,7 @@ import {
   computeMmai, dimensionPercentiles, percentileBandLabel,
   DIMENSION_NAMES, DIMENSION_QUESTIONS, DIMENSION_INDICATORS, DIMENSION_PILLARS,
   INDICATOR_FIELD, formatDimensionWeight, formatDimensionInfluence,
-  type DimensionKey, type IndicatorKey,
-} from "@/lib/composite";
+  type DimensionKey, type IndicatorKey, REFERENCE_COUNT } from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { sourcesForMarket, sourcesForDimension } from "@/lib/sources";
 
@@ -479,7 +478,7 @@ export default function TrendsPageInner({
           <div className="section-head">
             <p className="eyebrow">2 — EXPLORE THE THREE DIMENSIONS</p>
             <h2>Follow one dimension through the record</h2>
-            <p>Each card shows how that dimension ranks right now against the 148 market-years the headline uses, and what it measures.</p>
+            <p>Each card shows how that dimension ranks right now against the {REFERENCE_COUNT} market-years the headline uses, and what it measures.</p>
           </div>
 
           <div className="pillar-select-grid" style={{ marginTop: 22 }}>

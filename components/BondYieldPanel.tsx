@@ -24,13 +24,27 @@ const ORDER = ["US", "EA", "CA", "UK", "JP", "AU"];
 // Fixed per market, from the existing Ember-to-Ice palette. Deliberately
 // NOT score-derived: a yield is not a 0-100 score and must not borrow
 // the score colours' meaning.
+//
+// TWO OF THESE SIX USED TO BE THE SAME COLOUR. Japan was #5EC8D8 against
+// the US at #22D3EE -- a perceptual distance of 10.3, which is the range
+// where two colours simply read as one, and worse on a 2px line on a
+// phone. Australia at #B98CFF sat 28 from the Euro Area's #8B5CF6, close
+// enough that the two crowded at the top of the chart were hard to
+// separate. Six series were being drawn in four distinguishable hues.
+//
+// Japan and Australia move to pink and gold, which lifts the closest
+// pair in the whole set from 10.3 to 36.7. The four that were already
+// distinct keep their colours, because a market's colour is its identity
+// across the site and should not churn for a problem it did not cause.
+// Measured with CIE76 dE; anything under about 20 is too close for a
+// thin line. No green, per the site-wide rule.
 const COLORS: Record<string, string> = {
-  US: "#22D3EE",
-  EA: "#8B5CF6",
-  CA: "#F0975B",
-  UK: "#E14B4B",
-  JP: "#5EC8D8",
-  AU: "#B98CFF",
+  US: "#22D3EE", // cyan
+  EA: "#8B5CF6", // violet
+  CA: "#F0975B", // amber
+  UK: "#E14B4B", // red
+  JP: "#F472B6", // pink   -- was #5EC8D8, indistinguishable from the US
+  AU: "#FBBF24", // gold   -- was #B98CFF, crowding the Euro Area
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -228,7 +242,20 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
               Daily · {allDates.length} trading days
             </span>
           </div>
-          <TrendChart series={series} height={340} yLabel="%" showDots={false} connectNulls={false} />
+          {/* connectNulls, because the gaps were public holidays.
+              Every series is plotted on the UNION of all six markets'
+              trading days, so a date exists for Japan whenever London,
+              New York or Sydney traded -- and Japan's own line was given
+              a null, and therefore a visible break, on Marine Day and
+              Mountain Day. Every market shredded its own line on its own
+              holidays, and the newest day was worse: on 4 September only
+              the US had settled, so five lines stopped a day early and
+              the US was left with an orphaned dot floating past the end.
+              A market that did not trade has not lost its yield. Joining
+              across the gap is what a yield curve means, and a source
+              that genuinely stops is caught by verify-freshness, which
+              is the right place for it -- not by shredding a chart. */}
+          <TrendChart series={series} height={340} yLabel="%" showDots={false} connectNulls />
           <p
             style={{
               fontSize: 12,

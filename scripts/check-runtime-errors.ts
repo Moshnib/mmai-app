@@ -89,6 +89,37 @@ async function inspect(page: Page, path: string, base: string): Promise<Problem[
   // before that measures a page no reader ever sees -- the same reason
   // check-layout.ts waits.
   await page.waitForTimeout(2_500);
+
+  // NOTHING BUT THE HEADER MAY PIN ITSELF TO THE TOP OF THE SCREEN.
+  //
+  // globals.css styled the site header with a bare `nav` selector, and
+  // the Learn page's contents line is also a <nav>. It inherited the
+  // lot: sticky at top 0, an 82%-opaque dark background and a backdrop
+  // blur. At 310px tall on a phone, a third of the screen was covered
+  // by a black panel that followed the reader down the page. It was
+  // reported as the screen freezing.
+  //
+  // Neither the layout check nor a build sees this: nothing overflows,
+  // nothing throws, and the page looks correct until you scroll. So it
+  // is asserted here -- one sticky element pinned to the top per page,
+  // and the header is the one.
+  const pinned = await page.evaluate(() => {
+    const out: { cls: string; h: number }[] = [];
+    document.querySelectorAll("*").forEach((el) => {
+      const cs = getComputedStyle(el);
+      if (cs.position !== "sticky" && cs.position !== "fixed") return;
+      if (parseInt(cs.top || "9999", 10) !== 0) return;
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (h < 100) return;                       // a slim toolbar is fine
+      if (el.classList.contains("sitenav")) return;
+      out.push({ cls: el.tagName + "." + (String(el.className || "").split(" ")[0] || "-"), h });
+    });
+    return out;
+  });
+  for (const p of pinned) {
+    add("pinned", `${p.cls} is stuck to the top of the viewport and is ${p.h}px tall — only the site header should pin`);
+  }
+
   return found;
 }
 
