@@ -69,7 +69,12 @@ const short: Record<IndicatorKey, string> = {
  * the three where lower is better, and every arc would read backwards.
  */
 export default function CorrelationMatrix() {
-  const W = 680, H = 400;
+  // Measured: the ring and its labels occupy x 54-472, y 41-309. The
+  // canvas was 680x400 because the legend used to live inside it at
+  // x=486; with the legend moved to HTML below, the extra 200px was
+  // empty, and on a phone it was 200px of horizontal scroll buying
+  // nothing.
+  const W = 496, H = 340;
   const cx = 250, cy = 196, R = 128;
 
   // Five points on a ring, starting at the top and going clockwise.
@@ -118,7 +123,7 @@ export default function CorrelationMatrix() {
       <figure style={{ margin: 0, minWidth: 0 }}>
         <div style={{ overflowX: "auto" }}>
           <svg
-            viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minWidth: 560 }}
+            viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minWidth: 440 }}
             role="img"
             aria-label={
               `A ring of the five scored indicators with an arc drawn between every pair that is related. ` +
@@ -178,23 +183,29 @@ export default function CorrelationMatrix() {
               );
             })}
 
-            {/* legend, out of the ring's way */}
-            <g transform="translate(486, 96)">
-              <text x={0} y={0} fontSize={10.5} letterSpacing={1.2} fill="var(--slate)" fontFamily="IBM Plex Mono, monospace">
-                HOW TO READ IT
-              </text>
-              <line x1={0} y1={22} x2={34} y2={22} stroke="#22D3EE" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.75} />
-              <text x={44} y={26} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">good together</text>
-              <line x1={0} y1={48} x2={34} y2={48} stroke="#E14B4B" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.75} />
-              <text x={44} y={52} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">pull apart</text>
-              <line x1={0} y1={74} x2={34} y2={74} stroke="var(--slate)" strokeWidth={3} strokeLinecap="round" />
-              <text x={44} y={78} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">same dimension</text>
-              <line x1={0} y1={100} x2={34} y2={100} stroke="var(--slate)" strokeWidth={3} strokeDasharray="5 5" strokeLinecap="round" />
-              <text x={44} y={104} fontSize={11.5} fill="var(--ink-soft)" fontFamily="IBM Plex Sans, sans-serif">across dimensions</text>
-              <text x={0} y={134} fontSize={11} fill="var(--slate)" fontFamily="IBM Plex Sans, sans-serif">Thicker means stronger.</text>
-              <text x={0} y={150} fontSize={11} fill="var(--slate)" fontFamily="IBM Plex Sans, sans-serif">Faint pairs are left undrawn.</text>
-            </g>
           </svg>
+        </div>
+
+        {/* THE KEY LIVES OUTSIDE THE SCROLLER NOW.
+            It used to be a <g> at x=486 inside a 680-wide SVG with a
+            560px floor. Measured on a 375px phone, that put it 160px
+            past the right edge of the scroll container -- entirely
+            off-screen, reachable only by a sideways drag nobody knows to
+            try. The one labelled number on the diagram was therefore
+            presented with no key at all, which is precisely how the site
+            owner met it: a 0.58 floating on a web of lines.
+            As HTML it cannot be scrolled away from, it wraps instead of
+            overflowing, and it inherits the page's text sizes. */}
+        <div className="corr-key">
+          <span className="corr-key-title">HOW TO READ IT</span>
+          <span className="corr-key-item"><i style={{ background: "#22D3EE" }} />good together</span>
+          <span className="corr-key-item"><i style={{ background: "#E14B4B" }} />pull apart</span>
+          <span className="corr-key-item"><i style={{ background: "var(--slate)" }} />same dimension</span>
+          <span className="corr-key-item"><i className="dashed" />across dimensions</span>
+          <span className="corr-key-note">
+            Thicker means stronger. Faint pairs are left undrawn. The number on the heaviest line is a
+            correlation: 0 is no relationship, 1 is perfect.
+          </span>
         </div>
         <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "min(76ch, 100%)" }}>
           <b style={{ color: "var(--ink-soft)" }}>The solid lines are the strong ones, and that is the whole test.</b>{" "}

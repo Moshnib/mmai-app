@@ -137,7 +137,19 @@ body::before {
    height would cover the top of whatever section it jumped to. */
 [id] { scroll-margin-top: 80px; }
 
-nav {
+/* THE SITE HEADER, and only the site header.
+   This was a bare `nav` selector, which caught every <nav> on the site.
+   The Learn page's contents line is also a <nav> -- correctly, it is a
+   list of links to sections -- and it therefore inherited the header's
+   entire treatment: sticky at top 0, z-index 50, an 82%-opaque dark
+   background and a 14px backdrop blur.
+   On a phone that contents line is 310px tall, so a third of the screen
+   was covered by a black panel that followed the reader down the page,
+   over a hero built to show a gradient through it. It looked like the
+   screen had frozen, which is exactly how it was reported.
+   Scoped to a class now. A tag selector for a component's own styling
+   will find every other element that legitimately uses that tag. */
+.sitenav {
   position: sticky; top: 0; z-index: 50;
   background: rgba(8, 8, 13, 0.82); backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--hair);
@@ -1220,4 +1232,37 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 }
 @media (max-width: 640px) {
   .scrub-years > span:not(:first-child):not(:last-child) { display: none; }
+}
+
+/* The correlation diagram's key. It used to be drawn inside the SVG at
+   x=486 of a 680-wide canvas with a 560px floor, which on a 375px phone
+   put it 160px beyond the edge of the scroll container -- present in the
+   markup, unreachable in practice, and the one labelled number on the
+   diagram was left with nothing to explain it. Outside the scroller it
+   cannot be scrolled away from, and it wraps rather than overflowing. */
+.corr-key {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hair);
+}
+.corr-key-title {
+  font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro);
+  letter-spacing: .12em; color: var(--slate);
+}
+.corr-key-item {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: var(--t-caption); color: var(--ink-soft);
+}
+.corr-key-item > i {
+  width: 26px; height: 4px; border-radius: 2px; flex: 0 0 auto;
+  background: var(--slate);
+}
+/* The dashed swatch has to read as dashed at 26px wide, so it is drawn
+   as a repeating gradient rather than a border. */
+.corr-key-item > i.dashed {
+  background: repeating-linear-gradient(
+    to right, var(--slate) 0 6px, transparent 6px 11px
+  );
+}
+.corr-key-note {
+  flex: 1 1 100%; font-size: var(--t-micro); color: var(--slate); line-height: 1.6;
 }

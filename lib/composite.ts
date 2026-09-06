@@ -239,6 +239,22 @@ export const LADDER: readonly number[] = REFERENCE_SET
  *  is meaningful, which is why scores publish to one decimal. */
 export const LADDER_STEP = 100 / LADDER.length;
 
+/** HOW BIG THE RECORD IS, AND WHAT IT SPANS -- derived, because the
+ *  pages say it constantly.
+ *
+ *  "148 market-years" was typed out in nine places across the homepage,
+ *  Compare and Trends, while About and Learn computed it. All of them
+ *  agreed, and that is exactly the state the Australia inflation target
+ *  was in before it changed: correct until the day it was not, and wrong
+ *  underneath a promise that a reader can reproduce the score by hand.
+ *  A number the reader is invited to check should never be typed twice. */
+export const REFERENCE_COUNT = REFERENCE_SET.length;
+
+export const REFERENCE_SPAN = (() => {
+  const years = REFERENCE_SET.map((r) => r.y);
+  return `${Math.min(...years)}–${Math.max(...years)}`;
+})();
+
 /** Percentile rank against the pooled six-economy history.
  *
  *  STRICTLY LESS THAN, so ties resolve downward. The current year is

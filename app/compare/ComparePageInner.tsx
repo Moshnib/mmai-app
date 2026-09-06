@@ -8,8 +8,7 @@ import { useLiveHistory } from "@/lib/useLiveHistory";
 import { type RawIndicators } from "@/lib/indicators";
 import {
   DIMENSION_NAMES, computeMmai, dimensionPercentiles,
-  SOURCE_BREAK_UNCERTAINTY_PTS, type DimensionKey,
-} from "@/lib/composite";
+  SOURCE_BREAK_UNCERTAINTY_PTS, type DimensionKey, REFERENCE_COUNT } from "@/lib/composite";
 
 /** The five scored indicators, as their own selector. Under the three
  *  dimensions a "raw view" of a dimension is ambiguous -- Conditions has
@@ -246,7 +245,7 @@ export default function ComparePageInner() {
                   page has one; without it this page reads to a search engine and
                   a screen reader as sections with no subject. */}
               <h1>Six economies on one scale</h1>
-              <p>The same five official figures, rebuilt so the comparison actually holds — then ranked against the same 148 market-years. Every line here means the same thing.</p>
+              <p>The same five official figures, rebuilt so the comparison actually holds — then ranked against the same {REFERENCE_COUNT} market-years. Every line here means the same thing.</p>
             </div>
 
             {/* "What stands out now" (brief §9). Deliberately factual --
@@ -331,7 +330,7 @@ export default function ComparePageInner() {
             <p className="eyebrow">2. EXPLORE BY DIMENSION</p>
             <h2>Where each economy is strong, and where it is not</h2>
             <p>
-              Each line is that dimension&rsquo;s rank against the same 148 market-years the headline
+              Each line is that dimension&rsquo;s rank against the same {REFERENCE_COUNT} market-years the headline
               uses. Switch to the raw view for the underlying indicator on its own units.
             </p>
           </div>
