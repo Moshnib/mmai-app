@@ -153,6 +153,17 @@ jobs:
       # rather than a quiet fabrication -- the reporting date travels with
       # the value, and the carry expires -- plus that a live fetch is never
       # overwritten and a country with no source is never given one.
+      # Retrying was added to the Gulf refresh because data.gov.bh answers
+      # four days in ten -- and adding it without a budget quietly made a
+      # worse failure likely. Six countries run one after another inside a
+      # 60-second function with fetchers allowing 15 seconds each: one
+      # attempt each is a worst case near 90 seconds, three attempts near
+      # 277. That gets the function killed part-way, and a country never
+      # written is worse off than one written with a gap, because
+      # carry-forward never gets the chance to fill it.
+      - name: Retrying does not spend time the caller does not have
+        run: npx tsx scripts/test-retry-deadline.ts
+
       - name: A blinking Gulf source keeps its number, a dead one shows the gap
         run: npx tsx scripts/test-gulf-carry-forward.ts
 
@@ -190,6 +201,15 @@ jobs:
           done
           curl -sf -o /dev/null http://localhost:3123/ || { echo "server never came up"; exit 1; }
           npx tsx scripts/check-layout.ts
+          # Same server, second question. check-layout asks whether the
+          # pages LOOK right; this asks whether they RUN right -- a
+          # component that throws after hydration, a request that 404s, a
+          # resource the CSP blocks. None of those move a pixel, so the
+          # layout check walks straight past them, and the build does too.
+          #
+          # The CSP is the reason it earns its place: hand-written,
+          # enforced only in the browser, and silent when wrong.
+          npx tsx scripts/check-runtime-errors.ts
 
       # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
       # Eurostat retired the euro area HICP dataset that day. It kept

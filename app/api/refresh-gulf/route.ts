@@ -57,9 +57,9 @@ const SOURCE_NOTES: Record<GulfCountryCode, string> = {
 // Takes a THUNK now, not a promise, because a retry has to be able to
 // start the request again -- a promise can only be awaited once. Every
 // call site passes `() => fetchX()` for that reason.
-async function settle<T>(label: string, run: () => Promise<T>): Promise<T | null> {
+async function settle<T>(label: string, run: () => Promise<T>, deadline?: number): Promise<T | null> {
   try {
-    return await withRetry(`Gulf [${label}]`, run);
+    return await withRetry(`Gulf [${label}]`, run, { deadline });
   } catch (err) {
     console.error(`Gulf fetch failed [${label}]:`, (err as Error).message);
     return null;
@@ -96,13 +96,13 @@ interface GulfRawIndicators {
   policyRateObservationDate: string | null;
 }
 
-async function fetchCpi(country: GulfCountryCode): Promise<{ inflation: number; observationDate: string } | null> {
-  if (country === "AE") return settle("UAE CPI", () => fetchInflation("ARE"));
-  if (country === "BH") return settle("Bahrain CPI", () => fetchBahrainInflation());
-  if (country === "QA") return settle("Qatar CPI", () => fetchQatarInflation());
-  if (country === "SA") return settle("Saudi CPI", () => fetchSaudiInflation());
-  if (country === "KW") return settle("Kuwait CPI", () => fetchInflation("KWT"));
-  return settle("Oman CPI", () => fetchInflation("OMN")); // OM
+async function fetchCpi(country: GulfCountryCode, deadline: number): Promise<{ inflation: number; observationDate: string } | null> {
+  if (country === "AE") return settle("UAE CPI", () => fetchInflation("ARE"), deadline);
+  if (country === "BH") return settle("Bahrain CPI", () => fetchBahrainInflation(), deadline);
+  if (country === "QA") return settle("Qatar CPI", () => fetchQatarInflation(), deadline);
+  if (country === "SA") return settle("Saudi CPI", () => fetchSaudiInflation(), deadline);
+  if (country === "KW") return settle("Kuwait CPI", () => fetchInflation("KWT"), deadline);
+  return settle("Oman CPI", () => fetchInflation("OMN"), deadline); // OM
 }
 
 // BIS carries central bank policy rates for Saudi Arabia and Kuwait
@@ -121,22 +121,22 @@ async function fetchCpi(country: GulfCountryCode): Promise<{ inflation: number; 
 // worse than the gap. Qatar is genuinely available and current, and is
 // held back only by IMF's terms, which require written permission for
 // commercial reuse -- see MMAI_MASTER_HANDOVER.md.
-async function fetchPolicyRate(country: GulfCountryCode) {
-  if (country === "SA") return settle("Saudi policy rate", () => fetchBisPolicyRate("SA"));
-  if (country === "KW") return settle("Kuwait policy rate", () => fetchBisPolicyRate("KW"));
+async function fetchPolicyRate(country: GulfCountryCode, deadline: number) {
+  if (country === "SA") return settle("Saudi policy rate", () => fetchBisPolicyRate("SA"), deadline);
+  if (country === "KW") return settle("Kuwait policy rate", () => fetchBisPolicyRate("KW"), deadline);
   return null;
 }
 
-async function fetchGulfIndicators(country: GulfCountryCode): Promise<GulfRawIndicators> {
+async function fetchGulfIndicators(country: GulfCountryCode, deadline: number): Promise<GulfRawIndicators> {
   const today = new Date().toISOString().slice(0, 10);
   const iso3 = ISO3[country];
 
   const [cpi, fx, ca, realEstate, policy] = await Promise.all([
-    fetchCpi(country),
-    settle(`${country} FX reserves`, () => fetchFxReservesMonths(iso3)),
-    settle(`${country} current account`, () => fetchCurrentAccountPctGdp(iso3)),
-    country === "QA" ? settle("Qatar real estate", () => fetchQatarRealEstate()) : Promise.resolve(null),
-    fetchPolicyRate(country),
+    fetchCpi(country, deadline),
+    settle(`${country} FX reserves`, () => fetchFxReservesMonths(iso3), deadline),
+    settle(`${country} current account`, () => fetchCurrentAccountPctGdp(iso3), deadline),
+    country === "QA" ? settle("Qatar real estate", () => fetchQatarRealEstate(), deadline) : Promise.resolve(null),
+    fetchPolicyRate(country, deadline),
   ]);
 
   return {
@@ -228,9 +228,26 @@ export async function GET(request: Request) {
     }
   }
 
+  // Leaves ten seconds of the sixty for the Supabase writes and the
+  // response. Countries run one after another, so without this the
+  // function can simply be killed part-way through the list -- and a
+  // country that is never written is worse off than one written with a
+  // gap, because carry-forward never gets the chance to fill it.
+  const deadline = Date.now() + 50_000;
+  const skippedForTime: string[] = [];
+
   for (const country of pending) {
+    if (Date.now() >= deadline) {
+      // Reported rather than silent. The scheduled trigger runs three
+      // times a day, so a country skipped here is picked up on the next
+      // pass; a country skipped WITHOUT anyone knowing is how a gap
+      // becomes permanent.
+      skippedForTime.push(country);
+      results.push({ country, status: "skipped — out of time this run" });
+      continue;
+    }
     try {
-      const fetched = await fetchGulfIndicators(country);
+      const fetched = await fetchGulfIndicators(country, deadline);
 
       // A source that blinks must not wipe a good number. Values are
       // only ever carried INTO a null, and each carried value brings its
@@ -295,5 +312,21 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ refreshedAt: new Date().toISOString(), results });
+  // The scheduled job checks only the HTTP status, so anything it
+  // should react to has to be in the body where a human reading the
+  // run log will see it. A run that quietly did four countries out of
+  // six looks identical to a clean one otherwise.
+  return NextResponse.json({
+    refreshedAt: new Date().toISOString(),
+    ...(skippedForTime.length > 0
+      ? {
+          outOfTime: skippedForTime,
+          reason:
+            `${skippedForTime.length} country(ies) were not attempted because the run ran out of ` +
+            `time. They are picked up on the next scheduled pass. If this recurs, a source is ` +
+            `timing out rather than failing fast.`,
+        }
+      : {}),
+    results,
+  });
 }
