@@ -147,50 +147,31 @@ export default function CorrelationMatrix() {
               />
             ))}
 
-            {/* THE VALUE ON THE STRONGEST ARC, ACTUALLY ON IT.
-                Labelling all eight would put text over every line and
-                defeat the drawing, so only the heaviest is labelled -- but
-                it was drawn at the arc's CONTROL POINT rather than on the
-                arc. For a quadratic curve those are not the same place:
-                the curve passes through (a + 2q + b) / 4, and the control
-                point q sits well inside that, which dropped the number
-                into the middle of the ring where every other arc crosses.
-                It read as a number floating in a web of lines attached to
-                nothing, and was reported twice as exactly that.
-                Now on the curve, over an opaque chip so the lines beneath
-                do not run through it, and captioned with the pair it
-                describes -- because "0.58" answers nothing on its own. */}
-            {(() => {
-              const a = pos[strongest.a], b = pos[strongest.b];
-              const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-              const qx = mx + (cx - mx) * 0.45, qy = my + (cy - my) * 0.45;
-              // Midpoint of the quadratic, which is where the ink is.
-              const lx = (a.x + 2 * qx + b.x) / 4;
-              const ly = (a.y + 2 * qy + b.y) / 4;
-              const pairLabel = `${short[strongest.a]} ~ ${short[strongest.b]}`;
-              return (
-                <g>
-                  <rect
-                    x={lx - 62} y={ly - 20} width={124} height={34} rx={7}
-                    fill="var(--bg)" fillOpacity={0.92}
-                    stroke="#22D3EE" strokeOpacity={0.35}
-                  />
-                  <text
-                    x={lx} y={ly - 7} textAnchor="middle" fontSize={9}
-                    fill="var(--slate)" fontFamily="IBM Plex Sans, sans-serif"
-                  >
-                    {pairLabel}
-                  </text>
-                  <text
-                    x={lx} y={ly + 8} textAnchor="middle" fontSize={12} fontWeight={700}
-                    fill="#22D3EE" fontFamily="IBM Plex Mono, monospace"
-                  >
-                    {strongest.r.toFixed(2)}
-                  </text>
-                </g>
-              );
-            })()}
+            {/* NO NUMBER ON THE DRAWING, DELIBERATELY.
 
+                This diagram once labelled every arc, which was removed as
+                noise. Cutting seven labels to one did not fix the problem,
+                it left a leftover: a single coefficient with no reason to
+                be the one shown, on a page that is explaining a method
+                rather than reporting a reading. Four separate attempts to
+                make it legible -- moving the key out of the SVG, putting
+                the value on the curve instead of the control point, giving
+                it a chip, naming its pair -- each made it clearer without
+                making it belong.
+
+                The claim this picture makes is structural: arcs inside a
+                dimension are solid and heavy, arcs across dimensions are
+                dashed and light, therefore the grouping holds. Thickness
+                already carries magnitude. A number sitting on one arc adds
+                nothing to that argument and reads as a live indicator on a
+                page that has none.
+
+                Nothing is lost by removing it. The figcaption below names
+                the strongest pair and its value, states that no
+                cross-dimension pair reaches the cross-dimension maximum,
+                and the three dimension correlations are printed to three
+                decimals further down -- each in a sentence that gives the
+                number a meaning, which is where a number belongs. */}
             {IND.map((k) => {
               const p = pos[k];
               const tone = TONE[INDICATOR_DIMENSION[k]];
@@ -231,8 +212,8 @@ export default function CorrelationMatrix() {
           <span className="corr-key-item"><i style={{ background: "var(--slate)" }} />same dimension</span>
           <span className="corr-key-item"><i className="dashed" />across dimensions</span>
           <span className="corr-key-note">
-            Thicker means stronger. Faint pairs are left undrawn. The number on the heaviest line is a
-            correlation: 0 is no relationship, 1 is perfect.
+            Thicker means stronger, and faint pairs are left undrawn. This is a picture of which indicators
+            move together, not a reading — the exact correlations are written out below it.
           </span>
         </div>
         <figcaption style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.65, marginTop: 12, maxWidth: "min(76ch, 100%)" }}>
