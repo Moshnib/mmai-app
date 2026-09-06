@@ -126,9 +126,20 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
   const policyRateHeading = GULF_POLICY_RATE_LABELS[country.code];
 
   // The homepage shows a condensed version -- two headline figures and
-  // a short "Score pending" note -- with the full indicator set living
-  // on /gulf-watch. Compact cards are links, so tapping a country on
-  // the homepage goes somewhere.
+  // a short note -- with the full indicator set living on /gulf-watch.
+  // Compact cards are links, so tapping a country on the homepage goes
+  // somewhere.
+  //
+  // THIS NOTE USED TO READ "Score pending", WHICH PROMISED SOMETHING
+  // THAT IS NEVER COMING. Gulf countries are unscored by decision, not
+  // by delay: a feasibility check put all six at roughly 81-91, above
+  // every scored market, because the labour-market input rewards low
+  // official unemployment and Gulf unemployment is low substantially
+  // through how migrant labour is counted. Publishing "Saudi Arabia 88,
+  // United States 78.5" was judged indefensible, and that judgment
+  // stands. "Pending" told a reader to wait for a number nobody intends
+  // to publish, and contradicted the full card two clicks away, which
+  // said the opposite.
   if (compact) {
     return (
       <Link href="/gulf-watch" className="compare-card gulf-compact">
@@ -151,7 +162,7 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
           />
         </div>
         <div style={{ borderTop: "1px solid var(--hair)", marginTop: 8, paddingTop: 8, fontSize: 11, color: "var(--slate)" }}>
-          {isStale ? "Not refreshing" : "Score pending"}
+          {isStale ? "Not refreshing" : "Not scored — by design"}
         </div>
       </Link>
     );
@@ -219,16 +230,25 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
           "Not currently refreshing — no recent data available."
         ) : (
           <>
-            {/* Which sentence is true depends on the country: since BIS
-                supplies Saudi's and Kuwait's policy rates, the original
-                "policy rate data isn't available" line would sit
-                directly beneath a displayed policy rate on those two
-                cards. Gulf Watch still shows no composite for anyone --
-                for those two that is now a deliberate design choice
-                rather than a missing input. */}
-            {policyRateHeading
-              ? "Not scored — Gulf Watch shows each country's raw indicators rather than a composite."
-              : "No composite score — policy rate data isn't available for this country."}
+            {/* ONE SENTENCE, THE SAME FOR ALL SIX, AND THE TRUE REASON.
+                This branched on whether a policy rate existed, and told
+                the four countries without one that the missing rate was
+                why they had no score. That was never the reason, and it
+                implied the opposite of the decision on record: that
+                sourcing a policy rate would unlock a score.
+                What actually happened is that a feasibility check put
+                all six Gulf countries at roughly 81-91, ABOVE every
+                scored market. Not an arithmetic bug -- the labour-market
+                input rewards low official unemployment, and Gulf
+                unemployment is low substantially because of how migrant
+                labour is counted, so it does not mean what it means in
+                Germany. Ranking Saudi Arabia above the United States on
+                that basis was judged indefensible, and the countries are
+                unscored by choice. Saying so is the difference between a
+                methodological position a reader can argue with and a
+                gap that looks like neglect. */}
+            Not scored, deliberately: Gulf unemployment largely reflects how migrant labour is counted, so it does
+            not carry the same meaning as in the six scored economies and the two cannot share one scale.
             {country.fxReservesMonthsImports != null && (
               <>
                 {" "}FX reserves use the World Bank&apos;s own calculation — other institutions (e.g. the IMF) sometimes report a
