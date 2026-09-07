@@ -247,12 +247,18 @@ export default function ComparePageInner() {
                 who leads, who trails, how many sit in each band -- read
                 straight off the same scores the charts below plot. It
                 summarises rather than interpreting or advising. */}
+            {/* h2, not h3. This card sits directly under the page's only
+                h1, and an h3 there skips a level -- a screen reader
+                announcing the outline reports a missing section between
+                them. Gulf Watch already uses h2 for the same card, and
+                globals.css styles .insight-card h2 and h3 identically,
+                so this is an outline fix with no visual change at all. */}
             {standouts.length > 0 && (
               <div className="insight-card">
-                <h3>
+                <h2>
                   <span aria-hidden="true" style={{ color: "var(--accent-2)" }}>◈</span>
                   What stands out now
-                </h3>
+                </h2>
                 <ul>
                   {standouts.map((s) => (
                     <li key={s.text}>
@@ -267,11 +273,21 @@ export default function ComparePageInner() {
 
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", margin: "20px 0 28px" }}>
             <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>From</span>
-            <select value={effectiveFromYear} onChange={(e) => setFromYear(e.target.value)} style={selectStyle}>
+            {/* Named, because a screen reader otherwise announces two
+                identical combo boxes with a bare "to" between them and no
+                way to tell which end of the range each one sets. The
+                visible "to" is punctuation, not a label. */}
+            <select
+              aria-label="Range start year"
+              value={effectiveFromYear} onChange={(e) => setFromYear(e.target.value)} style={selectStyle}
+            >
               {allYears.map((y) => <option key={y} value={y} style={optionStyle}>{y}</option>)}
             </select>
             <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>to</span>
-            <select value={effectiveToYear} onChange={(e) => setToYear(e.target.value)} style={selectStyle}>
+            <select
+              aria-label="Range end year"
+              value={effectiveToYear} onChange={(e) => setToYear(e.target.value)} style={selectStyle}
+            >
               {allYears.map((y) => <option key={y} value={y} style={optionStyle}>{y}</option>)}
             </select>
           </div>
