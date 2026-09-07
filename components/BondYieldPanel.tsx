@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
-import { FALLBACK_MARKETS } from "@/lib/markets";
+import { MARKET_COLORS, FALLBACK_MARKETS } from "@/lib/markets";
 import TimeRangeFilter, { DAILY_RANGES, withinRange } from "@/components/TimeRangeFilter";
 import type { BondYieldPoint } from "@/lib/bondYieldsRead";
 
@@ -38,14 +38,7 @@ const ORDER = ["US", "EA", "CA", "UK", "JP", "AU"];
 // across the site and should not churn for a problem it did not cause.
 // Measured with CIE76 dE; anything under about 20 is too close for a
 // thin line. No green, per the site-wide rule.
-const COLORS: Record<string, string> = {
-  US: "#22D3EE", // cyan
-  EA: "#8B5CF6", // violet
-  CA: "#F0975B", // amber
-  UK: "#E14B4B", // red
-  JP: "#F472B6", // pink   -- was #5EC8D8, indistinguishable from the US
-  AU: "#FBBF24", // gold   -- was #B98CFF, crowding the Euro Area
-};
+const COLORS = MARKET_COLORS;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 

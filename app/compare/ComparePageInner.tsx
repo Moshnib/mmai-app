@@ -21,7 +21,7 @@ const RAW_CHOICES = [
   { key: "debtPctGdp", label: "Government debt", unit: "% of GDP" },
   { key: "policyRate", label: "Policy rate", unit: "%" },
 ] as const satisfies readonly { key: keyof RawIndicators; label: string; unit: string }[];
-import { FALLBACK_MARKETS } from "@/lib/markets";
+import { FALLBACK_MARKETS, MARKET_COLORS } from "@/lib/markets";
 
 const ORDER: DimensionKey[] = ["C", "D", "K"];
 
@@ -29,15 +29,10 @@ const ORDER: DimensionKey[] = ["C", "D", "K"];
 // elsewhere in the app (which is deliberately score-based, not identity-based),
 // THIS chart's whole purpose is tracking "which line is which country" across
 // time, so identity coloring is the correct choice here, not a regression.
-const MARKET_COLORS: Record<string, string> = {
-  US: "#22D3EE",
-  UK: "#F0975B",
-  EA: "#E14B4B",
-  CA: "#3B82F6",
-  JP: "#8B5CF6",
-  AU: "#F0609D",
-  NO: "#F4C430",
-};
+// Was a second, conflicting copy of this map, which also carried a
+// Norway entry for a market that is not in FALLBACK_MARKETS and has not
+// been scored for some time. Both are gone; the one map lives in
+// lib/markets.ts.
 
 export default function ComparePageInner() {
   const { history: liveHistory } = useLiveHistory();
