@@ -77,8 +77,17 @@ export default function ScoreDiagram() {
   return (
     <figure style={{ margin: 0 }}>
       <div style={{ overflowX: "auto" }}>
+        {/* THE FLOOR MUST BE THE VIEWBOX WIDTH, or the SVG shrinks its
+            own text. A 940-wide viewBox with a 680 floor is a scale of
+            0.72, and an SVG scales text with everything else: the 10px
+            annotations came out at 7.2px on a 390px screen, measured. At
+            the floor the scale is exactly 1, so a font-size in this file
+            is the font-size on screen. It scrolls a little further on a
+            phone, which is the right trade -- the scroller already
+            exists, and unreadable text does not become readable by
+            fitting. */}
         <svg
-          viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minWidth: 680 }}
+          viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minWidth: W }}
           role="img"
           aria-label={
             `The recipe behind an MMAI score, using Australia as a worked example. Five published figures — ` +

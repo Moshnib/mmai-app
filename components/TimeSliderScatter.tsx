@@ -68,6 +68,23 @@ export default function TimeSliderScatter({
   const [playing, setPlaying] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Measured so the SVG's viewBox can match its own rendered width --
+  // see the note beside W below. null until the first measurement, so
+  // the server render and the first client render agree.
+  const plotRef = useRef<HTMLDivElement | null>(null);
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  useEffect(() => {
+    const el = plotRef.current;
+    if (!el) return;
+    const read = () => setMeasuredWidth(Math.round(el.getBoundingClientRect().width));
+    read();
+    // Rotating a phone or opening a sidebar changes this, and a viewBox
+    // left at the old width would start scaling again.
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Clamped at render time, not via a setState-in-effect -- `years` can
   // change size (e.g. data arrives after mount) and the raw yearIndex
   // state should never be corrected out from under a resize/scrub the
@@ -107,7 +124,25 @@ export default function TimeSliderScatter({
   }
 
   const currentYear = years[safeYearIndex];
-  const W = 900;
+
+  // THE VIEWBOX IS THE RENDERED WIDTH, so the SVG never scales.
+  //
+  // This was a fixed `W = 900` on an SVG set to width:100%. Inside a
+  // phone-width card that is a scale factor of 0.32, and an SVG scales
+  // its TEXT along with everything else: the 10px axis labels came out
+  // at 3.2px on a 390px screen. Measured, not estimated. Nothing on the
+  // site is readable at 3.2px, and the layout check could not see it
+  // because the chart fitted its box perfectly -- it was legible-looking
+  // and unreadable.
+  //
+  // Matching the viewBox to the measured container width makes the
+  // scale exactly 1 at every size, so a font-size in this file is the
+  // font-size on screen. The layout maths is already parametric on W,
+  // so nothing else has to change.
+  //
+  // 900 stays as the pre-measurement default so the server and the
+  // first client render agree; the observer corrects it on mount.
+  const W = Math.max(measuredWidth ?? 900, 300);
   const H = height;
   const PAD_L = 54;
   const PAD_R = 20;
@@ -189,6 +224,7 @@ export default function TimeSliderScatter({
         </div>
       </div>
 
+      <div ref={plotRef}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
         {xTicks.map((t) => (
           <g key={`x-${t}`}>
@@ -220,6 +256,7 @@ export default function TimeSliderScatter({
           );
         })}
       </svg>
+      </div>
 
       {/* The SVG circles are decorative (no role, no focusable target --
           177 country-path lesson from the map redesign doesn't apply

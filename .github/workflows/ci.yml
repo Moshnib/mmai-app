@@ -236,6 +236,18 @@ jobs:
           # The CSP is the reason it earns its place: hand-written,
           # enforced only in the browser, and silent when wrong.
           npx tsx scripts/check-runtime-errors.ts
+          # Third question, same server. An SVG scales its TEXT along with
+          # everything else, so a chart drawn on a 900-wide canvas and
+          # rendered into a 292px card puts its 10px axis labels on screen
+          # at 3.2px. That is what /compare and /gulf-watch were doing on a
+          # phone, measured.
+          #
+          # Nothing else could see it: the chart fitted its container, so
+          # the layout check found no overflow; nothing threw; and the
+          # source says fontSize={10}, which looks fine. check-type-scale
+          # polices the size a component DECLARES -- this polices the size a
+          # reader actually gets.
+          npx tsx scripts/check-text-legibility.ts
 
       # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
       # Eurostat retired the euro area HICP dataset that day. It kept

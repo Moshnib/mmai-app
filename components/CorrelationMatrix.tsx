@@ -236,8 +236,12 @@ export default function CorrelationMatrix() {
           the diagram, not to the document. */}
       <figure style={{ margin: 0, minWidth: 0 }}>
         <div style={{ overflowX: "auto" }}>
+          {/* Floor equals the viewBox width so the scale is 1 and the
+              labels render at the size they are written at. A 520 floor
+              on a 680 viewBox was a scale of 0.76, taking 11px text to
+              8.4px on a phone. */}
           <svg
-            viewBox="0 0 680 224" width="100%" style={{ display: "block", minWidth: 520 }}
+            viewBox="0 0 680 224" width="100%" style={{ display: "block", minWidth: 680 }}
             role="img"
             aria-label={
               `The three dimensions and how closely they move together. Direction and Capacity share ` +
