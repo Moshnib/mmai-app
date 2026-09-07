@@ -153,6 +153,20 @@ jobs:
       # rather than a quiet fabrication -- the reporting date travels with
       # the value, and the carry expires -- plus that a live fetch is never
       # overwritten and a country with no source is never given one.
+      # There were two market colour maps -- one in Compare, one in the
+      # bond-yield panel -- disagreeing on five of six markets, with three
+      # colours SWAPPED between countries. Red was the Euro Area on one
+      # page and the United Kingdom on the other. Both palettes were
+      # individually well chosen; the damage came from their disagreeing,
+      # and nothing measured that -- the design audit counted hardcoded
+      # hex colours without checking whether they agreed.
+      #
+      # One map now, so divergence is impossible. This holds what made
+      # each palette good on its own: every market coloured, nothing
+      # coloured that is not a market, and no two closer than dE 20.
+      - name: One colour per market, all distinguishable
+        run: npx tsx scripts/test-market-colours.ts
+
       # /stablecoins was in the navigation on every page, linked from the
       # 404 page, and covered by both browser checks -- and absent from the
       # sitemap for as long as it existed. Search engines were never told

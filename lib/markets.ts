@@ -65,6 +65,41 @@ export const FALLBACK_MARKETS: MarketData[] = [
   { code: "AU", name: "Australia", raw: { inflation: 3.45, gdpGrowth: 2.14, unemployment: 4.46, policyRate: 4.35, brentYoY: 17.91, debtPctGdp: 50.7 } },
 ];
 
+/**
+ * ONE COLOUR PER MARKET, FOR THE WHOLE SITE.
+ *
+ * There were two maps -- one in the Compare chart, one in the bond-yield
+ * panel -- and they disagreed on five of six markets. Worse than
+ * arbitrary, they had three colours SWAPPED between countries:
+ *
+ *   red     was the Euro Area on Compare and the United Kingdom on bonds
+ *   amber   was the United Kingdom on Compare and Canada on bonds
+ *   violet  was Japan on Compare and the Euro Area on bonds
+ *
+ * A reader who learned "red is the Euro Area" on one page read the red
+ * line on the other as the Euro Area when it was the UK. Two charts that
+ * are individually well-chosen can still mislead if they contradict each
+ * other, and nothing measures that -- the design audit counted hardcoded
+ * hexes without ever checking they agreed.
+ *
+ * These values are the bond panel's, which were measured for perceptual
+ * separation on 6 September: the closest pair is 36.7 apart in CIE76 dE,
+ * where anything under about 20 reads as one colour on a thin line. The
+ * Compare set was equally well separated (36.4) and simply lost the
+ * coin-toss; what mattered was picking one.
+ *
+ * No green anywhere, per the site-wide rule.
+ * scripts/test-market-colours.ts holds the line.
+ */
+export const MARKET_COLORS: Record<string, string> = {
+  US: "#22D3EE", // cyan
+  EA: "#8B5CF6", // violet
+  CA: "#F0975B", // amber
+  UK: "#E14B4B", // red
+  JP: "#F472B6", // pink
+  AU: "#FBBF24", // gold
+};
+
 // scoreMarket() -- the five-pillar scorer -- was removed at the cutover on
 // 5 September 2026. scoreMarketV2 below is the only scorer.
 
