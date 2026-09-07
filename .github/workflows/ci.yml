@@ -248,6 +248,17 @@ jobs:
           # polices the size a component DECLARES -- this polices the size a
           # reader actually gets.
           npx tsx scripts/check-text-legibility.ts
+          # Fourth question, same server: can a reader NAME and OPERATE the
+          # page? A sweep found two unnamed year pickers on /compare -- two
+          # identical combo boxes with a bare "to" between them -- and a
+          # card at h3 directly under the only h1, so the outline skipped a
+          # level. Neither breaks a build, overflows a box, or throws.
+          #
+          # Contrast is measured here rather than asserted. The design audit
+          # said it was clean and was right; nothing re-checked it, and a
+          # colour token changes in one commit while a claim goes stale in
+          # the next.
+          npx tsx scripts/check-accessibility.ts
 
       # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
       # Eurostat retired the euro area HICP dataset that day. It kept
