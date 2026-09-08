@@ -15,6 +15,14 @@ import {
 export interface GulfCardData {
   code: string;
   name: string;
+  /** Human names of any indicators filled from an earlier reading
+   *  because this run's fetch failed -- see lib/useGulfIndicators.ts.
+   *  Empty when everything on the card came from the latest run.
+   *
+   *  The card says so. Carrying a value forward is defensible; doing it
+   *  invisibly is not, and the previous design recorded it only in a
+   *  database column no page ever read. */
+  carriedFields: string[];
   cpiYoy: number | null;
   realEstateValue: number | null;
   realEstateMetricLabel: string | null;
@@ -247,6 +255,23 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
                 unscored by choice. Saying so is the difference between a
                 methodological position a reader can argue with and a
                 gap that looks like neglect. */}
+            {/* CARRYING A VALUE FORWARD IS DEFENSIBLE. DOING IT SILENTLY
+                IS NOT. When a source does not answer, the card shows its
+                last real reading with that reading's own period -- which
+                is honest only if the reader is told it happened. The
+                previous design recorded it in a database column no page
+                ever read, so a carried number and a live one looked
+                identical. */}
+            {country.carriedFields.length > 0 && (
+              <>
+                <b style={{ color: "var(--ink-soft)" }}>
+                  {country.carriedFields.length === 1
+                    ? `The ${country.carriedFields[0]} figure did not refresh today.`
+                    : `${country.carriedFields.length} figures did not refresh today.`}
+                </b>{" "}
+                The last reading is shown, with its own reporting date — nothing has been estimated.{" "}
+              </>
+            )}
             Not scored, deliberately: Gulf unemployment largely reflects how migrant labour is counted, so it does
             not carry the same meaning as in the six scored economies and the two cannot share one scale.
             {country.fxReservesMonthsImports != null && (

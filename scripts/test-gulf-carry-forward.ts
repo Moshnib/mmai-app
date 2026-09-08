@@ -169,12 +169,39 @@ console.log("\nA LABEL TRAVELS WITH ITS VALUE\n");
 
 console.log("\nA COUNTRY WITH NO SOURCE IS NOT GIVEN ONE\n");
 {
-  // Four of six have no policy-rate source. Carry-forward must not
-  // invent one from a previous row that also had none.
+  // This used goodRow, whose policy_rate is ALREADY null -- so it
+  // passed because there was nothing to carry, which is the property
+  // the "NO PREVIOUS ROW" section already covers. It would have passed
+  // against an implementation that resurrects anything it finds. The
+  // fixture now HOLDS a rate, so the assertion has work to do.
+  const hadARate: StoredGulfRow = {
+    ...goodRow(daysAgo(1)),
+    policy_rate: 4, policy_rate_label: "Policy rate (discount)", policy_rate_observation_date: "2026-08-31",
+  };
+  const withRate = carryForwardGulf(failedFetch(), [hadARate], NOW);
+  ok("a stale rate is carried while the source exists", withRate.merged.policyRate === 4);
+
   const r = carryForwardGulf(failedFetch(), [goodRow(daysAgo(1))], NOW);
-  ok("policy rate stays absent", r.merged.policyRate === null);
+  ok("nothing is invented when history holds none", r.merged.policyRate === null);
   ok("real estate stays absent", r.merged.realEstateValue === null);
   ok("neither is claimed as carried", !r.carried.includes("policy rate") && !r.carried.includes("real estate"));
+}
+
+console.log("\nA VALUE WITHOUT ITS PERIOD IS NOT CARRIED\n");
+{
+  // The code said "the date is not optional" and then wrote `?? null`.
+  // A value carried without its date falls through to the card's legacy
+  // shared date, which on a failed run is TODAY -- publishing a July
+  // figure as "as of September".
+  const dateless: StoredGulfRow = { ...goodRow(daysAgo(1)), cpi_observation_date: null };
+  const older = goodRow(daysAgo(3));
+  const r = carryForwardGulf(failedFetch(), [dateless, older], NOW);
+  ok("skips the dateless row", r.merged.cpiObservationDate === "2026-07-01");
+  ok("takes the value from the row that had a date", r.merged.cpiYoy === 3);
+
+  const onlyDateless = carryForwardGulf(failedFetch(), [dateless], NOW);
+  ok("carries nothing when no row has a date", onlyDateless.merged.cpiYoy === null);
+  ok("and does not claim to have carried", !onlyDateless.carried.includes("inflation"));
 }
 
 console.log("\nEVERY CARRIED FIELD HAS A DATE TO CARRY\n");

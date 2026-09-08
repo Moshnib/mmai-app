@@ -3,10 +3,7 @@ import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { fetchInflation, fetchFxReservesMonths, fetchCurrentAccountPctGdp } from "@/lib/fetchers/worldbank";
 import { fetchBahrainInflation } from "@/lib/fetchers/bahrainCpi";
-import { withRetry } from "@/lib/retryFetch";
-import {
-  carryForwardGulf, carryNote, MAX_GULF_CARRY_DAYS, type StoredGulfRow,
-} from "@/lib/gulfCarryForward";
+import { withRetry, MAX_ATTEMPT_MS } from "@/lib/retryFetch";
 import { fetchQatarInflation } from "@/lib/fetchers/qatarCpi";
 import { fetchQatarRealEstate } from "@/lib/fetchers/qatarRealEstate";
 import { fetchSaudiInflation } from "@/lib/fetchers/datasaudi";
@@ -196,38 +193,6 @@ export async function GET(request: Request) {
     });
   }
 
-  // The last stored row per country, for carry-forward. One query for
-  // all six rather than one each: the refresh runs inside a 60-second
-  // function and six round trips to buy what one buys is time taken
-  // from the fetches that actually matter.
-  //
-  // Ordered newest-first and bucketed by country, so each country reads
-  // its own most recent row regardless of how the rows interleave.
-  const historyByCountry = new Map<string, StoredGulfRow[]>();
-  {
-    const since = new Date(Date.now() - MAX_GULF_CARRY_DAYS * 86_400_000).toISOString();
-    const { data: prevRows } = await supabase
-      .from("gulf_indicators")
-      .select(
-        "country_code, cpi_yoy, cpi_observation_date, fx_reserves_months_imports, fx_reserves_observation_date, " +
-        "current_account_pct_gdp, current_account_observation_date, real_estate_value, real_estate_metric_label, " +
-        "real_estate_observation_date, policy_rate, policy_rate_label, policy_rate_observation_date, fetched_at",
-      )
-      .in("country_code", pending)
-      .gte("fetched_at", since)
-      .order("fetched_at", { ascending: false });
-    // Every row in the window, newest first, not just the newest one.
-    // Carry-forward scans per field, because a flaky source usually
-    // fails on consecutive days and the most recent row is then just as
-    // empty as today's.
-    for (const row of prevRows ?? []) {
-      const code = (row as unknown as { country_code: string }).country_code;
-      const list = historyByCountry.get(code);
-      if (list) list.push(row as unknown as StoredGulfRow);
-      else historyByCountry.set(code, [row as unknown as StoredGulfRow]);
-    }
-  }
-
   // Leaves ten seconds of the sixty for the Supabase writes and the
   // response. Countries run one after another, so without this the
   // function can simply be killed part-way through the list -- and a
@@ -237,7 +202,10 @@ export async function GET(request: Request) {
   const skippedForTime: string[] = [];
 
   for (const country of pending) {
-    if (Date.now() >= deadline) {
+    // Reserve one attempt's worth before starting a country, for the
+    // same reason withRetry does: asking whether time has already run
+    // out lets a 15-second fetcher start with two seconds left.
+    if (Date.now() + MAX_ATTEMPT_MS >= deadline) {
       // Reported rather than silent. The scheduled trigger runs three
       // times a day, so a country skipped here is picked up on the next
       // pass; a country skipped WITHOUT anyone knowing is how a gap
@@ -247,20 +215,23 @@ export async function GET(request: Request) {
       continue;
     }
     try {
-      const fetched = await fetchGulfIndicators(country, deadline);
-
-      // A source that blinks must not wipe a good number. Values are
-      // only ever carried INTO a null, and each carried value brings its
-      // own reporting date with it, so the card keeps saying the period
-      // the figure actually belongs to. See lib/gulfCarryForward.ts.
-      const { merged: raw, carried, expired } = carryForwardGulf(
-        fetched,
-        historyByCountry.get(country) ?? [],
-        new Date(),
-      );
-      if (carried.length > 0) {
-        console.warn(`Gulf [${country}]: carried forward ${carried.join(", ")}`);
-      }
+      // WHAT WAS ACTUALLY FETCHED, NULLS AND ALL. The database is the
+      // record of what each source returned; it is not the place to
+      // repair gaps.
+      //
+      // Carry-forward used to run HERE, and the merged result was then
+      // inserted as a new row. The next run read that row back, saw a
+      // value one day old, and carried it again -- so the fourteen-day
+      // bound measured the age of the COPY and never expired anything. A
+      // permanently dead source published its last number for ever,
+      // marked fresh, which is precisely the outcome the bound exists to
+      // prevent. Simulated at day 45: still publishing, still unexpired.
+      //
+      // It now runs where the six scored markets already do theirs, at
+      // READ time in lib/useGulfIndicators.ts. Derived data is never
+      // written, so it can never be read back as if it were fetched, and
+      // the bound measures the real age of the real observation.
+      const raw = await fetchGulfIndicators(country, deadline);
       // Policy rate counts toward PARTIAL only for the countries that
 // actually have a source. Ignoring it entirely would let SOURCE_NOTES
       // keep claiming "+ BIS (live)" on a day the BIS fetch failed;
@@ -273,17 +244,12 @@ export async function GET(request: Request) {
         raw.currentAccountPctGdp == null ||
         (expectsPolicyRate && raw.policyRate == null);
       const baseNote = SOURCE_NOTES[country];
-      // Three states, and they are not the same thing. A carried value
-      // is a source that blinked and a number a reader can still trust;
-      // PARTIAL is a genuine hole; expired means a source has been down
-      // longer than carry-forward will cover, which is the one that
-      // needs somebody to look.
-      const expiredNote = expired
-        ? ` — a source has now been unavailable for more than ${MAX_GULF_CARRY_DAYS} days, so nothing was carried forward`
-        : "";
+      // Records what THIS RUN fetched. Whether a gap is later filled
+      // from an earlier row is a question for the page, not for the
+      // stored row -- see the note above.
       const sourceNote = partial
-        ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)${carryNote(carried)}${expiredNote}`
-        : `${baseNote}${carryNote(carried)}${expiredNote}`;
+        ? `${baseNote} — PARTIAL this run, one or more sources failed (see server logs)`
+        : baseNote;
 
       const { error } = await supabase.from("gulf_indicators").insert({
         country_code: country,

@@ -194,12 +194,18 @@ jobs:
             exit 1
           fi
 
+      # The force input reaches this endpoint too. It did not: the
+      # scored-markets step above built ?force=1 from inputs.force and
+      # this one sent a bare URL, so the documented remedy for a bad row
+      # -- ?force=1, which overrides the "already written today" guard --
+      # was unreachable from the Actions tab. Recovering from a wrongly
+      # stored Gulf value meant hand-rolling a curl with CRON_SECRET.
       - name: Refresh Gulf Watch
         run: |
           echo "Calling /api/refresh-gulf …"
           code=$(curl -sS -o /tmp/gulf.json -w "%{http_code}" --max-time 120 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${SITE_URL}/api/refresh-gulf")
+            "${SITE_URL}/api/refresh-gulf?force=${{ inputs.force && 1 || 0 }}")
           echo "HTTP $code"
           head -c 800 /tmp/gulf.json; echo
           [ "$code" = "200" ] || exit 1

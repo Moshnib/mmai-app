@@ -16,7 +16,7 @@
 //    npx tsx scripts/test-retry-deadline.ts
 // ============================================================
 
-import { withRetry, RETRY_ATTEMPTS } from "@/lib/retryFetch";
+import { withRetry, RETRY_ATTEMPTS, MAX_ATTEMPT_MS } from "@/lib/retryFetch";
 
 let fails = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -79,6 +79,38 @@ async function main() {
     let calls = 0;
     const value = await withRetry("first", async () => { calls++; return "done"; }, { deadline: Date.now() - 5_000 });
     ok("the first attempt always runs", value === "done" && calls === 1);
+  }
+
+  console.log("\nA RETRY THAT WOULD OVERRUN IS NOT STARTED — the regression guard\n");
+  {
+    // The original check asked whether time had ALREADY run out, not
+    // whether the attempt about to start could finish inside it. Every
+    // assertion here used an expired deadline or a 30-second one, so
+    // none touched the interval where a retry begins legally and ends
+    // illegally -- mutating the check to the correct budget-aware
+    // version left the suite green.
+    let calls = 0;
+    let threw = false;
+    try {
+      await withRetry(
+        "slow-source",
+        async () => { calls++; throw new Error("timeout"); },
+        { deadline: Date.now() + 1_000 },
+      );
+    } catch { threw = true; }
+    ok("reports the failure", threw);
+    ok("does not start an attempt it cannot finish", calls === 1, `${calls} attempt(s)`);
+  }
+
+  console.log("\nAND STILL RETRIES WHEN THERE IS ROOM\n");
+  {
+    let calls = 0;
+    const value = await withRetry(
+      "flaky",
+      async () => { calls++; if (calls < 2) throw new Error("blink"); return "ok"; },
+      { deadline: Date.now() + MAX_ATTEMPT_MS * 3 },
+    );
+    ok("a real budget still allows a retry", value === "ok" && calls === 2, `${calls} attempts`);
   }
 
   console.log("\nshouldRetry STILL NARROWS WHAT IS WORTH REPEATING\n");

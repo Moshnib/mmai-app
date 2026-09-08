@@ -141,11 +141,22 @@ export function carryForwardGulf<T>(
       const ageDays = (now.getTime() - new Date(row.fetched_at).getTime()) / 86_400_000;
       if (!Number.isFinite(ageDays) || ageDays > MAX_GULF_CARRY_DAYS) { sawTooOld = true; break; }
 
+      // THE DATE IS NOT OPTIONAL, AND THIS USED TO SAY SO WHILE DOING
+      // THE OPPOSITE. It read `?? null`, so a stored row holding a value
+      // with no date carried the value and dropped the period. The card
+      // then falls back to the row's legacy shared observation_date,
+      // which for a failed fetch is TODAY -- publishing a July figure as
+      // "as of September". That is the invented reporting period the
+      // per-indicator date columns exist to prevent, reintroduced by the
+      // feature whose first rule is that it must never happen.
+      //
+      // A value without its period is not usable, so it is not carried.
+      // Skip to an older row that has both.
+      const date = row[COLUMN[field.date]];
+      if (date == null) continue;
+
       merged[field.value] = value;
-      // The date is not optional. A value without the period it belongs
-      // to is a number with no meaning, and worse, one a reader would
-      // assume is current.
-      merged[field.date] = row[COLUMN[field.date]] ?? null;
+      merged[field.date] = date;
       if (field.label) merged[field.label] = row[COLUMN[field.label]] ?? null;
       carried.push(field.name);
       break;
