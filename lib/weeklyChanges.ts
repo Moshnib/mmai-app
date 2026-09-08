@@ -2,7 +2,7 @@
 
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { type RawIndicators } from "@/lib/indicators";
-import { computeMmai } from "@/lib/composite";
+import { INDICATOR_FIELD, computeMmai } from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
 
@@ -206,18 +206,49 @@ function toRawIndicators(row: RawIndicatorRow): RawIndicators {
   };
 }
 
-/** The five scored fields. brent_yoy is deliberately absent: it is still
- *  fetched and still shown in the feed, but it stopped being scored on
- *  1 September, so a change in it is not a change in anything the index
- *  reports and must not trigger "what changed". */
-function scoredDiffers(a: RawIndicatorRow, b: RawIndicatorRow): boolean {
-  return (
-    a.inflation !== b.inflation ||
-    a.gdp_growth !== b.gdp_growth ||
-    a.unemployment !== b.unemployment ||
-    a.policy_rate !== b.policy_rate ||
-    a.debt_pct_gdp !== b.debt_pct_gdp
-  );
+/** How many decimals each field is PUBLISHED to, taken from the same
+ *  record the pages render from so the two cannot drift apart. */
+const PUBLISHED_DP: Record<keyof typeof FIELD_OF, number> = {
+  inflation: INDICATOR_FIELD.infGap.decimals,
+  gdp_growth: INDICATOR_FIELD.gdp.decimals,
+  unemployment: INDICATOR_FIELD.une.decimals,
+  policy_rate: INDICATOR_FIELD.rate.decimals,
+  debt_pct_gdp: INDICATOR_FIELD.debt.decimals,
+};
+
+/** The columns scoredDiffers compares, and nothing else. */
+const FIELD_OF = {
+  inflation: 1, gdp_growth: 1, unemployment: 1, policy_rate: 1, debt_pct_gdp: 1,
+} as const;
+
+/** A reading as a reader sees it. Comparing raw values makes the feed
+ *  sensitive below its own display precision. */
+function asPublished(v: number | null | undefined, dp: number): number | null {
+  return v == null ? null : Number(v.toFixed(dp));
+}
+
+/** The five scored fields, COMPARED AT THE PRECISION THEY ARE PUBLISHED
+ *  TO. brent_yoy is deliberately absent: it is still fetched and still
+ *  shown in the feed, but it stopped being scored on 1 September, so a
+ *  change in it is not a change in anything the index reports.
+ *
+ *  This used to compare raw values with !==, which made the feed
+ *  sensitive to movements it could not then display. Japan's policy rate
+ *  went 0.977 to 0.978 and back on 7 September 2026 -- a thousandth of a
+ *  point, from the Bank of Japan's own rounding -- and the card
+ *  announced "moved September 7, 2026" above the line
+ *  "Policy rate 0.98% -> 0.98%" and a score change of 0.0. It reported a
+ *  change and then showed nothing changing, which reads as a broken page
+ *  rather than a quiet week.
+ *
+ *  A change nobody can see is not a change. The comparison now rounds to
+ *  the decimals each field is published to, so the feed says exactly
+ *  what the numbers on the page say. */
+export function scoredDiffers(a: RawIndicatorRow, b: RawIndicatorRow): boolean {
+  return (Object.keys(FIELD_OF) as (keyof typeof FIELD_OF)[]).some((f) => {
+    const dp = PUBLISHED_DP[f];
+    return asPublished(a[f], dp) !== asPublished(b[f], dp);
+  });
 }
 
 /** Newest reading, and the most recent one before it that read
