@@ -22,15 +22,16 @@ type Row = {
 
 const MAX_LOOKBACK_DAYS = 45;
 
-function scoredDiffers(a: Row, b: Row): boolean {
-  return (
-    a.inflation !== b.inflation ||
-    a.gdp_growth !== b.gdp_growth ||
-    a.unemployment !== b.unemployment ||
-    a.policy_rate !== b.policy_rate ||
-    a.debt_pct_gdp !== b.debt_pct_gdp
-  );
-}
+// THE SHIPPED FUNCTION, NOT A COPY OF IT.
+//
+// This file used to reimplement scoredDiffers here, which meant the
+// tests exercised the reimplementation and the real one went unchecked.
+// It is exactly how the precision bug survived: the copy compared raw
+// values, the shipped one did too, both agreed, and every test passed
+// while Japan's card announced a move it could not show.
+//
+// A test that reimplements what it tests can only prove the copy right.
+import { scoredDiffers } from "@/lib/weeklyChanges";
 
 /** Mirrors buildBuckets in lib/weeklyChanges.ts. */
 function build(rowsDesc: Row[]): { buckets: Row[]; steadySince: string | null } {
@@ -186,6 +187,30 @@ console.log("\nEDGE CASES\n");
 {
   ok("no rows is safe", pick([]).length === 0);
   ok("a single row yields no comparison", pick([base({ fetched_at: day(0) })]).length === 1);
+}
+
+console.log("\nA CHANGE NOBODY CAN SEE IS NOT A CHANGE\n");
+{
+  // Japan's policy rate went 0.977 to 0.978 and back on 7 September
+  // 2026 -- a thousandth of a point, out of the Bank of Japan's own
+  // rounding. The site publishes the rate to two decimals, so both read
+  // 0.98%. The feed compared raw values, called it a change, and printed
+  // "moved September 7, 2026" above "Policy rate 0.98% -> 0.98%" and a
+  // score delta of 0.0: a change reported and then not shown, which
+  // reads as a broken page rather than a quiet week.
+  const a = base({ fetched_at: day(1), policy_rate: 0.977 });
+  const b = base({ fetched_at: day(2), policy_rate: 0.978 });
+  ok("a wobble below published precision is not a change", !scoredDiffers(a, b), "0.977 vs 0.978, both print 0.98");
+
+  const real = base({ fetched_at: day(2), policy_rate: 0.99 });
+  ok("a visible move still is one", scoredDiffers(a, real), "0.98 vs 0.99");
+
+  // Inflation publishes to one decimal, so the floor is coarser there.
+  const i1 = base({ fetched_at: day(1), inflation: 2.04 });
+  const i2 = base({ fetched_at: day(2), inflation: 2.02 });
+  ok("same for inflation at one decimal", !scoredDiffers(i1, i2), "2.04 vs 2.02, both print 2.0");
+  const i3 = base({ fetched_at: day(2), inflation: 2.15 });
+  ok("and a visible inflation move counts", scoredDiffers(i1, i3), "2.0 vs 2.2");
 }
 
 console.log("\n" + (fails === 0 ? "ALL PASS" : `${fails} FAILURE(S)`));

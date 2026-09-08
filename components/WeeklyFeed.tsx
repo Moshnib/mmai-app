@@ -231,12 +231,21 @@ export default function WeeklyFeed() {
                       {scoreDelta && then ? (
                         <>
                           <span style={{ color: stateColor, marginLeft: 8 }}>{scoreDelta.text}</span>
-                          {/* WHEN it moved, and that it has been still
-                              since. A bare arrow says a change happened
-                              and leaves the reader to guess whether it
-                              was this morning or three weeks ago. */}
+                          {/* WHEN it moved. A bare arrow says a change
+                              happened and leaves the reader to guess
+                              whether it was this morning or three weeks
+                              ago.
+
+                              This read "moved <date>, steady since" —
+                              a sentence with nothing after "since". The
+                              clause was meant to add that it has held
+                              since then, and instead dangled. "Last
+                              moved" carries the same meaning in three
+                              words and finishes, and it reads as the
+                              mirror of "unchanged since <date>" on the
+                              rows where nothing happened. */}
                           <span style={{ color: "var(--slate)", marginLeft: 8, fontWeight: 500 }}>
-                            moved {formatDate(new Date(then.fetchedAt).getTime())}, steady since
+                            last moved {formatDate(new Date(then.fetchedAt).getTime())}
                           </span>
                         </>
                       ) : (
