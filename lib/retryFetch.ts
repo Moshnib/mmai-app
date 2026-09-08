@@ -21,6 +21,13 @@ export const RETRY_ATTEMPTS = 3;
  *  value it rescues. */
 export const RETRY_DELAY_MS = 400;
 
+/** The longest a single attempt can take, for reserving against a
+ *  deadline. Matches the slowest timeout any fetcher sets -- BIS and
+ *  Qatar CPI both allow 15 seconds. Deliberately the WORST case rather
+ *  than an average: the point of a reservation is that it holds when the
+ *  source is slow, which is precisely when retries happen. */
+export const MAX_ATTEMPT_MS = 15_000;
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export interface RetryOptions {
@@ -60,8 +67,19 @@ export async function withRetry<T>(
     } catch (err) {
       last = err as Error;
       if (i === RETRY_ATTEMPTS || !shouldRetry(last)) break;
-      if (deadline != null && Date.now() >= deadline) {
-        console.warn(`${label}: out of time after attempt ${i}, not retrying`);
+      // RESERVE THE ATTEMPT, do not merely check the clock.
+      //
+      // This asked `Date.now() >= deadline` -- whether time had ALREADY
+      // run out, not whether the attempt about to start could finish
+      // inside it. With a 600ms budget and a 500ms attempt, measured
+      // overrun was 826ms. At production scale a 15-second fetcher can
+      // start legally with two seconds left and return the caller 13
+      // seconds late, which is how the Gulf refresh could still be
+      // killed part-way through its list -- the exact outcome the
+      // deadline was introduced to prevent.
+      const nextAttemptEnds = Date.now() + RETRY_DELAY_MS * i + MAX_ATTEMPT_MS;
+      if (deadline != null && nextAttemptEnds >= deadline) {
+        console.warn(`${label}: not enough time left for another attempt after ${i}, giving up`);
         break;
       }
       // Logged at each retry rather than only at the end: a source that
