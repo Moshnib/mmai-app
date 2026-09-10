@@ -1266,3 +1266,24 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 .corr-key-note {
   flex: 1 1 100%; font-size: var(--t-micro); color: var(--slate); line-height: 1.6;
 }
+
+/* The stablecoin correlation table. It used .breakdown-row, which stacks
+   to one column below 640px -- correct for the dimension arithmetic,
+   which is a label and a few values that read as a sentence, and wrong
+   for a four-column table with a header. Stacked, the header became four
+   orphaned words and each row four orphaned numbers with nothing tying a
+   value to its column.
+   Four columns at every width. The label column shrinks and the whole
+   table scrolls inside its own box rather than the page, which is the
+   same treatment the correlation diagram and the wide tables use. */
+.corr-table { overflow-x: auto; margin-top: 2px; }
+.corr-table-row {
+  display: grid;
+  grid-template-columns: minmax(112px, 1.5fr) 52px 52px minmax(64px, auto);
+  gap: 10px; align-items: baseline; min-width: 300px;
+  padding: 5px 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); color: var(--slate);
+}
+.corr-table-row + .corr-table-row { border-top: 1px solid var(--hair); }
+.corr-table-head { font-weight: 700; color: var(--ink-soft); }

@@ -68,11 +68,21 @@ export default function StablecoinMacroLink({ link }: { link: MacroLink | null }
 
       {/* The working, because the site's whole claim is that you can
           check it. A verdict without the numbers under it is an opinion. */}
-      <div className="breakdown-row" style={{ fontWeight: 700, color: "var(--ink-soft)" }}>
+      {/* ITS OWN CLASS, NOT .breakdown-row.
+          This borrowed the dimension arithmetic's row, which stacks to a
+          single column below 640px. That works there: a label and a few
+          values that read as a sentence. Here it destroyed the table —
+          the header became four orphaned words down the page and every
+          row four orphaned numbers, with nothing tying a value to its
+          column. Reported from a phone as a broken page, and it was.
+          A four-column table keeps its four columns and scrolls if it
+          must. */}
+      <div className="corr-table">
+      <div className="corr-table-row corr-table-head">
         <span>Test</span><span>r</span><span>t</span><span>reading</span>
       </div>
       {link.lags.map((l) => (
-        <div key={`lag-${l.lagMonths}`} className="breakdown-row">
+        <div key={`lag-${l.lagMonths}`} className="corr-table-row">
           <span>{l.lagMonths === 0 ? "Same month" : `Yield leads by ${l.lagMonths}mo`}</span>
           <span>{l.r.toFixed(3)}</span>
           <span>{l.t.toFixed(2)}</span>
@@ -81,13 +91,14 @@ export default function StablecoinMacroLink({ link }: { link: MacroLink | null }
           </span>
         </div>
       ))}
-      <div className="breakdown-row">
+      <div className="corr-table-row">
         <span>Growth vs yield level</span>
         <span>{link.level.r.toFixed(3)}</span>
         <span>{link.level.t.toFixed(2)}</span>
         <span style={{ color: link.level.significant ? "var(--accent)" : "var(--slate)" }}>
           {link.level.significant ? "significant" : "no signal"}
         </span>
+      </div>
       </div>
 
       <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.7, maxWidth: "72ch" }}>
