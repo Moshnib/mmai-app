@@ -15,3 +15,7 @@ tsconfig.tsbuildinfo
 # yields that already live in Supabase -- the script regenerates it on
 # demand, so the repo does not need to carry it.
 bond-history-backfill.csv
+
+# Database backups from scripts/backup-database.ts. Contains subscriber
+# email addresses, so it must never reach a public repository.
+backups/
