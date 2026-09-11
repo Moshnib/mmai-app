@@ -984,6 +984,50 @@ Euro Area, Canada, UK, Japan (×2) and Australia still said *"Annual figure, upd
 
 The ONS publishes unemployment **quarterly** as well as monthly, and the quarterly series was a month fresher (2026 Q2 vs 2026 MAY). Not changed — swapping the concept mid-audit is how comparability breaks. Worth considering deliberately.
 
+### 19.8 The other half: asking the source what it has (2026-09-10)
+
+Everything else in section 19 reasons about **age**, and can only ever be as good as the allowances written beside it. `/api/source-audit` asks a different question: fetch all 23 figures now and compare them against what the site is publishing.
+
+| Verdict | Meaning | Fails the run? |
+|---|---|---|
+| `matches` | level with the source | no |
+| `one release behind` | the source has published, the next refresh has not run | **no** |
+| `RELEASES MISSED` | two or more releases behind | yes |
+| `VALUE DIFFERS` | same period, different number — a revision that never landed | yes |
+| `SOURCE WENT BACKWARDS` | the source now offers an OLDER period than we publish | yes |
+| `FETCH FAILED` | the source did not answer | **no** |
+| `NOT PUBLISHED` | nothing complete within `MAX_FALLBACK_DAYS`; the page shows N/A | yes |
+
+It does **not** catch a source that keeps answering and stops updating — Eurostat would have matched every day for nine months. That half is the age rules. **Neither check replaces the other.**
+
+**Why a route and not a workflow step.** The obvious home was `.github/workflows/refresh.yml`, and it cannot work: the fetchers need BEA, BLS and e-Stat keys plus Supabase credentials, and this repository holds exactly **one** secret, `CRON_SECRET`. The other five are Vercel environment variables. A step naming secrets that do not exist does not skip — it runs with empty strings and fails every morning for a reason unrelated to the data. So the check runs where the keys already are, called by curl like the two refreshes. It carries `if: always()` so it still runs when an earlier step failed, which is exactly when you want to know which source is wrong.
+
+#### Two design mistakes caught in review, both worth recording
+
+**1. The grace period measured the wrong interval.** The first version compared `now − liveDate` against a two-day grace. But `liveDate` is the *reporting period*, not the release date: a monthly figure is stamped the first of its month, so it is already ~40 days old the morning it is published, and a quarterly one ~100. The grace was therefore unreachable for 16 of the 20 probes, and **every ordinary release day would have gone red** — roughly 6–8 false alarms a month, each self-clearing at the next 06:10 refresh. It looked correct because the only series it was ever observed on was the daily UK policy rate, where period age and release age coincide. *One passing case was mistaken for a working design.*
+
+The fix counts whole **releases** behind, which needs no clock and gives the same answer at any hour. `scripts/test-releases-behind.ts` pins it down.
+
+**2. The claim that a dead source gets caught elsewhere was false.** The comments, and an earlier version of this section, said a permanently broken fetcher "stops the stored date advancing, and the age rules fail the refresh at that series' cadence limit". Traced through the code, none of that held:
+
+- `settle()` returns null on a throw, so the row is written with a **NULL** observation date — not a frozen old one.
+- `stalenessOf` returns null for a null date. Its own doc comment says *"null means no opinion, never fine: a caller must not read it as a pass"*.
+- `stalenessWarnings` read it as a pass. `staleMarkets` stayed `0` and the workflow gate never fired.
+
+So a source could have died permanently and **nothing anywhere would have alarmed.** The age rules only ever saw sources that kept answering with a frozen date — the Eurostat shape, not the dead-fetcher shape. Fixed in `app/api/refresh/route.ts`: a figure present with no observation date is now reported. A figure *absent* is still not — that is a null pillar, already visible on the page as a gap.
+
+#### Related pre-existing bug: the US inflation fallback dropped its date
+
+`route.ts` fell back from BEA PCE to BLS CPI but kept `infl?.observationDate`, which is null on that path — storing a CPI figure under a NULL date. Japan's fallback twelve lines below fixes this exact bug and comments on it; the US one never got the same treatment. It made US inflation exempt from every age rule whenever the fallback was in use (via the null-date hole above), and would have made the audit compare live PCE against stored CPI — figures that differ by several tenths — reporting the site as wrong on a day it was behaving exactly as documented.
+
+#### The audit now shares the pages' definition of "published"
+
+`newestScoreableByMarket` originally walked the rows itself and took the first complete one anywhere in its window. The pages use `latestCompleteObservation`, which stops at `MAX_FALLBACK_DAYS` (14) and renders N/A beyond it. Between day 14 and the end of the window the two disagreed, and the audit would have failed the run over a row **no reader could see**. It now delegates to the same function, and runs the same query the pages run — `.order("observation_date").order("fetched_at").limit(200)`, where it previously ordered by `fetched_at` alone and took 120. Both mattered: the ordering decides which row wins a same-day re-run, and a force-refresh writes every market at once (2026-09-01 wrote 60 rows in a day), so 120 rows can be two days of reach rather than twenty.
+
+#### Coverage
+
+23 probes against 30 scored figures. Absent by design: **Japan's unemployment** (OECD refuses Vercel's egress — the workflow fetches it on the runner) and **government debt** for all six markets (one shared BIS call, not a per-market fetch). Euro Area inflation, Euro Area policy rate and US policy rate were missing from the first version and have been added — EA inflation being the exact series behind the nine-month Eurostat incident.
+
 ### 19.9 Node has no default fetch timeout, and 25 call sites had none (2026-09-10)
 
 Found by the audit above on its first real outage. Statistics Canada was answering intermittently — three identical curls returned `200 in 10.7s`, nothing at all in 45s, and `502 in 35.0s`. Our own fetchers, measured the same minute:

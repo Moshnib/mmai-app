@@ -209,7 +209,27 @@ jobs:
       - name: Every fetcher can give up on a source that stops answering
         run: npx tsx scripts/check-fetch-timeouts.ts
 
+      # The source audit first shipped with a grace period that compared
+      # now against the REPORTING PERIOD rather than the release date. A
+      # monthly figure is ~40 days old the morning it comes out and a
+      # quarterly one ~100, so the grace was unreachable for 16 of the 20
+      # probes and every ordinary release day would have gone red. It
+      # looked right because the only series it was observed on was a
+      # daily policy rate, where the two ages coincide -- one passing case
+      # mistaken for a working design. Counting whole releases needs no
+      # clock and gives the same answer at any hour.
+      - name: A fresh release is never an alarm, a missed one always is
+        run: npx tsx scripts/test-releases-behind.ts
 
+      # stalenessOf says in its own doc comment that null means "no opinion,
+      # never fine -- a caller must not read it as a pass". The refresh route
+      # read it as a pass, via `if (verdict?.stale)`, which is false for null.
+      # That is the failure mode of a DEAD source: a fetcher that throws
+      # writes a NULL date, not a frozen old one, so the one thing guaranteed
+      # to happen when a source dies was the one thing the age check could
+      # not see, and staleMarkets stayed 0 throughout.
+      - name: A figure with no observation date is reported, not passed
+        run: npx tsx scripts/test-null-date-not-a-pass.ts
 
       # The site reached twenty-seven distinct font sizes without anyone
       # deciding to have twenty-seven -- each was a reasonable local

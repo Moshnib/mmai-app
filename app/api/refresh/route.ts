@@ -198,11 +198,24 @@ async function fetchRawIndicators(
     ]);
 
     let usInflation = infl?.inflation ?? null;
+    // THE FALLBACK CARRIES ITS OWN OBSERVATION PERIOD, exactly as Japan's
+    // does below. Without this line the row stored a CPI figure under a
+    // NULL date, and a null date is not a small cosmetic gap:
+    //
+    //   - stalenessOf() returns null for a null date -- "no opinion", which
+    //     stalenessWarnings then treats as a pass. US inflation would be
+    //     exempt from every age rule for as long as the fallback lasted.
+    //   - the source audit reads a null date as "unknown period", skips the
+    //     date comparison, and compares live PCE against stored CPI. Those
+    //     legitimately differ by several tenths, so it would report the site
+    //     as wrong on a day the site is doing exactly what it documents.
+    let usInflationDate = infl?.observationDate ?? null;
     let fellBack = false;
     if (usInflation == null) {
       const fb = await settle("US inflation (CPI fallback)", fetchUsInflation());
       if (fb?.inflation != null) {
         usInflation = fb.inflation;
+        usInflationDate = fb.observationDate ?? null;
         fellBack = true;
       }
     }
@@ -217,7 +230,7 @@ async function fetchRawIndicators(
         brentYoY,
       },
       dates: {
-        inflation: infl?.observationDate ?? null,
+        inflation: usInflationDate,
         gdpGrowth: gdp?.observationDate ?? null,
         unemployment: unemp?.observationDate ?? null,
         policyRate: rate?.observationDate ?? null,
@@ -477,6 +490,7 @@ const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
  *  NOT that everything is current. */
 function stalenessWarnings(
   market: string,
+  raw: RawIndicators,
   dates: ObservationDates,
   debtPeriod: string | null
 ): string[] {
@@ -497,6 +511,32 @@ function stalenessWarnings(
   for (const key of Object.keys(dateFor) as PillarKey[]) {
     const source = sourceForPillar(marketName, key);
     if (!source) continue;
+
+    // A MISSING DATE IS NOT A PASS, and this loop used to read it as one.
+    //
+    // stalenessOf() is explicit that null means "no opinion, never fine --
+    // a caller must not read it as a pass". This caller did exactly that:
+    // `if (verdict?.stale)` is false for null, so a figure with no date at
+    // all sailed through every age rule.
+    //
+    // That is not a theoretical gap, it is the failure mode of a dead
+    // source. When a fetcher throws, settle() returns null and the row is
+    // written with a NULL observation date -- not a frozen old one. So the
+    // one thing guaranteed to happen when a source dies permanently was
+    // the one thing this check could not see. A source could stop
+    // answering forever and staleMarkets would stay 0.
+    //
+    // A figure present with no date is now reported. A figure that is
+    // ABSENT entirely is not: that is a null pillar, already visible on the
+    // page as a gap, and warning about it here would fire for every market
+    // that legitimately lacks one.
+    if (dateFor[key] == null) {
+      if (raw[RAW_FIELD[key].key] != null) {
+        warnings.push(`${RAW_FIELD[key].label}: a figure with no observation date, so its age cannot be checked`);
+      }
+      continue;
+    }
+
     const verdict = stalenessOf(source, dateFor[key]);
     if (verdict?.stale) {
       warnings.push(describeStale(RAW_FIELD[key].label, verdict));
@@ -747,7 +787,7 @@ export async function GET(request: Request) {
       // the response so the workflow can fail on it -- a warning nobody
       // is shown is the same as no warning, which is how the Eurostat
       // series survived nine months.
-      const staleWarnings = stalenessWarnings(market, dates, debt?.period ?? null);
+      const staleWarnings = stalenessWarnings(market, raw, dates, debt?.period ?? null);
       if (staleWarnings.length > 0) {
         console.warn(`${market} STALE: ${staleWarnings.join("; ")}`);
       }
