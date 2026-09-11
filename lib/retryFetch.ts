@@ -48,6 +48,14 @@ export interface RetryOptions {
    *  With a deadline the retries simply stop when the budget is spent,
    *  and the caller still gets whatever the first attempts produced. */
   deadline?: number;
+  /** How many goes in total, defaulting to RETRY_ATTEMPTS.
+   *
+   *  The default suits the refresh, where a rescued value is the whole
+   *  point and a source is worth pestering. The source audit overrides
+   *  it to 2: that caller only writes a report, every fetcher it calls
+   *  already carries its own 8-15 second abort, and three attempts plus
+   *  backoff would not fit inside the budget it runs in. */
+  attempts?: number;
 }
 
 /**
@@ -58,15 +66,15 @@ export async function withRetry<T>(
   attempt: () => Promise<T>,
   options: RetryOptions = {},
 ): Promise<T> {
-  const { shouldRetry = () => true, deadline } = options;
+  const { shouldRetry = () => true, deadline, attempts = RETRY_ATTEMPTS } = options;
   let last: Error | undefined;
 
-  for (let i = 1; i <= RETRY_ATTEMPTS; i++) {
+  for (let i = 1; i <= attempts; i++) {
     try {
       return await attempt();
     } catch (err) {
       last = err as Error;
-      if (i === RETRY_ATTEMPTS || !shouldRetry(last)) break;
+      if (i === attempts || !shouldRetry(last)) break;
       // RESERVE THE ATTEMPT, do not merely check the clock.
       //
       // This asked `Date.now() >= deadline` -- whether time had ALREADY
@@ -90,5 +98,5 @@ export async function withRetry<T>(
     }
   }
 
-  throw new Error(`${label}: failed after ${RETRY_ATTEMPTS} attempts — ${last?.message ?? "unknown error"}`);
+  throw new Error(`${label}: failed after ${attempts} attempts — ${last?.message ?? "unknown error"}`);
 }

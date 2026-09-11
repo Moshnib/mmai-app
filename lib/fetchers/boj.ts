@@ -24,7 +24,7 @@ export async function fetchJapanPolicyRate(): Promise<{ policyRate: number; obse
   const startDate = `${currentYear - 1}01`; // YYYYMM — one year back is plenty for "most recent"
   const url = `https://www.stat-search.boj.or.jp/api/v1/getDataCode?lang=en&db=FM01&code=STRDCLUCON&startDate=${startDate}`;
 
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`BOJ request failed: ${res.status} ${res.statusText}`);
 
   const json: BojResponse = await res.json();

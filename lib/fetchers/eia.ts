@@ -22,7 +22,7 @@ export async function fetchBrentYoY(): Promise<{ brentYoY: number; observationDa
   if (!key) throw new Error("EIA_API_KEY is not configured");
 
   const url = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${key}&frequency=monthly&data%5B0%5D=value&facets%5Bproduct%5D%5B%5D=EPCBRENT&facets%5Bseries%5D%5B%5D=RBRTE&sort%5B0%5D%5Bcolumn%5D=period&sort%5B0%5D%5Bdirection%5D=desc&length=24`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`EIA request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

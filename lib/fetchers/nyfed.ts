@@ -25,7 +25,7 @@ interface NyFedRateRow {
 
 export async function fetchUsPolicyRate(): Promise<{ policyRate: number; observationDate: string }> {
   const url = "https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`NY Fed request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

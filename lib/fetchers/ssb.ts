@@ -31,6 +31,7 @@ export async function fetchNorwayInflation(): Promise<{ inflation: number; obser
       response: { format: "json-stat2" },
     }),
     next: { revalidate: 0 },
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`SSB request failed: ${res.status} ${res.statusText}`);
 

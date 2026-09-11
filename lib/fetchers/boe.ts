@@ -18,7 +18,7 @@ export async function fetchUkPolicyRate(): Promise<{ policyRate: number; observa
   from.setDate(from.getDate() - 400); // Bank Rate changes infrequently -- wide enough window to always catch at least one row.
 
   const url = `https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUDBEDR&UsingCodes=Y&CSVF=TN&Datefrom=${formatIadbDate(from)}&Dateto=${formatIadbDate(to)}`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`Bank of England request failed: ${res.status} ${res.statusText}`);
 
   const csv = await res.text();

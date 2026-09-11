@@ -65,7 +65,7 @@ function latestObservation(json: JsonStatResponse): { period: string; value: num
 
 export async function fetchEuroAreaGdpGrowth(): Promise<{ gdpGrowth: number; observationDate: string }> {
   const url = `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/tec00115?format=JSON&geo=${EA_GEO_FIXED}&unit=CLV_PCH_PRE&lastTimePeriod=3`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`Eurostat GDP growth request failed: ${res.status} ${res.statusText}`);
 
   const obs = latestObservation(await res.json());
@@ -75,7 +75,7 @@ export async function fetchEuroAreaGdpGrowth(): Promise<{ gdpGrowth: number; obs
 
 export async function fetchEuroAreaUnemployment(): Promise<{ unemployment: number; observationDate: string }> {
   const url = `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_m?format=JSON&geo=${EA_GEO_FIXED}&s_adj=SA&sex=T&age=TOTAL&unit=PC_ACT&lastTimePeriod=3`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`Eurostat unemployment request failed: ${res.status} ${res.statusText}`);
 
   const obs = latestObservation(await res.json());
@@ -106,7 +106,7 @@ export async function fetchEuroAreaGdpGrowthQuarterly(): Promise<{ gdpGrowth: nu
   const url =
     `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/namq_10_gdp` +
     `?format=JSON&geo=${EA_GEO_FIXED}&unit=CLV_PCH_SM&na_item=B1GQ&s_adj=SCA&lastTimePeriod=4`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`Eurostat quarterly GDP request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

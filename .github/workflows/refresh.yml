@@ -209,3 +209,96 @@ jobs:
           echo "HTTP $code"
           head -c 800 /tmp/gulf.json; echo
           [ "$code" = "200" ] || exit 1
+
+      # ---------------------------------------------------------------
+      # DOES WHAT WE PUBLISH STILL AGREE WITH ITS SOURCE?
+      #
+      # Every other freshness check reasons about AGE, and can only be
+      # as good as the allowances written beside it -- the UK labour
+      # series legitimately carries 170 days, the BIS debt series 420.
+      # A source can fail inside its own allowance and nothing notices,
+      # because a failed fetch is served from the previous reading and
+      # every page looks perfectly healthy.
+      #
+      # This asks all twenty sources directly, straight after the
+      # refresh, and fails the run if the site is publishing a figure
+      # its own source no longer agrees with -- a missed release, an
+      # unapplied revision, or a fetcher that has quietly broken.
+      #
+      # It does NOT catch a source that keeps answering and stops
+      # updating; Eurostat returned December 2025 for nine months and a
+      # stored-versus-live comparison would have matched every day. That
+      # half belongs to the age rules in lib/freshness.ts. Neither check
+      # replaces the other.
+      #
+      # WHY A CURL AND NOT `npx tsx scripts/check-sources-live.ts`. The
+      # script was the first attempt and it cannot run here. Its
+      # fetchers need BEA, BLS and e-Stat keys plus the Supabase
+      # credentials, and this repository holds exactly one secret --
+      # CRON_SECRET. The other five are Vercel environment variables. A
+      # step naming secrets that do not exist does not skip: it runs
+      # with empty strings and fails every single morning for a reason
+      # that has nothing to do with the data, which is precisely the
+      # alarm people learn to ignore -- and then the real one goes
+      # unread too. So the check runs where the keys already are, called
+      # from here exactly like the two refreshes above. The script stays
+      # for local runs.
+      #
+      # It runs LAST on purpose: a disagreement after both refreshes
+      # means the refresh could not put it right, rather than that it
+      # had not run yet.
+      # ---------------------------------------------------------------
+      - name: Published figures still agree with their sources
+        # RUNS EVEN IF A STEP ABOVE FAILED, which is the whole point. A step
+        # with no `if:` inherits success(), so this would have been SKIPPED on
+        # exactly the mornings it is most wanted: the day an age rule fires,
+        # the refresh step exits 1 and this -- the check that says WHICH source
+        # and HOW it disagrees -- would never have run. A Gulf-side outage
+        # (data.gov.bh answers four days in ten) would likewise have cancelled
+        # a scored-market audit that has nothing to do with it.
+        if: always()
+        run: |
+          echo "Calling /api/source-audit …"
+          code=$(curl -sS -o /tmp/audit.json -w "%{http_code}" --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${SITE_URL}/api/source-audit")
+          echo "HTTP $code"
+          # Print every row, matching or not. A green run that shows
+          # nothing is indistinguishable from a check that does nothing.
+          node -e 'try{const j=require("/tmp/audit.json");for(const r of j.rows||[])console.log("  "+String(r.verdict).padEnd(20)+String(r.name).padEnd(24)+"site "+r.storedValue+" "+r.storedDate+"   source "+r.liveValue+" "+r.liveDate)}catch(e){console.log("(could not parse the response)")}'
+          [ "$code" = "200" ] || { head -c 500 /tmp/audit.json; echo; exit 1; }
+
+          # A SOURCE HAVING A BAD DAY IS NOT THE SITE BEING WRONG, and the
+          # two are counted separately for that reason. Statistics Canada
+          # was measured on 2026-09-10 answering three identical requests
+          # with 200 in 10.7s, nothing in 45s, and 502 in 35s -- while the
+          # Canadian figures on the site were entirely correct. Failing the
+          # run on that would produce exactly the daily false alarm people
+          # learn to skip, and then the real one goes unread too.
+          #
+          # A fetcher that stays broken is NOT let off, though the reason is
+          # not the one this comment used to give. It claimed the stored date
+          # stops advancing and the age check above catches it. It does not:
+          # a dead fetcher writes a NULL date, stalenessOf has no opinion on a
+          # null, and that was read as a pass -- so nothing fired at all. The
+          # refresh route now reports a figure that arrives without a date,
+          # and a figure that does not arrive leaves its pillar null, which
+          # withholds the composite and shows N/A on the page after 14 days.
+          down=$(node -e 'try{const j=require("/tmp/audit.json");process.stdout.write(String(j.sourcesDown??0))}catch(e){process.stdout.write("0")}')
+          if [ "$down" != "0" ]; then
+            echo
+            node -e 'try{const j=require("/tmp/audit.json");for(const u of j.unreachable||[])console.log("  "+u)}catch(e){}'
+            echo "::warning::$down source(s) did not answer today. That is the source, not"
+            echo "the stored figure -- it could not be confirmed, not shown to be wrong."
+          fi
+
+          bad=$(node -e 'try{const j=require("/tmp/audit.json");process.stdout.write(String(j.disagreements??0))}catch(e){process.stdout.write("0")}')
+          if [ "$bad" != "0" ]; then
+            echo
+            node -e 'try{const j=require("/tmp/audit.json");for(const p of j.problems||[])console.log("  "+p)}catch(e){}'
+            echo "::error::$bad published figure(s) disagree with their own source."
+            echo "A failed fetch is served from the previous reading, so every page looks"
+            echo "healthy either way -- this is the only check that opens the box."
+            exit 1
+          fi
+          echo "Every figure that could be reached agrees with its live source."

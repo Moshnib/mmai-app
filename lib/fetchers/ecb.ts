@@ -43,7 +43,7 @@ const MAX_MONTHLY_AGE_DAYS = 100;
 export async function fetchEuroAreaInflation(): Promise<{ inflation: number; observationDate: string }> {
   const url =
     "https://data-api.ecb.europa.eu/service/data/HICP/M.U2.N.000000.4D0.ANR?format=csvdata&lastNObservations=1";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`ECB HICP request failed: ${res.status} ${res.statusText}`);
 
   const lines = (await res.text()).trim().split(/\r?\n/);
@@ -87,7 +87,7 @@ export async function fetchEuroAreaInflation(): Promise<{ inflation: number; obs
 
 export async function fetchEuroAreaPolicyRate(): Promise<{ policyRate: number; observationDate: string }> {
   const url = "https://data-api.ecb.europa.eu/service/data/FM/D.U2.EUR.4F.KR.DFR.LEV?format=jsondata&lastNObservations=1";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`ECB request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();
