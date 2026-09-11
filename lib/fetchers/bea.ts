@@ -21,7 +21,7 @@ export async function fetchUsGdpGrowth(): Promise<{ gdpGrowth: number; observati
   if (!key) throw new Error("BEA_API_KEY is not configured");
 
   const url = `https://apps.bea.gov/api/data/?UserID=${key}&method=GetData&datasetname=NIPA&TableName=T10101&Frequency=A&Year=X&ResultFormat=JSON`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`BEA request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();
@@ -85,7 +85,7 @@ export async function fetchUsPceInflation(): Promise<{ inflation: number; observ
     `https://apps.bea.gov/api/data/?UserID=${key}&method=GetData&datasetname=NIPA` +
     `&TableName=T20804&Frequency=M&Year=${years}&ResultFormat=JSON`;
 
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`BEA PCE request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();
@@ -165,7 +165,7 @@ export async function fetchUsGdpGrowthQuarterly(): Promise<{ gdpGrowth: number; 
     `https://apps.bea.gov/api/data/?UserID=${key}&method=GetData&datasetname=NIPA` +
     `&TableName=T10106&Frequency=Q&Year=${now - 2},${now - 1},${now}&ResultFormat=JSON`;
 
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`BEA quarterly GDP request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

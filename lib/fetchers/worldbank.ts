@@ -6,7 +6,7 @@
 
 export async function fetchGdpGrowth(countryIso3: string): Promise<{ gdpGrowth: number; observationDate: string }> {
   const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=20`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`World Bank request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();
@@ -20,7 +20,7 @@ export async function fetchGdpGrowth(countryIso3: string): Promise<{ gdpGrowth: 
 
 export async function fetchInflation(countryIso3: string): Promise<{ inflation: number; observationDate: string }> {
   const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/FP.CPI.TOTL.ZG?format=json&per_page=20`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`World Bank request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();
@@ -33,7 +33,7 @@ export async function fetchInflation(countryIso3: string): Promise<{ inflation: 
 
 export async function fetchUnemployment(countryIso3: string): Promise<{ unemployment: number; observationDate: string }> {
   const url = `https://api.worldbank.org/v2/country/${countryIso3}/indicator/SL.UEM.TOTL.ZS?format=json&per_page=20`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`World Bank request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

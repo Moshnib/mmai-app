@@ -193,6 +193,24 @@ jobs:
       - name: A blinking Gulf source keeps its number, a dead one shows the gap
         run: npx tsx scripts/test-gulf-carry-forward.ts
 
+      # The same lesson as the step above, one layer lower down. Node has no
+      # default fetch timeout at all, so a source that accepts the connection
+      # and then goes quiet is not a slow request -- it is one that never
+      # returns. On 2026-09-10 Statistics Canada was answering intermittently
+      # and our GDP call ran for 148,919ms before returning a 500; the sibling
+      # call that had a timeout gave up at 8,016ms. Inside a 60-second function
+      # that is the difference between one missing indicator and every market
+      # after Canada going unwritten.
+      #
+      # Twenty-five call sites had no timeout, because the convention was
+      # adopted partway through the project and never backfilled -- and a
+      # fetcher without one looks identical to a fetcher with one on every
+      # day the source happens to be healthy.
+      - name: Every fetcher can give up on a source that stops answering
+        run: npx tsx scripts/check-fetch-timeouts.ts
+
+
+
       # The site reached twenty-seven distinct font sizes without anyone
       # deciding to have twenty-seven -- each was a reasonable local
       # choice, and 12, 12.5 and 13 ended up coexisting. A comment saying

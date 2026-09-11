@@ -9,7 +9,7 @@
 
 export async function fetchAustraliaInflation(): Promise<{ inflation: number; observationDate: string }> {
   const url = "https://data.api.abs.gov.au/rest/data/ABS,CPI,2.0.0/1.10001.10.50.M?format=csvfilewithlabels";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`ABS request failed: ${res.status} ${res.statusText}`);
 
   const csv = await res.text();

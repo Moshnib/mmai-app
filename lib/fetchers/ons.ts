@@ -22,7 +22,7 @@ interface OnsMonthPoint {
 
 export async function fetchUkInflation(): Promise<{ inflation: number; observationDate: string }> {
   const url = "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23/data";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`ONS request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();
@@ -99,7 +99,7 @@ interface OnsQuarter {
 
 export async function fetchUkGdpGrowthQuarterly(): Promise<{ gdpGrowth: number; observationDate: string }> {
   const url = "https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ihyr/qna/data";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`ONS quarterly GDP request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

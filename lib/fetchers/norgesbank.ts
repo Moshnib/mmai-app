@@ -16,7 +16,7 @@
 
 export async function fetchNorwayPolicyRate(): Promise<{ policyRate: number; observationDate: string }> {
   const url = "https://data.norges-bank.no/api/data/IR/B.KPRA.SD.R?format=sdmx-json&lastNObservations=1";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`Norges Bank request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

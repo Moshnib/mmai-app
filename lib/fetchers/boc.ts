@@ -6,7 +6,7 @@
 
 export async function fetchCanadaPolicyRate(): Promise<{ policyRate: number; observationDate: string }> {
   const url = "https://www.bankofcanada.ca/valet/observations/V39079/json?recent=1";
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`Bank of Canada request failed: ${res.status} ${res.statusText}`);
 
   const json = await res.json();

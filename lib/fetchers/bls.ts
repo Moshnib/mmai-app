@@ -30,7 +30,7 @@ async function fetchBlsSeries(seriesId: string, startYear: number, endYear: numb
   url.searchParams.set("endyear", String(endYear));
   if (key) url.searchParams.set("registrationkey", key);
 
-  const res = await fetch(url.toString(), { next: { revalidate: 0 } });
+  const res = await fetch(url.toString(), { next: { revalidate: 0 }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`BLS request failed: ${res.status} ${res.statusText}`);
 
   const json: BlsResponse = await res.json();

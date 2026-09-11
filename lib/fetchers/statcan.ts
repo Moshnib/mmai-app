@@ -18,6 +18,7 @@ export async function fetchCanadaInflation(): Promise<{ inflation: number; obser
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify([{ vectorId: 41690973, latestN: 15 }]),
     next: { revalidate: 0 },
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`Statistics Canada request failed: ${res.status} ${res.statusText}`);
 
@@ -123,6 +124,7 @@ export async function fetchCanadaGdpGrowthQuarterly(): Promise<{ gdpGrowth: numb
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify([{ vectorId: 62305752, latestN: 9 }]),
     next: { revalidate: 0 },
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`Statistics Canada GDP request failed: ${res.status} ${res.statusText}`);
 

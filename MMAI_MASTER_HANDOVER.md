@@ -984,6 +984,20 @@ Euro Area, Canada, UK, Japan (×2) and Australia still said *"Annual figure, upd
 
 The ONS publishes unemployment **quarterly** as well as monthly, and the quarterly series was a month fresher (2026 Q2 vs 2026 MAY). Not changed — swapping the concept mid-audit is how comparability breaks. Worth considering deliberately.
 
+### 19.9 Node has no default fetch timeout, and 25 call sites had none (2026-09-10)
+
+Found by the audit above on its first real outage. Statistics Canada was answering intermittently — three identical curls returned `200 in 10.7s`, nothing at all in 45s, and `502 in 35.0s`. Our own fetchers, measured the same minute:
+
+| Call | Time | Outcome |
+|---|---:|---|
+| CA inflation | 27,327ms | eventually succeeded |
+| CA unemployment | 8,016ms | gave up — **it had a timeout** |
+| CA GDP | **148,919ms** | ran on, then HTTP 500 |
+
+`/api/refresh` fetches a market's four indicators together and then walks the markets **one after another**, inside `maxDuration = 60`. A 149-second call cannot finish in that budget: the function is killed part-way and every market after Canada is never written at all. The only call that behaved was the one that had a timeout.
+
+`AbortSignal.timeout` was adopted partway through the project and never backfilled — **25 of 48 call sites across 16 files had none**. A fetcher without a timeout looks identical to one with a timeout on every day the source is healthy, which is why nothing noticed. All 48 now carry one (8000ms on the scored path, 15000ms for the slower Gulf sources), and `scripts/check-fetch-timeouts.ts` fails CI if a new call site appears without.
+
 ---
 
 ## 20. The "now" snapshot, and why it keeps biting (2026-09-02)
