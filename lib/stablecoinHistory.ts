@@ -137,7 +137,7 @@ export const ETHEREUM_STABLECOIN_HISTORY: StablecoinHistoryPoint[] = [
  *  already recognise them; the rest are chosen for separation. */
 export const STABLECOIN_TOKEN_COLORS: Record<string, string> = {
   USDT: "#26A17B",
-  USDC: "#2775CA",
+  USDC: "#3B8FE0",
   USDS: "#A78BFA",
   DAI: "#F5AC37",
   USDe: "#E14B4B",

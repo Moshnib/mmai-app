@@ -176,6 +176,32 @@ for (let i = 0; i < STABLECOIN_TOKEN_ORDER.length; i++) {
 }
 ok("the closest pair is still distinguishable", closest.d >= 20, `${closest.pair} at dE ${closest.d.toFixed(1)}`);
 
+// AND EVERY COLOUR MUST BE READABLE, not merely distinct. TrendChart
+// paints each legend label in its own series colour, so these are TEXT
+// colours as well as line colours. Circle blue (#2775CA) measured
+// 4.27:1 against the page, just under the 4.5 WCAG AA needs at 12px --
+// caught by scripts/check-accessibility.ts only after a five-minute CI
+// run against a rendered page. Checking it here fails in a second.
+const PAGE_BG = "#08080D";
+const relLum = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  const v = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((x) => {
+    const c = x / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+};
+const contrast = (a: string, b: string) => {
+  const x = relLum(a);
+  const y = relLum(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+};
+for (const token of STABLECOIN_TOKEN_ORDER) {
+  const r = contrast(STABLECOIN_TOKEN_COLORS[token], PAGE_BG);
+  ok(`${token} is legible as legend text`, r >= 4.5, `${r.toFixed(2)}:1`);
+}
+
+
 console.log("");
 if (fails > 0) {
   console.error(`${fails} check(s) failed.\n`);
