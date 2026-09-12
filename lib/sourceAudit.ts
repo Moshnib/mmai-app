@@ -49,11 +49,11 @@
 //  not in GitHub — putting the check where the keys already are avoids
 //  copying five secrets into a second system.
 //
-//  IT DOES NOT COVER EVERY FIGURE. 23 probes against 30 scored figures
-//  (6 markets x 5 indicators). Absent, each for a reason: Japan's
+//  IT DOES NOT COVER EVERY FIGURE. 27 probes against 35 scored figures
+//  (7 markets x 5 indicators). Absent, each for a reason: Japan's
 //  unemployment (OECD refuses Vercel's egress — the workflow fetches it
 //  on the runner instead), and every market's government debt, which
-//  comes from a single BIS call shared across all six rather than a
+//  comes from a single BIS call shared across all seven rather than a
 //  per-market fetch.
 // ============================================================
 
@@ -72,6 +72,8 @@ import { fetchCanadaPolicyRate } from "./fetchers/boc";
 import { fetchAustraliaPolicyRate } from "./fetchers/rba";
 import { fetchEuroAreaInflation, fetchEuroAreaPolicyRate } from "./fetchers/ecb";
 import { fetchUsPolicyRate } from "./fetchers/nyfed";
+import { fetchSwedenInflation, fetchSwedenUnemployment, fetchSwedenGdpGrowthQuarterly } from "./fetchers/scb";
+import { fetchBisPolicyRate } from "./fetchers/bis";
 
 /** A fetcher result, in any of the shapes the fetchers return. */
 type Fetched = {
@@ -123,6 +125,11 @@ export const PROBES: Probe[] = [
   { market: "AU", label: "unemployment", column: "unemployment", dateColumn: "unemployment_observation_date", fetch: fetchAustraliaUnemployment, tolerance: 0.02 },
   { market: "AU", label: "GDP growth", column: "gdp_growth", dateColumn: "gdp_observation_date", fetch: fetchAustraliaGdpGrowthQuarterly, tolerance: 0.05 },
   { market: "AU", label: "policy rate", column: "policy_rate", dateColumn: "policy_rate_observation_date", fetch: fetchAustraliaPolicyRate, tolerance: 0.01 },
+
+  { market: "SE", label: "inflation (CPIF)", column: "inflation", dateColumn: "inflation_observation_date", fetch: fetchSwedenInflation, tolerance: 0.02 },
+  { market: "SE", label: "unemployment", column: "unemployment", dateColumn: "unemployment_observation_date", fetch: fetchSwedenUnemployment, tolerance: 0.02 },
+  { market: "SE", label: "GDP growth", column: "gdp_growth", dateColumn: "gdp_observation_date", fetch: fetchSwedenGdpGrowthQuarterly, tolerance: 0.05 },
+  { market: "SE", label: "policy rate", column: "policy_rate", dateColumn: "policy_rate_observation_date", fetch: () => fetchBisPolicyRate("SE"), tolerance: 0.01 },
 ];
 
 /** How often each kind of figure is published. Derived from the column

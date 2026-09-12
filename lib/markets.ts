@@ -66,7 +66,7 @@ export const FALLBACK_MARKETS: MarketData[] = [
   // Sweden joined 2026-09-12. Values below are the readings verified live
   // at that date; like every row here they are a fallback for when the
   // database cannot be read, not the published figures.
-  { code: "SE", name: "Sweden", raw: { inflation: 0.2, gdpGrowth: 3.3, unemployment: 8.6, policyRate: 1.75, brentYoY: 17.91, debtPctGdp: 34 } },
+  { code: "SE", name: "Sweden", raw: { inflation: 0.7, gdpGrowth: 3.3, unemployment: 8.6, policyRate: 1.75, brentYoY: 17.91, debtPctGdp: 34 } },
 ];
 
 /**
