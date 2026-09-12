@@ -38,6 +38,53 @@ export interface StablecoinHistoryPoint {
   bySymbol: Record<string, number | null>;
 }
 
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** One point as TrendChart wants it: a display label, a value in billions,
+ *  and the ISO date to order by. */
+export interface StablecoinSeriesPoint {
+  year: string;
+  value: number;
+  sortKey: string;
+}
+
+/**
+ * The Ethereum supply series, ready to chart.
+ *
+ * THIS LIVES HERE RATHER THAN IN THE PAGE because of two bugs that the
+ * page's own inline version had, and both came from the label.
+ *
+ * IT WAS SORTED ALPHABETICALLY. TrendChart draws a CATEGORY axis and
+ * orders it by each point's `sortKey`, falling back to the display label
+ * when none is given. The page gave none, so 38 points labelled "Sep '23",
+ * "Oct '23" and so on were ordered as text: Apr '24, Apr '25, Apr '26,
+ * Aug '24, Aug '25... The line leapt between years at every step and the
+ * chart read as violent zigzag. It was not the data. It was the sort --
+ * the identical failure the bond panel hit, which is why `sortKey` exists
+ * at all (see the comment above orderOf in components/TrendChart.tsx).
+ *
+ * THREE POINTS WERE BEING DROPPED. The label was month-and-year only, and
+ * the backfill steps roughly thirty days, so it drifts across month ends:
+ * 1 and 31 August 2025 both read "Aug '25", as did 1 and 31 October 2025
+ * and 1 and 31 March 2026. TrendChart keys its axis by label, so the
+ * second of each pair was silently discarded -- including 31 Aug 2025 at
+ * $154.1bn, which is $14.8bn above the point that survived it.
+ *
+ * The label now carries the day, which is both unique and truthful: these
+ * are real block dates, not month ends. Ticks are relabelled from the ISO
+ * date anyway once a date axis is detected, so the axis stays readable.
+ */
+export function ethereumSupplySeriesPoints(): StablecoinSeriesPoint[] {
+  return ETHEREUM_STABLECOIN_HISTORY.map((p) => {
+    const [y, m, d] = p.date.split("-");
+    return {
+      year: `${Number(d)} ${MONTHS_SHORT[Number(m) - 1]} ${y.slice(2)}`,
+      value: Math.round((p.total / 1e9) * 10) / 10,
+      sortKey: p.date,
+    };
+  });
+}
+
 export const ETHEREUM_STABLECOIN_HISTORY: StablecoinHistoryPoint[] = [
   { date: "2023-09-06", total: 67002301829, bySymbol: { USDT: 39025187376, USDC: 24078629435, USDS: null, DAI: 3854108578, USDe: null, PYUSD: 44376440 } },
   { date: "2023-10-07", total: 66512756395, bySymbol: { USDT: 39024700486, USDC: 23553895648, USDS: null, DAI: 3824763721, USDe: null, PYUSD: 109396540 } },
@@ -77,3 +124,66 @@ export const ETHEREUM_STABLECOIN_HISTORY: StablecoinHistoryPoint[] = [
   { date: "2026-07-29", total: 158615613063, bySymbol: { USDT: 92058581162, USDC: 49760153209, USDS: 6561470016, DAI: 4597534888, USDe: 3848367864, PYUSD: 1789505924 } },
   { date: "2026-08-28", total: 156083144213, bySymbol: { USDT: 88306390736, USDC: 50644400707, USDS: 6635707740, DAI: 4607070994, USDe: 4077286895, PYUSD: 1812287141 } },
 ];
+
+/** One colour per token, held here so the chart and any future use agree.
+ *
+ *  Distinctness is MEASURED, not assumed: scripts/test-stablecoin-series.ts
+ *  computes the CIE76 distance between every pair and fails below 20,
+ *  which is roughly where two 2px lines stop being tellable apart. Two
+ *  market palettes once disagreed on five of six markets and nothing
+ *  noticed until a test measured it -- see scripts/test-market-colours.ts.
+ *
+ *  USDT and USDC keep their issuers' own brand colours because readers
+ *  already recognise them; the rest are chosen for separation. */
+export const STABLECOIN_TOKEN_COLORS: Record<string, string> = {
+  USDT: "#26A17B",
+  USDC: "#3B8FE0",
+  USDS: "#A78BFA",
+  DAI: "#F5AC37",
+  USDe: "#E14B4B",
+  PYUSD: "#94A3B8",
+};
+
+/** Largest first, which is also the order the legend reads in. */
+export const STABLECOIN_TOKEN_ORDER = ["USDT", "USDC", "USDS", "DAI", "USDe", "PYUSD"] as const;
+
+/**
+ * Each token's SHARE of Ethereum stablecoin supply, as a percentage.
+ *
+ * WHY SHARE AND NOT DOLLARS. The total line already answers "how big is
+ * it". This answers "who is winning", and in dollars it could not: USDT
+ * sits near $100bn while PYUSD sits near $2bn, so five of the six tokens
+ * would be pressed flat against the axis and the composition -- the whole
+ * point of the chart -- would be invisible. As shares they all occupy the
+ * same 0-60% range and the shifts are legible.
+ *
+ * NULL MEANS THE TOKEN DID NOT EXIST at that block, and must stay null
+ * rather than becoming 0. USDS, USDe and PYUSD all launched inside this
+ * window; a zero would draw a line along the floor and imply a token that
+ * existed at nothing, which is a different claim entirely. TrendChart
+ * draws null as a gap.
+ *
+ * A share of ZERO is real and kept: USDS reads 0 on 2024-09-03, the block
+ * where it had launched but held no supply yet.
+ */
+export function ethereumCompositionSeries(): Array<{
+  key: string;
+  name: string;
+  color: string;
+  data: Array<{ year: string; value: number | null; sortKey: string }>;
+}> {
+  return STABLECOIN_TOKEN_ORDER.map((symbol) => ({
+    key: `share-${symbol}`,
+    name: symbol,
+    color: STABLECOIN_TOKEN_COLORS[symbol],
+    data: ETHEREUM_STABLECOIN_HISTORY.map((p) => {
+      const [y, m, d] = p.date.split("-");
+      const supply = p.bySymbol[symbol];
+      return {
+        year: `${Number(d)} ${MONTHS_SHORT[Number(m) - 1]} ${y.slice(2)}`,
+        value: supply == null || p.total === 0 ? null : Math.round((supply / p.total) * 1000) / 10,
+        sortKey: p.date,
+      };
+    }),
+  }));
+}

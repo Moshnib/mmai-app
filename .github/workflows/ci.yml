@@ -209,6 +209,17 @@ jobs:
       - name: Every fetcher can give up on a source that stops answering
         run: npx tsx scripts/check-fetch-timeouts.ts
 
+      # The three-year stablecoin line was reported as "like zigzag". The
+      # data was fine; TrendChart orders its category axis by each point's
+      # sortKey and falls back to the DISPLAY LABEL when none is given. The
+      # page gave none, so 38 points labelled "Sep '23", "Oct '23" were
+      # ordered as text -- Apr '25, Aug '24, Aug '26, Dec '24 -- hopping
+      # between four years at every step. The same failure the bond panel
+      # hit, which is why sortKey exists. A month-only label also collapsed
+      # three pairs of points that fall in the same month.
+      - name: The stablecoin history charts in date order, with every point
+        run: npx tsx scripts/test-stablecoin-series.ts
+
       # The source audit first shipped with a grace period that compared
       # now against the REPORTING PERIOD rather than the release date. A
       # monthly figure is ~40 days old the morning it comes out and a

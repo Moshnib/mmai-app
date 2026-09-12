@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import { fetchAllStablecoinSupplies, STABLECOINS, type StablecoinSupply, type StablecoinChain } from "@/lib/fetchers/stablecoins";
-import { ETHEREUM_STABLECOIN_HISTORY } from "@/lib/stablecoinHistory";
+import { ETHEREUM_STABLECOIN_HISTORY, ethereumSupplySeriesPoints, ethereumCompositionSeries } from "@/lib/stablecoinHistory";
 import StablecoinTokens from "@/components/StablecoinTokens";
 import StablecoinMacroLink from "@/components/StablecoinMacroLink";
 import { measureMacroLink, type YieldPoint } from "@/lib/stablecoinMacro";
@@ -101,13 +101,26 @@ export default async function StablecoinsPage() {
       key: "ethereum-total",
       name: "Ethereum stablecoin supply",
       color: "#22D3EE",
-      data: history.map((p) => {
-        const d = new Date(`${p.date}T00:00:00Z`);
-        const label = `${d.toLocaleString("en-US", { month: "short", timeZone: "UTC" })} '${p.date.slice(2, 4)}`;
-        return { year: label, value: Math.round((p.total / 1e9) * 10) / 10 };
-      }),
+      // Built in lib/stablecoinHistory.ts, which explains why the label
+      // carries the day and why the ISO sortKey is not optional: without
+      // it this chart sorted its months alphabetically and drew noise.
+      data: ethereumSupplySeriesPoints(),
     },
   ];
+  // COMPOSITION, not size. Every figure quoted in the caption below is
+  // derived here rather than typed, so the prose cannot go stale the way
+  // a hardcoded "USDe reached 8%" would the next time the backfill grows.
+  const composition = ethereumCompositionSeries();
+  const shareSeries = (name: string) => composition.find((s) => s.name === name)!.data;
+  const usdtShare = shareSeries("USDT");
+  const usdtFirstShare = usdtShare[0].value;
+  const usdtLastShare = usdtShare[usdtShare.length - 1].value;
+  const usdeReal = shareSeries("USDe").filter(
+    (d): d is { year: string; value: number; sortKey: string } => d.value != null
+  );
+  const usdePeakShare = usdeReal.reduce((a, b) => (b.value > a.value ? b : a));
+  const usdeNowShare = usdeReal[usdeReal.length - 1];
+
   const tronTotal = rows.filter((r) => r.chain === "tron").reduce((s, r) => s + r.supply, 0);
 
   const chainTotals = CHAIN_ORDER.map((chain) => ({
@@ -211,6 +224,31 @@ export default async function StablecoinsPage() {
               stablecoins shrinking — over the same stretch Tron grew past Ethereum to become the largest home for
               Tether, at {money(tronTotal)} today. The supply moved chains rather than leaving. Tron and Solana
               publish no comparable history, so this chart covers Ethereum alone.
+            </p>
+          </div>
+
+          {/* WHO IS WINNING, which the total above cannot show.
+              Shares rather than dollars on purpose: USDT sits near $100bn
+              and PYUSD near $2bn, so in dollars five of the six tokens
+              would lie flat against the axis and the composition -- the
+              entire point -- would be invisible. A gap is a token that did
+              not exist yet; see ethereumCompositionSeries(). */}
+          <div className="chart-card" style={{ marginTop: 20 }}>
+            <div className="chart-card-label">
+              <span>Share of Ethereum supply, by token</span>
+              <span style={{ marginLeft: "auto", color: "var(--slate)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                Tether {usdtFirstShare}% → {usdtLastShare}% over the period
+              </span>
+            </div>
+            <TrendChart series={composition} height={320} yLabel="%" showLegend showDots={false} />
+            <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", paddingTop: 12, borderTop: "1px dashed var(--hair)", lineHeight: 1.7 }}>
+              <b style={{ color: "var(--ink-soft)" }}>What the total cannot show.</b> Tether and USD Coin
+              still hold most of Ethereum&apos;s stablecoin supply between them, but the newer tokens are
+              where the movement is. USDe — a synthetic dollar, backed by a hedged crypto position rather
+              than cash in a bank — reached {usdePeakShare.value}% of the chain&apos;s supply in{" "}
+              {usdePeakShare.sortKey.slice(0, 7)} and is {usdeNowShare.value}% today. On the total above that
+              whole arc is a small wobble. A line that starts partway across is a token that did not exist
+              before then, not one that sat at zero.
             </p>
           </div>
 
