@@ -246,7 +246,7 @@ export default function DashboardInner() {
           <p className="eyebrow">DASHBOARD</p>
           <h1>Where macro is supportive, what moved, and what money costs</h1>
           <p>
-            The seven markets MMAI scores, arranged for a decision rather than an explanation. Every
+            The {CODES.length} markets MMAI scores, arranged for a decision rather than an explanation. Every
             figure is read from what the daily refresh stored, so this page cannot disagree with the
             rest of the site. It measures the macro environment, not any security, and it is not
             investment advice.

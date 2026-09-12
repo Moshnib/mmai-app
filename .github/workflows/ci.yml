@@ -260,6 +260,26 @@ jobs:
       - name: Every font size is on the scale
         run: npx tsx scripts/check-type-scale.ts
 
+      # THE ONE THAT WOULD HAVE CAUGHT "SWEDEN CONTRIBUTES 0".
+      #
+      # The Learn page ranked every scored market by how many rows it
+      # contributes to the frozen 148-row reference set and named the
+      # smallest. Sweden joined after that set was frozen, so Sweden
+      # contributes zero, so Sweden became "the smallest" -- and the page
+      # published "Sweden is under-represented in the record ... Sweden
+      # contributes 0, because for eight of those years its central bank
+      # targeted the quantity of money". Zero and eight in one sentence,
+      # and the eight-year reason belongs to Japan. Live for days.
+      #
+      # Four pages also said "seven markets" within a minute of Norway
+      # becoming the eighth.
+      #
+      # Neither throws, neither moves a pixel, neither fails a type check.
+      # A sentence that has merely gone STALE is invisible to every other
+      # check in this file, which is why this one counts.
+      - name: Market counts in copy are derived, not typed
+        run: npx tsx scripts/test-market-count-copy.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT THE CONTACT FORM.
       #
       # Loads every page in a real browser at phone, tablet and desktop

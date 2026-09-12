@@ -53,7 +53,7 @@
 //  (7 markets x 5 indicators). Absent, each for a reason: Japan's
 //  unemployment (OECD refuses Vercel's egress — the workflow fetches it
 //  on the runner instead), and every market's government debt, which
-//  comes from a single BIS call shared across all seven rather than a
+//  comes from a single BIS call shared across every market rather than a
 //  per-market fetch.
 // ============================================================
 

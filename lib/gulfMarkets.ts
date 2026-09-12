@@ -89,4 +89,8 @@ export const GULF_POLICY_RATE_LABELS: Record<string, string> = {
   SA: "Policy rate (repo)",
   KW: "Policy rate (discount)",
   SE: "Policy rate",
+  // Norway reactivated 2026-09-12. Read through BIS rather than Norges
+  // Bank directly: the rate is identical and BIS state the reuse terms
+  // that Norges Bank do not. BIS name Norges Bank as the source.
+  NO: "Policy rate",
 };

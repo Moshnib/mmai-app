@@ -21,6 +21,34 @@ import type { BondYieldPoint } from "@/lib/bondYieldsRead";
 const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 const ORDER = ["US", "EA", "CA", "UK", "JP", "AU"];
 
+/** WHICH SCORED MARKETS HAVE NO BOND CARD, DERIVED RATHER THAN TYPED.
+ *
+ *  The paragraph below used to name Sweden in prose and open with "Six
+ *  markets, not seven". Norway joined on 12 September and that sentence
+ *  was wrong the same minute -- wrong count, and missing a market. No
+ *  check could catch it, because a stale sentence is not a failing test.
+ *  So the count and the names now come from the market list itself.
+ *
+ *  Both absences have one cause, and it is the same licence question
+ *  that kept Norway out of the index altogether until BIS turned out to
+ *  republish its POLICY rate under usable terms. BIS does not publish
+ *  daily bond curves, so for these two the gap stands. */
+const WITHOUT_CARDS = FALLBACK_MARKETS.map((m) => m.code).filter((c) => !ORDER.includes(c));
+
+/** Named because "their central banks" is vaguer than this site should
+ *  be about who publishes what. A market with no entry falls back to the
+ *  generic phrase rather than breaking the sentence. */
+const CENTRAL_BANK: Record<string, string> = { SE: "the Riksbank", NO: "Norges Bank" };
+
+const COUNT_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const countWord = (n: number) => COUNT_WORDS[n] ?? String(n);
+
+function joinWords(parts: string[], conjunction: string): string {
+  if (parts.length <= 1) return parts[0] ?? "";
+  if (parts.length === 2) return `${parts[0]} ${conjunction} ${parts[1]}`;
+  return `${parts.slice(0, -1).join(", ")} ${conjunction} ${parts[parts.length - 1]}`;
+}
+
 // Fixed per market, from the existing Ember-to-Ice palette. Deliberately
 // NOT score-derived: a yield is not a 0-100 score and must not borrow
 // the score colours' meaning.
@@ -197,16 +225,23 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
           ))}
         </div>
 
-        {/* WHY SIX CARDS ON A SEVEN-MARKET SITE. Without this line a
-            reader counts the markets, finds one short, and has no way to
-            tell a missing source from a broken page. */}
-        <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.7 }}>
-          Six markets, not seven. Sweden has no card here because no Swedish bond series is wired:
-          the daily figure would come from the Riksbank, whose terms do not confirm that commercial
-          reuse is permitted, and this site does not publish a source it cannot show a licence for.
-          Eurostat does publish a Swedish ten-year yield monthly, which is a different measure from
-          the daily curves above and is not mixed into them.
-        </p>
+        {/* WHY FEWER CARDS THAN MARKETS. Without this a reader counts the
+            markets, finds the panel short, and cannot tell a missing
+            source from a broken page. Counts and names are derived: the
+            hand-typed version went stale the day Norway was added. */}
+        {WITHOUT_CARDS.length > 0 && (
+          <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.7 }}>
+            {ORDER.length} markets, not {FALLBACK_MARKETS.length}.{" "}
+            {joinWords(WITHOUT_CARDS.map((c) => MARKET_NAMES[c] ?? c), "and")}{" "}
+            {WITHOUT_CARDS.length === 1 ? "has" : "have"} no card here, because the daily figure
+            would have to come from{" "}
+            {joinWords(WITHOUT_CARDS.map((c) => CENTRAL_BANK[c] ?? "its own central bank"), "and")},
+            whose terms do not confirm that commercial reuse is permitted &mdash; and this site does
+            not publish a source it cannot show a licence for. Eurostat publishes a monthly ten-year
+            yield for {WITHOUT_CARDS.length === 1 ? "it" : "them"}, which is a different measure
+            from the daily curves above and is deliberately not mixed into them.
+          </p>
+        )}
 
         <TimeRangeFilter options={DAILY_RANGES} selected={rangeDays} onChange={setRangeDays} />
         <div className="country-filter">
@@ -276,8 +311,9 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
             reading {fmtDay(newestDate)}.
           </p>
           <p style={{ fontSize: 12, color: "var(--slate)", margin: "8px 0 0", lineHeight: 1.7 }}>
-            <b style={{ color: "var(--ink-soft)" }}>On the 10y−2y spread</b>, shown for the two markets that publish
-            both maturities: a negative number means lenders want more to lend for two years than for ten. That is
+            <b style={{ color: "var(--ink-soft)" }}>On the 10y−2y spread</b>, shown for the{" "}
+            {countWord(latest.filter((m) => m.spread != null).length)} markets that publish both maturities: a
+            negative number means lenders want more to lend for two years than for ten. That is
             unusual, and worth reading alongside everything else rather than on its own.
           </p>
         </div>

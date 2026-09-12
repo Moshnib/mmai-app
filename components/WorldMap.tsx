@@ -46,7 +46,7 @@ const MARKET_LABEL_LONLAT: Record<string, [number, number]> = {
 };
 
 // Crops out the empty Antarctica band at the bottom of the equirectangular
-// projection (lat below roughly -60) so the seven scored markets fill more of
+// projection (lat below roughly -60) so the scored markets fill more of
 // the frame -- same underlying map data, just a tighter viewBox. Confirmed
 // this keeps Australia's full landmass (Tasmania's southern tip projects to
 // y≈355 of 480) with real margin to spare.

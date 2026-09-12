@@ -39,10 +39,39 @@ const REF_SPAN = `${Math.min(...REF_YEARS)}–${Math.max(...REF_YEARS)}`;
 const REF_N = REFERENCE_SET.length;
 // Japan carries fewer rows than the others, and a reader comparing Japan
 // is owed that fact. Counted, not asserted.
+//
+// FILTERED TO MARKETS THAT ARE ACTUALLY IN THE RECORD, and that filter is
+// load-bearing. Without it this mapped over every SCORED market, and a
+// market added after the reference set was frozen counts zero rows -- so
+// the "fewest rows" market became Sweden at 0 the day Sweden was added,
+// and the page published: "Sweden is under-represented in the record ...
+// Sweden contributes 0, because for eight of those years its central bank
+// targeted the quantity of money". Zero and eight at once, and the
+// eight-year reason belongs to Japan. It was live for days.
+//
+// A market with no rows is not under-represented in the record; it is
+// absent from it, which is a different and larger fact. It gets its own
+// note below rather than being silently ranked alongside the others.
+const REF_MARKET_CODES = new Set(REFERENCE_SET.map((r) => r.m));
+
 const REF_BY_MARKET = FALLBACK_MARKETS
+  .filter((m) => REF_MARKET_CODES.has(m.code))
   .map((m) => ({ name: m.name, n: REFERENCE_SET.filter((r) => r.m === m.code).length }))
   .sort((a, b) => a.n - b.n);
 const REF_SHORTEST = REF_BY_MARKET[0];
+
+/** Markets scored against a record they contribute nothing to. Sweden
+ *  joined on 12 September 2026 and Norway the same day, both after the
+ *  reference set was frozen. A reader comparing them to the United States
+ *  is owed this. */
+const REF_ABSENT = FALLBACK_MARKETS.filter((m) => !REF_MARKET_CODES.has(m.code)).map((m) => m.name);
+
+const REF_MARKET_COUNT = REF_BY_MARKET.length;
+
+/** The count of SCORED markets, written as a word. Hand-typed "seven"
+ *  appeared in four places and was wrong within a day of Norway joining. */
+const COUNT_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const MARKET_COUNT_WORD = COUNT_WORDS[FALLBACK_MARKETS.length] ?? String(FALLBACK_MARKETS.length);
 
 // Which dimensions actually separate one country from another, ranked.
 //
@@ -280,14 +309,24 @@ const TOPICS = [
         kind: "judgment",
         head: "Full employment is treated as the same number everywhere",
         body:
-          "Unemployment is scored against one historical distribution for all seven markets, so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Japan and the euro area do not plausibly share a single definition of full employment. Using each country’s own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
+          `Unemployment is scored against one historical distribution for all ${MARKET_COUNT_WORD} markets, so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Japan and the euro area do not plausibly share a single definition of full employment. Using each country’s own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.`,
       },
       {
         kind: "judgment",
         head: `${REF_SHORTEST.name} is under-represented in the record`,
         body:
-          `The reference distribution holds ${REF_N} market-years rather than a clean 26 for each of the six. ${REF_SHORTEST.name} contributes ${REF_SHORTEST.n}, because for eight of those years its central bank targeted the quantity of money rather than an interest rate, so no policy rate exists to record. Those years are absent at source, not dropped for convenience — but it does mean ${REF_SHORTEST.name} shapes the historical average slightly less than the others, and the years missing are its most unusual ones.`,
+          `The reference distribution holds ${REF_N} market-years rather than a clean 26 for each of the ${COUNT_WORDS[REF_MARKET_COUNT]} markets in it. ${REF_SHORTEST.name} contributes ${REF_SHORTEST.n}, because for eight of those years its central bank targeted the quantity of money rather than an interest rate, so no policy rate exists to record. Those years are absent at source, not dropped for convenience — but it does mean ${REF_SHORTEST.name} shapes the historical average slightly less than the others, and the years missing are its most unusual ones.`,
       },
+      ...(REF_ABSENT.length > 0
+        ? [
+            {
+              kind: "judgment" as const,
+              head: `${REF_ABSENT.join(" and ")} ${REF_ABSENT.length === 1 ? "is" : "are"} scored against a record ${REF_ABSENT.length === 1 ? "it does" : "they do"} not appear in`,
+              body:
+                `The ${REF_N}-row reference distribution was built from ${COUNT_WORDS[REF_MARKET_COUNT]} markets and frozen. ${REF_ABSENT.join(" and ")} joined afterwards, so ${REF_ABSENT.length === 1 ? "its score is" : "their scores are"} a rank against other countries' history rather than against ${REF_ABSENT.length === 1 ? "its own" : "their own"}. That is deliberate: re-cutting the distribution every time a market is added would move every published score for reasons having nothing to do with the economy. It does mean the comparison is to a shared yardstick, not a home one — and the yardstick is six large economies over ${REF_SPAN}.`,
+            },
+          ]
+        : []),
     ],
     impact:
       `You can take the raw numbers for any market, run them through the formulas shown here, and get the exact score shown on the Overview page — no hidden adjustments. The full ${REF_N}-row reference table is published too, so the averages themselves can be checked rather than taken on trust. A percentile describes conditions for an average household and business in that economy against the last ${REF_SPAN} — manageable inflation, available jobs, reasonable borrowing costs — not investment returns, and not a government’s policy performance. MMAI is not investment advice.`,
@@ -457,7 +496,7 @@ const GULF_TOPICS = [
   {
     id: "gulf-no-score",
     title: "Why Gulf Watch Has No Composite Score",
-    def: "Gulf Watch deliberately does not combine these figures into one score the way MMAI does for its seven scored markets. A usable, legally licensable, automatable policy interest rate feed doesn't exist yet for any of these six countries, and MMAI's own rule requires at least 70% pillar coverage before a market earns a published score — so instead of filling the gap with a stand-in number, Gulf Watch shows exactly what's real and marks the rest \"N/A.\"",
+    def: `Gulf Watch deliberately does not combine these figures into one score the way MMAI does for its ${MARKET_COUNT_WORD} scored markets. A usable, legally licensable, automatable policy interest rate feed doesn't exist yet for any of these six countries, and MMAI's own rule requires at least 70% pillar coverage before a market earns a published score — so instead of filling the gap with a stand-in number, Gulf Watch shows exactly what's real and marks the rest \"N/A.\"`,
     impact: "Every figure on Gulf Watch traces back to its source on the Sources page, same as every scored market. The missing score here isn't a gap in the site — it's the same honesty rule that keeps every other number on MMAI trustworthy, applied consistently even when it means showing less rather than more.",
   },
 ];
