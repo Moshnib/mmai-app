@@ -1399,3 +1399,98 @@ time a source hiccup dropped the v2 score. Tested across all three phases.
   repo is inside a comment, so source greps come back clean while a page still
   displays it. Fetch the rendered HTML — that is how the Trends eyebrow and the
   Compare meta description were caught.
+
+---
+
+## 24. The investor dashboard, and two drawings (2026-09-12)
+
+`/dashboard` exists for one reader — an **investor** — and answers three
+questions in order: where is the macro environment supportive, what has
+changed lately, and what does money cost. It is `app/dashboard/page.tsx`
+(metadata) wrapping `app/dashboard/DashboardInner.tsx` (all of it).
+
+### 24.1 It reads, it does not recompute
+
+Scores, bands and the three dimensions come from `mmai_scores` exactly as the
+refresh wrote them. `mmai_scores` stores the **standardised** dimension values,
+which read as 1, 0, −1 and mean nothing to a reader, so the page converts them
+through **`dimensionPercentiles`** — the same function every other page uses.
+That conversion lives in ONE helper, `dimsOf()`, used by both the table and the
+map. It was duplicated inline for about an hour and that is exactly how the two
+market-colour maps that disagreed on five of six markets began.
+
+Raw figures go through `latestCompleteObservation`, so this screen cannot quote
+a figure the rest of the site has already stopped showing.
+
+### 24.2 What it deliberately does not show
+
+**A trend line of the SCORE.** The engine changed on 5 September 2026 (§23), so
+score history is about a week long and anything spanning that date is not
+comparable. "What moved" is built on the **indicators** instead — monthly back
+to 2019, same measure throughout — which is what an investor wants anyway: not
+"the score fell" but "inflation stopped falling and unemployment turned up".
+
+### 24.3 `components/PositioningMap.tsx`
+
+A quadrant scatter of the three dimensions: **Direction** across, **Conditions**
+up, **Capacity** as the radius. It answers the question the composite hides.
+Japan is the standing example — Conditions 100, Direction 15 — which its score
+of 50.7 cannot say on its own.
+
+Three rules built into it, each of which a future edit will be tempted to break:
+
+- **It never moves a dot.** Canada and the Euro Area sit almost on top of each
+  other. Only the **label** is displaced, with a leader line back to its dot.
+  Moving the dot would be moving the finding.
+- **Captions live in the padding, not the corners.** Japan's dot sits hard
+  against the top of the plot and landed on "strong but fading" when the
+  captions were drawn inside. `PAD.top`/`PAD.bottom` are sized for the largest
+  radius (18) **plus** a caption clear of it.
+- **It renders nothing until measured.** `width` starts at 0 and a
+  ResizeObserver fills it, so the viewBox scale is always 1. A guessed 720
+  inside a 247px phone card is the 3.2px axis-label bug (§16) reached by
+  another route — `check-layout` caught it at 320px during this change.
+
+Below 300px of plot the captions shorten ("strong, rising") and dots scale to
+0.7, because two full captions are wider than a phone's plot and would collide
+over the centre line.
+
+### 24.4 `components/Sparkline.tsx`
+
+The `2y` column beside each figure in "What moved": the last 24 months, drawn
+to its own range, no axes and no numbers. A spike that came back down and a
+steady glide to the same place are different facts, and the level and the
+change either side of it cannot tell them apart.
+
+- **`aria-hidden`, on purpose.** The row already states the figure and the
+  change in text. This is texture, not information a screen reader should be
+  read as a squiggle it cannot interpret.
+- **Nulls break the line.** They are never bridged. The break in the US
+  inflation and unemployment lines is **October 2025**, the month BLS published
+  nothing during the shutdown. Japan has no monthly inflation series at all
+  (§ "What moved" note), so that cell renders a dash, not an empty box.
+
+### 24.5 A trap worth recording
+
+A throwaway check script reported "no gaps" for the US series while the rendered
+page clearly drew two segments. The script was wrong, not the component: it
+mapped gaps to `p.month` on a type whose field is `period`, so `gaps` was
+`[undefined]` and `gaps.join(", ") || "none"` printed "none". **The rendered
+page was right and the verification script was lying.** Check the page before
+trusting a script written to check the page.
+
+### 24.6 Verification on this change
+
+All **23** checks — the 19 offline ones plus `check-layout`,
+`check-runtime-errors`, `check-text-legibility` and `check-accessibility`.
+
+Two operational notes for whoever runs them next:
+
+- `pkill -f "next start"` does **not** kill the server on Windows. A stale
+  server kept serving a previous build's HTML against a wiped `.next`, and
+  `check-runtime-errors` failed with 500s on a chunk that no longer existed —
+  three times, looking exactly like a real CSP/MIME bug. Kill it by port:
+  `Get-NetTCPConnection -LocalPort 3123 -State Listen` → `Stop-Process -Force`.
+  And never rebuild while the old server is still serving `.next`.
+- The two collisions in §24.3 were found by **looking at the rendered page**.
+  No check failed on either, and no build would have.
