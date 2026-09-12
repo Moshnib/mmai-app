@@ -236,7 +236,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
             </span>
           </div>
           {/* connectNulls, because the gaps were public holidays.
-              Every series is plotted on the UNION of all six markets'
+              Every series is plotted on the UNION of all six bond markets'
               trading days, so a date exists for Japan whenever London,
               New York or Sydney traded -- and Japan's own line was given
               a null, and therefore a visible break, on Marine Day and
