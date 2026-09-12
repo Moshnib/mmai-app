@@ -529,14 +529,26 @@ export const DIMENSION_EFFECTIVE_INFLUENCE: Record<DimensionKey, number> = {
   K: 34.9,
 };
 
-/** How far each dimension spreads today's seven markets apart, in percentile
- *  points. A dimension every country scores alike cannot distinguish them
- *  whatever weight it carries -- the question that retired the oil pillar,
- *  asked of the replacement. */
+/** How far each dimension spreads today's EIGHT markets apart, in
+ *  percentile points. A dimension every country scores alike cannot
+ *  distinguish them whatever weight it carries -- the question that
+ *  retired the oil pillar, asked of the replacement.
+ *
+ *  THESE MOVE WHENEVER THE MARKET LIST DOES, and that is not a defect.
+ *  Unlike the influence figures above -- which are measured against the
+ *  fixed 148-row reference set and are unaffected by who is scored --
+ *  these describe the spread of the markets actually published today.
+ *  Norway joining on 12 September moved all three: C 27.5 -> 26.5,
+ *  D 22.9 -> 21.6, K 22.0 -> 22.5. Sweden had moved them days before.
+ *
+ *  So a market cannot be added without re-running
+ *  scripts/measure-dimension-influence.ts and republishing these. CI
+ *  fails if they drift, which is how both additions were caught rather
+ *  than shipped with a stale claim on the Learn page. */
 export const DIMENSION_CROSS_MARKET_SD: Record<DimensionKey, number> = {
-  C: 27.5,
-  D: 22.9,
-  K: 22.0,
+  C: 26.5,
+  D: 21.6,
+  K: 22.5,
 };
 
 export const DIMENSION_INFLUENCE_MEASURED = "12 September 2026";

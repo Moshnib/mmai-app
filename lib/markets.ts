@@ -27,11 +27,23 @@ export interface MarketData {
 // visit produced N/A. Its historical data remains in lib/history.ts, unused,
 // in case a source is found later.
 //
-// Norway was removed from display 2026-08-22, pending written confirmation
-// from Norges Bank on whether commercial reuse of their Key Policy Rate data
-// is actually permitted (their own site's terms don't say, see lib/sources.ts).
-// All of Norway's code, fetchers, and historical data are untouched — this is
-// a one-line re-add once that's resolved, not a rebuild.
+// NORWAY CAME BACK 2026-09-12, after three weeks paused. The pause was
+// real -- Norges Bank's own terms do not say whether commercial reuse of
+// the Key Policy Rate is permitted -- but the remedy was never the email
+// this comment used to promise. BIS already republish that rate, naming
+// Norges Bank as its source, under terms that permit commercial use with
+// citation. That is the same route that had ALREADY unblocked Saudi
+// Arabia and Kuwait weeks earlier, and Sweden days earlier.
+//
+// The lesson is not about Norway. A blocker was recorded once, and then
+// re-read as settled every time anyone looked, while the thing that
+// solved it was wired into the same repository. When a market is parked
+// on a licence question, re-check whether an aggregator already carries
+// it before waiting on an institution.
+//
+// Its unemployment and GDP also moved off World Bank annual series onto
+// Eurostat -- see lib/fetchers/norway.ts for why an ILO modelled annual
+// estimate was the wrong figure to sit beside seven monthly ones.
 // RESYNCED TO LIVE 2026-09-02. This is the THIRD time these have drifted,
 // and the drift is never cosmetic:
 //
@@ -67,6 +79,9 @@ export const FALLBACK_MARKETS: MarketData[] = [
   // at that date; like every row here they are a fallback for when the
   // database cannot be read, not the published figures.
   { code: "SE", name: "Sweden", raw: { inflation: 0.7, gdpGrowth: 3.3, unemployment: 8.6, policyRate: 1.75, brentYoY: 17.91, debtPctGdp: 34 } },
+  // Norway rejoined 2026-09-12. Verified live that day: CPI from Statistics
+  // Norway, unemployment and GDP from Eurostat, rate and debt from BIS.
+  { code: "NO", name: "Norway", raw: { inflation: 3.3, gdpGrowth: 1.6, unemployment: 4.2, policyRate: 4.25, brentYoY: 17.91, debtPctGdp: 53.9 } },
 ];
 
 /**
@@ -109,6 +124,14 @@ export const MARKET_COLORS: Record<string, string> = {
   // dE 44.3 from its nearest neighbour (US cyan), against 36.7 for the
   // closest existing pair, and reads at 7.9:1 on the page.
   SE: "#60A5FA", // blue
+  // Warm sand, chosen the same way Sweden's blue was: measured, not
+  // picked. dE 37.0 from its nearest neighbour (Canada's amber), which
+  // is wider than the closest existing pair at 36.7, and 10.97:1 on the
+  // card. The obvious neutrals -- cream, stone, ice -- were all measured
+  // first and all rejected: each sat under 20 dE from the body text or
+  // the missing-data grey, so a Norway line would have read as text or
+  // as "no data" rather than as a country.
+  NO: "#D8C3A0", // warm sand
 };
 
 // scoreMarket() -- the five-pillar scorer -- was removed at the cutover on

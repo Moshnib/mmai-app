@@ -12,7 +12,16 @@ const ALERT_ENGINE = "v2.0";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
-import { fetchGdpGrowth, fetchUnemployment } from "@/lib/fetchers/worldbank";
+// fetchGdpGrowth is gone from this import, and that is a milestone worth
+// recording: with Norway moved to Eurostat on 2026-09-12, NO SCORED
+// MARKET READS GDP GROWTH FROM THE WORLD BANK ANY MORE. Every one now
+// reads a quarterly year-over-year figure from its own statistics office
+// or from Eurostat, so no market carries a number that is a year older
+// than the ones printed beside it.
+//
+// fetchUnemployment stays, for one narrow purpose: Japan's fallback when
+// the OECD dataflow fails. See the JP branch.
+import { fetchUnemployment } from "@/lib/fetchers/worldbank";
 import { fetchAustraliaInflation, fetchAustraliaUnemployment, fetchAustraliaGdpGrowthQuarterly } from "@/lib/fetchers/abs";
 import { fetchJapanInflation, fetchJapanGdpGrowthQuarterly } from "@/lib/fetchers/estat";
 import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
@@ -30,7 +39,7 @@ import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchSwedenInflation, fetchSwedenUnemployment, fetchSwedenGdpGrowthQuarterly } from "@/lib/fetchers/scb";
 import { fetchBisPolicyRate } from "@/lib/fetchers/bis";
-import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
+import { fetchNorwayUnemployment, fetchNorwayGdpGrowthQuarterly } from "@/lib/fetchers/norway";
 import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
@@ -479,15 +488,34 @@ async function fetchRawIndicators(
   }
 
   if (market === "NO") {
-    // CPI (already a 12-month rate, no YoY math needed) via Statistics
-    // Norway's PxWebApi. GDP/unemployment via World Bank, same pattern
-    // as JP/AU/CA/UK. Policy rate via Norges Bank's own Data Portal.
-    // All confirmed live 2026-08-21.
+    // NORWAY, reactivated 2026-09-12 after three weeks dormant. Three of
+    // these four lines changed, and each change has a reason:
+    //
+    //   policy rate   was Norges Bank direct. Their terms do not state
+    //                 whether commercial reuse is permitted, which is why
+    //                 Norway was paused at all. BIS republish the same
+    //                 rate, naming Norges Bank as the source, under terms
+    //                 that do permit it -- the route that already
+    //                 unblocked Saudi Arabia, Kuwait and Sweden. No email
+    //                 was ever needed. lib/fetchers/norgesbank.ts is now
+    //                 unused: correct code against an unclear licence.
+    //
+    //   unemployment  was the World Bank's ILO MODELLED estimate --
+    //                 annual, lagging a year or more, and not Norway's
+    //                 own measurement. Now Eurostat's monthly harmonised
+    //                 rate, the same definition every other market uses.
+    //
+    //   GDP growth    was World Bank annual. Now Eurostat quarterly,
+    //                 year over year, matching every other market.
+    //
+    // Inflation is unchanged and stays with Statistics Norway: Norges
+    // Bank's 2% target is set on Norway's own CPI, so that is the series
+    // the score must read.
     const [infl, unemp, gdp, rate] = await Promise.all([
       settle("NO inflation", fetchNorwayInflation()),
-      settle("NO unemployment", fetchUnemployment("NOR")),
-      settle("NO GDP growth", fetchGdpGrowth("NOR")),
-      settle("NO policy rate", fetchNorwayPolicyRate()),
+      settle("NO unemployment", fetchNorwayUnemployment()),
+      settle("NO GDP growth (quarterly YoY)", fetchNorwayGdpGrowthQuarterly()),
+      settle("NO policy rate (BIS)", fetchBisPolicyRate("NO")),
     ]);
     return {
       raw: {
@@ -510,10 +538,12 @@ async function fetchRawIndicators(
   throw new Error(`fetchRawIndicators: unknown market "${market}"`);
 }
 
-// Norway paused 2026-08-22 pending Norges Bank license confirmation — see
-// the matching comment in lib/markets.ts. fetchRawIndicators()'s "NO"
-// branch below is left in place, ready to reactivate with a one-line change.
-const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "SE"];
+// Norway rejoined 2026-09-12. It was paused on 2026-08-22 pending a
+// licence answer from Norges Bank that nobody ever needed to ask for --
+// BIS already publish the rate under usable terms. The comment that stood
+// here for three weeks said the branch was "ready to reactivate with a
+// one-line change", and it was.
+const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "SE", "NO"];
 
 /** Every figure this run wrote, checked against how often its source
  *  actually publishes.

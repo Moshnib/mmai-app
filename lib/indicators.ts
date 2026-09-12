@@ -81,6 +81,10 @@ export const INFLATION_TARGET: Record<string, number> = {
   // reads. Stated rather than left to the 2.0 default: Australia above shows
   // targets do vary, so a market inheriting one silently is a trap.
   SE: 2.0,
+  // Norges Bank targets 2.0 on Norway's own CPI, which is the series
+  // lib/fetchers/ssb.ts reads -- not the HICP Eurostat also publishes for
+  // Norway. Stated rather than inherited, for the same reason Sweden is.
+  NO: 2.0,
 };
 
 export function inflationTargetFor(market: string): number {
@@ -92,7 +96,22 @@ export function inflationTargetFor(market: string): number {
 // ------------------------------------------------------------------
 
 const COLOR_STOPS = ["#E14B4B", "#F0975B", "#8B5CF6", "#22D3EE"];
-const NA_COLOR = "#6B7086";
+/** The colour of a figure that does not exist.
+ *
+ *  Was #6B7086, which measured 3.85:1 on a card and 4.08:1 on the page --
+ *  both under the 4.5:1 this site holds itself to. It went unnoticed
+ *  because it only renders when something is MISSING, and on a fully
+ *  populated site nothing was: scripts/check-accessibility.ts caught it
+ *  the moment Norway was added and had no stored rows yet.
+ *
+ *  That is the uncomfortable part. The least readable text on the site
+ *  was the text saying a number could not be shown -- the one a reader
+ *  most needs to distinguish from a real figure.
+ *
+ *  #7B8096 is the same hue lifted until it clears the bar: 4.82:1 on a
+ *  card, 5.11:1 on the page, and still 38.6 dE from the nearest market
+ *  colour so an N/A is never mistaken for a country. */
+const NA_COLOR = "#7B8096";
 
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
