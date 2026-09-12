@@ -100,7 +100,10 @@ check("  ...and passes with its own documented allowance",
 const debtRows = SOURCES.filter((s) => s.indicator.startsWith("Government Debt"));
 check("Every BIS debt row carries the allowance",
   debtRows.filter((s) => s.maxAgeDays == null).map((s) => s.market), []);
-check("  ...and there are seven of them", debtRows.length, 7);
+// Counted, not assumed: a market added without its debt row would
+// otherwise pass the "every row carries the allowance" check above by
+// simply not existing. Sweden made this eight on 2026-09-12.
+check("  ...and there are eight of them", debtRows.length, 8);
 
 // THE SECOND FALSE POSITIVE THIS FILE CAUGHT BEFORE SHIPPING. ONS
 // labour-market data runs about four months behind: verified against the

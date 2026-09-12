@@ -217,7 +217,7 @@ const TOPICS = [
     title: "Brent Crude Oil — shown, but no longer scored",
     def: "The global benchmark oil price. Even if you never buy gasoline directly, oil is embedded in shipping, manufacturing, and heating costs.",
     targetNote:
-      "Oil used to be MMAI's fifth pillar and stopped being one on 1 September 2026. The reason is simple: there is only one oil price in the world, so every country received exactly the same score for it. It moved all six scores up and down together and could never make one country look better or worse than another — while taking 12.5% of the weight. Government debt replaced it because every country has its own. Oil is still shown in the weekly feed, where a single global price is exactly what it claims to be.",
+      "Oil used to be MMAI's fifth pillar and stopped being one on 1 September 2026. The reason is simple: there is only one oil price in the world, so every country received exactly the same score for it. It moved every score up and down together and could never make one country look better or worse than another — while taking 12.5% of the weight. Government debt replaced it because every country has its own. Oil is still shown in the weekly feed, where a single global price is exactly what it claims to be.",
     impact: "Oil spikes show up weeks later as higher prices at the pump, higher heating bills, and higher shipping costs baked into everything you buy.",
   },
   {
@@ -280,7 +280,7 @@ const TOPICS = [
         kind: "judgment",
         head: "Full employment is treated as the same number everywhere",
         body:
-          "Unemployment is scored against one historical distribution for all six markets, so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Japan and the euro area do not plausibly share a single definition of full employment. Using each country’s own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
+          "Unemployment is scored against one historical distribution for all seven markets, so a country with structurally higher unemployment scores lower for reasons that are not about current conditions. Japan and the euro area do not plausibly share a single definition of full employment. Using each country’s own estimate would be more accurate, but those estimates are themselves uncertain and revised often, which would trade one problem for another.",
       },
       {
         kind: "judgment",
@@ -457,7 +457,7 @@ const GULF_TOPICS = [
   {
     id: "gulf-no-score",
     title: "Why Gulf Watch Has No Composite Score",
-    def: "Gulf Watch deliberately does not combine these figures into one score the way MMAI does for its six scored markets. A usable, legally licensable, automatable policy interest rate feed doesn't exist yet for any of these six countries, and MMAI's own rule requires at least 70% pillar coverage before a market earns a published score — so instead of filling the gap with a stand-in number, Gulf Watch shows exactly what's real and marks the rest \"N/A.\"",
+    def: "Gulf Watch deliberately does not combine these figures into one score the way MMAI does for its seven scored markets. A usable, legally licensable, automatable policy interest rate feed doesn't exist yet for any of these six countries, and MMAI's own rule requires at least 70% pillar coverage before a market earns a published score — so instead of filling the gap with a stand-in number, Gulf Watch shows exactly what's real and marks the rest \"N/A.\"",
     impact: "Every figure on Gulf Watch traces back to its source on the Sources page, same as every scored market. The missing score here isn't a gap in the site — it's the same honesty rule that keeps every other number on MMAI trustworthy, applied consistently even when it means showing less rather than more.",
   },
 ];

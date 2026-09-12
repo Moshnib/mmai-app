@@ -529,17 +529,17 @@ export const DIMENSION_EFFECTIVE_INFLUENCE: Record<DimensionKey, number> = {
   K: 34.9,
 };
 
-/** How far each dimension spreads today's six markets apart, in percentile
+/** How far each dimension spreads today's seven markets apart, in percentile
  *  points. A dimension every country scores alike cannot distinguish them
  *  whatever weight it carries -- the question that retired the oil pillar,
  *  asked of the replacement. */
 export const DIMENSION_CROSS_MARKET_SD: Record<DimensionKey, number> = {
-  C: 21.8,
-  D: 14.0,
-  K: 22.8,
+  C: 27.5,
+  D: 22.9,
+  K: 22.0,
 };
 
-export const DIMENSION_INFLUENCE_MEASURED = "4 September 2026";
+export const DIMENSION_INFLUENCE_MEASURED = "12 September 2026";
 
 /** The exact transform applied to one indicator, written out with the
  *  constants the engine actually holds.
