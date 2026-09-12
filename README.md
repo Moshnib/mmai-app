@@ -38,11 +38,12 @@ Then create a new repository on github.com and follow its "push an existing repo
 
 ### 5. Deploy on Vercel
 Go to vercel.com → New Project → Import your GitHub repo → it auto-detects Next.js → add your environment variables → Deploy.
-Vercel automatically registers the daily cron job in `vercel.json` — no extra setup.
+Scheduling runs from GitHub Actions (`.github/workflows/refresh.yml`), not Vercel — add `CRON_SECRET` as a repository secret with the same value as in Vercel. There is deliberately no Vercel cron; see `MMAI_MASTER_HANDOVER.md` §19.10.
 
 ### 6. Trigger your first live refresh
-Once deployed, visit `https://your-app.vercel.app/api/refresh` once manually
-(or wait for the daily 06:00 UTC cron) to populate the database for the first time.
+Once deployed, open the repository's **Actions** tab and run **Refresh MMAI data** by hand
+(or wait for the scheduled run at 06:10 UTC) to populate the database for the first time.
+The endpoint itself refuses any request without `CRON_SECRET`, so visiting it in a browser returns 401.
 
 ## Extending to the other 9 sources
 `app/api/refresh/route.ts` has a `TODO` block showing exactly which source

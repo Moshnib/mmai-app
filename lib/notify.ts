@@ -41,7 +41,7 @@ function emailHtml(crossing: BandCrossing, unsubscribeUrl: string): string {
 
 export async function sendBandCrossingEmail(to: string, crossing: BandCrossing, unsubscribeToken: string) {
   const resend = getResendClient();
-  const unsubscribeUrl = `${SITE_URL}/api/unsubscribe?token=${unsubscribeToken}`;
+  const unsubscribeUrl = `${SITE_URL}/api/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
   return resend.emails.send({
     // Follows the site domain, but the SENDING domain still has to be
     // verified with Resend separately -- pointing the site at a new domain
@@ -50,5 +50,26 @@ export async function sendBandCrossingEmail(to: string, crossing: BandCrossing, 
     to,
     subject: `${crossing.marketName}: ${crossing.oldBand} → ${crossing.newBand}`,
     html: emailHtml(crossing, unsubscribeUrl),
+    // ONE-CLICK UNSUBSCRIBE, THE STANDARD WAY (RFC 8058).
+    //
+    // These two headers are what put the "Unsubscribe" button beside the
+    // sender's name in Gmail, Outlook and Apple Mail. Pressing it makes
+    // the mail provider send a POST to the URL with the body
+    // "List-Unsubscribe=One-Click" -- no page visit, no second click.
+    //
+    // It matters for more than convenience. The link in the body now
+    // opens a confirmation page rather than unsubscribing on sight (see
+    // app/api/unsubscribe/route.ts, and why: corporate link scanners open
+    // every link in a message). Without these headers, "unsubscribe"
+    // would have become two steps for everyone; with them, the provider's
+    // own button stays one step, and it is POST-only, so a scanner that
+    // merely follows links can never trigger it.
+    //
+    // Gmail and Yahoo also REQUIRE both headers from bulk senders; mail
+    // without them is increasingly routed to spam.
+    headers: {
+      "List-Unsubscribe": `<${unsubscribeUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
   });
 }

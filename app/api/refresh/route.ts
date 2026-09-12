@@ -888,7 +888,7 @@ export async function GET(request: Request) {
           composite_z: v2.composite,
           percentile: v2.percentile,
           formula_version: formulaVersion,
-        }),
+        }).select("id").single(),
       ]);
 
       const insertErrors = [rawInsert.error, scoreInsert.error].filter((e): e is NonNullable<typeof e> => e != null);
@@ -912,7 +912,59 @@ export async function GET(request: Request) {
         );
       }
 
-      if (band && previousBand && previousBand !== band.label && composite !== null && comparableToPrevious) {
+      // ONE ALERT PER MARKET PER DAY, NO MATTER HOW MANY RUNS RACE.
+      //
+      // On 4 September 2026 two refreshes wrote the same four markets less
+      // than a second apart -- GitHub's schedule and the Vercel cron, which
+      // was due at 06:00 and fired at 06:29. The freshness guard is
+      // check-then-write: both runs asked "has this market been done
+      // today?" before either had written, both heard no, and both wrote.
+      // The rows were identical that day, so nothing showed.
+      //
+      // The email path would not have been so forgiving. Each run reads
+      // the previous band BEFORE writing its own, so on a day a band
+      // genuinely moves, both runs see the same crossing -- and the sender
+      // keeps no record of what it has sent. Every subscriber watching the
+      // market would have had the alert twice.
+      //
+      // So the email belongs to whichever run wrote TODAY'S FIRST score
+      // row. ids come from an identity sequence and are handed out at
+      // insert time, so "first" is the lowest id, and every racing run
+      // agrees on which that is once its own write has landed: the run
+      // that inserted first sees itself lowest, the later one always sees
+      // the earlier. Exactly one sends, with no new table and no lock.
+      //
+      // The Vercel cron is gone now too, but this does not depend on that:
+      // a hand-triggered run overlapping the schedule is the same race.
+      //
+      // A same-day forced re-run therefore never emails. Deliberate: one
+      // alert per market per day. A correction that lands the same
+      // afternoon shows on the site without a second message.
+      //
+      // If the ownership read itself fails the email still goes: a
+      // duplicate alert is an annoyance, a missing one is a broken promise.
+      let ownsToday = true;
+      const myScoreId = scoreInsert.data?.id;
+      if (myScoreId != null) {
+        const { data: firstToday, error: firstErr } = await supabase
+          .from("mmai_scores")
+          .select("id")
+          .eq("market", market)
+          .eq("observation_date", observationDate)
+          .order("id", { ascending: true })
+          .limit(1);
+        if (firstErr) {
+          console.error(`${market}: could not confirm this run owns today's alert (${firstErr.message}); sending anyway`);
+        } else if (firstToday?.[0]) {
+          ownsToday = firstToday[0].id === myScoreId;
+        }
+      }
+
+      if (band && previousBand && previousBand !== band.label && composite !== null && comparableToPrevious && !ownsToday) {
+        console.warn(`${market}: band ${previousBand} -> ${band.label} already reported by an earlier run today; no second email.`);
+      }
+
+      if (band && previousBand && previousBand !== band.label && composite !== null && comparableToPrevious && ownsToday) {
         const { data: subscribers } = await supabase
           .from("subscribers")
           .select("email, unsubscribe_token, markets");

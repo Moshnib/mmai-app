@@ -2,7 +2,7 @@
 # Scheduled data refresh — the PRIMARY trigger for MMAI's data.
 #
 # WHY THIS EXISTS
-# vercel.json also declares crons, but this project is on Vercel's Hobby
+# vercel.json used to declare crons too, but this project is on Vercel's Hobby
 # tier where cron jobs are explicitly best-effort: Vercel may delay them
 # by hours or skip a day entirely. Observed directly -- 2026-08-28 ran 25
 # minutes late, 2026-08-29 had not run at all two hours past schedule,
@@ -20,8 +20,15 @@
 # have a reading for today -- see the freshness guard in
 # app/api/refresh/route.ts. Extra runs are cheap no-ops, never duplicates.
 #
-# The Vercel crons are deliberately LEFT IN PLACE as a third layer. If
-# they fire, they simply find the work already done.
+# THE VERCEL CRONS WERE REMOVED on 2026-09-11. They had been kept as a
+# third layer on the reasoning that if they fired, they would find the
+# work already done. On 2026-09-04 one fired 29 minutes late -- at 06:29,
+# the same second as this job -- and the freshness guard, which checks
+# before it writes, let both through: four markets got two rows each.
+# Harmless that day. On a day a band moved, every watching subscriber
+# would have been emailed twice. Two schedulers that cannot see each
+# other are not redundancy, they are a race. This job already runs three
+# times a day under a concurrency lock, so it is the only scheduler now.
 # ============================================================
 name: Refresh MMAI data
 
@@ -267,6 +274,12 @@ jobs:
           # nothing is indistinguishable from a check that does nothing.
           node -e 'try{const j=require("/tmp/audit.json");for(const r of j.rows||[])console.log("  "+String(r.verdict).padEnd(20)+String(r.name).padEnd(24)+"site "+r.storedValue+" "+r.storedDate+"   source "+r.liveValue+" "+r.liveDate)}catch(e){console.log("(could not parse the response)")}'
           [ "$code" = "200" ] || { head -c 500 /tmp/audit.json; echo; exit 1; }
+
+          # FAIL CLOSED ON THE SHAPE. The gates below read each field with a
+          # default of 0, so if the route ever renamed one, its gate would
+          # read "0" and pass forever while checking nothing. Require the
+          # fields first, loudly.
+          node -e 'const j=require("/tmp/audit.json");const miss=["rows","problems","unreachable","disagreements","sourcesDown"].filter(k=>!(k in j));if(miss.length){console.log("::error::The audit response is missing "+miss.join(", ")+" -- the route and this step have drifted apart.");process.exit(1)}'
 
           # A SOURCE HAVING A BAD DAY IS NOT THE SITE BEING WRONG, and the
           # two are counted separately for that reason. Statistics Canada
