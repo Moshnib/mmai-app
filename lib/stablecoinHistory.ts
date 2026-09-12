@@ -124,3 +124,66 @@ export const ETHEREUM_STABLECOIN_HISTORY: StablecoinHistoryPoint[] = [
   { date: "2026-07-29", total: 158615613063, bySymbol: { USDT: 92058581162, USDC: 49760153209, USDS: 6561470016, DAI: 4597534888, USDe: 3848367864, PYUSD: 1789505924 } },
   { date: "2026-08-28", total: 156083144213, bySymbol: { USDT: 88306390736, USDC: 50644400707, USDS: 6635707740, DAI: 4607070994, USDe: 4077286895, PYUSD: 1812287141 } },
 ];
+
+/** One colour per token, held here so the chart and any future use agree.
+ *
+ *  Distinctness is MEASURED, not assumed: scripts/test-stablecoin-series.ts
+ *  computes the CIE76 distance between every pair and fails below 20,
+ *  which is roughly where two 2px lines stop being tellable apart. Two
+ *  market palettes once disagreed on five of six markets and nothing
+ *  noticed until a test measured it -- see scripts/test-market-colours.ts.
+ *
+ *  USDT and USDC keep their issuers' own brand colours because readers
+ *  already recognise them; the rest are chosen for separation. */
+export const STABLECOIN_TOKEN_COLORS: Record<string, string> = {
+  USDT: "#26A17B",
+  USDC: "#2775CA",
+  USDS: "#A78BFA",
+  DAI: "#F5AC37",
+  USDe: "#E14B4B",
+  PYUSD: "#94A3B8",
+};
+
+/** Largest first, which is also the order the legend reads in. */
+export const STABLECOIN_TOKEN_ORDER = ["USDT", "USDC", "USDS", "DAI", "USDe", "PYUSD"] as const;
+
+/**
+ * Each token's SHARE of Ethereum stablecoin supply, as a percentage.
+ *
+ * WHY SHARE AND NOT DOLLARS. The total line already answers "how big is
+ * it". This answers "who is winning", and in dollars it could not: USDT
+ * sits near $100bn while PYUSD sits near $2bn, so five of the six tokens
+ * would be pressed flat against the axis and the composition -- the whole
+ * point of the chart -- would be invisible. As shares they all occupy the
+ * same 0-60% range and the shifts are legible.
+ *
+ * NULL MEANS THE TOKEN DID NOT EXIST at that block, and must stay null
+ * rather than becoming 0. USDS, USDe and PYUSD all launched inside this
+ * window; a zero would draw a line along the floor and imply a token that
+ * existed at nothing, which is a different claim entirely. TrendChart
+ * draws null as a gap.
+ *
+ * A share of ZERO is real and kept: USDS reads 0 on 2024-09-03, the block
+ * where it had launched but held no supply yet.
+ */
+export function ethereumCompositionSeries(): Array<{
+  key: string;
+  name: string;
+  color: string;
+  data: Array<{ year: string; value: number | null; sortKey: string }>;
+}> {
+  return STABLECOIN_TOKEN_ORDER.map((symbol) => ({
+    key: `share-${symbol}`,
+    name: symbol,
+    color: STABLECOIN_TOKEN_COLORS[symbol],
+    data: ETHEREUM_STABLECOIN_HISTORY.map((p) => {
+      const [y, m, d] = p.date.split("-");
+      const supply = p.bySymbol[symbol];
+      return {
+        year: `${Number(d)} ${MONTHS_SHORT[Number(m) - 1]} ${y.slice(2)}`,
+        value: supply == null || p.total === 0 ? null : Math.round((supply / p.total) * 1000) / 10,
+        sortKey: p.date,
+      };
+    }),
+  }));
+}
