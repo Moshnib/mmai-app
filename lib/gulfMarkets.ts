@@ -79,7 +79,14 @@ export const GULF_POLICY_RATE_GRANULARITY = "daily" as const;
  *  the same class of dishonest copy this whole feature was built to fix,
  *  just pointing the other way. Presence of DATA and existence of a
  *  SOURCE are separate questions. */
+// THE NAME HAS OUTGROWN THE MAP. Sweden is a scored market, not Gulf
+// Watch, but it reads its policy rate from the same BIS dataflow and
+// fetchBisPolicyRate looks its label up here. Left in place rather than
+// moved, because moving it would touch every Gulf caller for one entry;
+// renaming is worth doing the next time this file is opened for its own
+// reasons.
 export const GULF_POLICY_RATE_LABELS: Record<string, string> = {
   SA: "Policy rate (repo)",
   KW: "Policy rate (discount)",
+  SE: "Policy rate",
 };

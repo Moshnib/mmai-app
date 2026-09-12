@@ -28,6 +28,8 @@ import { fetchCanadaPolicyRate } from "@/lib/fetchers/boc";
 import { fetchUkInflation, fetchUkUnemployment, fetchUkGdpGrowthQuarterly } from "@/lib/fetchers/ons";
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
+import { fetchSwedenInflation, fetchSwedenUnemployment, fetchSwedenGdpGrowthQuarterly } from "@/lib/fetchers/scb";
+import { fetchBisPolicyRate } from "@/lib/fetchers/bis";
 import { fetchNorwayPolicyRate } from "@/lib/fetchers/norgesbank";
 import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
@@ -344,6 +346,46 @@ async function fetchRawIndicators(
     };
   }
 
+  if (market === "SE") {
+    // SWEDEN, added 2026-09-12. Statistics Sweden publishes all three of
+    // its national figures as finished RATES -- CPI "annual changes",
+    // labour status ALÖSP "unemployment rate, percent", and NR0103DH
+    // "change in volume corresp. period previous year". Nothing is
+    // computed from an index here, which removes the class of bug that
+    // Canada's and Australia's fetchers each have to get right.
+    //
+    // Licence: CC BY 4.0, stated on SCB's own pages -- the standard this
+    // project adopted after Norway, where a third-party catalog said
+    // "open" and the institution itself never did.
+    //
+    // The policy rate comes from BIS rather than the Riksbank directly,
+    // for the same reason Saudi Arabia's and Kuwait's do: BIS's terms
+    // permit commercial use with citation and need no permission email.
+    // BIS names Sveriges Riksbank as the source in its own response.
+    const [infl, unemp, gdp, rate] = await Promise.all([
+      settle("SE inflation", fetchSwedenInflation()),
+      settle("SE unemployment", fetchSwedenUnemployment()),
+      settle("SE GDP growth (quarterly YoY)", fetchSwedenGdpGrowthQuarterly()),
+      settle("SE policy rate (BIS)", fetchBisPolicyRate("SE")),
+    ]);
+    return {
+      raw: {
+        inflation: infl?.inflation ?? null,
+        gdpGrowth: gdp?.gdpGrowth ?? null,
+        unemployment: unemp?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: infl?.observationDate ?? null,
+        gdpGrowth: gdp?.observationDate ?? null,
+        unemployment: unemp?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
+    };
+  }
+
   if (market === "EA") {
     // GDP/unemployment via Eurostat; INFLATION and policy rate (deposit
     // facility) via the ECB's own Data Portal — both confirmed live
@@ -471,7 +513,7 @@ async function fetchRawIndicators(
 // Norway paused 2026-08-22 pending Norges Bank license confirmation — see
 // the matching comment in lib/markets.ts. fetchRawIndicators()'s "NO"
 // branch below is left in place, ready to reactivate with a one-line change.
-const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU"];
+const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "SE"];
 
 /** Every figure this run wrote, checked against how often its source
  *  actually publishes.

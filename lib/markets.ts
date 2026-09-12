@@ -63,6 +63,10 @@ export const FALLBACK_MARKETS: MarketData[] = [
   { code: "UK", name: "United Kingdom", raw: { inflation: 2.9, gdpGrowth: 0.9, unemployment: 4.9, policyRate: 3.75, brentYoY: 17.91, debtPctGdp: 88.8 } },
   { code: "JP", name: "Japan", raw: { inflation: 2, gdpGrowth: 0.55, unemployment: 2.4, policyRate: 0.977, brentYoY: 17.91, debtPctGdp: 178.8 } },
   { code: "AU", name: "Australia", raw: { inflation: 3.45, gdpGrowth: 2.14, unemployment: 4.46, policyRate: 4.35, brentYoY: 17.91, debtPctGdp: 50.7 } },
+  // Sweden joined 2026-09-12. Values below are the readings verified live
+  // at that date; like every row here they are a fallback for when the
+  // database cannot be read, not the published figures.
+  { code: "SE", name: "Sweden", raw: { inflation: 0.2, gdpGrowth: 3.3, unemployment: 8.6, policyRate: 1.75, brentYoY: 17.91, debtPctGdp: 34 } },
 ];
 
 /**
@@ -98,6 +102,13 @@ export const MARKET_COLORS: Record<string, string> = {
   UK: "#E14B4B", // red
   JP: "#F472B6", // pink
   AU: "#FBBF24", // gold
+  // Blue, chosen by measurement. Green was measured first and was the
+  // most separated of any candidate -- and is banned: the palette keeps
+  // green out entirely so a rising line is never read as a "good" line.
+  // scripts/test-market-colours.ts enforces that, and caught it. This is
+  // dE 44.3 from its nearest neighbour (US cyan), against 36.7 for the
+  // closest existing pair, and reads at 7.9:1 on the page.
+  SE: "#60A5FA", // blue
 };
 
 // scoreMarket() -- the five-pillar scorer -- was removed at the cutover on
