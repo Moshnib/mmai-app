@@ -197,6 +197,17 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
           ))}
         </div>
 
+        {/* WHY SIX CARDS ON A SEVEN-MARKET SITE. Without this line a
+            reader counts the markets, finds one short, and has no way to
+            tell a missing source from a broken page. */}
+        <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.7 }}>
+          Six markets, not seven. Sweden has no card here because no Swedish bond series is wired:
+          the daily figure would come from the Riksbank, whose terms do not confirm that commercial
+          reuse is permitted, and this site does not publish a source it cannot show a licence for.
+          Eurostat does publish a Swedish ten-year yield monthly, which is a different measure from
+          the daily curves above and is not mixed into them.
+        </p>
+
         <TimeRangeFilter options={DAILY_RANGES} selected={rangeDays} onChange={setRangeDays} />
         <div className="country-filter">
           {markets.map((code) => {

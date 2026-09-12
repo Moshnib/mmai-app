@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 // fallback used to hide the entire nav while its data loaded).
 const NAV_ITEMS = [
   { href: "/", label: "Overview" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/trends", label: "Data Over Time" },
   { href: "/compare", label: "Compare" },
   { href: "/gulf-watch", label: "Gulf Watch" },

@@ -28,6 +28,7 @@ export interface SiteRoute {
 
 export const SITE_ROUTES: readonly SiteRoute[] = [
   { path: "/", priority: 1.0, changeFrequency: "daily" },
+  { path: "/dashboard", priority: 0.9, changeFrequency: "daily" },
   { path: "/trends", priority: 0.8, changeFrequency: "daily" },
   { path: "/compare", priority: 0.8, changeFrequency: "daily" },
   { path: "/gulf-watch", priority: 0.7, changeFrequency: "daily" },
