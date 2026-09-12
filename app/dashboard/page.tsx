@@ -8,8 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  // Read on the server so the key never reaches the browser. Without it
-  // the question box is not rendered at all -- a box that always answers
-  // "not configured" is worse than no box.
-  return <DashboardInner assistantEnabled={Boolean(process.env.ANTHROPIC_API_KEY)} />;
+  return <DashboardInner />;
 }

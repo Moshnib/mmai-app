@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Flag from "@/components/Flag";
-import AskMmai from "@/components/AskMmai";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
@@ -135,7 +134,7 @@ function pairFor(series: MonthlyPoint[], key: Indicator, months: number): { now:
   return { now: series[latest][key], then: j >= 0 ? series[j][key] : null };
 }
 
-export default function DashboardInner({ assistantEnabled }: { assistantEnabled: boolean }) {
+export default function DashboardInner() {
   const [scores, setScores] = useState<Record<string, ScoreRow>>({});
   const [raw, setRaw] = useState<Record<string, RawRow>>({});
   const [bonds, setBonds] = useState<Record<string, BondRow>>({});
@@ -227,8 +226,6 @@ export default function DashboardInner({ assistantEnabled }: { assistantEnabled:
 
         {state === "ready" && (
           <>
-            {assistantEnabled && <AskMmai />}
-
             {/* ---------------- 1. WHERE ---------------- */}
             <div className="chart-card" style={{ marginTop: 20 }}>
               <div className="chart-card-label">
