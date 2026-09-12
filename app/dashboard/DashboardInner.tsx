@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Flag from "@/components/Flag";
+import PositioningMap, { type PositionPoint } from "@/components/PositioningMap";
+import Sparkline from "@/components/Sparkline";
 import { getPublicSupabaseClient } from "@/lib/supabase";
-import { FALLBACK_MARKETS } from "@/lib/markets";
+import { FALLBACK_MARKETS, MARKET_COLORS } from "@/lib/markets";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
 import { latestCompleteObservation } from "@/lib/latestComplete";
 import { colorForScore } from "@/lib/indicators";
@@ -79,6 +81,10 @@ const TH: React.CSSProperties = {
   fontWeight: 600,
 };
 const TD: React.CSSProperties = { padding: "10px", textAlign: "right", fontVariantNumeric: "tabular-nums" };
+/** The sparkline sits tight against the figure it belongs to, so the two
+ *  read as one thing rather than as a separate column of decoration. */
+const SPARK_TH: React.CSSProperties = { ...TH, textAlign: "left", padding: "8px 10px 8px 2px" };
+const SPARK_TD: React.CSSProperties = { padding: "10px 10px 10px 2px", width: 64 };
 const NOTE: React.CSSProperties = {
   fontSize: 12,
   color: "var(--slate)",
@@ -132,6 +138,28 @@ function pairFor(series: MonthlyPoint[], key: Indicator, months: number): { now:
   if (latest < 0) return { now: null, then: null };
   const j = latest - months;
   return { now: series[latest][key], then: j >= 0 ? series[j][key] : null };
+}
+
+/** The last two years of a series, for the sparkline beside the figure.
+ *
+ *  Two years is chosen, not arbitrary: it is long enough to show whether a
+ *  rate is on a trend or bouncing, and short enough that the 2022 inflation
+ *  spike does not flatten everything since into a straight line. The window
+ *  is the last 24 ROWS rather than the last 24 published readings, so a
+ *  series that stopped reporting shows its gap instead of quietly
+ *  stretching older figures across it. */
+function tailOf(series: MonthlyPoint[], key: Indicator, months = 24): (number | null)[] {
+  return series.slice(-months).map((p) => p[key]);
+}
+
+/** mmai_scores stores the STANDARDISED dimension values, which read as
+ *  1, 0, -1 and mean nothing to a reader. Every other page shows them as
+ *  percentiles, so this one does too -- and through the same function, in
+ *  one place, so the table and the map cannot drift apart. */
+function dimsOf(st: ScoreRow | undefined): Record<DimensionKey, number | null> {
+  return st?.dim_conditions != null && st.dim_direction != null && st.dim_capacity != null
+    ? dimensionPercentiles({ C: st.dim_conditions, D: st.dim_direction, K: st.dim_capacity })
+    : { C: null, D: null, K: null };
 }
 
 export default function DashboardInner() {
@@ -202,6 +230,15 @@ export default function DashboardInner() {
   );
   const unscored = CODES.filter((c) => scores[c]?.percentile == null);
 
+  // Only markets with all three dimensions can be placed. A market missing
+  // one would have to be drawn at an invented coordinate, and a dot on a
+  // chart makes a much more confident claim than a dash in a table does.
+  const points: PositionPoint[] = ranked.flatMap(({ code, score }) => {
+    const d = dimsOf(score);
+    if (d.C == null || d.D == null || d.K == null) return [];
+    return [{ code, name: NAME[code], conditions: d.C, direction: d.D, capacity: d.K, score: score?.percentile ?? 0 }];
+  });
+
   return (
     <div className="section">
       <div className="wrap">
@@ -226,7 +263,36 @@ export default function DashboardInner() {
 
         {state === "ready" && (
           <>
-            {/* ---------------- 1. WHERE ---------------- */}
+            {/* ---------------- 1. THE MAP ---------------- */}
+            <div className="chart-card" style={{ marginTop: 20 }}>
+              <div className="chart-card-label">
+                <span>Where each economy sits</span>
+                <span style={{ marginLeft: "auto", color: "var(--slate)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                  conditions against direction, sized by capacity
+                </span>
+              </div>
+              {points.length === 0 ? (
+                <p style={{ fontSize: 13, color: "var(--slate)", margin: 0 }}>
+                  No market currently has all three dimensions stored, so there is nothing to place.
+                </p>
+              ) : (
+                <PositioningMap points={points} />
+              )}
+              <p style={NOTE}>
+                <b style={{ color: "var(--ink-soft)" }}>Read the corners, not the middle.</b> A single
+                score hides the thing that usually matters most, which is whether a good position is
+                being built or spent. Up the chart is how supportive conditions are <em>now</em>; across
+                is which way they are <em>heading</em>; the size of each dot is how much room the state
+                has to respond if something breaks &mdash; low debt and rates it can still cut. Top-right
+                is strong and getting stronger. Top-left is the one to look at twice: still strong, but
+                the momentum has turned. Bottom-right is early recovery, which is where the cheap entries
+                usually are and also where most of the false starts are. All three are percentiles
+                against the same 148 market-years as the score, so a dot at 50 is an ordinary year, not a
+                middling one.
+              </p>
+            </div>
+
+            {/* ---------------- 2. WHERE ---------------- */}
             <div className="chart-card" style={{ marginTop: 20 }}>
               <div className="chart-card-label">
                 <span>Ranked right now</span>
@@ -235,7 +301,7 @@ export default function DashboardInner() {
                 </span>
               </div>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr>
                       <th style={{ ...TH, textAlign: "left", padding: "8px 10px 8px 0" }}>Market</th>
@@ -248,16 +314,7 @@ export default function DashboardInner() {
                   </thead>
                   <tbody>
                     {ranked.map(({ code, score }) => {
-                      // mmai_scores stores the STANDARDISED dimension values,
-                      // which read as 1, 0, -1 and mean nothing to a reader.
-                      // Every other page shows them as percentiles, so this
-                      // one does too -- through the same function, not a
-                      // second conversion of its own.
-                      const st = score;
-                      const dims: Record<DimensionKey, number | null> =
-                        st?.dim_conditions != null && st.dim_direction != null && st.dim_capacity != null
-                          ? dimensionPercentiles({ C: st.dim_conditions, D: st.dim_direction, K: st.dim_capacity })
-                          : { C: null, D: null, K: null };
+                      const dims = dimsOf(score);
                       return (
                         <tr key={code} style={{ borderTop: "1px solid var(--hair)" }}>
                           <MarketCell code={code} />
@@ -285,7 +342,7 @@ export default function DashboardInner() {
               </p>
             </div>
 
-            {/* ---------------- 2. WHAT MOVED ---------------- */}
+            {/* ---------------- 3. WHAT MOVED ---------------- */}
             <div className="chart-card" style={{ marginTop: 20 }}>
               <div className="chart-card-label">
                 <span>What moved</span>
@@ -294,17 +351,20 @@ export default function DashboardInner() {
                 </span>
               </div>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr>
                       <th style={{ ...TH, textAlign: "left", padding: "8px 10px 8px 0" }}>Market</th>
                       <th style={TH}>Inflation</th>
+                      <th style={SPARK_TH}>2y</th>
                       <th style={TH}>3m</th>
                       <th style={TH}>12m</th>
                       <th style={TH}>Unemployment</th>
+                      <th style={SPARK_TH}>2y</th>
                       <th style={TH}>3m</th>
                       <th style={TH}>12m</th>
                       <th style={TH}>Policy rate</th>
+                      <th style={SPARK_TH}>2y</th>
                       <th style={TH}>12m</th>
                     </tr>
                   </thead>
@@ -316,16 +376,20 @@ export default function DashboardInner() {
                       const une3 = pairFor(series, "unemployment", 3);
                       const une12 = pairFor(series, "unemployment", 12);
                       const rate12 = pairFor(series, "policyRate", 12);
+                      const colour = MARKET_COLORS[code] ?? "#C7C9D9";
                       return (
                         <tr key={code} style={{ borderTop: "1px solid var(--hair)" }}>
                           <MarketCell code={code} />
                           <td style={TD}>{fmt(inf3.now, 1, "%")}</td>
+                          <td style={SPARK_TD}><Sparkline values={tailOf(series, "inflation")} colour={colour} /></td>
                           <td style={TD}><Delta now={inf3.now} then={inf3.then} /></td>
                           <td style={TD}><Delta now={inf12.now} then={inf12.then} /></td>
                           <td style={TD}>{fmt(une3.now, 1, "%")}</td>
+                          <td style={SPARK_TD}><Sparkline values={tailOf(series, "unemployment")} colour={colour} /></td>
                           <td style={TD}><Delta now={une3.now} then={une3.then} /></td>
                           <td style={TD}><Delta now={une12.now} then={une12.then} /></td>
                           <td style={TD}>{fmt(rate12.now, 2, "%")}</td>
+                          <td style={SPARK_TD}><Sparkline values={tailOf(series, "policyRate")} colour={colour} /></td>
                           <td style={TD}><Delta now={rate12.now} then={rate12.then} dp={2} /></td>
                         </tr>
                       );
@@ -338,7 +402,12 @@ export default function DashboardInner() {
                 points, so &ldquo;up 0.4&rdquo; on inflation means the rate is 0.4 points higher than it
                 was, not that prices rose 0.4%. Up is neither good nor bad on its own: inflation moving
                 toward a central bank&apos;s target is good whichever way it travels, and unemployment
-                rising rarely is. These are the published monthly figures back to 2019, on the same
+                rising rarely is. The <b style={{ color: "var(--ink-soft)" }}>2y</b> line beside each
+                figure is the last twenty-four months of it, drawn to its own range so the shape shows
+                rather than the level &mdash; a spike that came back down and a steady glide to the same
+                place are different facts, and the numbers either side cannot tell them apart. A break
+                in the line is a month with no published reading, left as a gap rather than drawn
+                through. These are the published monthly figures back to 2019, on the same
                 measure throughout &mdash; which is why this panel tracks the indicators rather than the
                 score. One figure differs from the ranking above on purpose: US inflation reads CPI here
                 and PCE there, because the Federal Reserve states its 2% target on PCE, so PCE is what
@@ -349,7 +418,7 @@ export default function DashboardInner() {
               </p>
             </div>
 
-            {/* ---------------- 3. THE PRICE OF MONEY ---------------- */}
+            {/* ---------------- 4. THE PRICE OF MONEY ---------------- */}
             <div className="chart-card" style={{ marginTop: 20 }}>
               <div className="chart-card-label">
                 <span>What money costs</span>
@@ -358,7 +427,7 @@ export default function DashboardInner() {
                 </span>
               </div>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr>
                       <th style={{ ...TH, textAlign: "left", padding: "8px 10px 8px 0" }}>Market</th>
@@ -400,7 +469,7 @@ export default function DashboardInner() {
               </p>
             </div>
 
-            {/* ---------------- 4. WHAT TO DISTRUST ---------------- */}
+            {/* ---------------- 5. WHAT TO DISTRUST ---------------- */}
             <div className="chart-card" style={{ marginTop: 20 }}>
               <div className="chart-card-label"><span>Before you rely on any of it</span></div>
               <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: 0, lineHeight: 1.8 }}>
