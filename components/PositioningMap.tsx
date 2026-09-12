@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MARKET_COLORS } from "@/lib/markets";
+import { FLAG_SHAPES } from "@/components/Flag";
 
 // ============================================================
 //  WHERE EACH ECONOMY SITS, AND WHICH WAY IT IS FACING
@@ -53,16 +54,30 @@ const HEIGHT = 400;
  *  top edge: with the captions drawn inside the corners it landed on top
  *  of "strong but fading". The largest radius is 18, so the top and bottom
  *  padding each leave 18 for the dot plus room for a caption clear of it. */
-const PAD = { top: 46, right: 24, bottom: 62, left: 46 };
+const PAD = { top: 52, right: 30, bottom: 66, left: 46 };
 
-/** Radius from Capacity. A floor of 7 keeps a market with almost no
- *  capacity visible -- a dot too small to see reads as missing data. */
+/** Radius from Capacity.
+ *
+ *  The floor used to be 7, which is enough to SEE a dot and not enough to
+ *  read a flag inside one. A 14px circle turns the Union Flag into a
+ *  smudge. Raised to 11, so the smallest dot is 22px across and every
+ *  flag is at least recognisable; the range is kept the same width so
+ *  Capacity is still encoded by the same amount of area as before.
+ *
+ *  PAD above was widened to match. A dot at an axis extreme extends by
+ *  its own radius, so the largest radius and the padding move together --
+ *  forget that and Japan, which sits at Conditions 100, is clipped by the
+ *  top edge of the SVG. */
 const rFor = (capacity: number, scale: number) =>
-  (7 + (Math.max(0, Math.min(100, capacity)) / 100) * 11) * scale;
+  (11 + (Math.max(0, Math.min(100, capacity)) / 100) * 11) * scale;
 
 export default function PositioningMap({ points }: { points: PositionPoint[] }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
+  // clipPath ids are document-global. Two of these on one page with
+  // hand-written ids would silently share clips and one map would draw
+  // the other's circles.
+  const uid = useId().replace(/:/g, "");
 
   useEffect(() => {
     const el = boxRef.current;
@@ -127,6 +142,37 @@ export default function PositioningMap({ points }: { points: PositionPoint[] }) 
       return acc;
     }, []);
 
+// MARKETS THAT SIT ON TOP OF EACH OTHER, NAMED RATHER THAN LEFT TO SQUINT AT.
+//
+// Canada and the Euro Area currently differ by about two percentile
+// points on each axis. Once the dots became flags instead of translucent
+// discs, the front one covered roughly two-thirds of the back one, and
+// the obvious fix -- nudging them apart -- is the one thing this chart
+// must not do.
+//
+// So the occlusion is reported instead. "These two are in almost exactly
+// the same position" is a finding about the economies, not a defect in
+// the drawing, and a reader is better served by being told it than by
+// being left to work out why one flag is half-hidden.
+//
+// Measured in percentile points because that is what the axes are; a
+// pixel threshold would change meaning with the width of the container.
+const NEAR = 6;
+
+function nearlyIdentical(ps: PositionPoint[]): [PositionPoint, PositionPoint][] {
+  const out: [PositionPoint, PositionPoint][] = [];
+  for (let i = 0; i < ps.length; i++) {
+    for (let j = i + 1; j < ps.length; j++) {
+      const a = ps[i];
+      const b = ps[j];
+      if (Math.abs(a.direction - b.direction) <= NEAR && Math.abs(a.conditions - b.conditions) <= NEAR) {
+        out.push([a, b]);
+      }
+    }
+  }
+  return out;
+}
+
   const described = points
     .map(
       (p) =>
@@ -179,11 +225,77 @@ export default function PositioningMap({ points }: { points: PositionPoint[] }) 
           {narrow ? "Conditions — right now" : "Conditions — right now, percentile"}
         </text>
 
+        {laid.map(({ p, cx, cy, r }) => {
+          const colour = MARKET_COLORS[p.code] ?? "#8A8EA3";
+          return (
+            <g key={p.code}>
+              {/* THE DOT IS THE COUNTRY'S FLAG, CLIPPED TO A CIRCLE.
+                  A reader who knows the Japanese flag does not have to
+                  learn that pink means Japan first.
+
+                  The flags are authored in a 28x20 box (components/
+                  Flag.tsx). To COVER a circle of radius r the short side
+                  has to reach the diameter, so the scale is 2r/20 = r/10
+                  and the width becomes 2.8r -- wider than the circle, and
+                  the excess is clipped off the sides. Scaling to fit the
+                  WIDTH instead would leave empty wedges top and bottom.
+
+                  The ring stays the market's colour, because that colour
+                  is the country's identity in every other chart on the
+                  site -- the sparklines, the compare lines, the bond
+                  curves. The flag says which country; the ring says which
+                  line on every other page is the same country. */}
+              {/* A DARK HALO, DRAWN FIRST IN EACH DOT SO IT CUTS INTO
+                  WHATEVER IS BEHIND IT. Canada and the Euro Area sit at
+                  almost the same coordinates, and once the dots became
+                  opaque flags the front one simply erased the back one --
+                  the old translucent discs had let both show through.
+                  Moving either is off the table, so instead every dot
+                  carves a rim out of its neighbour and the one behind
+                  reads as a crescent rather than a smudge. */}
+              <circle cx={cx} cy={cy} r={r + 1.5} fill="none" stroke="#0B0B12" strokeWidth={3} />
+              <clipPath id={`${uid}-${p.code}`}>
+                <circle cx={cx} cy={cy} r={r} />
+              </clipPath>
+              {FLAG_SHAPES[p.code] ? (
+                <g clipPath={`url(#${uid}-${p.code})`}>
+                  {/* Painted under the flag: several of these flags have
+                      white in them, and an unpainted gap would show the
+                      quadrant shading through. */}
+                  <circle cx={cx} cy={cy} r={r} fill="#12121A" />
+                  <g transform={`translate(${cx - 1.4 * r}, ${cy - r}) scale(${r / 10})`}>
+                    {FLAG_SHAPES[p.code]}
+                  </g>
+                </g>
+              ) : (
+                // No flag authored for this market: fall back to the disc
+                // rather than drawing an empty hole.
+                <circle cx={cx} cy={cy} r={r} fill={colour} fillOpacity={0.22} />
+              )}
+              {/* Drawn after, so the ring sits ON the flag rather than
+                  under its clipped edge, where half its width would be
+                  invisible. */}
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke={colour} strokeWidth={2} />
+            </g>
+          );
+        })}
+
+        {/* EVERY LABEL AFTER EVERY DOT, WHICH IS THE WHOLE REASON THIS IS
+            A SECOND PASS.
+
+            When each market drew its own dot and its own name together,
+            a market drawn later painted its flag straight over an earlier
+            market's name. On a phone that hid Norway's: "NO" sat behind
+            Australia's flag and simply was not there.
+
+            Splitting the passes costs nothing and makes the guarantee
+            structural -- no dot can cover a name, whatever the data does
+            next. */}
         {laid.map(({ p, cx, cy, r, lx, ly, anchor }) => {
           const colour = MARKET_COLORS[p.code] ?? "#8A8EA3";
           const moved = Math.abs(ly - (cy + 4)) > 2;
           return (
-            <g key={p.code}>
+            <g key={`label-${p.code}`}>
               {moved && (
                 <line
                   x1={anchor === "end" ? cx - r : cx + r}
@@ -195,7 +307,24 @@ export default function PositioningMap({ points }: { points: PositionPoint[] }) 
                   strokeOpacity={0.55}
                 />
               )}
-              <circle cx={cx} cy={cy} r={r} fill={colour} fillOpacity={0.22} stroke={colour} strokeWidth={1.5} />
+              {/* A dark backing stroke under the name. The labels sit
+                  beside the dots, and beside a dot is sometimes on top of
+                  the quadrant shading or another flag's rim; painting the
+                  glyphs twice, dark and wide underneath, keeps them
+                  legible without a box that would clutter the plot. */}
+              <text
+                x={lx}
+                y={ly}
+                textAnchor={anchor}
+                fontSize="11"
+                fontWeight={700}
+                fill="none"
+                stroke="#0B0B12"
+                strokeWidth={3}
+                strokeLinejoin="round"
+              >
+                {p.code}
+              </text>
               <text x={lx} y={ly} textAnchor={anchor} fontSize="11" fontWeight={700} fill="#F5F6FA">
                 {p.code}
               </text>
@@ -203,6 +332,20 @@ export default function PositioningMap({ points }: { points: PositionPoint[] }) 
           );
         })}
       </svg>
+
+      {nearlyIdentical(points).map(([a, b]) => (
+        <p
+          key={`${a.code}-${b.code}`}
+          style={{ fontSize: 12, color: "var(--slate)", margin: "10px 0 0", lineHeight: 1.7 }}
+        >
+          <b style={{ color: "var(--ink-soft)" }}>
+            {a.name} and {b.name} overlap because they are in almost the same position.
+          </b>{" "}
+          Conditions {a.conditions.toFixed(0)} against {b.conditions.toFixed(0)}, direction{" "}
+          {a.direction.toFixed(0)} against {b.direction.toFixed(0)}. Neither dot has been moved to
+          separate them &mdash; that would misplace both.
+        </p>
+      ))}
     </div>
   );
 }
