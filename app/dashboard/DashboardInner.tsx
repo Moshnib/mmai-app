@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Flag from "@/components/Flag";
+import AskMmai from "@/components/AskMmai";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
@@ -134,7 +135,7 @@ function pairFor(series: MonthlyPoint[], key: Indicator, months: number): { now:
   return { now: series[latest][key], then: j >= 0 ? series[j][key] : null };
 }
 
-export default function DashboardInner() {
+export default function DashboardInner({ assistantEnabled }: { assistantEnabled: boolean }) {
   const [scores, setScores] = useState<Record<string, ScoreRow>>({});
   const [raw, setRaw] = useState<Record<string, RawRow>>({});
   const [bonds, setBonds] = useState<Record<string, BondRow>>({});
@@ -226,6 +227,8 @@ export default function DashboardInner() {
 
         {state === "ready" && (
           <>
+            {assistantEnabled && <AskMmai />}
+
             {/* ---------------- 1. WHERE ---------------- */}
             <div className="chart-card" style={{ marginTop: 20 }}>
               <div className="chart-card-label">
@@ -340,7 +343,9 @@ export default function DashboardInner() {
                 toward a central bank&apos;s target is good whichever way it travels, and unemployment
                 rising rarely is. These are the published monthly figures back to 2019, on the same
                 measure throughout &mdash; which is why this panel tracks the indicators rather than the
-                score. Japan&apos;s inflation reads N/A because no monthly series is wired for it: the
+                score. One figure differs from the ranking above on purpose: US inflation reads CPI here
+                and PCE there, because the Federal Reserve states its 2% target on PCE, so PCE is what
+                the score measures. Both are real; they are different baskets. Japan&apos;s inflation reads N/A because no monthly series is wired for it: the
                 OECD price dataflow returns an error for Japan specifically, and Japan&apos;s own e-Stat
                 needs a registered key. Its scored figure comes from e-Stat and is current; only the
                 monthly history is missing.
