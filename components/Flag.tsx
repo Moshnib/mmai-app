@@ -7,7 +7,11 @@
 // All rendered at a fixed 4:3 aspect ratio with rounded corners for a
 // consistent, elegant look across the site.
 
-const FLAGS: Record<string, React.ReactNode> = {
+// Exported so a chart can draw a flag somewhere other than beside a name
+// -- the positioning map clips these into its dots. Every shape here is
+// authored in a 28x20 box, which is the contract a consumer relies on to
+// scale and centre one; do not change that box without checking the map.
+export const FLAG_SHAPES: Record<string, React.ReactNode> = {
   US: (
     <>
       <rect width="28" height="20" fill="#B22234" />
@@ -155,7 +159,7 @@ const FLAGS: Record<string, React.ReactNode> = {
 };
 
 export default function Flag({ code, size = 20 }: { code: string; size?: number }) {
-  const content = FLAGS[code];
+  const content = FLAG_SHAPES[code];
   if (!content) return null;
   return (
     <svg
