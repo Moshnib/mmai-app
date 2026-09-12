@@ -12,7 +12,16 @@ const ALERT_ENGINE = "v2.0";
 import { fetchUsInflation, fetchUsUnemployment } from "@/lib/fetchers/bls";
 import { fetchUsPolicyRate } from "@/lib/fetchers/nyfed";
 import { fetchJapanPolicyRate } from "@/lib/fetchers/boj";
-import { fetchGdpGrowth, fetchUnemployment } from "@/lib/fetchers/worldbank";
+// fetchGdpGrowth is gone from this import, and that is a milestone worth
+// recording: with Norway moved to Eurostat on 2026-09-12, NO SCORED
+// MARKET READS GDP GROWTH FROM THE WORLD BANK ANY MORE. Every one now
+// reads a quarterly year-over-year figure from its own statistics office
+// or from Eurostat, so no market carries a number that is a year older
+// than the ones printed beside it.
+//
+// fetchUnemployment stays, for one narrow purpose: Japan's fallback when
+// the OECD dataflow fails. See the JP branch.
+import { fetchUnemployment } from "@/lib/fetchers/worldbank";
 import { fetchAustraliaInflation, fetchAustraliaUnemployment, fetchAustraliaGdpGrowthQuarterly } from "@/lib/fetchers/abs";
 import { fetchJapanInflation, fetchJapanGdpGrowthQuarterly } from "@/lib/fetchers/estat";
 import { fetchJapanUnemployment } from "@/lib/fetchers/oecd";
