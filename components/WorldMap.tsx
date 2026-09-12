@@ -25,6 +25,7 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   JP: ["392"],
   AU: ["036"],
   EA: ["250", "276", "380", "724", "528", "056", "040", "620", "372", "246", "300"],
+  SE: ["752"],
   NO: ["578"],
 };
 
@@ -39,10 +40,13 @@ const MARKET_LABEL_LONLAT: Record<string, [number, number]> = {
   AU: [134, -27],
   EA: [14, 47],
   NO: [15, 64],
+  // East of Norway and well north of the euro-area anchor, so no label
+  // collides with another.
+  SE: [16, 61],
 };
 
 // Crops out the empty Antarctica band at the bottom of the equirectangular
-// projection (lat below roughly -60) so the six scored markets fill more of
+// projection (lat below roughly -60) so the seven scored markets fill more of
 // the frame -- same underlying map data, just a tighter viewBox. Confirmed
 // this keeps Australia's full landmass (Tasmania's southern tip projects to
 // y≈355 of 480) with real margin to spare.

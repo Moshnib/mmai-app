@@ -77,6 +77,10 @@ export const INFLATION_TARGET: Record<string, number> = {
   CA: 2.0,
   JP: 2.0,
   AU: 2.5,
+  // The Riksbank targets 2.0 on CPIF, which is the series lib/fetchers/scb.ts
+  // reads. Stated rather than left to the 2.0 default: Australia above shows
+  // targets do vary, so a market inheriting one silently is a trap.
+  SE: 2.0,
 };
 
 export function inflationTargetFor(market: string): number {
