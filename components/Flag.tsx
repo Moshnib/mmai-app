@@ -3,7 +3,7 @@
 // Hand-built SVG flags for exactly the markets this site covers -- not an
 // emoji (Windows has historically rendered flag emoji as plain two-letter
 // codes instead of actual flag images, unreliable for a professional site)
-// and not a large external icon-font dependency for only 6 flags needed.
+// and not a large external icon-font dependency for the handful needed.
 // All rendered at a fixed 4:3 aspect ratio with rounded corners for a
 // consistent, elegant look across the site.
 
@@ -95,6 +95,16 @@ const FLAGS: Record<string, React.ReactNode> = {
       <rect x="0" y="7" width="28" height="6" fill="#fff" />
       <rect x="8.8" y="0" width="2.4" height="20" fill="#002868" />
       <rect x="0" y="8.8" width="28" height="2.4" fill="#002868" />
+    </>
+  ),
+  // Sweden: Nordic cross, same construction as Norway above but two
+  // colours instead of three. The vertical bar sits left of centre, as
+  // on the real flag.
+  SE: (
+    <>
+      <rect width="28" height="20" fill="#006AA7" />
+      <rect x="7" y="0" width="4" height="20" fill="#FECC00" />
+      <rect x="0" y="8" width="28" height="4" fill="#FECC00" />
     </>
   ),
   // ---------- Gulf Watch flags ----------

@@ -26,6 +26,7 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   AU: ["036"],
   EA: ["250", "276", "380", "724", "528", "056", "040", "620", "372", "246", "300"],
   NO: ["578"],
+  SE: ["752"],
 };
 
 // Some markets carry territory so far from the landmass everyone
