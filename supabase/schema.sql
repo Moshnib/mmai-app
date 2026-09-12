@@ -51,11 +51,15 @@ create table if not exists mmai_scores (
   formula_version text not null default 'v1.0'  -- matches the methodology paper's version tag
 );
 
--- One row per market showing only the latest score — what the homepage reads.
-create or replace view latest_scores as
-select distinct on (market) *
-from mmai_scores
-order by market, observation_date desc, computed_at desc;
+-- latest_scores USED TO BE A VIEW HERE. Dropped 2026-09-11.
+-- Nothing in the app ever read it -- the pages read raw_indicators and pick
+-- the row through lib/latestComplete.ts -- and Supabase's security advisor
+-- flagged it at ERROR level: a view created like this runs with its
+-- creator's rights rather than the reader's, which bypasses row-level
+-- security. It exposed nothing (mmai_scores is public-read anyway), but a
+-- dead object that bypasses RLS is a trap for whoever adds a private
+-- column next. Removed with:
+--   drop view if exists public.latest_scores;
 
 -- Indexes for the query patterns the site actually uses.
 create index if not exists idx_raw_indicators_market_date on raw_indicators (market, observation_date desc);

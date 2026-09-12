@@ -75,10 +75,7 @@ Everything below was checked directly at the time, not assumed:
 | Database | Supabase — free tier (commercial use explicitly allowed) |
 | Local dev | Node.js v24.19.0 + npm 11.17.0 |
 
-**Vercel cron config** (`vercel.json`, committed):
-```json
-{ "crons": [ { "path": "/api/refresh", "schedule": "0 6 * * *" } ] }
-```
+**Scheduling:** GitHub Actions only (`.github/workflows/refresh.yml`). `vercel.json` and its crons were **removed on 2026-09-11** after one fired late and raced the GitHub run — see §19.10.
 
 ### Environment variables
 
@@ -639,7 +636,7 @@ Vercel Hobby crons are **best-effort** — they may be delayed hours or skipped 
 
 1. **GitHub Actions** (`.github/workflows/refresh.yml`) — primary, 06:10 / 12:00 / 18:00 UTC, fails loudly on non-200.
 2. **Freshness guard** — markets already stamped today are skipped, so the later runs are cheap no-ops.
-3. **Vercel crons** — left in place as a third layer.
+3. ~~Vercel crons~~ — **removed 2026-09-11.** One fired 29 minutes late and raced the GitHub run (§19.10). Two schedulers that cannot see each other are a race, not redundancy.
 
 `workflow_dispatch` has a **force** checkbox (added 31 Aug) for re-running after a *source* change, which the freshness guard would otherwise block until the next day. Force is deliberately unavailable on the schedule.
 
@@ -1041,6 +1038,27 @@ Found by the audit above on its first real outage. Statistics Canada was answeri
 `/api/refresh` fetches a market's four indicators together and then walks the markets **one after another**, inside `maxDuration = 60`. A 149-second call cannot finish in that budget: the function is killed part-way and every market after Canada is never written at all. The only call that behaved was the one that had a timeout.
 
 `AbortSignal.timeout` was adopted partway through the project and never backfilled — **25 of 48 call sites across 16 files had none**. A fetcher without a timeout looks identical to one with a timeout on every day the source is healthy, which is why nothing noticed. All 48 now carry one (8000ms on the scored path, 15000ms for the slower Gulf sources), and `scripts/check-fetch-timeouts.ts` fails CI if a new call site appears without.
+
+### 19.10 Two schedulers were a race, and the email path would have paid for it (2026-09-11)
+
+A bug sweep of production found four markets with **two rows each on 2026-09-04, written under a second apart** at 06:29. GitHub ran once that day, under a concurrency lock, so the second writer was the **Vercel cron** — due at 06:00, fired 29 minutes late. The freshness guard checks *then* writes, so both runs heard "not done yet". The two rows held identical figures, so nothing showed.
+
+What it would have cost, traced through the code rather than assumed:
+
+- **Every watching subscriber emailed twice.** Each run reads the previous band before writing its own, and the sender keeps no record of what it sent. **Fixed:** the alert belongs to whichever run wrote **today's first** `mmai_scores` row (lowest identity id); racing runs always agree on which that is, with no new table and no lock. Deliberate side effect: a same-day forced re-run never emails.
+- **The Vercel crons are gone.** `vercel.json` is removed. GitHub Actions runs three times a day under a concurrency lock and is the only scheduler.
+
+Three more email bugs, all **dormant until the sending domain is verified** — which is exactly why they were fixed before it:
+
+| Bug | Fix |
+|---|---|
+| Unsubscribe deleted on a plain **GET**, so corporate link scanners, which open every link in a message to vet it, would have unsubscribed people who never clicked | GET shows a confirm button; **POST** deletes. Emails now carry `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058), so the mail provider's own one-click button works — POST-only, so no scanner can fire it |
+| Every re-subscribe minted a **new token**, killing the unsubscribe link in every earlier email | An existing subscription keeps its token |
+| Re-subscribing **replaced** the markets — anyone could type in an address and silently stop its owner's other alerts | Markets are **added**, never removed; removing needs the owner's link. The response no longer echoes the market list, which would otherwise reveal what any address follows |
+
+Also: the unused `latest_scores` view, flagged **ERROR** by Supabase's security advisor (it ran with its creator's rights, bypassing RLS), is removed from `schema.sql`. **The owner runs** `drop view if exists public.latest_scores;` in the SQL Editor, since the MCP connection is read-only. `withRetry` now clamps `attempts` to at least 1, and the audit step fails if the route's response loses a field its gates read.
+
+**Still open, deliberately:** anyone can still sign up an address that is not theirs. Only a **confirmation email** (double opt-in) closes that. It is a product decision plus a schema change, and it should be settled **before** the domain is bought and alerts start flowing.
 
 ---
 

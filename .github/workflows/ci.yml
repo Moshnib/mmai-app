@@ -231,6 +231,15 @@ jobs:
       - name: A figure with no observation date is reported, not passed
         run: npx tsx scripts/test-null-date-not-a-pass.ts
 
+      # The unsubscribe link used to delete on a plain GET. Corporate mail
+      # filters open every link in a message to vet it, so every subscriber
+      # behind one would have been unsubscribed on arrival of their first
+      # alert without clicking anything. This runs the route with the
+      # database credentials REMOVED: a GET that tried to delete would throw,
+      # so a GET that succeeds provably never reached the database.
+      - name: Opening an unsubscribe link changes nothing
+        run: npx tsx scripts/test-unsubscribe-safety.ts
+
       # The site reached twenty-seven distinct font sizes without anyone
       # deciding to have twenty-seven -- each was a reasonable local
       # choice, and 12, 12.5 and 13 ended up coexisting. A comment saying

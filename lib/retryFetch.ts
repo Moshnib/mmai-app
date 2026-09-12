@@ -59,14 +59,21 @@ export interface RetryOptions {
 }
 
 /**
- * Run `attempt` up to RETRY_ATTEMPTS times, returning the first success.
+ * Run `attempt` up to `options.attempts` times (RETRY_ATTEMPTS unless the
+ * caller says otherwise), returning the first success.
  */
 export async function withRetry<T>(
   label: string,
   attempt: () => Promise<T>,
   options: RetryOptions = {},
 ): Promise<T> {
-  const { shouldRetry = () => true, deadline, attempts = RETRY_ATTEMPTS } = options;
+  const { shouldRetry = () => true, deadline } = options;
+  // At least one go. Asked for 0, this used to skip the loop entirely,
+  // never call the source, and throw "failed after 0 attempts" -- reporting
+  // a failure that did not happen. No caller passes 0 today; the clamp
+  // keeps it that way by construction rather than by luck.
+  const requested = options.attempts ?? RETRY_ATTEMPTS;
+  const attempts = Number.isFinite(requested) ? Math.max(1, Math.floor(requested)) : RETRY_ATTEMPTS;
   let last: Error | undefined;
 
   for (let i = 1; i <= attempts; i++) {

@@ -127,6 +127,20 @@ async function main() {
     ok("a 404 is not retried", threw && calls === 1, `${calls} attempt(s)`);
   }
 
+  console.log("\nattempts IS HONOURED, AND CAN NEVER BE ZERO\n");
+  // The option was added for the source audit, which passes 2. Until this
+  // block existed, making withRetry ignore it entirely left every test
+  // here green -- the same class of gap the deadline test above was
+  // written to close.
+  for (const [asked, want] of [[2, 2], [1, 1], [0, 1], [-3, 1]] as const) {
+    let calls = 0;
+    let threw = false;
+    try {
+      await withRetry("counted", async () => { calls++; throw new Error("boom"); }, { attempts: asked });
+    } catch { threw = true; }
+    ok(`attempts: ${asked} makes ${want} call(s)`, threw && calls === want, `${calls} call(s)`);
+  }
+
   console.log("");
   if (fails > 0) {
     console.error(`${fails} assertion(s) failed.\n`);
