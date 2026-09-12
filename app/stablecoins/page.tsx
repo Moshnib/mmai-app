@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import { fetchAllStablecoinSupplies, STABLECOINS, type StablecoinSupply, type StablecoinChain } from "@/lib/fetchers/stablecoins";
-import { ETHEREUM_STABLECOIN_HISTORY } from "@/lib/stablecoinHistory";
+import { ETHEREUM_STABLECOIN_HISTORY, ethereumSupplySeriesPoints } from "@/lib/stablecoinHistory";
 import StablecoinTokens from "@/components/StablecoinTokens";
 import StablecoinMacroLink from "@/components/StablecoinMacroLink";
 import { measureMacroLink, type YieldPoint } from "@/lib/stablecoinMacro";
@@ -101,11 +101,10 @@ export default async function StablecoinsPage() {
       key: "ethereum-total",
       name: "Ethereum stablecoin supply",
       color: "#22D3EE",
-      data: history.map((p) => {
-        const d = new Date(`${p.date}T00:00:00Z`);
-        const label = `${d.toLocaleString("en-US", { month: "short", timeZone: "UTC" })} '${p.date.slice(2, 4)}`;
-        return { year: label, value: Math.round((p.total / 1e9) * 10) / 10 };
-      }),
+      // Built in lib/stablecoinHistory.ts, which explains why the label
+      // carries the day and why the ISO sortKey is not optional: without
+      // it this chart sorted its months alphabetically and drew noise.
+      data: ethereumSupplySeriesPoints(),
     },
   ];
   const tronTotal = rows.filter((r) => r.chain === "tron").reduce((s, r) => s + r.supply, 0);

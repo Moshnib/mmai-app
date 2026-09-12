@@ -38,6 +38,53 @@ export interface StablecoinHistoryPoint {
   bySymbol: Record<string, number | null>;
 }
 
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** One point as TrendChart wants it: a display label, a value in billions,
+ *  and the ISO date to order by. */
+export interface StablecoinSeriesPoint {
+  year: string;
+  value: number;
+  sortKey: string;
+}
+
+/**
+ * The Ethereum supply series, ready to chart.
+ *
+ * THIS LIVES HERE RATHER THAN IN THE PAGE because of two bugs that the
+ * page's own inline version had, and both came from the label.
+ *
+ * IT WAS SORTED ALPHABETICALLY. TrendChart draws a CATEGORY axis and
+ * orders it by each point's `sortKey`, falling back to the display label
+ * when none is given. The page gave none, so 38 points labelled "Sep '23",
+ * "Oct '23" and so on were ordered as text: Apr '24, Apr '25, Apr '26,
+ * Aug '24, Aug '25... The line leapt between years at every step and the
+ * chart read as violent zigzag. It was not the data. It was the sort --
+ * the identical failure the bond panel hit, which is why `sortKey` exists
+ * at all (see the comment above orderOf in components/TrendChart.tsx).
+ *
+ * THREE POINTS WERE BEING DROPPED. The label was month-and-year only, and
+ * the backfill steps roughly thirty days, so it drifts across month ends:
+ * 1 and 31 August 2025 both read "Aug '25", as did 1 and 31 October 2025
+ * and 1 and 31 March 2026. TrendChart keys its axis by label, so the
+ * second of each pair was silently discarded -- including 31 Aug 2025 at
+ * $154.1bn, which is $14.8bn above the point that survived it.
+ *
+ * The label now carries the day, which is both unique and truthful: these
+ * are real block dates, not month ends. Ticks are relabelled from the ISO
+ * date anyway once a date axis is detected, so the axis stays readable.
+ */
+export function ethereumSupplySeriesPoints(): StablecoinSeriesPoint[] {
+  return ETHEREUM_STABLECOIN_HISTORY.map((p) => {
+    const [y, m, d] = p.date.split("-");
+    return {
+      year: `${Number(d)} ${MONTHS_SHORT[Number(m) - 1]} ${y.slice(2)}`,
+      value: Math.round((p.total / 1e9) * 10) / 10,
+      sortKey: p.date,
+    };
+  });
+}
+
 export const ETHEREUM_STABLECOIN_HISTORY: StablecoinHistoryPoint[] = [
   { date: "2023-09-06", total: 67002301829, bySymbol: { USDT: 39025187376, USDC: 24078629435, USDS: null, DAI: 3854108578, USDe: null, PYUSD: 44376440 } },
   { date: "2023-10-07", total: 66512756395, bySymbol: { USDT: 39024700486, USDC: 23553895648, USDS: null, DAI: 3824763721, USDe: null, PYUSD: 109396540 } },
