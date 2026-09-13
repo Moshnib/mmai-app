@@ -344,16 +344,15 @@ export default function TrendsPageInner({
                   this was) left the panel floating with 150px of dead
                   space under it, which is what made its position read
                   as wrong. These two columns now fill each other out. */}
-              <div className="tabs tabs-inline" style={{ marginTop: 20 }}>
+              <div className="market-picker" style={{ marginTop: 20, justifyContent: "flex-start" }}>
                 {FALLBACK_MARKETS.map((m) => (
                   <button
                     key={m.code}
-                    className={`tab${m.code === current ? " active" : ""}`}
+                    className={`market-chip${m.code === current ? " active" : ""}`}
                     onClick={() => setCurrent(m.code)}
                     aria-pressed={m.code === current}
-                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }}
                   >
-                    <Flag code={m.code} size={17} /> {m.name}
+                    <Flag code={m.code} size={22} /> {m.name}
                   </button>
                 ))}
               </div>
