@@ -293,16 +293,15 @@ export default function OverviewPage() {
           <p className="meta-label" style={{ margin: "0 0 10px" }}>
             {current ? "Showing" : "Choose a market"}
           </p>
-          <div className="tabs">
+          <div className="market-picker">
             {markets.map((m) => (
               <button
                 key={m.code}
-                className={`tab${m.code === current ? " active" : ""}`}
+                className={`market-chip${m.code === current ? " active" : ""}`}
                 onClick={() => selectMarket(m.code)}
                 aria-pressed={m.code === current}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
-                <Flag code={m.code} size={18} /> {m.name}
+                <Flag code={m.code} size={22} /> {m.name}
               </button>
             ))}
           </div>

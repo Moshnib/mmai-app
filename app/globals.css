@@ -269,6 +269,92 @@ h1.headline {
 }
 .tab.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
 
+/* ============================================================
+   CHOOSING A MARKET
+
+   WHAT WAS WRONG WITH .tabs HERE. It is a bordered, filled box that
+   wraps its buttons, which reads as a segmented control -- a shape that
+   works for three or four options sitting on one line. At nine markets
+   it wraps to four rows, and on a phone it becomes a tall empty-looking
+   panel with a list inside it. The box was doing no work: it grouped
+   things that were already visibly a group, and it added a hard edge
+   around the most inviting element on the page.
+
+   So the box is gone and each market is its own chip. The flag leads,
+   at 22px rather than 18 -- for most readers a flag is recognised
+   faster than a country name is read, and it is the only part that
+   survives being glanced at.
+
+   The selected state keeps the accent gradient .tab.active already
+   used, so this is a new shape in the existing visual language rather
+   than a new language.
+
+   Chips wrap naturally at any count, which is the property .tabs did
+   not have: this has been re-laid-out three times in two days as
+   markets were added, and should not need a fourth.
+   ============================================================ */
+.market-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.market-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  /* 44px minimum, so a chip is a comfortable tap target on a phone
+     without padding alone having to guarantee it. */
+  min-height: 44px;
+  padding: 9px 16px 9px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: var(--t-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.market-chip:hover {
+  border-color: var(--slate);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+}
+
+/* Movement only for readers who want it. */
+@media (prefers-reduced-motion: no-preference) {
+  .market-chip:hover { transform: translateY(-1px); }
+}
+
+.market-chip.active {
+  background: linear-gradient(135deg, var(--accent-2), #6D28D9);
+  border-color: transparent;
+  color: #fff;
+}
+
+.market-chip.active:hover {
+  background: linear-gradient(135deg, var(--accent-2), #6D28D9);
+  color: #fff;
+}
+
+/* On a narrow phone the chips go full width in two columns rather than
+   ragging badly at three-and-a-half per row. */
+@media (max-width: 420px) {
+  .market-picker { gap: 8px; }
+  /* 0 1, not 1 1. With grow enabled an odd market count leaves the last
+     chip alone on its row and it stretches to full width -- nine markets
+     made South Korea twice the size of every other country. Growth off,
+     basis half: the orphan stays a chip and centres. */
+  .market-chip { flex: 0 1 calc(50% - 4px); justify-content: flex-start; }
+}
+
+
 /* Now nested inside .snapshot-card, so it carries no border or
    background of its own -- a vertical rule separates score from chart,
    matching the design reference. */

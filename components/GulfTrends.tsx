@@ -391,16 +391,15 @@ export default function GulfTrends() {
             </p>
           </div>
 
-          <div className="tabs">
+          <div className="market-picker">
             {GULF_COUNTRIES.map((c) => (
               <button
                 key={c.code}
-                className={`tab${c.code === current ? " active" : ""}`}
+                className={`market-chip${c.code === current ? " active" : ""}`}
                 onClick={() => setCurrent(c.code)}
                 aria-pressed={c.code === current}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
-                <Flag code={c.code} size={18} /> {c.name}
+                <Flag code={c.code} size={22} /> {c.name}
               </button>
             ))}
           </div>
