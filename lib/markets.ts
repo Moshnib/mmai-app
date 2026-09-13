@@ -82,6 +82,11 @@ export const FALLBACK_MARKETS: MarketData[] = [
   // Norway rejoined 2026-09-12. Verified live that day: CPI from Statistics
   // Norway, unemployment and GDP from Eurostat, rate and debt from BIS.
   { code: "NO", name: "Norway", raw: { inflation: 3.3, gdpGrowth: 1.6, unemployment: 4.2, policyRate: 4.25, brentYoY: 17.91, debtPctGdp: 53.9 } },
+  // Korea joined 2026-09-13, the first market needing NO new institution
+  // and NO new licence -- OECD for inflation, unemployment and GDP, BIS
+  // for the rate and debt, both already audited here. Verified live that
+  // day, and every reading sits inside 1.6 SD of the reference mean.
+  { code: "KR", name: "Korea", raw: { inflation: 3.09, gdpGrowth: 3.76, unemployment: 2.8, policyRate: 3, brentYoY: 17.91, debtPctGdp: 45.7 } },
 ];
 
 /**
@@ -132,6 +137,16 @@ export const MARKET_COLORS: Record<string, string> = {
   // the missing-data grey, so a Norway line would have read as text or
   // as "no data" rather than as a country.
   NO: "#D8C3A0", // warm sand
+  // Orchid. Nine markets is where picking colours by eye stops working,
+  // so this one was SEARCHED rather than guessed: a sweep of HSL keeping
+  // only colours that clear every rule the site enforces, ranked by
+  // distance from the nearest existing colour. dE 35.5 from Japan's pink,
+  // which is the same separation as the closest existing pair, and 8.0:1
+  // on the card.
+  //
+  // The search also turned up a hole in the green ban -- see
+  // scripts/test-market-colours.ts.
+  KR: "#C992F6", // orchid
 };
 
 // scoreMarket() -- the five-pillar scorer -- was removed at the cutover on
