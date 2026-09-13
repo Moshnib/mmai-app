@@ -89,6 +89,24 @@ export const FALLBACK_MARKETS: MarketData[] = [
   { code: "KR", name: "Korea", raw: { inflation: 3.09, gdpGrowth: 3.76, unemployment: 2.8, policyRate: 3, brentYoY: 17.91, debtPctGdp: 45.7 } },
 ];
 
+
+/** THE NUMBER OF SCORED MARKETS, AS A WORD, DERIVED.
+ *
+ *  Three pages -- the homepage, About and Compare -- announced "Six
+ *  economies" while the site scored nine. They were written when six was
+ *  true and nothing re-read them when Sweden, Norway and Korea arrived.
+ *
+ *  scripts/test-market-count-copy.ts existed by then and did not catch
+ *  it: it looked for a count attached to the word "market", and these
+ *  said "economies". A rule that names one noun only polices that noun.
+ *
+ *  NOT to be used for the reference set. "148 market-years of the same
+ *  six economies" is a fixed historical fact and must stay six however
+ *  many markets are scored. */
+const COUNT_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+export const MARKET_COUNT_WORD = COUNT_WORDS[FALLBACK_MARKETS.length] ?? String(FALLBACK_MARKETS.length);
+export const MARKET_COUNT_WORD_CAP = MARKET_COUNT_WORD.charAt(0).toUpperCase() + MARKET_COUNT_WORD.slice(1);
+
 /**
  * ONE COLOUR PER MARKET, FOR THE WHOLE SITE.
  *

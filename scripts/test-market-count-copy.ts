@@ -41,6 +41,8 @@ console.log("\nMarket counts in copy\n");
 
 // ---------- 1. no page hand-types the number of markets ----------
 const WORDS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+/** Gulf Watch really does cover six countries, and always will unless the
+ *  Gulf changes shape. Its pages are not in scope. */
 const FILES = [
   "app/learn/page.tsx",
   "app/dashboard/DashboardInner.tsx",
@@ -52,10 +54,78 @@ const FILES = [
   "components/WorldMap.tsx",
 ];
 
-/** Only flags a count word ATTACHED to the word "market(s)" -- "six
- *  large economies" describing the reference set is a fixed historical
- *  fact and must not be rewritten every time a market is added. */
-const PATTERN = new RegExp(`\\b(${WORDS.join("|")})\\s+(scored\\s+)?markets?\\b`, "i");
+/** Counts attached to the things this site counts.
+ *
+ *  "market(s)" WAS THE ONLY NOUN HERE, AND THAT WAS THE HOLE. On
+ *  13 September an audit of the live site found three pages announcing
+ *  "Six economies" while nine were scored -- the homepage, About and
+ *  Compare, the three most-read pages. This test was already running in
+ *  CI and passed every time, because it policed one noun and the copy
+ *  used another.
+ *
+ *  A rule that names one word only ever polices that word. Adding
+ *  "economies" and "countries"; anything else the copy starts calling
+ *  them will need adding too, which is the honest limitation of
+ *  checking prose with a regular expression.
+ *
+ *  NOT flagged: a count attached to the REFERENCE SET. "148 market-years
+ *  of the same six economies" is a fixed historical fact that must stay
+ *  six however many markets are scored, so a line mentioning the
+ *  reference set is skipped. */
+const NOUNS = "markets?|economies|economy|countries|country";
+/** "one" is dropped: it is a pronoun far more often than a count.
+ *  "distinguish one country from another" is English, not a claim about
+ *  coverage, and the site has never scored one market. */
+const COUNTING_WORDS = WORDS.filter((w) => w !== "one");
+
+// NOTE THE DOUBLE BACKSLASHES, AND DO NOT "TIDY" THEM AWAY.
+//
+// Inside a template literal `\b` is a BACKSPACE character, not a regex
+// word boundary. A single backslash here builds a pattern that matches
+// nothing, which makes this test pass on every input -- including the
+// three pages that said "Six economies" while nine were scored.
+//
+// That is not hypothetical: it happened while widening this check on
+// 13 September 2026, minutes after adding it. Every assertion went green
+// and the check was inert. The only thing that noticed was the mutation
+// test below, which puts a known-bad string back and fails if the suite
+// stays green.
+const PATTERN = new RegExp(
+  `\\b(${COUNTING_WORDS.join("|")})\\s+(scored\\s+)?(${NOUNS})\\b`,
+  "i",
+);
+
+/** A line describing the frozen reference set may legitimately say six. */
+const ABOUT_THE_REFERENCE_SET =
+  /148|market-year|reference|record|own history|since 2000|2000.{0,4}2025|Gulf/i;
+
+// ---------- 0. does the pattern work at all? ----------
+//
+// A regex that matches NOTHING makes every assertion below pass. That is
+// not a hypothetical failure mode: it happened here on 13 September 2026,
+// when a single backslash in a template literal turned the word boundary
+// into a backspace character. The whole file went green while checking
+// nothing.
+//
+// So the pattern is tested against strings it MUST catch and strings it
+// MUST NOT, before it is trusted on real pages.
+const MUST_CATCH = [
+  "<h1>Six economies on one scale</h1>",
+  "The seven markets MMAI scores, arranged for a decision",
+  "eight countries on one scale",
+  "Six economies scored on five official figures each",
+];
+const MUST_NOT_CATCH = [
+  "distinguish one country from another",
+  "could never make one country look better or worse",
+];
+for (const sample of MUST_CATCH) {
+  if (!PATTERN.test(sample)) fail(`the pattern does not match "${sample}" — it is not doing anything`);
+}
+for (const sample of MUST_NOT_CATCH) {
+  if (PATTERN.test(sample)) fail(`the pattern matches "${sample}", which is English rather than a count`);
+}
+if (!failed) ok("the pattern catches what it must and ignores what it must not");
 
 for (const file of FILES) {
   let src: string;
@@ -69,7 +139,8 @@ for (const file of FILES) {
     .map((line, i) => ({ line, n: i + 1 }))
     // Comments may discuss history -- the prose a reader sees may not.
     .filter(({ line }) => !line.trimStart().startsWith("//") && !line.trimStart().startsWith("*"))
-    .filter(({ line }) => PATTERN.test(line));
+    .filter(({ line }) => PATTERN.test(line))
+    .filter(({ line }) => !ABOUT_THE_REFERENCE_SET.test(line));
 
   if (offenders.length > 0) {
     for (const { line, n } of offenders) {

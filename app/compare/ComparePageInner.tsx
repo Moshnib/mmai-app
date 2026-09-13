@@ -21,7 +21,7 @@ const RAW_CHOICES = [
   { key: "debtPctGdp", label: "Government debt", unit: "% of GDP" },
   { key: "policyRate", label: "Policy rate", unit: "%" },
 ] as const satisfies readonly { key: keyof RawIndicators; label: string; unit: string }[];
-import { FALLBACK_MARKETS, MARKET_COLORS } from "@/lib/markets";
+import { FALLBACK_MARKETS, MARKET_COLORS, MARKET_COUNT_WORD_CAP } from "@/lib/markets";
 
 const ORDER: DimensionKey[] = ["C", "D", "K"];
 
@@ -239,7 +239,7 @@ export default function ComparePageInner() {
               {/* h1, not h2 -- this is the page's top-level subject. Every other
                   page has one; without it this page reads to a search engine and
                   a screen reader as sections with no subject. */}
-              <h1>Six economies on one scale</h1>
+              <h1>{MARKET_COUNT_WORD_CAP} economies on one scale</h1>
               <p>The same five official figures, rebuilt so the comparison actually holds — then ranked against the same {REFERENCE_COUNT} market-years. Every line here means the same thing.</p>
             </div>
 
