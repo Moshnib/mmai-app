@@ -85,6 +85,12 @@ export const INFLATION_TARGET: Record<string, number> = {
   // lib/fetchers/ssb.ts reads -- not the HICP Eurostat also publishes for
   // Norway. Stated rather than inherited, for the same reason Sweden is.
   NO: 2.0,
+  // The Bank of Korea targets 2.0 on HEADLINE CPI, stated on its own site
+  // and in force since 2019. Written down rather than left to the 2.0
+  // default even though the default matches: Malaysia was rejected as a
+  // market precisely because Bank Negara publishes no target at all, and
+  // a default that happens to be right teaches nobody that.
+  KR: 2.0,
 };
 
 export function inflationTargetFor(market: string): number {

@@ -538,20 +538,28 @@ export const DIMENSION_EFFECTIVE_INFLUENCE: Record<DimensionKey, number> = {
  *  Unlike the influence figures above -- which are measured against the
  *  fixed 148-row reference set and are unaffected by who is scored --
  *  these describe the spread of the markets actually published today.
- *  Norway joining on 12 September moved all three: C 27.5 -> 26.5,
- *  D 22.9 -> 21.6, K 22.0 -> 22.5. Sweden had moved them days before.
+ *  Sweden, Norway and Korea each moved them within days of each other:
+ *
+ *    Sweden   ->  C 27.5  D 22.9  K 22.0
+ *    Norway   ->  C 26.5  D 21.6  K 22.5
+ *    Korea    ->  C 27.2  D 25.7  K 21.8
+ *
+ *  Korea widened Direction most, from 21.6 to 25.7, because it arrived
+ *  with the strongest growth reading in the set. A market does not have
+ *  to be an outlier to move these -- it only has to be somewhere the
+ *  others are not.
  *
  *  So a market cannot be added without re-running
  *  scripts/measure-dimension-influence.ts and republishing these. CI
  *  fails if they drift, which is how both additions were caught rather
  *  than shipped with a stale claim on the Learn page. */
 export const DIMENSION_CROSS_MARKET_SD: Record<DimensionKey, number> = {
-  C: 26.5,
-  D: 21.6,
-  K: 22.5,
+  C: 27.2,
+  D: 25.7,
+  K: 21.8,
 };
 
-export const DIMENSION_INFLUENCE_MEASURED = "12 September 2026";
+export const DIMENSION_INFLUENCE_MEASURED = "13 September 2026";
 
 /** The exact transform applied to one indicator, written out with the
  *  constants the engine actually holds.

@@ -84,11 +84,49 @@ if (!failed) ok(`closest pair is ${closest.pair} at dE ${closest.d.toFixed(1)}, 
 // ---------- the site-wide rule ----------
 // Green is reserved out of the palette entirely, so a rising line is
 // never mistaken for a "good" line.
+//
+// THIS CHECK USED TO HAVE A HOLE, and it was found by searching the
+// colour space for Korea rather than by anything failing. The rule was
+// only "g > r+40 AND g > b+40", which misses every green whose red or
+// blue channel is close to its green one:
+//
+//   #6B931F  olive       g 147, r 107  -- difference exactly 40, passes
+//   #358D65  emerald     g 141, b 101  -- passes
+//   #D0F20D  chartreuse  g 242, r 208  -- passes
+//
+// All three are unmistakably green to a reader, and the top three
+// results of that search were exactly these. A rule about what a reader
+// SEES cannot be enforced only on channel arithmetic, so hue is checked
+// too: 60-185 degrees is yellow-green through cyan-green.
 for (const [code, hex] of Object.entries(MARKET_COLORS)) {
-  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-  if (g > r + 40 && g > b + 40) fail(`${code} (${hex}) is green, and the site does not use green`);
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+  if (g > r + 40 / 255 && g > b + 40 / 255) {
+    fail(`${code} (${hex}) is green by channel, and the site does not use green`);
+    continue;
+  }
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const chroma = max - min;
+  if (chroma < 0.08) continue; // near-grey has no meaningful hue
+
+  let hue: number;
+  if (max === r) hue = ((g - b) / chroma) * 60;
+  else if (max === g) hue = (2 + (b - r) / chroma) * 60;
+  else hue = (4 + (r - g) / chroma) * 60;
+  if (hue < 0) hue += 360;
+
+  if (hue >= 60 && hue <= 185) {
+    fail(
+      `${code} (${hex}) sits at hue ${hue.toFixed(0)}deg, which reads as green. ` +
+        `The channel test alone misses olive, emerald and chartreuse.`,
+    );
+  }
 }
-if (!failed) ok("no green, per the site-wide rule");
+if (!failed) ok("no green, by channel AND by hue");
 
 console.log("");
 if (failed) {

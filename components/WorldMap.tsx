@@ -27,6 +27,7 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   EA: ["250", "276", "380", "724", "528", "056", "040", "620", "372", "246", "300"],
   SE: ["752"],
   NO: ["578"],
+  KR: ["410"],
 };
 
 // Approximate [longitude, latitude] label anchor per market — not a precise

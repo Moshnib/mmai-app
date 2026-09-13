@@ -40,6 +40,7 @@ import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchSwedenInflation, fetchSwedenUnemployment, fetchSwedenGdpGrowthQuarterly } from "@/lib/fetchers/scb";
 import { fetchBisPolicyRate } from "@/lib/fetchers/bis";
 import { fetchNorwayUnemployment, fetchNorwayGdpGrowthQuarterly } from "@/lib/fetchers/norway";
+import { fetchKoreaReadings } from "@/lib/fetchers/korea";
 import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
@@ -487,6 +488,48 @@ async function fetchRawIndicators(
     };
   }
 
+  if (market === "KR") {
+    // KOREA, added 2026-09-13. The ninth market, and the first that
+    // needed no new institution and no new licence: inflation,
+    // unemployment and GDP all come from OECD, the policy rate and debt
+    // from BIS, and both were already audited and wired here.
+    //
+    // THIS BRANCH DOES NOT USE Promise.all, AND THAT IS THE POINT.
+    //
+    // Every other market fans its sources out concurrently because they
+    // are different institutions. Korea's three come from ONE, and OECD
+    // answers concurrent requests with HTTP 500 across the board -- not
+    // for the extra ones, for ALL of them. While researching this market
+    // a parallel probe reported "no OECD data for Japan", which is false:
+    // this project fetches Japan's unemployment from OECD every day.
+    //
+    // A Promise.all here would therefore not fail loudly. It would return
+    // three nulls, settle() would swallow them, the row would be written
+    // PARTIAL, and Korea would silently stop being scored. fetchKoreaReadings
+    // runs them in series and captures each failure separately, so one dead
+    // series cannot take the other two with it.
+    const kr = await fetchKoreaReadings();
+    for (const message of kr.errors) console.warn(`  ${message}`);
+
+    const rate = await settle("KR policy rate (BIS)", fetchBisPolicyRate("KR"));
+    return {
+      raw: {
+        inflation: kr.inflation?.inflation ?? null,
+        gdpGrowth: kr.gdpGrowth?.gdpGrowth ?? null,
+        unemployment: kr.unemployment?.unemployment ?? null,
+        policyRate: rate?.policyRate ?? null,
+        brentYoY,
+      },
+      dates: {
+        inflation: kr.inflation?.observationDate ?? null,
+        gdpGrowth: kr.gdpGrowth?.observationDate ?? null,
+        unemployment: kr.unemployment?.observationDate ?? null,
+        policyRate: rate?.observationDate ?? null,
+        brent: brentDate,
+      },
+    };
+  }
+
   if (market === "NO") {
     // NORWAY, reactivated 2026-09-12 after three weeks dormant. Three of
     // these four lines changed, and each change has a reason:
@@ -543,7 +586,7 @@ async function fetchRawIndicators(
 // BIS already publish the rate under usable terms. The comment that stood
 // here for three weeks said the branch was "ready to reactivate with a
 // one-line change", and it was.
-const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "SE", "NO"];
+const MARKETS = ["US", "EA", "CA", "UK", "JP", "AU", "SE", "NO", "KR"];
 
 /** Every figure this run wrote, checked against how often its source
  *  actually publishes.

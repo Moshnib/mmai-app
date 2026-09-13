@@ -22,6 +22,7 @@
 
 import { MAX_AGE_DAYS, stalenessOf, quarterToDate, ageInDays } from "../lib/freshness";
 import { SOURCES, type SourceCadence } from "../lib/sources";
+import { FALLBACK_MARKETS } from "../lib/markets";
 
 const NOW = Date.parse("2026-09-02T00:00:00Z");
 const dayFmt = (daysAgo: number) =>
@@ -102,8 +103,24 @@ check("Every BIS debt row carries the allowance",
   debtRows.filter((s) => s.maxAgeDays == null).map((s) => s.market), []);
 // Counted, not assumed: a market added without its debt row would
 // otherwise pass the "every row carries the allowance" check above by
-// simply not existing. Sweden made this eight on 2026-09-12.
-check("  ...and there are eight of them", debtRows.length, 8);
+// simply not existing -- an absent row asserts nothing, so nothing fails.
+//
+// THE COUNT IS DERIVED, and it did not used to be. It was written as the
+// literal 8 with a comment saying "Sweden made this eight", and adding
+// Korea broke it the next day. A hand-typed count is correct until the
+// next market and silently wrong after -- which is exactly the failure
+// scripts/test-market-count-copy.ts was written to stop in page COPY on
+// the same day this one bit in a TEST.
+//
+// What actually matters is that every scored market has a debt row, so
+// that is what is now checked, by name rather than by total.
+const scoredMarketNames = new Set(FALLBACK_MARKETS.map((m) => m.name));
+const withDebt = new Set(debtRows.map((s) => s.market));
+check(
+  "  ...and every scored market has one",
+  [...scoredMarketNames].filter((n) => !withDebt.has(n)),
+  [],
+);
 
 // THE SECOND FALSE POSITIVE THIS FILE CAUGHT BEFORE SHIPPING. ONS
 // labour-market data runs about four months behind: verified against the

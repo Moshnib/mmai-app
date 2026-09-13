@@ -93,4 +93,6 @@ export const GULF_POLICY_RATE_LABELS: Record<string, string> = {
   // Bank directly: the rate is identical and BIS state the reuse terms
   // that Norges Bank do not. BIS name Norges Bank as the source.
   NO: "Policy rate",
+  // Korea joined 2026-09-13. The Bank of Korea Base Rate.
+  KR: "Policy rate",
 };

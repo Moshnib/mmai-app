@@ -111,6 +111,52 @@ export const FLAG_SHAPES: Record<string, React.ReactNode> = {
       <rect x="0" y="8" width="28" height="4" fill="#FECC00" />
     </>
   ),
+  KR: (
+    <>
+      <rect width="28" height="20" fill="#fff" />
+      {/* Taegeuk. Rotated -45deg about its own centre: the tilt is what
+          makes this Korean rather than a generic yin-yang. */}
+      <g transform="rotate(-45 14 10)">
+        <circle cx="14" cy="10" r="5" fill="#CD2E3A" />
+        <path d="M9,10 A2.5,2.5 0 0 1 14,10 A2.5,2.5 0 0 0 19,10 A5,5 0 0 1 9,10 Z" fill="#0047A0" />
+      </g>
+      {/* Four trigrams, one per corner, each angled toward the centre.
+          Bar counts and breaks are simplified for a 28x20 box; what is
+          preserved is that all four differ from each other. */}
+      <g fill="#000">
+        {/* upper left - three solid bars */}
+        <g transform="rotate(-56 5.5 4.5)">
+          <rect x="3.1" y="3.1" width="4.8" height="0.8" />
+          <rect x="3.1" y="4.35" width="4.8" height="0.8" />
+          <rect x="3.1" y="5.6" width="4.8" height="0.8" />
+        </g>
+        {/* lower right - three broken bars */}
+        <g transform="rotate(-56 22.5 15.5)">
+          <rect x="20.1" y="14.1" width="2.1" height="0.8" />
+          <rect x="22.9" y="14.1" width="2.1" height="0.8" />
+          <rect x="20.1" y="15.35" width="2.1" height="0.8" />
+          <rect x="22.9" y="15.35" width="2.1" height="0.8" />
+          <rect x="20.1" y="16.6" width="2.1" height="0.8" />
+          <rect x="22.9" y="16.6" width="2.1" height="0.8" />
+        </g>
+        {/* upper right - broken, solid, broken */}
+        <g transform="rotate(56 22.5 4.5)">
+          <rect x="20.1" y="3.1" width="2.1" height="0.8" />
+          <rect x="22.9" y="3.1" width="2.1" height="0.8" />
+          <rect x="20.1" y="4.35" width="4.8" height="0.8" />
+          <rect x="20.1" y="5.6" width="2.1" height="0.8" />
+          <rect x="22.9" y="5.6" width="2.1" height="0.8" />
+        </g>
+        {/* lower left - solid, broken, solid */}
+        <g transform="rotate(56 5.5 15.5)">
+          <rect x="3.1" y="14.1" width="4.8" height="0.8" />
+          <rect x="3.1" y="15.35" width="2.1" height="0.8" />
+          <rect x="5.9" y="15.35" width="2.1" height="0.8" />
+          <rect x="3.1" y="16.6" width="4.8" height="0.8" />
+        </g>
+      </g>
+    </>
+  ),
   // ---------- Gulf Watch flags ----------
   AE: (
     <>
