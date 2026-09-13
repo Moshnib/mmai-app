@@ -1494,3 +1494,201 @@ Two operational notes for whoever runs them next:
   And never rebuild while the old server is still serving `.next`.
 - The two collisions in §24.3 were found by **looking at the rendered page**.
   No check failed on either, and no build would have.
+
+---
+
+## 25. Norway, South Korea, and four sources that had quietly died (2026-09-12 → 13)
+
+The index went from seven scored markets to nine. More usefully, the two
+days produced a **test a candidate country has to pass**, and it rejected
+eight of the ten countries examined — for reasons that were never about
+bad data.
+
+### 25.1 The scope boundary, stated at last
+
+MMAI is calibrated for **mature, floating-rate, inflation-targeting
+economies whose GDP measures domestic activity**. That was always true and
+was never written down, so it got rediscovered five times in two days.
+
+A market can only be scored if its readings land **inside** the 148-row
+reference distribution. Outside it, the score stops being wrong and starts
+being *meaningless* — the dimension pegs and stops responding to the thing
+it measures.
+
+| Country | Reading | Distance | What happened |
+|---|---|---|---|
+| Turkey | policy rate 37% | **+17.9σ** | Capacity pegs at 100, ranks 1st |
+| South Africa | unemployment 32.4% | **−12.7σ** | scored exactly **0.0**; a fall to 25% would not move it |
+| Brazil | policy rate 14% | **+6.1σ** | Capacity pegged, ranked 1st at 99.3 |
+| Denmark | GDP 3.42% avg | — | worth **32 points**, would rank 2nd of 9 |
+| Malaysia | — | — | Bank Negara publishes **no inflation target** |
+| Thailand | unemployment 0.8% | below the record's floor | informal-sector absorption |
+| Poland, Czechia, Hungary | — | — | OECD prices frozen at 2025-12 |
+
+Two deserve emphasis because they were nearly added:
+
+**Brazil had the best data found anywhere** — Banco Central do Brasil's
+SGS API, no key, no registration, all five indicators current, ODbL
+licence. It fails on *interpretation*: a 14% rate in an emerging market is
+a risk premium, not room to cut.
+
+**South Africa's data is completely honest.** Stats SA measures 32.4%
+unemployment properly and it really is that high. It fails because nothing
+in the reference record exceeds 12%.
+
+The screen to run on any future candidate is in
+`scripts/verify-korea-fetch.ts`: every reading within ~3σ, checked before
+wiring anything.
+
+### 25.2 Norway — the blocker that never existed
+
+Norway was paused on 2026-08-22 pending written confirmation from Norges
+Bank that commercial reuse of the Key Policy Rate is permitted. Their own
+terms do not say.
+
+**Nobody ever needed to ask.** BIS republishes that rate, naming Norges
+Bank as source, under terms that permit commercial use with citation —
+the identical route already carrying Saudi Arabia's and Kuwait's since
+August and Sweden's since days before. The answer sat in
+`lib/fetchers/bis.ts` the whole time it was being waited on.
+
+**The lesson is not about Norway.** A blocker was written down once and
+re-read as settled every time anyone looked. When a market is parked on a
+licence question, check whether an aggregator already carries it before
+waiting on an institution.
+
+Norway's unemployment and GDP also moved off World Bank **annual** series
+(the unemployment one an ILO *modelled estimate*, not Norway's own
+measurement) onto Eurostat. Inflation stays with Statistics Norway,
+because Norges Bank's 2% target is set on Norway's own CPI.
+
+### 25.3 South Korea — and why the name says South
+
+The ninth market, and the first needing **no new institution and no new
+licence**: OECD for inflation, unemployment and GDP; BIS for rate and
+debt. Every reading sits inside 1.6σ.
+
+Every institution calls it simply "Korea" — OECD `KOR`, BIS `KR`, the
+Bank of Korea. That is unambiguous to a statistician, because North Korea
+publishes no macro data and appears in none of these sources. It is **not**
+unambiguous to a reader looking at a flag and a score, so the site says
+**South Korea** while the Sources page still names institutions as they
+name themselves.
+
+### 25.4 OECD DOES NOT ANSWER FROM VERCEL
+
+Korea merged green and failed on its first real refresh. The stored row:
+
+    policy_rate    3       BIS      ok
+    debt_pct_gdp   45.7    BIS      ok
+    inflation      null    OECD
+    unemployment   null    OECD
+    gdp_growth     null    OECD
+
+Five calls, one runtime, one moment. Both non-OECD ones worked.
+
+**This project already knew.** Japan's unemployment has been fetched by
+the GitHub Action with curl and relayed since August for exactly this
+reason, and that workflow step sits thirty lines above the one calling the
+route.
+
+Korea's three series are now relayed the same way — for both
+`/api/refresh` **and** `/api/source-audit`, which also runs on Vercel. The
+direct fetchers stay and are tried first: they work everywhere that is not
+Vercel, including the verify scripts.
+
+**OECD also rate-limits hard**, on a window longer than a single call.
+Concurrent requests return HTTP 500 for *all* of them, including ones that
+work alone — which reads exactly like "OECD has no data for this country"
+and is false. A parallel probe reported no OECD data for Japan, which this
+project fetches every day.
+
+### 25.5 Four dead sources, all returning HTTP 200
+
+Every one answers with a plausible number and a stale date:
+
+| Source | Frozen at | Age |
+|---|---|---|
+| OECD prices, Japan | 2021-06 | five years |
+| OECD prices, Chile | 2023-12 | |
+| OECD prices, Mexico | 2024-07 | |
+| OECD prices — France, Poland, Czechia, Hungary, Switzerland | 2025-12 | |
+| Eurostat `prc_hicp_manr` (incl. Denmark) | 2025-12 | retired 2026-02-04 |
+
+The rot is **per country**: the US, UK, Germany, Canada and Australia are
+current in the same dataflow.
+
+**Every OECD-sourced series must carry an age guard.** Korea's do, matching
+the one protecting euro area inflation after Eurostat's retirement cost
+nine months of a wrong published figure.
+
+### 25.6 A withheld score could not be written at all
+
+The refresh route wrote `band = null` when a score is withheld, above a
+comment claiming that was "the intended behaviour and what the mmai_scores
+check constraint enforces". The schema says the opposite: `band text not
+null`. So a market with a missing indicator could not be written **at
+all** — the insert was refused, and on the site a market with no row is
+indistinguishable from one never configured.
+
+Dormant for months because every market had always returned all five
+indicators. Korea was the first to arrive incomplete — precisely the
+moment the site most needs to record something.
+
+`percentileBandLabel(null)` already returns "Not published".
+`scripts/test-withheld-score-is-storable.ts` holds the line.
+
+### 25.7 Three tests that read stronger than they were
+
+Worth recording together, because the pattern is the point: **a test can
+pass without checking anything**, and only a mutation catches it.
+
+- `verify-freshness` asserted *"there are eight"* BIS debt rows as a
+  literal. Korea broke it. It now checks every scored market **has** a debt
+  row, by name.
+- `test-market-count-copy` policed the word "market". Three pages said
+  **"Six economies"** while nine were scored — the homepage, About, and
+  Compare's h1 — and it passed every time.
+- Widening that test then made it **inert for ten minutes**: inside a
+  template literal `` `\b` `` is a backspace character, not a word
+  boundary, so the regex matched nothing and every assertion passed on
+  every input. It now tests **itself** against strings it must and must not
+  catch, before it is trusted on real pages.
+- The green ban had the same shape of hole: `g > r+40 && g > b+40` misses
+  olive, emerald and chartreuse. Found by *searching* the colour space for
+  Korea's colour, not by anything failing. Hue is checked now.
+
+**Every new test in this section was verified by reintroducing the bug and
+confirming the suite goes red.** A test added without that is a guess.
+
+### 25.8 Completeness — the thing a person kept catching
+
+Adding a market touches **ten files** and the compiler enforces none of
+it: each is a `Record` keyed by string, so a missing entry is an empty
+chart, not a type error.
+
+- Sweden shipped with no flag, map shape or glyph. The site owner reported
+  it.
+- Norway shipped with annual history only. Its charts rendered, so nothing
+  looked wrong, and the monthly view was empty for a day.
+- Korea shipped with no history at all — four empty panels on a page
+  called Data Over Time.
+
+`scripts/test-market-completeness.ts` now asks the question for every
+market and every file at once, and runs in CI.
+
+### 25.9 What a new session must not do
+
+- **Do not fetch OECD from a Vercel route.** Relay it from the workflow.
+- **Do not fire OECD requests concurrently.** Space them; a 500 means wait,
+  not gone.
+- **Do not add an OECD series without an age guard.** Four have died.
+- **Do not add a market without running the σ screen first.** Eight of ten
+  candidates failed it, and none failed for having bad data.
+- **Do not hand-type a count into copy**, in any noun. It is right until
+  the next market and silent afterwards.
+- **Do not add a test without a mutation run.** Three in two days read
+  stronger than they were.
+- **Do not rewrite "six" where it describes the REFERENCE SET.** 148
+  market-years from six economies is frozen and stays six however many
+  markets are scored.

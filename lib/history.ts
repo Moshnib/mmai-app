@@ -130,6 +130,30 @@ export const HISTORY: Record<string, HistoryPoint[]> = {
     { year: "2024", indicators: { inflation: 1.9, gdpGrowth: 2, unemployment: 8.4, policyRate: 3.6, brentYoY: -2, debtPctGdp: 33.6 } },
     { year: "2025", indicators: { inflation: 2.6, gdpGrowth: 1.6, unemployment: 8.9, policyRate: 2.1, brentYoY: -8, debtPctGdp: 34 } },
   ],
+  // SOUTH KOREA, backfilled 2026-09-13 by scripts/backfill-korea-history.ts.
+  //
+  // Built the same way Sweden's was: inflation and unemployment are the
+  // calendar-year averages of the monthly series in lib/monthlyHistory.ts,
+  // growth is the average of that year's four quarterly year-over-year
+  // readings, the policy rate is December's LEVEL -- a rate is a level at
+  // a moment, not something to average -- and debt is the BIS Q4 figure.
+  //
+  // Brent is the single global price every market carries; it is the same
+  // number for all of them, which is precisely why it stopped being
+  // scored on 1 September 2026.
+  //
+  // STOPS AT 2025. The current year is appended below from
+  // FALLBACK_MARKETS for every market, so a row here would duplicate it
+  // with a partial-year average.
+  KR: [
+    { year: "2019", indicators: { inflation: 0.4, gdpGrowth: 2.3, unemployment: 3.8, policyRate: 1.25, brentYoY: -10, debtPctGdp: 37.1 } },
+    { year: "2020", indicators: { inflation: 0.5, gdpGrowth: -0.7, unemployment: 4, policyRate: 0.5, brentYoY: -34, debtPctGdp: 42.1 } },
+    { year: "2021", indicators: { inflation: 2.5, gdpGrowth: 4.7, unemployment: 3.6, policyRate: 1, brentYoY: 69, debtPctGdp: 42.6 } },
+    { year: "2022", indicators: { inflation: 5.1, gdpGrowth: 2.9, unemployment: 2.9, policyRate: 3.25, brentYoY: 42, debtPctGdp: 41.5 } },
+    { year: "2023", indicators: { inflation: 3.6, gdpGrowth: 1.5, unemployment: 2.7, policyRate: 3.5, brentYoY: -19, debtPctGdp: 43.9 } },
+    { year: "2024", indicators: { inflation: 2.3, gdpGrowth: 2.2, unemployment: 2.8, policyRate: 3, brentYoY: -2, debtPctGdp: 43.6 } },
+    { year: "2025", indicators: { inflation: 2.1, gdpGrowth: 1.1, unemployment: 2.8, policyRate: 2.5, brentYoY: -8, debtPctGdp: 45.7 } },
+  ],
 };
 
 // ============================================================

@@ -28,7 +28,7 @@
 import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getPublicSupabaseClient } from "@/lib/supabase";
-import { runSourceAudit, newestScoreableByMarket, PROBES } from "@/lib/sourceAudit";
+import { runSourceAudit, newestScoreableByMarket, PROBES, type RelayedProbeValues } from "@/lib/sourceAudit";
 
 // Twenty external APIs. They run concurrently (see PROBE_TIMEOUT_MS in
 // lib/sourceAudit.ts), so this is bounded by the slowest single source
@@ -73,7 +73,42 @@ export async function GET(request: Request) {
     );
   }
 
-  const { rows, problems, unreachable, behind, checked } = await runSourceAudit(published);
+  // KOREA'S THREE OECD FIGURES ARRIVE AS QUERY PARAMETERS.
+  //
+  // This route runs on Vercel, and OECD does not answer from Vercel --
+  // Korea's first refresh proved it, with BIS returning a policy rate and
+  // debt while all three OECD series came back null in the same runtime.
+  // The workflow fetches them for the refresh relay anyway, sequentially,
+  // and hands the same values here.
+  //
+  // Validated, not trusted: these are query parameters. A relay sending
+  // nonsense must not silently become "matches". An implausible figure is
+  // dropped, which leaves the probe reporting FETCH FAILED -- unchecked
+  // rather than wrongly confirmed.
+  const params = new URL(request.url).searchParams;
+  const relayed: RelayedProbeValues = new Map();
+  const RELAYABLE: [string, string, number, number][] = [
+    ["kr_inflation", "KR inflation (CPI)", -5, 30],
+    ["kr_unemployment", "KR unemployment", 0.1, 30],
+    ["kr_gdp", "KR GDP growth", -20, 20],
+  ];
+  for (const [key, probeName, min, max] of RELAYABLE) {
+    const rawValue = params.get(key);
+    const rawDate = params.get(`${key}_date`);
+    if (!rawValue || !rawDate) continue;
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < min || value > max) {
+      console.error(`source-audit: relayed ${key} rejected, implausible value "${rawValue}"`);
+      continue;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      console.error(`source-audit: relayed ${key} rejected, bad date "${rawDate}"`);
+      continue;
+    }
+    relayed.set(probeName, { value, observationDate: rawDate });
+  }
+
+  const { rows, problems, unreachable, behind, checked } = await runSourceAudit(published, relayed);
 
   // Logged as well as returned. The workflow prints the body, but a
   // manual visit to this URL leaves a trace in the Vercel logs too.

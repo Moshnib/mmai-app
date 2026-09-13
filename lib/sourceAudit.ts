@@ -74,6 +74,8 @@ import { fetchEuroAreaInflation, fetchEuroAreaPolicyRate } from "./fetchers/ecb"
 import { fetchUsPolicyRate } from "./fetchers/nyfed";
 import { fetchSwedenInflation, fetchSwedenUnemployment, fetchSwedenGdpGrowthQuarterly } from "./fetchers/scb";
 import { fetchBisPolicyRate } from "./fetchers/bis";
+import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
+import { fetchNorwayUnemployment, fetchNorwayGdpGrowthQuarterly } from "@/lib/fetchers/norway";
 
 /** A fetcher result, in any of the shapes the fetchers return. */
 type Fetched = {
@@ -130,7 +132,56 @@ export const PROBES: Probe[] = [
   { market: "SE", label: "unemployment", column: "unemployment", dateColumn: "unemployment_observation_date", fetch: fetchSwedenUnemployment, tolerance: 0.02 },
   { market: "SE", label: "GDP growth", column: "gdp_growth", dateColumn: "gdp_observation_date", fetch: fetchSwedenGdpGrowthQuarterly, tolerance: 0.05 },
   { market: "SE", label: "policy rate", column: "policy_rate", dateColumn: "policy_rate_observation_date", fetch: () => fetchBisPolicyRate("SE"), tolerance: 0.01 },
+
+  // Norway, added to the audit 2026-09-13. It became a scored market the
+  // day before and was not probed for a day -- which is exactly the
+  // window in which a source can die unnoticed.
+  { market: "NO", label: "inflation (CPI)", column: "inflation", dateColumn: "inflation_observation_date", fetch: fetchNorwayInflation, tolerance: 0.02 },
+  { market: "NO", label: "unemployment", column: "unemployment", dateColumn: "unemployment_observation_date", fetch: fetchNorwayUnemployment, tolerance: 0.02 },
+  { market: "NO", label: "GDP growth", column: "gdp_growth", dateColumn: "gdp_observation_date", fetch: fetchNorwayGdpGrowthQuarterly, tolerance: 0.05 },
+  { market: "NO", label: "policy rate", column: "policy_rate", dateColumn: "policy_rate_observation_date", fetch: () => fetchBisPolicyRate("NO"), tolerance: 0.01 },
+
+  // KOREA'S THREE OECD PROBES ARE RELAYED, NOT FETCHED HERE.
+  //
+  // Two reasons, either of which alone would be enough:
+  //
+  //   1. OECD does not answer from Vercel, and this audit runs on Vercel.
+  //      Korea's first refresh proved it -- policy rate and debt arrived
+  //      from BIS while all three OECD series came back null in the same
+  //      runtime at the same moment. Probing them here would produce a
+  //      FETCH FAILED warning every single morning, which is how a check
+  //      stops being read.
+  //
+  //   2. PROBES run through Promise.all below. OECD answers concurrent
+  //      requests with HTTP 500 across the board, so three parallel
+  //      Korean probes would fail even somewhere OECD worked.
+  //
+  // The workflow already fetches these three, sequentially, for the
+  // refresh relay. It hands the same values to this route, and the probe
+  // compares them against what is published. That is real drift
+  // coverage: if OECD starts returning a DIFFERENT number rather than no
+  // number, VALUE DIFFERS still fires. A dead source shows up separately,
+  // as a withheld Korean score.
+  //
+  // If the relay is absent the probe reports FETCH FAILED with a note
+  // saying so, rather than pretending the figure was checked.
+  { market: "KR", label: "inflation (CPI)", column: "inflation", dateColumn: "inflation_observation_date", fetch: relayOnly("KR inflation (CPI)"), tolerance: 0.02 },
+  { market: "KR", label: "unemployment", column: "unemployment", dateColumn: "unemployment_observation_date", fetch: relayOnly("KR unemployment"), tolerance: 0.02 },
+  { market: "KR", label: "GDP growth", column: "gdp_growth", dateColumn: "gdp_observation_date", fetch: relayOnly("KR GDP growth"), tolerance: 0.05 },
+  { market: "KR", label: "policy rate", column: "policy_rate", dateColumn: "policy_rate_observation_date", fetch: () => fetchBisPolicyRate("KR"), tolerance: 0.01 },
 ];
+
+/** A probe whose value cannot be fetched from this runtime and must be
+ *  handed in. Throwing rather than returning null keeps the existing
+ *  FETCH FAILED path, so an absent relay is reported as unchecked instead
+ *  of silently counted as matching. */
+function relayOnly(name: string): () => Promise<never> {
+  return async () => {
+    throw new Error(
+      `no relayed value for "${name}". OECD does not answer from Vercel, so the workflow must pass this figure in.`,
+    );
+  };
+}
 
 /** How often each kind of figure is published. Derived from the column
  *  rather than stored per probe because it is exact: every inflation and
@@ -303,8 +354,13 @@ async function withTimeout<T>(run: () => Promise<T>, ms: number): Promise<T> {
 // be the wrong question entirely -- see releasesBehind above. Nothing
 // here depends on the wall clock any more: the comparison is between two
 // dates the sources themselves supply, which also makes it reproducible.
+/** Figures fetched elsewhere and handed in, keyed by probe name -- the
+ *  same `${market} ${label}` string the rows are titled with. */
+export type RelayedProbeValues = Map<string, { value: number; observationDate: string }>;
+
 export async function runSourceAudit(
   published: Map<string, Record<string, unknown>>,
+  relayed: RelayedProbeValues = new Map(),
 ): Promise<AuditResult> {
   const problems: string[] = [];
   const unreachable: string[] = [];
@@ -321,11 +377,17 @@ export async function runSourceAudit(
 
       let live: Fetched | null = null;
       let err = "";
+      const handedIn = relayed.get(name);
       try {
-        live = (await withTimeout(
-          () => withRetry(name, probe.fetch, { attempts: PROBE_ATTEMPTS }),
-          PROBE_TIMEOUT_MS,
-        )) as Fetched;
+        // A relayed figure was fetched by the workflow moments ago. Using
+        // it rather than re-fetching is not a shortcut: for Korea this
+        // runtime cannot reach the source at all.
+        live = handedIn
+          ? ({ value: handedIn.value, observationDate: handedIn.observationDate } as unknown as Fetched)
+          : ((await withTimeout(
+              () => withRetry(name, probe.fetch, { attempts: PROBE_ATTEMPTS }),
+              PROBE_TIMEOUT_MS,
+            )) as Fetched);
       } catch (e) {
         // withRetry prefixes its label, which is useful in a server log
         // and redundant here where the row already names the indicator.

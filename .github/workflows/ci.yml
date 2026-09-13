@@ -296,6 +296,25 @@ jobs:
       - name: A withheld score is still a storable row
         run: npx tsx scripts/test-withheld-score-is-storable.ts
 
+      # THE ONE THAT WOULD HAVE CAUGHT THREE SEPARATE OMISSIONS.
+      #
+      # Adding a market touches ten files and the compiler enforces none
+      # of it -- every one is a Record keyed by string, so a missing entry
+      # is an empty chart rather than a type error.
+      #
+      #   Sweden shipped with no flag, map shape or glyph, and the site
+      #   owner reported it.
+      #   Norway shipped with annual history only; its monthly view was
+      #   empty for a day and its charts still rendered, so nothing looked
+      #   wrong.
+      #   Korea shipped with no history at all -- four empty panels on a
+      #   page called Data Over Time.
+      #
+      # None failed a build, threw, or moved a pixel anywhere a check was
+      # looking.
+      - name: Every market is wired into every market-keyed file
+        run: npx tsx scripts/test-market-completeness.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT THE CONTACT FORM.
       #
       # Loads every page in a real browser at phone, tablet and desktop
