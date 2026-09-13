@@ -82,11 +82,22 @@ export const FALLBACK_MARKETS: MarketData[] = [
   // Norway rejoined 2026-09-12. Verified live that day: CPI from Statistics
   // Norway, unemployment and GDP from Eurostat, rate and debt from BIS.
   { code: "NO", name: "Norway", raw: { inflation: 3.3, gdpGrowth: 1.6, unemployment: 4.2, policyRate: 4.25, brentYoY: 17.91, debtPctGdp: 53.9 } },
-  // Korea joined 2026-09-13, the first market needing NO new institution
+  // SOUTH Korea, and the name says so deliberately.
+  //
+  // Every institution behind this row calls it simply "Korea" -- OECD
+  // REF_AREA "KOR", BIS "KR", the Bank of Korea. That is the diplomatic
+  // convention and it is unambiguous to a statistician, because North
+  // Korea publishes no macro data and appears in none of these sources.
+  //
+  // It is NOT unambiguous to a reader looking at a flag and a score. The
+  // site says South Korea; the Sources page still names the institutions
+  // as they name themselves.
+  //
+  // Joined 2026-09-13, the first market needing NO new institution
   // and NO new licence -- OECD for inflation, unemployment and GDP, BIS
   // for the rate and debt, both already audited here. Verified live that
   // day, and every reading sits inside 1.6 SD of the reference mean.
-  { code: "KR", name: "Korea", raw: { inflation: 3.09, gdpGrowth: 3.76, unemployment: 2.8, policyRate: 3, brentYoY: 17.91, debtPctGdp: 45.7 } },
+  { code: "KR", name: "South Korea", raw: { inflation: 3.09, gdpGrowth: 3.76, unemployment: 2.8, policyRate: 3, brentYoY: 17.91, debtPctGdp: 45.7 } },
 ];
 
 

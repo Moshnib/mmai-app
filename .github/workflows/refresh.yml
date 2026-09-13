@@ -349,9 +349,24 @@ jobs:
         if: always()
         run: |
           echo "Calling /api/source-audit …"
+          # Korea's three OECD figures go with it, for the same reason the
+          # refresh gets them: OECD does not answer from Vercel, and this
+          # route runs there. They were fetched once by the step above, so
+          # relaying them costs nothing and turns three unprobed Korean
+          # series into real drift coverage.
+          AUDIT_URL="${SITE_URL}/api/source-audit"
+          add () {
+            if [ -n "$2" ] && [ -n "$3" ]; then
+              SEP=$([ "${AUDIT_URL#*\?}" != "$AUDIT_URL" ] && echo "&" || echo "?")
+              AUDIT_URL="${AUDIT_URL}${SEP}${1}=${2}&${1}_date=${3}"
+            fi
+          }
+          add kr_inflation "${{ steps.kr.outputs.krInflation }}" "${{ steps.kr.outputs.krInflationDate }}"
+          add kr_unemployment "${{ steps.kr.outputs.krUnemployment }}" "${{ steps.kr.outputs.krUnemploymentDate }}"
+          add kr_gdp "${{ steps.kr.outputs.krGdp }}" "${{ steps.kr.outputs.krGdpDate }}"
           code=$(curl -sS -o /tmp/audit.json -w "%{http_code}" --max-time 90 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${SITE_URL}/api/source-audit")
+            "$AUDIT_URL")
           echo "HTTP $code"
           # Print every row, matching or not. A green run that shows
           # nothing is indistinguishable from a check that does nothing.
