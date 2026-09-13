@@ -17,7 +17,7 @@ import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/ind
 import {
   DIMENSION_NAMES, dimensionDrivers, maskedDimension, percentileBandLabel,
   UNCERTAINTY_NOTE, CONVENTION_NOTE, REFERENCE_COUNT, REFERENCE_SPAN } from "@/lib/composite";
-import { FALLBACK_MARKETS, scoreMarketV2, type MarketData } from "@/lib/markets";
+import { FALLBACK_MARKETS, scoreMarketV2, type MarketData, MARKET_COUNT_WORD_CAP } from "@/lib/markets";
 import { latestCompleteObservation, fallbackNote, type ObservationPick } from "@/lib/latestComplete";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
@@ -589,7 +589,7 @@ export default function OverviewPage() {
                   It is also the same confusion that cost this project nine
                   months on the Euro Area: measuring when we last ASKED and
                   reporting it as when the data last MOVED. */}
-              <p>Six economies scored on five official figures each, and six Gulf economies tracked without a score — sources checked daily, every figure carrying its own reporting date and traced to the institution that published it. Not investment advice.</p>
+              <p>{MARKET_COUNT_WORD_CAP} economies scored on five official figures each, and six Gulf economies tracked without a score — sources checked daily, every figure carrying its own reporting date and traced to the institution that published it. Not investment advice.</p>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link

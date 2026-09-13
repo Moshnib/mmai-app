@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 import { DIMENSION_NAMES, DIMENSION_QUESTIONS, type DimensionKey } from "@/lib/composite";
+import { MARKET_COUNT_WORD_CAP } from "@/lib/markets";
 
 export const metadata: Metadata = {
   title: "About",
@@ -40,7 +41,7 @@ const USES = [
   },
   {
     q: "Is my country's job market genuinely stronger than its neighbours'?",
-    a: "Six economies on one scale, rebuilt so the comparison actually holds.",
+    a: `${MARKET_COUNT_WORD_CAP} economies on one scale, rebuilt so the comparison actually holds.`,
   },
   {
     q: "Are conditions improving, or getting worse?",
