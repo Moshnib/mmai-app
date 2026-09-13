@@ -106,6 +106,73 @@ jobs:
             echo "jpUnemploymentDate=$PER-01" >> "$GITHUB_OUTPUT"
           fi
 
+      # ---------- KOREA: THREE OECD SERIES, FOR THE SAME REASON ----------
+      #
+      # OECD does not answer from Vercel. Korea was added on 13 September
+      # reading these three directly from the route, and the stored row
+      # came back with policy rate 3 and debt 45.7 from BIS beside
+      # inflation NULL, unemployment NULL and GDP NULL from OECD -- five
+      # calls in one runtime at one moment, and only the OECD ones
+      # returned nothing. All three had been verified live from a laptop
+      # minutes before.
+      #
+      # Japan's unemployment has been relayed from here since August for
+      # exactly this reason. Korea now is too.
+      #
+      # SEQUENTIAL, with a pause between. Fired concurrently, OECD answers
+      # HTTP 500 to ALL of them, including ones that work alone -- which
+      # reads as "OECD has no data for Korea" and is wrong.
+      - name: Fetch Korea inflation, unemployment and GDP from OECD
+        id: kr
+        continue-on-error: true
+        run: |
+          BASE='https://sdmx.oecd.org/public/rest/data'
+          # format=csvfile, never csvfilewithlabels -- label expansion
+          # takes 11-40s against ~0.1s. See lib/fetchers/oecd.ts.
+          Q='lastNObservations=1&format=csvfile'
+
+          # Columns BY HEADER NAME: these dataflows carry 30+ columns and
+          # OECD reorders them without notice.
+          grab () {
+            local url="$1" file="$2"
+            curl -sS --max-time 60 "$url" -o "$file" || return 1
+            local val per
+            val=$(awk -F, 'NR==1{for(i=1;i<=NF;i++) if($i=="OBS_VALUE") v=i} NR==2{print $v}' "$file")
+            per=$(awk -F, 'NR==1{for(i=1;i<=NF;i++) if($i=="TIME_PERIOD") t=i} NR==2{print $t}' "$file")
+            printf '%s|%s' "$val" "$per"
+          }
+
+          INF=$(grab "$BASE/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,1.0/KOR.M.N.CPI.PA._T.N.GY?$Q" /tmp/kr_inf.csv)
+          sleep 4
+          UNE=$(grab "$BASE/OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0/KOR.UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M?$Q" /tmp/kr_une.csv)
+          sleep 4
+          GDP=$(grab "$BASE/OECD.SDD.NAD,DSD_NAMAIN1@DF_QNA_EXPENDITURE_GROWTH_OECD,1.1/Q.Y.KOR.S1..B1GQ......GY.?$Q" /tmp/kr_gdp.csv)
+
+          echo "inflation=$INF  unemployment=$UNE  gdp=$GDP"
+
+          # Monthly periods are YYYY-MM and become the first of the month.
+          emit_monthly () {
+            local pair="$1" name="$2"
+            local val="${pair%%|*}" per="${pair##*|}"
+            if [ -n "$val" ] && [ -n "$per" ]; then
+              echo "${name}=$val" >> "$GITHUB_OUTPUT"
+              echo "${name}Date=${per}-01" >> "$GITHUB_OUTPUT"
+            fi
+          }
+          emit_monthly "$INF" krInflation
+          emit_monthly "$UNE" krUnemployment
+
+          # Quarterly is YYYY-Qn and is stamped at the END of the quarter
+          # it describes, matching every other quarterly series here.
+          GVAL="${GDP%%|*}"; GPER="${GDP##*|}"
+          case "${GPER##*-}" in
+            Q1) GM=03 ;; Q2) GM=06 ;; Q3) GM=09 ;; Q4) GM=12 ;; *) GM="" ;;
+          esac
+          if [ -n "$GVAL" ] && [ -n "$GM" ]; then
+            echo "krGdp=$GVAL" >> "$GITHUB_OUTPUT"
+            echo "krGdpDate=${GPER%%-*}-${GM}-01" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Refresh scored markets
         run: |
           echo "Calling /api/refresh (force=${{ inputs.force }}) …"
@@ -128,6 +195,22 @@ jobs:
             URL="${URL}${SEP}jp_unemployment=${JP}&jp_unemployment_date=${JPD}"
             echo "relaying Japan unemployment ${JP} (${JPD})"
           fi
+
+          # Korea's three, same mechanism. Each is appended only if the
+          # step above actually got it, so a single failed series does not
+          # take the other two with it -- the route falls back to its own
+          # direct fetch, and failing that withholds the score.
+          append () {
+            local key="$1" val="$2" date="$3"
+            if [ -n "$val" ] && [ -n "$date" ]; then
+              SEP=$([ "${URL#*\?}" != "$URL" ] && echo "&" || echo "?")
+              URL="${URL}${SEP}${key}=${val}&${key}_date=${date}"
+              echo "relaying ${key} ${val} (${date})"
+            fi
+          }
+          append kr_inflation "${{ steps.kr.outputs.krInflation }}" "${{ steps.kr.outputs.krInflationDate }}"
+          append kr_unemployment "${{ steps.kr.outputs.krUnemployment }}" "${{ steps.kr.outputs.krUnemploymentDate }}"
+          append kr_gdp "${{ steps.kr.outputs.krGdp }}" "${{ steps.kr.outputs.krGdpDate }}"
           code=$(curl -sS -o /tmp/main.json -w "%{http_code}" --max-time 120 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "$URL")

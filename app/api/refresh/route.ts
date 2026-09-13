@@ -132,6 +132,74 @@ async function settle<T>(label: string, promise: Promise<T>): Promise<T | null> 
  *  Returns null on anything implausible, and the caller then falls back
  *  exactly as it does today. Silently accepting a bad number would be
  *  worse than the staleness this is fixing. */
+/** A FIGURE FETCHED BY THE WORKFLOW AND HANDED TO THIS ROUTE.
+ *
+ *  OECD DOES NOT WORK FROM VERCEL. That is not a guess: on 13 September
+ *  2026 Korea was added reading three OECD series directly, and the stored
+ *  row came back with policy rate 3 and debt 45.7 from BIS beside inflation
+ *  NULL, unemployment NULL and GDP NULL from OECD. Five calls, the same
+ *  runtime, the same moment; the two non-OECD ones worked. All three OECD
+ *  series had been verified live from a laptop minutes earlier.
+ *
+ *  This project already knew. Japan's unemployment has been relayed from
+ *  the GitHub Action since August for exactly this reason, and the
+ *  workflow step doing it is thirty lines above the one that calls this
+ *  route. Korea was built on the one source already proven not to work
+ *  here, with the evidence sitting in the repository.
+ *
+ *  So the workflow curls these, and passes them in. The direct fetchers
+ *  stay and are still tried first: they work everywhere except Vercel,
+ *  which includes scripts/verify-korea-fetch.ts.
+ *
+ *  Values are validated rather than trusted -- this is a query parameter,
+ *  and a relay that starts sending nonsense must not become the published
+ *  figure. */
+function parseRelayedFigure(
+  request: Request,
+  key: string,
+  bounds: { min: number; max: number; maxAgeDays: number },
+): { value: number; observationDate: string } | null {
+  const params = new URL(request.url).searchParams;
+  const rawValue = params.get(key);
+  const rawDate = params.get(`${key}_date`);
+  if (!rawValue || !rawDate) return null;
+
+  const value = Number(rawValue);
+  if (!Number.isFinite(value) || value < bounds.min || value > bounds.max) {
+    console.error(`Relayed ${key} rejected: implausible value "${rawValue}"`);
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+    console.error(`Relayed ${key} rejected: bad date "${rawDate}"`);
+    return null;
+  }
+  const when = Date.parse(rawDate);
+  const now = Date.now();
+  if (Number.isNaN(when) || when > now || now - when > bounds.maxAgeDays * 86_400_000) {
+    console.error(`Relayed ${key} rejected: date out of range "${rawDate}"`);
+    return null;
+  }
+
+  return { value, observationDate: rawDate };
+}
+
+export interface RelayedKorea {
+  inflation: { value: number; observationDate: string } | null;
+  unemployment: { value: number; observationDate: string } | null;
+  gdpGrowth: { value: number; observationDate: string } | null;
+}
+
+/** Bounds are per indicator and deliberately wide: they reject a unit
+ *  mix-up or a parse landing on the wrong column, not an unusual economy. */
+function parseRelayedKorea(request: Request): RelayedKorea {
+  return {
+    inflation: parseRelayedFigure(request, "kr_inflation", { min: -5, max: 30, maxAgeDays: 400 }),
+    unemployment: parseRelayedFigure(request, "kr_unemployment", { min: 0.1, max: 30, maxAgeDays: 400 }),
+    gdpGrowth: parseRelayedFigure(request, "kr_gdp", { min: -20, max: 20, maxAgeDays: 400 }),
+  };
+}
+
 function parseRelayedJpUnemployment(request: Request): { value: number; observationDate: string } | null {
   const params = new URL(request.url).searchParams;
   const rawValue = params.get("jp_unemployment");
@@ -190,7 +258,8 @@ interface FetchedIndicators {
 async function fetchRawIndicators(
   market: string,
   brent: { brentYoY: number; observationDate: string } | null,
-  relayedJpUnemployment: { value: number; observationDate: string } | null
+  relayedJpUnemployment: { value: number; observationDate: string } | null,
+  relayedKorea: RelayedKorea
 ): Promise<FetchedIndicators> {
   const brentYoY = brent?.brentYoY ?? null;
   const brentDate = brent?.observationDate ?? null;
@@ -508,22 +577,45 @@ async function fetchRawIndicators(
     // PARTIAL, and Korea would silently stop being scored. fetchKoreaReadings
     // runs them in series and captures each failure separately, so one dead
     // series cannot take the other two with it.
+    // Tried directly first, then relayed. The direct path works from
+    // anywhere that is not Vercel -- including scripts/verify-korea-fetch.ts
+    // -- and on Vercel every OECD call returns nothing, which is why the
+    // workflow fetches these three with curl and hands them over. See
+    // parseRelayedFigure for the evidence.
     const kr = await fetchKoreaReadings();
     for (const message of kr.errors) console.warn(`  ${message}`);
+
+    const inflation = kr.inflation
+      ? { value: kr.inflation.inflation, observationDate: kr.inflation.observationDate }
+      : relayedKorea.inflation;
+    const unemployment = kr.unemployment
+      ? { value: kr.unemployment.unemployment, observationDate: kr.unemployment.observationDate }
+      : relayedKorea.unemployment;
+    const gdpGrowth = kr.gdpGrowth
+      ? { value: kr.gdpGrowth.gdpGrowth, observationDate: kr.gdpGrowth.observationDate }
+      : relayedKorea.gdpGrowth;
+
+    for (const [label, direct, relayed] of [
+      ["inflation", kr.inflation, relayedKorea.inflation],
+      ["unemployment", kr.unemployment, relayedKorea.unemployment],
+      ["GDP growth", kr.gdpGrowth, relayedKorea.gdpGrowth],
+    ] as const) {
+      if (!direct && relayed) console.log(`KR ${label} came from the workflow relay`);
+    }
 
     const rate = await settle("KR policy rate (BIS)", fetchBisPolicyRate("KR"));
     return {
       raw: {
-        inflation: kr.inflation?.inflation ?? null,
-        gdpGrowth: kr.gdpGrowth?.gdpGrowth ?? null,
-        unemployment: kr.unemployment?.unemployment ?? null,
+        inflation: inflation?.value ?? null,
+        gdpGrowth: gdpGrowth?.value ?? null,
+        unemployment: unemployment?.value ?? null,
         policyRate: rate?.policyRate ?? null,
         brentYoY,
       },
       dates: {
-        inflation: kr.inflation?.observationDate ?? null,
-        gdpGrowth: kr.gdpGrowth?.observationDate ?? null,
-        unemployment: kr.unemployment?.observationDate ?? null,
+        inflation: inflation?.observationDate ?? null,
+        gdpGrowth: gdpGrowth?.observationDate ?? null,
+        unemployment: unemployment?.observationDate ?? null,
         policyRate: rate?.observationDate ?? null,
         brent: brentDate,
       },
@@ -730,6 +822,7 @@ export async function GET(request: Request) {
   // market's Supabase error can't re-trigger a redundant EIA call.
   // Parsed once, outside the loop: it is the same value for every market
   // and only Japan reads it.
+  const relayedKr = parseRelayedKorea(request);
   const relayedJp = parseRelayedJpUnemployment(request);
   if (relayedJp) {
     console.log(
@@ -765,7 +858,7 @@ export async function GET(request: Request) {
 
   for (const market of pending) {
     try {
-      const { raw, dates } = await fetchRawIndicators(market, brentResult, relayedJp);
+      const { raw, dates } = await fetchRawIndicators(market, brentResult, relayedJp, relayedKr);
 
       // Set here rather than inside each of fetchRawIndicators()'s
       // seven per-market branches: the value is looked up from one
@@ -779,13 +872,32 @@ export async function GET(request: Request) {
       // longer writes its columns, and its code is gone from the tree.
       //
       // v2 withholds rather than reweighting, so percentile is null on a
-      // run where any indicator failed. That is a row with no score and no
-      // band, which is the intended behaviour and what the mmai_scores
-      // check constraint enforces -- not an error to paper over.
+      // run where any indicator failed. That is a row with no score --
+      // deliberately, and not an error to paper over.
+      //
+      // THE BAND IS NEVER NULL, AND THE COMMENT HERE USED TO SAY IT WAS.
+      //
+      // It read: "a row with no score and no band, which is the intended
+      // behaviour and what the mmai_scores check constraint enforces".
+      // The schema says the exact opposite -- band is declared NOT NULL.
+      // So a market that withheld its score could not be WRITTEN AT ALL:
+      // the insert was refused, the market got no row, and on the site
+      // that is indistinguishable from a market never configured.
+      //
+      // It lay dormant because until 13 September every market always
+      // came back with all five indicators. Korea arrived with three
+      // nulls -- OECD returns nothing from Vercel -- and the run
+      // reported a Postgres constraint violation instead of a withheld
+      // score. The comment had been describing a guarantee that was
+      // never there.
+      //
+      // percentileBandLabel already answers null with "Not published",
+      // which is the honest label and satisfies the column. A withheld
+      // score is now a stored fact rather than a failed write.
       const v2 = computeMmai(raw, market);
       const composite = v2.percentile;
       const coverage = v2.percentile != null ? 1 : 0;
-      const band = composite != null ? { label: percentileBandLabel(composite) } : null;
+      const band = { label: percentileBandLabel(composite) };
 
       // Collected for the published-statistics drift check at the end of
       // the run. Only scorable markets contribute: a market that withheld

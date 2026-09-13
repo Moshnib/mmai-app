@@ -280,6 +280,22 @@ jobs:
       - name: Market counts in copy are derived, not typed
         run: npx tsx scripts/test-market-count-copy.ts
 
+      # THE ONE THAT WOULD HAVE CAUGHT KOREA WRITING NO ROW AT ALL.
+      #
+      # MMAI withholds a score when an indicator is missing, and the
+      # refresh route wrote band=null to match -- above a comment claiming
+      # that was "what the mmai_scores check constraint enforces". The
+      # schema says the opposite: band is NOT NULL. So a market that
+      # withheld could not be written at all, and on the site a market
+      # with no row is indistinguishable from one never configured.
+      #
+      # Dormant for months, because every market always returned all five
+      # indicators. Korea arrived with three nulls on 13 September and the
+      # run reported a Postgres constraint violation instead of a withheld
+      # score. It type-checked, and passed every other test in this file.
+      - name: A withheld score is still a storable row
+        run: npx tsx scripts/test-withheld-score-is-storable.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT THE CONTACT FORM.
       #
       # Loads every page in a real browser at phone, tablet and desktop
