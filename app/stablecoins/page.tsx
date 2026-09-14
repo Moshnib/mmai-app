@@ -7,12 +7,14 @@ import StablecoinTokens from "@/components/StablecoinTokens";
 import StablecoinMacroLink from "@/components/StablecoinMacroLink";
 import { measureMacroLink, type YieldPoint } from "@/lib/stablecoinMacro";
 import { getPublicSupabaseClient } from "@/lib/supabase";
+import { pageMetadata } from "@/lib/pageMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Stablecoins",
   description:
     "How many dollars exist as stablecoins on Ethereum, Tron and Solana — read straight from each blockchain, with no composite score.",
-};
+  path: "/stablecoins",
+});
 
 // Read live on the server and cached, rather than stored in a database.
 //

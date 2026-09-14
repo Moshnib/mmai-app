@@ -12,6 +12,7 @@ import GulfCard from "@/components/GulfCard";
 import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
+import StructuredData from "@/components/StructuredData";
 import CountryGlyph from "@/components/CountryGlyph";
 import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
@@ -252,6 +253,14 @@ export default function OverviewPage() {
 
   return (
     <>
+      {/* THE INDEX AS A DATASET, DESCRIBED ONCE, HERE.
+          The root layout carries the publisher and the site; this is the
+          dataset itself, and it belongs on the homepage alone because
+          there is ONE index. Emitted from the layout it would attach to
+          all eleven pages and claim eleven datasets exist. Server-
+          rendered into the initial HTML despite this being a client
+          component, so a crawler that runs no JavaScript still sees it. */}
+      <StructuredData dataset />
       <div className="hero">
         <div className="wrap">
           {/* Only the intro block is centred (design reference); the

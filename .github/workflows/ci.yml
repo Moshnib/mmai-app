@@ -372,6 +372,19 @@ jobs:
           # colour token changes in one commit while a claim goes stale in
           # the next.
           npx tsx scripts/check-accessibility.ts
+          # Fifth question, same server: what does a SEARCH ENGINE get,
+          # and what does a person see when the link is pasted into a
+          # chat? Neither is visible on the site itself.
+          #
+          # Three things were live on 14 September: no page emitted a
+          # canonical URL at all, every page shared ONE social card
+          # because ten pages set a title and description and none set
+          # openGraph, and there was no structured data anywhere. The
+          # canonical one matters most right now -- this site is about to
+          # move to a real domain, and without canonicals a crawler
+          # reaching both hosts may treat the new domain as a duplicate
+          # of the old.
+          npx tsx scripts/check-seo.ts
 
       # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
       # Eurostat retired the euro area HICP dataset that day. It kept

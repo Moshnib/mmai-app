@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ComparePageInner from "./ComparePageInner";
 import GovernmentDebtRow from "@/components/GovernmentDebtRow";
+import { pageMetadata } from "@/lib/pageMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Compare Markets",
   description:
     "Every tracked market side by side over any year range — composite scores, the three dimension rankings, and the raw underlying rates, on one chart.",
-};
+  path: "/compare",
+});
 
 // The methodology footer lives HERE rather than inside ComparePageInner
 // so that page order is decided on the server: comparison sections, then

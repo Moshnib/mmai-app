@@ -4,12 +4,14 @@ import BondYieldPanel from "@/components/BondYieldPanel";
 import { readBondYields } from "@/lib/bondYieldsRead";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import type { DimensionKey } from "@/lib/composite";
+import { pageMetadata } from "@/lib/pageMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Data Over Time",
   description:
     "How each market's MMAI score and its three dimensions have moved since 2019 — with the raw inflation, growth, unemployment, debt and policy-rate figures behind them.",
-};
+  path: "/trends",
+});
 
 const VALID_DIMENSIONS: DimensionKey[] = ["C", "D", "K"];
 
