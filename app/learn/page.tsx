@@ -19,6 +19,7 @@ import ScoreDiagram from "@/components/ScoreDiagram";
 import CorrelationMatrix from "@/components/CorrelationMatrix";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { indicatorFormula, INDICATOR_READING } from "@/lib/composite";
+import { pageMetadata } from "@/lib/pageMetadata";
 
 // Rendered FROM INFLATION_TARGET rather than typed out as prose.
 //
@@ -116,11 +117,12 @@ const MOST_INFLUENTIAL = DIMENSION_NAMES[
 const COND_SPLIT = `inflation ${(W_INFLATION * 100).toFixed(1)}% (exactly ${COND_WEIGHT_FRACTION.inflation})  ·  unemployment ${(W_UNEMPLOYMENT * 100).toFixed(1)}% (exactly ${COND_WEIGHT_FRACTION.unemployment})`;
 const CAP_SPLIT = `debt ${(W_DEBT * 100).toFixed(0)}%  ·  policy rate ${(W_RATE * 100).toFixed(0)}%`;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Learn More",
   description:
     "What inflation, growth, unemployment, interest rates and government debt actually mean for you — and the exact arithmetic that turns them into one comparable score.",
-};
+  path: "/learn",
+});
 
 /**
  * Which dimension each indicator feeds, so the reader meets that fact on

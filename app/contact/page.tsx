@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+import { pageMetadata } from "@/lib/pageMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Contact",
   description:
     "Requests, partnership enquiries, corrections — every message is read personally. If you think something on MMAI is wrong, that is the most useful message you can send.",
-};
+  path: "/contact",
+});
 
 /**
  * A PAGE OF ITS OWN AGAIN.

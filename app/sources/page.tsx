@@ -6,12 +6,14 @@ import { GULF_SOURCES, GULF_NAME_TO_CODE } from "@/lib/gulfSources";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import ExportDataButtons from "@/components/ExportDataButtons";
 import SourcesTable from "@/components/SourcesTable";
+import { pageMetadata } from "@/lib/pageMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Data Sources & Licences",
   description:
     "Every institution, licence, and verification date behind every number on MMAI — plus a full CSV export of the underlying data.",
-};
+  path: "/sources",
+});
 
 const marketOrder = ["All markets", ...FALLBACK_MARKETS.map((m) => m.name)];
 const codeForName = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.name, m.code]));

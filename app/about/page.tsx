@@ -3,12 +3,14 @@ import Link from "next/link";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 import { DIMENSION_NAMES, DIMENSION_QUESTIONS, type DimensionKey } from "@/lib/composite";
 import { MARKET_COUNT_WORD_CAP } from "@/lib/markets";
+import { pageMetadata } from "@/lib/pageMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About",
   description:
     "Everyone watches the market. Almost nobody watches the conditions underneath it. MMAI reads the macro picture — prices, jobs, growth, debt and the cost of money — as one comparable score per country.",
-};
+  path: "/about",
+});
 
 // Counted, never typed. A number written into prose by hand is the first
 // thing to go stale, and this page's whole argument is that its numbers

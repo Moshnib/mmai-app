@@ -3,6 +3,7 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/siteUrl";
+import StructuredData from "@/components/StructuredData";
 
 const DESCRIPTION =
   "A transparent macro-market intelligence index — every formula published, every source licensed, no black box.";
@@ -23,6 +24,12 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   applicationName: "MMAI",
+  // The homepage's canonical. Every other page sets its own through
+  // lib/pageMetadata.ts. Without these a search engine reaching both the
+  // vercel.app address and the real domain has no instruction about which
+  // is authoritative, and may treat the new domain as a duplicate of the
+  // old one -- the single most costly thing to get wrong during a move.
+  alternates: { canonical: SITE_URL },
   openGraph: {
     type: "website",
     siteName: "MMAI",
@@ -52,6 +59,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        {/* WHAT THIS SITE IS, IN A FORM A CRAWLER CAN READ.
+            The prose says MMAI publishes an index built from official
+            statistics; a crawler cannot infer that from prose. For a
+            data site this is the difference between being indexed as a
+            blog and being eligible for Google Dataset Search. Every
+            field is derived from the engine, so none can drift from what
+            the site actually publishes. */}
+        <StructuredData />
       </head>
       <body>
         {/* Standard "skip to content" pattern -- invisible until it
