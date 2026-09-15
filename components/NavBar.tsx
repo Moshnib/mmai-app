@@ -16,6 +16,10 @@ const NAV_ITEMS = [
   { href: "/trends", label: "Data Over Time" },
   { href: "/compare", label: "Compare" },
   { href: "/gulf-watch", label: "Gulf Watch" },
+  // Next to Gulf Watch deliberately: both show countries with real
+  // figures and no score. Gulf Watch keeps its own name -- it reached
+  // that conclusion first and has its own sources.
+  { href: "/observatory", label: "Observatory" },
   { href: "/stablecoins", label: "Stablecoins" },
   { href: "/learn", label: "Learn More" },
   { href: "/sources", label: "Sources" },

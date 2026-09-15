@@ -38,9 +38,16 @@ import { fetchUkInflation, fetchUkUnemployment, fetchUkGdpGrowthQuarterly } from
 import { fetchUkPolicyRate } from "@/lib/fetchers/boe";
 import { fetchNorwayInflation } from "@/lib/fetchers/ssb";
 import { fetchSwedenInflation, fetchSwedenUnemployment, fetchSwedenGdpGrowthQuarterly } from "@/lib/fetchers/scb";
-import { fetchBisPolicyRate } from "@/lib/fetchers/bis";
+import { fetchBisPolicyRate, type BisPolicyRateArea } from "@/lib/fetchers/bis";
 import { fetchNorwayUnemployment, fetchNorwayGdpGrowthQuarterly } from "@/lib/fetchers/norway";
 import { fetchKoreaReadings } from "@/lib/fetchers/korea";
+import {
+  fetchObservatoryInflation,
+  fetchObservatoryUnemployment,
+  fetchObservatoryGdpGrowth,
+  fetchObservatoryBondYield,
+} from "@/lib/fetchers/observatory";
+import { OBSERVATORY } from "@/lib/observatory";
 import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
@@ -769,6 +776,81 @@ function stalenessWarnings(
 // rather than corrected: correcting it would have left the same trap for
 // whoever changes a source next.
 
+/** THE OBSERVATORY — tracked, never scored.
+ *
+ *  Runs after the scored markets and writes to its OWN table. Nothing
+ *  here computes a composite, writes to mmai_scores, or touches
+ *  raw_indicators: these countries are excluded from the index on
+ *  purpose, and lib/observatory.ts records why for each one.
+ *
+ *  A SEPARATE TABLE, NOT raw_indicators. The columns would have fitted.
+ *  But seven places read raw_indicators, several with a fixed row limit
+ *  and no market filter — the source audit takes 200 rows and its own
+ *  comment records a force-refresh writing 60 in one day. Two more
+ *  countries there would quietly shorten the lookback window for every
+ *  SCORED market.
+ *
+ *  FAILURE IS PER COUNTRY AND PER FIGURE. settle() turns each throw into
+ *  a null, so one dead source costs one cell rather than the row, and
+ *  the page shows a gap where a gap exists. That matters more here than
+ *  in the index: there is no score to withhold, so a missing figure is
+ *  the only signal a reader gets. */
+async function refreshObservatory(
+  supabase: ReturnType<typeof getServiceSupabaseClient>,
+  debtByMarket: Map<string, { debtPctGdp: number; period: string }>,
+): Promise<{ country: string; status: string }[]> {
+  const results: { country: string; status: string }[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const country of OBSERVATORY) {
+    const code = country.code;
+    const [infl, unemp, gdp, yld] = await Promise.all([
+      settle(`${code} inflation`, fetchObservatoryInflation(code)),
+      settle(`${code} unemployment`, fetchObservatoryUnemployment(code)),
+      settle(`${code} GDP growth`, fetchObservatoryGdpGrowth(code)),
+      settle(`${code} 10y yield`, fetchObservatoryBondYield(code)),
+    ]);
+
+    // A policy rate ONLY where the country sets one. Finland uses the
+    // euro; BIS correctly has no series, and asking would log a failure
+    // for something that is not broken. The registry is the authority.
+    const setsOwnRate = !country.policyRateNote?.includes("no policy rate of its own");
+    const rate = setsOwnRate
+      ? await settle(`${code} policy rate (BIS)`, fetchBisPolicyRate(code as BisPolicyRateArea))
+      : null;
+
+    const debt = debtByMarket.get(code) ?? null;
+
+    const { error } = await supabase.from("observatory_indicators").insert({
+      country_code: code,
+      inflation: infl?.inflation ?? null,
+      gdp_growth: gdp?.gdpGrowth ?? null,
+      unemployment: unemp?.unemployment ?? null,
+      policy_rate: rate?.policyRate ?? null,
+      debt_pct_gdp: debt?.debtPctGdp ?? null,
+      yield_10y: yld?.yield10y ?? null,
+      inflation_observation_date: infl?.observationDate ?? null,
+      gdp_observation_date: gdp?.observationDate ?? null,
+      unemployment_observation_date: unemp?.observationDate ?? null,
+      policy_rate_observation_date: rate?.observationDate ?? null,
+      debt_observation_period: debt?.period ?? null,
+      yield_observation_date: yld?.observationDate ?? null,
+      observation_date: today,
+      source_note: "ECB (HICP) · Eurostat (unemployment, GDP, 10y yield) · BIS (policy rate, debt)",
+    });
+
+    const got = [infl, unemp, gdp, yld, debt].filter(Boolean).length + (rate ? 1 : 0);
+    const wanted = setsOwnRate ? 6 : 5;
+    results.push({
+      country: code,
+      status: error ? `error: ${error.message}` : `ok (${got}/${wanted} figures)`,
+    });
+    if (error) console.error(`Observatory write failed for ${code}: ${error.message}`);
+  }
+
+  return results;
+}
+
 export async function GET(request: Request) {
   // Protect this endpoint so only Vercel Cron (or you, manually, with the
   // secret) can trigger a refresh — prevents random internet traffic from
@@ -1299,6 +1381,23 @@ export async function GET(request: Request) {
     bondResult = { inserted: 0, markets: 0, error: message };
   }
 
+  // ---------- THE OBSERVATORY ----------
+  //
+  // Tracked countries, written to their own table with no score. Runs
+  // last and cannot fail the refresh: these are a display, not a pillar,
+  // so every scored market above is unaffected by whatever happens here.
+  // It reuses the BIS debt already fetched for the index rather than
+  // asking again -- one request covers every country BIS carries.
+  let observatory: { country: string; status: string }[] = [];
+  try {
+    observatory = await refreshObservatory(supabase, debtByMarket);
+    for (const r of observatory) console.log(`  Observatory ${r.country}: ${r.status}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Observatory refresh failed:", message);
+    observatory = [{ country: "all", status: `error: ${message}` }];
+  }
+
   // ---------- ARE THE PUBLISHED STATISTICS STILL TRUE? ----------
   //
   // PILLAR_CROSS_MARKET_SD is printed on the Learn page as a measured
@@ -1357,5 +1456,6 @@ export async function GET(request: Request) {
     publishedDrift,
     results,
     bondYields: bondResult,
+    observatory,
   });
 }

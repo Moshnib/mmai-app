@@ -44,7 +44,7 @@ import { GULF_POLICY_RATE_LABELS } from "@/lib/gulfMarkets";
 
 /** BIS REF_AREA codes for the areas MMAI actually fetches. These happen
  *  to match the ISO-2 country codes used elsewhere in Gulf Watch. */
-export type BisPolicyRateArea = "SA" | "KW" | "SE" | "NO" | "KR";
+export type BisPolicyRateArea = "SA" | "KW" | "SE" | "NO" | "KR" | "DK";
 
 // Quote-aware CSV field splitter. NOT interchangeable with the plain
 // line.split(",") used in abs.ts/rba.ts: verified against the live full
@@ -181,6 +181,8 @@ export async function fetchBisPolicyRate(
  *  here because the series is published for the area as a whole. */
 const DEBT_AREAS: Record<string, string> = {
   US: "US", UK: "GB", JP: "JP", CA: "CA", AU: "AU", EA: "XM", SE: "SE", NO: "NO", KR: "KR",
+  // Observatory countries. Tracked, not scored -- see lib/observatory.ts.
+  DK: "DK", FI: "FI",
 };
 
 export interface GovernmentDebt {

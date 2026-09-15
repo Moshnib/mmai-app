@@ -186,6 +186,67 @@ alter table gulf_indicators enable row level security;
 create policy "Public read access" on gulf_indicators for select using (true);
 
 -- ============================================================
+-- THE OBSERVATORY: countries tracked with real figures and no score.
+-- Added 2026-09-14.
+--
+-- WHY A SEPARATE TABLE RATHER THAN raw_indicators. The columns would
+-- have fitted, and it was nearly done that way. But seven places read
+-- raw_indicators, several of them with a fixed row limit and no market
+-- filter -- app/api/source-audit/route.ts takes 200 rows and its own
+-- comment records that a force-refresh once wrote 60 rows in a single
+-- day. Adding two more countries to that table would quietly shorten
+-- the lookback window for every SCORED market, which is exactly the
+-- class of bug that comment exists to warn about.
+--
+-- It is also the honest shape: these rows are a different kind of thing.
+-- They are never scored, never ranked, and never joined to mmai_scores.
+-- Gulf Watch reached the same conclusion and has its own table.
+--
+-- One row per country per refresh, appended -- matching raw_indicators
+-- rather than the unique-per-day pattern bond_yields uses, because a
+-- re-run after fixing a source should leave both readings visible.
+-- ============================================================
+create table if not exists observatory_indicators (
+  id bigint generated always as identity primary key,
+  country_code text not null,
+  inflation numeric,
+  gdp_growth numeric,
+  unemployment numeric,
+  policy_rate numeric,
+  debt_pct_gdp numeric,
+  yield_10y numeric,
+  -- EACH FIGURE'S OWN REPORTING PERIOD, not one shared date.
+  -- Gulf Watch shipped with a single observation_date and a site-owner
+  -- spot-check found no way to tell which numbers were current and
+  -- which were over a year old. The per-field dates were being fetched
+  -- correctly and discarded before reaching the table.
+  inflation_observation_date date,
+  gdp_observation_date date,
+  unemployment_observation_date date,
+  policy_rate_observation_date date,
+  -- BIS publishes debt as a QUARTER ("2025-Q4"), and a quarter is not a
+  -- day. Stored verbatim rather than converted, for the same reason the
+  -- Gulf table keeps its periods: stamping one indicator with another's
+  -- reporting date has already caused a wrong published claim here.
+  debt_observation_period text,
+  yield_observation_date date,
+  -- The refresh date. Kept for ordering, NOT for judging freshness --
+  -- read the per-field columns above for that.
+  observation_date date not null,
+  source_note text,
+  fetched_at timestamptz not null default now()
+);
+
+create index if not exists idx_observatory_country_date
+  on observatory_indicators (country_code, observation_date desc);
+
+alter table observatory_indicators enable row level security;
+
+-- Read-only to the public, like every other table here. Writes happen
+-- through the refresh route with the service-role key.
+create policy "Public read access" on observatory_indicators for select using (true);
+
+-- ============================================================
 -- BOND YIELDS: 10-year government bond yields, one row per market
 -- per trading day. Added 2026-08-29.
 --
