@@ -2,9 +2,11 @@
 
 import { useRef, useState } from "react";
 import worldPaths from "@/lib/mapdata/world-paths.json";
+import { repairSeam } from "@/lib/mapdata/seam";
 import { colorForScore } from "@/lib/indicators";
 import { percentileBandLabel } from "@/lib/composite";
 import { scoreMarketV2, type MarketData } from "@/lib/markets";
+import Flag from "@/components/Flag";
 
 /** One place for the score-plus-label pair, so the map cannot drift onto a
  *  different engine from the panel above it — which it briefly did. */
@@ -12,7 +14,6 @@ function scoreOf(m: MarketData) {
   const { percentile } = scoreMarketV2(m);
   return { composite: percentile, band: { color: colorForScore(percentile), label: percentileBandLabel(percentile) } };
 }
-import Flag from "@/components/Flag";
 
 // ISO 3166-1 numeric country IDs (topojson world-atlas) grouped by market.
 // Euro Area is represented by its largest constituent economies by land
@@ -30,54 +31,19 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
   KR: ["410"],
 };
 
-// Approximate [longitude, latitude] label anchor per market — not a precise
-// geographic centroid, just a readable point roughly inside each market's
-// landmass, nudged apart where markets sit close together (UK/Euro Area).
-const MARKET_LABEL_LONLAT: Record<string, [number, number]> = {
-  US: [-98, 39],
-  CA: [-100, 62],
-  UK: [-3.5, 55.5],
-  JP: [138, 37],
-  AU: [134, -27],
-  EA: [14, 47],
-  NO: [15, 64],
-  // East of Norway and well north of the euro-area anchor, so no label
-  // collides with another.
-  SE: [16, 61],
-};
+// Crops the bottom of the equirectangular projection (below roughly -60°)
+// so the scored markets fill more of the frame. Tasmania's southern tip
+// projects to y≈355 of 480, so Australia keeps its whole landmass.
+const CROP_HEIGHT = 400;
 
-// Crops out the empty Antarctica band at the bottom of the equirectangular
-// projection (lat below roughly -60) so the scored markets fill more of
-// the frame -- same underlying map data, just a tighter viewBox. Confirmed
-// this keeps Australia's full landmass (Tasmania's southern tip projects to
-// y≈355 of 480) with real margin to spare.
-const CROP_HEIGHT = 420;
-
-function project(lon: number, lat: number, width: number, height: number): [number, number] {
-  const x = ((lon + 180) / 360) * width;
-  const y = ((90 - lat) / 180) * height;
-  return [x, y];
-}
-
-// Every click target on this map (country shape, score label, legend entry)
-// was mouse/touch-only -- no role, no tabIndex, no way to tell a keyboard or
-// screen-reader user it was interactive at all, let alone activate it. This
-// makes any of them behave like a real button: focusable, announced, and
-// activatable with Enter or Space, on top of the click handler each element
-// already has.
-function a11yButtonProps(label: string, onActivate: () => void) {
-  return {
-    role: "button" as const,
-    tabIndex: 0,
-    "aria-label": label,
-    onKeyDown: (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        onActivate();
-      }
-    },
-  };
-}
+/** Drawn once, not per render: the seam repair walks every point of 176
+ *  outlines. Antarctica is dropped outright -- it sits below the crop, and
+ *  its ring crossing the 180° line was one of the three stripes. */
+const COUNTRIES = worldPaths.countries
+  .filter((c) => String(c.id) !== "010")
+  // Three shapes in the data carry no id (N. Cyprus, Somaliland, Kosovo),
+  // so the React key falls back to the index or all three would collide.
+  .map((c, i) => ({ id: String(c.id), key: c.id ? String(c.id) : `shape-${i}`, d: repairSeam(c.d, worldPaths.width) }));
 
 interface HoverState {
   code: string;
@@ -85,6 +51,21 @@ interface HoverState {
   y: number;
 }
 
+/**
+ * NO NUMBERS ON THE MAP ITSELF.
+ *
+ * The map used to print each score on its country. Four markets sit
+ * within a few hundred kilometres of each other in northern Europe, so
+ * Norway's and Sweden's numbers were drawn on top of each other, the UK's
+ * crowded the Euro Area's, and South Korea -- too small to hold a label --
+ * had none at all. Nudging anchors apart was tried and only moves the
+ * collision. The ranked key beneath the map carries every score, readably,
+ * and the tooltip gives the one under the pointer; the map's job is to say
+ * where, and roughly how well, at a glance.
+ *
+ * Colour is the score ramp, softened so nine shapes do not shout, with
+ * the chosen market in full strength and outlined in the accent.
+ */
 export default function WorldMap({ markets, current, onSelect }: { markets: MarketData[]; current: string; onSelect: (code: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<HoverState | null>(null);
@@ -101,9 +82,8 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
     if (!rect) return;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    // Skip the re-render (177 country paths + 6 labels) on sub-pixel
-    // jitter -- the tooltip only needs to track the cursor closely enough
-    // to look attached, not on every single mousemove tick.
+    // Skip the re-render on sub-pixel jitter -- the tooltip only needs to
+    // track the cursor closely enough to look attached.
     setHover((prev) => (prev && prev.code === code && Math.abs(prev.x - x) < 2 && Math.abs(prev.y - y) < 2 ? prev : { code, x, y }));
   }
   function handleHoverEnd() {
@@ -111,133 +91,77 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
   }
 
   const hoverMarket = hover ? marketByCode[hover.code] : null;
-  const hoverBand = hoverMarket ? scoreOf(hoverMarket).band : null;
+  const hoverScore = hoverMarket ? scoreOf(hoverMarket) : null;
+
+  // Highest first, so the key reads as a ranking rather than a list in
+  // whatever order the markets happen to be stored.
+  const ranked = [...markets]
+    .map((m) => ({ m, ...scoreOf(m) }))
+    .sort((a, b) => (b.composite ?? -1) - (a.composite ?? -1));
 
   return (
-    <div
-      ref={containerRef}
-      style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "22px 26px", position: "relative" }}
-    >
-      <svg viewBox={`0 0 ${worldPaths.width} ${CROP_HEIGHT}`} width="100%" style={{ display: "block" }}>
-        {worldPaths.countries.map((c, i) => {
-          const key = c.id ?? `country-${i}`;
-          const marketCode = countryToMarket[String(c.id)];
+    <div ref={containerRef} className="world-map">
+      <svg viewBox={`0 0 ${worldPaths.width} ${CROP_HEIGHT}`} width="100%" style={{ display: "block" }} aria-hidden="true">
+        {COUNTRIES.map((c) => {
+          const marketCode = countryToMarket[c.id];
           const market = marketCode ? marketByCode[marketCode] : undefined;
-          const isSelected = !!marketCode && marketCode === current;
 
           if (!market) {
-            return <path key={key} d={c.d} fill="var(--track)" stroke="var(--hair)" strokeWidth={0.4} />;
+            return <path key={c.key} d={c.d} fill="var(--track)" stroke="var(--card-bg)" strokeWidth={0.5} />;
           }
 
           const { band } = scoreOf(market);
+          const isSelected = marketCode === current;
 
           return (
             <path
-              key={key}
+              key={c.key}
               d={c.d}
               fill={band.color}
-              fillOpacity={isSelected ? 1 : 0.8}
-              stroke={isSelected ? "var(--ink)" : band.color}
-              strokeWidth={isSelected ? 1.3 : 0.4}
-              style={{ cursor: "pointer", transition: "fill-opacity 0.15s ease, stroke-width 0.15s ease" }}
+              fillOpacity={isSelected ? 0.95 : 0.55}
+              stroke={isSelected ? "var(--accent)" : "var(--card-bg)"}
+              strokeWidth={isSelected ? 1.4 : 0.5}
+              style={{ cursor: "pointer", transition: "fill-opacity 0.15s ease" }}
               onClick={() => onSelect(marketCode)}
               onMouseMove={(e) => handleHoverMove(marketCode, e)}
               onMouseLeave={handleHoverEnd}
-              // Not a keyboard/screen-reader target: Euro Area alone would
-              // otherwise expose 11 identically-labeled tab stops (one per
-              // constituent country path). The score label below is the
-              // one focusable target per market and carries the full
-              // accessible name; this shape is mouse/touch-only.
-              tabIndex={-1}
-              aria-hidden="true"
             />
-          );
-        })}
-
-        {/* Score labels, drawn on top of the country shapes so the number
-            is always visible without needing to hover -- a dark halo
-            (paint-order: stroke) keeps a same-colored number legible
-            against its own country's fill. */}
-        {markets.map((m) => {
-          const pos = MARKET_LABEL_LONLAT[m.code];
-          if (!pos) return null;
-          const [x, y] = project(pos[0], pos[1], worldPaths.width, worldPaths.height);
-          const { composite, band } = scoreOf(m);
-          const label = composite === null ? "N/A" : composite.toFixed(1);
-          const isSelected = m.code === current;
-          // The visible label is just the number (62.4) -- WCAG 2.5.3
-          // (Label in Name) needs that value inside the accessible name
-          // too, not just the navigation action, so it folds the score
-          // and band back in. This is the one keyboard/screen-reader
-          // target per market on the map (see the country paths above).
-          const actionLabel = `Show ${m.name}, score ${label}, ${band.label}`;
-
-          return (
-            <text
-              key={m.code}
-              x={x}
-              y={y}
-              textAnchor="middle"
-              fontWeight={600}
-              fontSize={isSelected ? 15 : 12.5}
-              fill={band.color}
-              stroke="var(--card-bg)"
-              strokeWidth={3}
-              strokeLinejoin="round"
-              style={{ paintOrder: "stroke", cursor: "pointer", fontFamily: "var(--font-num)" }}
-              onClick={() => onSelect(m.code)}
-              onMouseMove={(e) => handleHoverMove(m.code, e)}
-              onMouseLeave={handleHoverEnd}
-              {...a11yButtonProps(actionLabel, () => onSelect(m.code))}
-            >
-              {label}
-            </text>
           );
         })}
       </svg>
 
-      {hoverMarket && hoverBand && hover && (
-        <div
-          style={{
-            position: "absolute",
-            left: hover.x,
-            top: hover.y,
-            transform: "translate(-50%, calc(-100% - 10px))",
-            background: "var(--paper)",
-            border: "1px solid var(--hair-strong)",
-            borderRadius: 4,
-            padding: "7px 10px",
-            fontFamily: "IBM Plex Mono, monospace",
-            fontSize: 12,
-            whiteSpace: "nowrap",
-            pointerEvents: "none",
-          }}
-        >
-          <span style={{ color: "var(--ink)", fontWeight: 600 }}>{hoverMarket.name}</span>
-          <span style={{ color: "var(--slate)", marginLeft: 8 }}>{hoverBand.label}</span>
+      {hoverMarket && hoverScore && hover && (
+        <div className="world-map-tip" style={{ left: hover.x, top: hover.y }}>
+          <b>{hoverMarket.name}</b>
+          <span>{hoverScore.composite === null ? "N/A" : hoverScore.composite.toFixed(1)}</span>
+          <span className="world-map-tip-band">{hoverScore.band.label}</span>
         </div>
       )}
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 18px", marginTop: 14, fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }}>
-        {markets.map((m) => {
-          const { composite, band } = scoreOf(m);
+      {/* The keyboard and screen-reader way in. The country shapes stay
+          mouse and touch only: the Euro Area alone is eleven shapes, and
+          eleven identical tab stops would be worse than none. Real
+          buttons here, not spans given a role. */}
+      <div className="world-map-key">
+        {ranked.map(({ m, composite, band }) => {
           const label = composite === null ? "N/A" : composite.toFixed(1);
-          // Visible text includes the score (below), so the accessible
-          // name does too -- same Label in Name reasoning as the map's
-          // score labels above.
+          // Visible text includes the score, so the accessible name does
+          // too (WCAG 2.5.3, Label in Name).
           const actionLabel = `Show ${m.name}, score ${label}, ${band.label}`;
           return (
-            <span
+            <button
+              type="button"
               key={m.code}
+              className={m.code === current ? "on" : undefined}
               onClick={() => onSelect(m.code)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", color: m.code === current ? "var(--ink)" : "var(--slate)" }}
-              {...a11yButtonProps(actionLabel, () => onSelect(m.code))}
+              aria-label={actionLabel}
+              aria-pressed={m.code === current}
             >
-              <i style={{ width: 8, height: 8, borderRadius: 1, background: band.color }} />
+              <i style={{ background: band.color }} aria-hidden="true" />
               <Flag code={m.code} size={16} />
-              {m.name}
-              <span style={{ color: "var(--ink)", fontWeight: 600 }}>{label}</span>
-            </span>
+              <span className="world-map-key-name">{m.name}</span>
+              <span className="world-map-key-score">{label}</span>
+            </button>
           );
         })}
       </div>

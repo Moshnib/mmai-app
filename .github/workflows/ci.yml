@@ -275,6 +275,13 @@ jobs:
       - name: Every text colour is legible on navy
         run: npx tsx scripts/check-palette-contrast.ts
 
+      # Russia, Fiji and Antarctica cross the 180° line, and their outlines
+      # drew full-width stripes across the homepage map -- over Canada and
+      # Alaska -- for as long as the map existed. Nothing overflowed and
+      # nothing threw, so no other check could see it.
+      - name: The world map draws no stripes
+        run: npx tsx scripts/test-map-seam.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT "SWEDEN CONTRIBUTES 0".
       #
       # The Learn page ranked every scored market by how many rows it

@@ -1766,3 +1766,30 @@ cards moved from inline styles to `.learn-topic` with phone padding; the
 per-market target list no longer breaks mid-entry; the five steps are one
 column below 1000px; desktop recipe labels no longer sit on their lines;
 and a stale "Five of the six aim at 2%" beside a list of nine was corrected.
+
+## 27. The homepage map, and formulas in words (2026-09-15)
+
+**Map stripes were a data bug.** Russia, Fiji and Antarctica cross the
+180° line; their outlines jumped edge to edge, and the SVG fill drew
+full-width bands over Canada/Alaska and the Pacific. `lib/mapdata/seam.ts`
+unwraps each ring and draws it on both sides of the map (the viewport clips
+both); Antarctica is dropped below the crop. `scripts/test-map-seam.ts`
+(CI) asserts the raw data still crosses and the repaired data never jumps
+more than half the map.
+
+**No score labels on the map** (supersedes the label anchors and
+CROP_HEIGHT 420 recorded in the earlier map section; the crop is now 400). Norway/Sweden overlapped and South Korea
+had no label at all. The map now shows where (soft ramp colour, selected
+market full strength with a gold outline); the ranked key beneath it —
+real buttons — carries every score. Country cards are a fixed 3×3 (one
+column on phones) with grey silhouettes, gold when selected; the score
+number keeps the ramp colour. Norway's glyph no longer includes Svalbard.
+
+**Learn page formulas.** Each indicator now leads with a sentence and two
+worked values generated from `INDICATOR_STATS` and `q()`; the exact
+formula is behind "Show the exact formula" and is still what
+`verify-published-formulas.ts` parses. Three false statements removed:
+the debt note described the retired five-pillar 60% rule ("full marks",
+"gentle penalty"); "for the current six" (nine are measured); and Gulf
+Watch's "no policy-rate feed / 70% pillar coverage" (Saudi and Kuwait are
+live via BIS; the real reason is labour-market comparability).

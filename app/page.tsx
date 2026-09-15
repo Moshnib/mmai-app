@@ -484,7 +484,10 @@ export default function OverviewPage() {
                 >
                   <span className="cc-name">{m.name}</span>
                   <span className="cc-glyph">
-                    <CountryGlyph code={m.code} color={mBand.color} size={124} />
+                    {/* The shape identifies the country; it does not repeat the score.
+                        Nine shapes in nine ramp colours read as a paint chart
+                        above the numbers that actually carry the colour. */}
+                    <CountryGlyph code={m.code} color={m.code === current ? "var(--accent)" : "var(--glyph)"} size={124} />
                   </span>
                   <span className="cc-score" style={{ color: mBand.color }}>
                     {mScore === null ? "—" : mScore.toFixed(1)}
@@ -507,7 +510,7 @@ export default function OverviewPage() {
               alternative for "see the other markets"; now that it's
               gone, hiding the map with nothing in its place would leave
               phones with no way to explore markets other than the
-              currently-selected one at all. Hidden above 860px via
+              currently-selected one at all. Hidden above 900px via
               .map-mobile-links so it doesn't duplicate the map on desktop. */}
           <div className="map-mobile-links">
             {markets.filter((m) => m.code !== current).map((m) => (
