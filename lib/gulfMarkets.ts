@@ -95,4 +95,7 @@ export const GULF_POLICY_RATE_LABELS: Record<string, string> = {
   NO: "Policy rate",
   // Korea joined 2026-09-13. The Bank of Korea Base Rate.
   KR: "Policy rate",
+  // Observatory. Denmark sets this to hold the krone to the euro rather
+  // than to steer Danish prices -- it has no inflation target.
+  DK: "Policy rate (certificates of deposit)",
 };

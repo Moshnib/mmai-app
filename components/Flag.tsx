@@ -157,6 +157,25 @@ export const FLAG_SHAPES: Record<string, React.ReactNode> = {
       </g>
     </>
   ),
+  // ---------- Observatory flags ----------
+  // Tracked countries, not scored. See lib/observatory.ts.
+  DK: (
+    <>
+      <rect width="28" height="20" fill="#C8102E" />
+      {/* The Scandinavian cross: vertical bar offset left of centre,
+          horizontal bar centred. Denmark's is the original and every
+          other Nordic flag follows its proportions. */}
+      <rect x="9" y="0" width="4" height="20" fill="#fff" />
+      <rect x="0" y="8" width="28" height="4" fill="#fff" />
+    </>
+  ),
+  FI: (
+    <>
+      <rect width="28" height="20" fill="#fff" />
+      <rect x="9" y="0" width="4.5" height="20" fill="#003580" />
+      <rect x="0" y="7.75" width="28" height="4.5" fill="#003580" />
+    </>
+  ),
   // ---------- Gulf Watch flags ----------
   AE: (
     <>

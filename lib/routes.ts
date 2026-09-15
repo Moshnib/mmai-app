@@ -32,6 +32,7 @@ export const SITE_ROUTES: readonly SiteRoute[] = [
   { path: "/trends", priority: 0.8, changeFrequency: "daily" },
   { path: "/compare", priority: 0.8, changeFrequency: "daily" },
   { path: "/gulf-watch", priority: 0.7, changeFrequency: "daily" },
+  { path: "/observatory", priority: 0.7, changeFrequency: "daily" },
   // Was missing from the sitemap entirely until 6 September 2026, while
   // being linked from every page's navigation.
   { path: "/stablecoins", priority: 0.6, changeFrequency: "daily" },
