@@ -111,8 +111,8 @@ export default function ExportDataButtons() {
   }
 
   return (
-    <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 16, padding: "20px 24px", backdropFilter: "blur(10px)" }}>
-      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--accent-2)", letterSpacing: 1, marginBottom: 10 }}>
+    <div style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "20px 24px" }}>
+      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--slate)", letterSpacing: 1, marginBottom: 10 }}>
         EXPORT THE DATA
       </div>
       <p style={{ fontSize: 13, color: "var(--slate)", margin: "0 0 14px" }}>
@@ -125,15 +125,15 @@ export default function ExportDataButtons() {
               onClick={() => exportTable(table, filename)}
               disabled={status[table] === "loading"}
               style={{
-                padding: "9px 18px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600,
-                border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.04)", color: "var(--ink)",
+                padding: "9px 18px", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 600,
+                border: "1px solid var(--hair-strong)", background: "transparent", color: "var(--ink)",
                 opacity: status[table] === "loading" ? 0.6 : 1,
               }}
             >
               {status[table] === "loading" ? "Preparing…" : `Download ${label}`}
             </button>
             {status[table] === "error" && (
-              <p style={{ color: "#E14B4B", fontSize: 12, margin: "6px 0 0" }}>Couldn&apos;t reach the database — try again in a moment.</p>
+              <p style={{ color: "#E85A5A", fontSize: 12, margin: "6px 0 0" }}>Couldn&apos;t reach the database — try again in a moment.</p>
             )}
             {status[table] === "empty" && (
               <p style={{ color: "var(--slate)", fontSize: 12, margin: "6px 0 0" }}>No data yet for this table.</p>

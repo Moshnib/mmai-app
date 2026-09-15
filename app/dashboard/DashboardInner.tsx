@@ -376,7 +376,7 @@ export default function DashboardInner() {
                       const une3 = pairFor(series, "unemployment", 3);
                       const une12 = pairFor(series, "unemployment", 12);
                       const rate12 = pairFor(series, "policyRate", 12);
-                      const colour = MARKET_COLORS[code] ?? "#C7C9D9";
+                      const colour = MARKET_COLORS[code] ?? "var(--ink-soft)";
                       return (
                         <tr key={code} style={{ borderTop: "1px solid var(--hair)" }}>
                           <MarketCell code={code} />

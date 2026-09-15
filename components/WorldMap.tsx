@@ -116,7 +116,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
   return (
     <div
       ref={containerRef}
-      style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "22px 26px", backdropFilter: "blur(14px)", position: "relative" }}
+      style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "22px 26px", position: "relative" }}
     >
       <svg viewBox={`0 0 ${worldPaths.width} ${CROP_HEIGHT}`} width="100%" style={{ display: "block" }}>
         {worldPaths.countries.map((c, i) => {
@@ -126,7 +126,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
           const isSelected = !!marketCode && marketCode === current;
 
           if (!market) {
-            return <path key={key} d={c.d} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.4} />;
+            return <path key={key} d={c.d} fill="var(--track)" stroke="var(--hair)" strokeWidth={0.4} />;
           }
 
           const { band } = scoreOf(market);
@@ -137,7 +137,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
               d={c.d}
               fill={band.color}
               fillOpacity={isSelected ? 1 : 0.8}
-              stroke={isSelected ? "#fff" : band.color}
+              stroke={isSelected ? "var(--ink)" : band.color}
               strokeWidth={isSelected ? 1.3 : 0.4}
               style={{ cursor: "pointer", transition: "fill-opacity 0.15s ease, stroke-width 0.15s ease" }}
               onClick={() => onSelect(marketCode)}
@@ -178,14 +178,13 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
               x={x}
               y={y}
               textAnchor="middle"
-              fontFamily="'Space Grotesk', sans-serif"
-              fontWeight={700}
+              fontWeight={600}
               fontSize={isSelected ? 15 : 12.5}
               fill={band.color}
-              stroke="#0b0b12"
+              stroke="var(--card-bg)"
               strokeWidth={3}
               strokeLinejoin="round"
-              style={{ paintOrder: "stroke", cursor: "pointer" }}
+              style={{ paintOrder: "stroke", cursor: "pointer", fontFamily: "var(--font-num)" }}
               onClick={() => onSelect(m.code)}
               onMouseMove={(e) => handleHoverMove(m.code, e)}
               onMouseLeave={handleHoverEnd}
@@ -204,9 +203,9 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
             left: hover.x,
             top: hover.y,
             transform: "translate(-50%, calc(-100% - 10px))",
-            background: "rgba(6,6,10,0.94)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 8,
+            background: "var(--paper)",
+            border: "1px solid var(--hair-strong)",
+            borderRadius: 4,
             padding: "7px 10px",
             fontFamily: "IBM Plex Mono, monospace",
             fontSize: 12,
@@ -231,13 +230,13 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
             <span
               key={m.code}
               onClick={() => onSelect(m.code)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", color: m.code === current ? "#fff" : "var(--slate)" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", color: m.code === current ? "var(--ink)" : "var(--slate)" }}
               {...a11yButtonProps(actionLabel, () => onSelect(m.code))}
             >
-              <i style={{ width: 8, height: 8, borderRadius: "50%", background: band.color, boxShadow: `0 0 6px ${band.color}` }} />
+              <i style={{ width: 8, height: 8, borderRadius: 1, background: band.color }} />
               <Flag code={m.code} size={16} />
               {m.name}
-              <span style={{ color: band.color, fontWeight: 700 }}>{label}</span>
+              <span style={{ color: "var(--ink)", fontWeight: 600 }}>{label}</span>
             </span>
           );
         })}

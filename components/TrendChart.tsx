@@ -238,12 +238,12 @@ export default function TrendChart({
         role="img"
         aria-label={chartDescription}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--hair)" vertical={false} />
         <XAxis
           dataKey="year"
           ticks={smartTicks}
           tickFormatter={isDateAxis ? formatTick : undefined}
-          minTickGap={isDateAxis ? 24 : 5} tick={{ fontSize: 12, fill: "var(--slate)" }} axisLine={{ stroke: "rgba(255,255,255,0.15)" }} tickLine={false} />
+          minTickGap={isDateAxis ? 24 : 5} tick={{ fontSize: 12, fill: "var(--slate)" }} axisLine={{ stroke: "var(--hair-strong)" }} tickLine={false} />
         <YAxis
           domain={yDomain ?? ["auto", "auto"]}
           tick={{ fontSize: 11, fill: "var(--slate)" }}
@@ -252,11 +252,11 @@ export default function TrendChart({
           label={yLabel ? { value: yLabel, angle: -90, position: "insideLeft", fontSize: 11, fill: "var(--slate)" } : undefined}
         />
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "#12121A", fontSize: 13, fontFamily: "IBM Plex Mono, monospace" }}
-          labelStyle={{ fontWeight: 700, color: "#F5F6FA" }}
-          itemStyle={{ color: "#C7C9D9" }}
+          contentStyle={{ borderRadius: 4, border: "1px solid var(--hair-strong)", background: "var(--paper)", fontSize: 13, fontFamily: "IBM Plex Mono, monospace" }}
+          labelStyle={{ fontWeight: 700, color: "var(--ink)" }}
+          itemStyle={{ color: "var(--ink-soft)" }}
         />
-        {showLegend && <Legend wrapperStyle={{ fontSize: 12, color: "#C7C9D9" }} />}
+        {showLegend && <Legend wrapperStyle={{ fontSize: 12, color: "var(--ink-soft)" }} />}
         {series.map((s) => (
           <Line
             key={s.key}

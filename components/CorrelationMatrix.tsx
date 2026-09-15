@@ -1,13 +1,13 @@
 import {
   INDICATOR_CORRELATIONS, DIMENSION_CORRELATIONS,
-  INDICATOR_DIMENSION, DIMENSION_NAMES, DIMENSION_INDICATORS,
+  INDICATOR_DIMENSION, DIMENSION_NAMES, DIMENSION_INDICATORS, DIMENSION_TONE,
   type IndicatorKey, type DimensionKey,
 } from "@/lib/composite";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 
 const IND: IndicatorKey[] = ["infGap", "une", "gdp", "debt", "rate"];
 const DIM: DimensionKey[] = ["C", "D", "K"];
-const TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
+const TONE = DIMENSION_TONE;
 const N = REFERENCE_SET.length;
 
 /** Below this a relationship is noise, and drawing it would fill the
@@ -139,7 +139,7 @@ export default function CorrelationMatrix() {
                 key={`${a}-${b}`}
                 d={arc(pos[a], pos[b])}
                 fill="none"
-                stroke={r > 0 ? "#22D3EE" : "#E14B4B"}
+                stroke={r > 0 ? "#22D3EE" : "#E85A5A"}
                 strokeWidth={1 + Math.abs(r) * 7}
                 strokeOpacity={same ? 0.75 : 0.4}
                 strokeDasharray={same ? undefined : "5 5"}
@@ -184,7 +184,7 @@ export default function CorrelationMatrix() {
                     x={p.x + (right ? 16 : p.x < cx - 4 ? -16 : 0)}
                     y={p.y + (above ? -16 : right || p.x < cx - 4 ? 4 : 26)}
                     textAnchor={right ? "start" : p.x < cx - 4 ? "end" : "middle"}
-                    fontSize={12.5} fill="#fff" fontFamily="IBM Plex Sans, sans-serif"
+                    fontSize={12.5} fill="var(--ink)" fontFamily="IBM Plex Sans, sans-serif"
                   >
                     {short[k]}
                   </text>
@@ -208,7 +208,7 @@ export default function CorrelationMatrix() {
         <div className="corr-key">
           <span className="corr-key-title">HOW TO READ IT</span>
           <span className="corr-key-item"><i style={{ background: "#22D3EE" }} />good together</span>
-          <span className="corr-key-item"><i style={{ background: "#E14B4B" }} />pull apart</span>
+          <span className="corr-key-item"><i style={{ background: "#E85A5A" }} />pull apart</span>
           <span className="corr-key-item"><i style={{ background: "var(--slate)" }} />same dimension</span>
           <span className="corr-key-item"><i className="dashed" />across dimensions</span>
           <span className="corr-key-note">
@@ -299,7 +299,7 @@ export default function CorrelationMatrix() {
                       <circle cx={P[d].x} cy={P[d].y} r={13} fill={TONE[d]} stroke="var(--paper)" strokeWidth={3} />
                       <text
                         x={P[d].x} y={P[d].y + (d === "D" ? 36 : -26)}
-                        textAnchor="middle" fontSize={14} fontWeight={700} fill="#fff"
+                        textAnchor="middle" fontSize={14} fontWeight={700} fill="var(--ink)"
                         fontFamily="IBM Plex Sans, sans-serif"
                       >
                         {DIMENSION_NAMES[d]}

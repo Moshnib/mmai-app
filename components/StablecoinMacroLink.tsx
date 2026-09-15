@@ -48,7 +48,7 @@ export default function StablecoinMacroLink({ link }: { link: MacroLink | null }
     <div className="mmai-card" style={{ marginTop: 12 }}>
       <div className="meta-label">Against the macro cycle</div>
 
-      <h3 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 17, margin: "8px 0 10px", color: "var(--ink)" }}>
+      <h3 style={{ fontFamily: "var(--font-display)", fontSize: 17, margin: "8px 0 10px", color: "var(--ink)" }}>
         {link.anySignificant
           ? "This does move with US interest rates"
           : "This does not move with US interest rates"}
@@ -86,7 +86,7 @@ export default function StablecoinMacroLink({ link }: { link: MacroLink | null }
           <span>{l.lagMonths === 0 ? "Same month" : `Yield leads by ${l.lagMonths}mo`}</span>
           <span>{l.r.toFixed(3)}</span>
           <span>{l.t.toFixed(2)}</span>
-          <span style={{ color: l.significant ? "var(--accent)" : "var(--slate)" }}>
+          <span style={{ color: l.significant ? "var(--ink)" : "var(--slate)" }}>
             {l.significant ? "significant" : "no signal"}
           </span>
         </div>
@@ -95,7 +95,7 @@ export default function StablecoinMacroLink({ link }: { link: MacroLink | null }
         <span>Growth vs yield level</span>
         <span>{link.level.r.toFixed(3)}</span>
         <span>{link.level.t.toFixed(2)}</span>
-        <span style={{ color: link.level.significant ? "var(--accent)" : "var(--slate)" }}>
+        <span style={{ color: link.level.significant ? "var(--ink)" : "var(--slate)" }}>
           {link.level.significant ? "significant" : "no signal"}
         </span>
       </div>

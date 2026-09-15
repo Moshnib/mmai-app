@@ -20,21 +20,21 @@ export interface BandCrossing {
 
 function emailHtml(crossing: BandCrossing, unsubscribeUrl: string): string {
   return `
-  <div style="font-family:-apple-system,sans-serif;background:#08080D;color:#F5F6FA;padding:32px;border-radius:12px;">
-    <p style="font-family:monospace;font-size:11px;color:#9C7B3D;letter-spacing:2px;margin:0 0 12px;">MMAI ALERT</p>
+  <div style="font-family:-apple-system,sans-serif;background:#101826;color:#E9ECF1;padding:32px;border-radius:8px;">
+    <p style="font-family:monospace;font-size:11px;color:#D4B06A;letter-spacing:2px;margin:0 0 12px;">MMAI ALERT</p>
     <h2 style="font-family:Georgia,serif;font-size:22px;margin:0 0 16px;">
       ${crossing.marketName} moved from ${crossing.oldBand} to ${crossing.newBand}
     </h2>
-    <p style="font-size:15px;color:#C7C9D9;line-height:1.6;">
-      The MMAI composite score for ${crossing.marketName} is now <b style="color:#fff;">${crossing.score.toFixed(1)}</b>.
+    <p style="font-size:15px;color:#C5CCD7;line-height:1.6;">
+      The MMAI composite score for ${crossing.marketName} is now <b style="color:#D4B06A;">${crossing.score.toFixed(1)}</b>.
     </p>
     <a href="${SITE_URL}/trends?market=${crossing.marketCode}"
-       style="display:inline-block;margin-top:16px;padding:10px 20px;background:#8B5CF6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
+       style="display:inline-block;margin-top:16px;padding:10px 20px;background:#E9ECF1;color:#101826;text-decoration:none;border-radius:4px;font-weight:600;">
       View the chart →
     </a>
-    <p style="font-size:11px;color:#6B7086;margin-top:32px;">
+    <p style="font-size:11px;color:#9BA6B7;margin-top:32px;">
       You're receiving this because you subscribed to MMAI alerts for ${crossing.marketName}.
-      <a href="${unsubscribeUrl}" style="color:#6B7086;">Unsubscribe</a>
+      <a href="${unsubscribeUrl}" style="color:#9BA6B7;">Unsubscribe</a>
     </p>
   </div>`;
 }

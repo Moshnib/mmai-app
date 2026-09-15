@@ -135,12 +135,12 @@ export default function SourcesTable({
     <>
       {groups.map((group) => (
         <div key={group.name} style={{ marginBottom: 28 }}>
-          <h2 style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: 17, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
             {codeForName[group.name] && <Flag code={codeForName[group.name]} size={22} />}
             {group.name}
           </h2>
-          <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 14, overflow: "hidden", backdropFilter: "blur(14px)" }}>
-            <div className="sources-head" style={{ background: "rgba(139,92,246,0.18)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 700, color: "var(--accent)", letterSpacing: 0.5 }}>
+          <div style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 6, overflow: "hidden" }}>
+            <div className="sources-head" style={{ background: "var(--hover)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 700, color: "var(--slate)", letterSpacing: 0.5 }}>
               <span>INDICATOR</span>
               <span>INSTITUTION</span>
               <span>LICENCE</span>
@@ -179,7 +179,7 @@ export default function SourcesTable({
                       fontSize: 11,
                       fontWeight: 700,
                       padding: "3px 9px",
-                      borderRadius: 999,
+                      borderRadius: 3,
                       background: e.status === "live" ? "var(--status-live-bg)" : e.status === "manual" ? "var(--status-manual-bg)" : "rgba(255,255,255,0.06)",
                       color: e.status === "live" ? "var(--status-live)" : e.status === "manual" ? "var(--accent-2)" : "var(--slate)",
                     }}

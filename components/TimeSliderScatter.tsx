@@ -182,8 +182,8 @@ export default function TimeSliderScatter({
           onClick={togglePlay}
           aria-label={playing ? "Pause" : "Play"}
           style={{
-            width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--hair)",
-            background: "rgba(34,211,238,0.1)", color: "var(--accent)", cursor: "pointer",
+            width: 34, height: 34, borderRadius: 4, border: "1px solid var(--hair-strong)",
+            background: "transparent", color: "var(--ink)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", flex: "none", fontSize: 13,
           }}
         >
@@ -219,7 +219,7 @@ export default function TimeSliderScatter({
             ))}
           </div>
         </div>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 21, color: "var(--accent)", minWidth: 56, textAlign: "center", flex: "none" }}>
+        <div style={{ fontFamily: "var(--font-num)", fontWeight: 500, fontSize: 21, color: "var(--accent)", minWidth: 56, textAlign: "center", flex: "none" }}>
           {currentYear}
         </div>
       </div>
@@ -228,13 +228,13 @@ export default function TimeSliderScatter({
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
         {xTicks.map((t) => (
           <g key={`x-${t}`}>
-            <line x1={px(t)} y1={PAD_T} x2={px(t)} y2={H - PAD_B} stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
+            <line x1={px(t)} y1={PAD_T} x2={px(t)} y2={H - PAD_B} stroke="var(--hair)" strokeWidth={1} />
             <text x={px(t)} y={H - PAD_B + 16} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize={10} fill="var(--slate)">{t.toFixed(1)}</text>
           </g>
         ))}
         {yTicks.map((t) => (
           <g key={`y-${t}`}>
-            <line x1={PAD_L} y1={py(t)} x2={W - PAD_R} y2={py(t)} stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
+            <line x1={PAD_L} y1={py(t)} x2={W - PAD_R} y2={py(t)} stroke="var(--hair)" strokeWidth={1} />
             <text x={PAD_L - 8} y={py(t) + 3} textAnchor="end" fontFamily="IBM Plex Mono, monospace" fontSize={10} fill="var(--slate)">{t.toFixed(1)}</text>
           </g>
         ))}
@@ -249,7 +249,7 @@ export default function TimeSliderScatter({
           return (
             <g key={s.key}>
               <circle cx={cx} cy={cy} r={10} fill="none" stroke={s.color} strokeWidth={1.3} opacity={0.45} style={{ transition: "cx 0.35s cubic-bezier(.2,.7,.3,1), cy 0.35s cubic-bezier(.2,.7,.3,1)" }} />
-              <circle cx={cx} cy={cy} r={6.5} fill={s.color} stroke="#08080D" strokeWidth={2} style={{ transition: "cx 0.35s cubic-bezier(.2,.7,.3,1), cy 0.35s cubic-bezier(.2,.7,.3,1)" }}>
+              <circle cx={cx} cy={cy} r={6.5} fill={s.color} stroke="var(--card-bg)" strokeWidth={2} style={{ transition: "cx 0.35s cubic-bezier(.2,.7,.3,1), cy 0.35s cubic-bezier(.2,.7,.3,1)" }}>
                 <title>{`${s.name} — ${currentYear}: ${xLabel} ${point.x.toFixed(1)}, ${yLabel} ${point.y.toFixed(1)}`}</title>
               </circle>
             </g>

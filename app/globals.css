@@ -1,25 +1,51 @@
+/* ============================================================
+   THE PALETTE — "Editorial Dark", September 2026
+
+   The site was near-black with neon cyan and violet, gradient buttons,
+   frosted glass and a glow behind every page. Each was a reasonable
+   choice on its own; together they are the look most generated sites
+   now share, and a reader who has seen a hundred of them discounts the
+   numbers before reading one. The owner chose this direction from
+   side-by-side mockups built on the real homepage.
+
+   THE RULES THAT MAKE IT WORK, because tokens alone do not:
+   - Deep navy, not black. Solid surfaces, no glass, no glow, no
+     gradients. scripts/check-palette.ts fails the build on each.
+   - ONE accent, gold, spent only on what is current or chosen: the
+     score, the selected market, the latest point. Spread it further and
+     it stops meaning anything.
+   - A selected control is a solid off-white fill with navy text.
+   - Data colours (markets, dimensions, the score ramp) are NOT chrome
+     and keep their meaning. Three were lifted slightly so they still
+     read on navy -- see lib/markets.ts and lib/indicators.ts.
+   - scripts/check-palette-contrast.ts measures every text colour here
+     against both grounds, with no browser, on every build.
+   ============================================================ */
 :root {
-  --ink: #F5F6FA;           /* primary text on dark bg */
-  --ink-soft: #C7C9D9;      /* secondary text */
-  --paper: #08080D;         /* page background, near-black */
-  --white: #12121A;         /* "card" surfaces (glass panels, not literal white) */
+  --ink: #E9ECF1;           /* primary text on the navy ground */
+  --ink-soft: #C5CCD7;      /* secondary text */
+  --paper: #101826;         /* page background, deep navy */
+  --white: #131D2E;         /* card surfaces (solid panels, not literal white) */
   /* NAMED FOR WHAT THEY DO, NOT WHAT THEY ONCE WERE.
      These were --gold, --gold-deep, --gold-bg, --teal and --teal-bg. The
      site was gold once; the palette moved to cyan and violet and the names
      stayed, so --gold held cyan and any new work reaching for it got a
-     colour it did not expect. --gold-bg was worse: translucent #8B5CF6,
-     the OLD violet, so the "gold" background could never match the "gold"
-     foreground. Every value below is unchanged -- this is a rename only. */
-  --accent: #22D3EE;        /* primary accent: cyan */
-  --accent-2: #B98CFF;      /* secondary accent: violet */
+     colour it did not expect. --gold-bg was worse: a translucent violet
+     that could never match the "gold" foreground. The names stayed through
+     the September 2026 restyle; the values did not. */
+  --accent: #D4B06A;        /* THE accent: gold. Current or chosen, nothing else. */
+  /* Not a second brand colour any more. Every use of it was a label,
+     a link or a quiet marker, so it is a light neutral now -- which is
+     what keeps --accent singular. */
+  --accent-2: #C5CCD7;
 
   /* Source status, used by the Sources table and the Trends panel. Kept
-     separate from --accent even though live currently shares its value,
-     so the two can diverge without one silently dragging the other. */
-  --status-live: #22D3EE;
-  --status-live-bg: rgba(34, 211, 238, 0.12);
-  --status-manual-bg: rgba(139, 92, 246, 0.14);
-  --slate: #8A8EA3;         /* muted/meta text */
+     separate from --accent, and since September 2026 a different colour:
+     "live" is a fact about a source, not something chosen or current. */
+  --status-live: #8FB3E0;
+  --status-live-bg: rgba(143, 179, 224, 0.12);
+  --status-manual-bg: rgba(197, 204, 215, 0.10);
+  --slate: #9BA6B7;         /* muted/meta text */
 
   /* THE TYPE SCALE. Ten steps, and nothing outside them.
      The site had grown to twenty-seven distinct font sizes -- 12, 12.5 and
@@ -43,26 +69,44 @@
   --t-h1: 34px;         /* page headings */
   --t-display: 46px;    /* score display */
   --t-hero: 52px;       /* the page headline, desktop end of its clamp */
-  --hair: rgba(255, 255, 255, 0.1); /* borders */
-  --glass: rgba(255, 255, 255, 0.035);
+  --hair: #253247;          /* borders and rules */
+  --hair-strong: #34445E;   /* a border under the pointer */
+  --mid: #4A5A73;           /* centre lines on axes and tracks */
+  /* Kept as a name because forty call sites use it. It is no longer
+     glass: a solid panel, the same as --card-bg. */
+  --glass: #131D2E;
 
   /* One card system, per the design brief's consistency rules (§7, §37):
      every card on every page uses these three values rather than
      re-inventing a radius/padding/border per component. Existing
      hand-rolled cards are being migrated onto .mmai-card over time. */
-  --card-radius: 16px;
+  --card-radius: 6px;
   --card-pad: 18px 20px;
-  --card-bg: rgba(255, 255, 255, 0.035);
+  --card-bg: #131D2E;
+
+  --hover: #182438;         /* a surface under the pointer */
+  --track: #1F2A3D;         /* the empty part of a bar */
+  --bar: #AEB8C8;           /* a bar that is not encoding a colour */
+  --on-bg: #E9ECF1;         /* a selected control's fill */
+  --on-ink: #101826;        /* ...and its text */
+
+  /* THE TYPE ROLES. Source Serif for headings -- a text face made for
+     long reading, not a display face chosen to look expensive. IBM Plex
+     Sans for everything a reader reads, and Plex Mono for figures, so
+     digits line up and a number never looks like prose. */
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-num: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 /* The shared card. Use this instead of repeating
-   background/border/radius/blur inline. */
+   background/border/radius inline. */
 .mmai-card {
   background: var(--card-bg);
   border: 1px solid var(--hair);
   border-radius: var(--card-radius);
   padding: var(--card-pad);
-  backdrop-filter: blur(10px);
 }
 
 /* Small uppercase metadata / section label. The brief allows monospace
@@ -80,7 +124,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  font-family: var(--font-body);
   /* THE BASE SIZE, which the site never actually set. Anything that did
      not name its own size inherited the BROWSER's 16px -- a value that is
      not on the scale and was never chosen by anyone. Almost everything
@@ -94,7 +138,7 @@ body {
   font-size: var(--t-body);
   position: relative;
   scrollbar-width: thin;             /* Firefox */
-  scrollbar-color: rgba(139,92,246,0.5) transparent;
+  scrollbar-color: var(--hair-strong) transparent;
 }
 
 /* Off-screen until it receives keyboard focus -- standard skip-link
@@ -115,20 +159,8 @@ body {
    page. Applies globally, e.g. the Sources page table's horizontal scroll. */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.4); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.65); }
-
-/* Ambient glow, fixed behind everything */
-body::before {
-  content: "";
-  position: fixed;
-  top: -220px; right: -180px;
-  width: 760px; height: 760px;
-  background: radial-gradient(circle, rgba(139,92,246,0.28), rgba(34,211,238,0.10) 45%, transparent 70%);
-  filter: blur(10px);
-  pointer-events: none;
-  z-index: 0;
-}
+::-webkit-scrollbar-thumb { background: var(--hair-strong); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--mid); }
 
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
@@ -151,7 +183,7 @@ body::before {
    will find every other element that legitimately uses that tag. */
 .sitenav {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(8, 8, 13, 0.82); backdrop-filter: blur(14px);
+  background: var(--paper);
   border-bottom: 1px solid var(--hair);
 }
 .navrow {
@@ -159,22 +191,23 @@ body::before {
   padding: 16px 24px; max-width: 1180px; margin: 0 auto;
 }
 .brand {
-  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: var(--t-h3);
+  font-family: var(--font-display); font-weight: 600; font-size: var(--t-h3);
   display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink);
 }
-.brand .dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-2), var(--accent)); box-shadow: 0 0 12px rgba(139,92,246,0.7); }
-.navlinks { display: flex; gap: 8px; font-size: var(--t-small); font-weight: 600; }
+.brand .dot { width: 8px; height: 8px; border-radius: 1px; background: var(--accent); }
+.navlinks { display: flex; gap: 2px; font-size: var(--t-small); font-weight: 600; }
 .navlink {
-  padding: 8px 14px; border-radius: 8px; color: var(--slate);
+  padding: 8px 10px; border-radius: 4px; color: var(--slate); white-space: nowrap;
   text-decoration: none; background: none; border: none; cursor: pointer;
   font-family: inherit; font-size: var(--t-small); font-weight: 600;
 }
-.navlink.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
+.navlink:hover { color: var(--ink); }
+.navlink.active { background: var(--on-bg); color: var(--on-ink); }
 
 /* Mobile nav -- hamburger + slide-down panel, hidden entirely above
-   860px (matches the breakpoint already used by .score-panel and the
-   Sources table elsewhere). Below it, .navlinks (7 links in one row,
-   confirmed to overflow its container on a phone) hides and the
+   1100px (see the media query below for why it is not the 900 the
+   score panel and Sources table use). Below it, .navlinks (a row of
+   links that overflows its container) hides and the
    hamburger takes over. The panel is server-rendered display:none by
    default (never toggled via JS during render) so there's no hydration
    mismatch -- only the "open" class, driven by client state, reveals it. */
@@ -193,7 +226,7 @@ body::before {
 .navpanel {
   display: none;
   position: absolute; top: 100%; left: 0; right: 0;
-  background: rgba(8, 8, 13, 0.96); backdrop-filter: blur(14px);
+  background: var(--paper);
   border-bottom: 1px solid var(--hair);
   padding: 8px 16px 16px; flex-direction: column; gap: 2px;
 }
@@ -202,9 +235,14 @@ body::before {
   color: var(--slate); text-decoration: none; background: none; border: none; cursor: pointer;
   font-family: inherit; font-size: var(--t-body); font-weight: 600; text-align: left;
 }
-.navpanel-link.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
+.navpanel-link.active { background: var(--on-bg); color: var(--on-ink); }
 
-@media (max-width: 900px) {
+/* 1100, not 900. Eleven links in IBM Plex Sans need about 1,050px on one
+   row, and at 960 the row pushed the whole page 83px sideways -- found by
+   the nav-row width added to scripts/check-layout.ts with the September
+   2026 restyle. Below this the menu button takes over, as it already did
+   on phones. */
+@media (max-width: 1100px) {
   .navlinks { display: none; }
   .navburger { display: flex; }
   .navpanel.open { display: flex; }
@@ -212,18 +250,18 @@ body::before {
 
 .hero { padding: 48px 0 36px; position: relative; z-index: 1; }
 .eyebrow {
-  font-family: "IBM Plex Mono", monospace; font-size: var(--t-caption); font-weight: 700;
-  background: linear-gradient(90deg, var(--accent-2), var(--accent));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-family: var(--font-mono); font-size: var(--t-caption); font-weight: 600;
+  color: var(--slate);
   letter-spacing: 2px; margin: 0 0 14px;
 }
 h1.headline {
-  font-family: "Space Grotesk", -apple-system, sans-serif; font-weight: 700; font-size: clamp(var(--t-h2), 5vw, var(--t-hero));
-  line-height: 1.12; margin: 0 auto 16px; max-width: 22ch; letter-spacing: -0.015em;
+  font-family: var(--font-display); font-weight: 600; font-size: clamp(var(--t-h2), 5vw, var(--t-hero));
+  line-height: 1.12; margin: 0 0 16px; max-width: 22ch; letter-spacing: -0.012em;
+  text-wrap: balance;
 }
 /* 1.12 is right for a two-line headline at 52px. On a phone the same
-   headline wraps to four lines at 30px, and Space Grotesk's natural
-   glyph box at that size is ~39px against a 33.6px line box -- so
+   headline wraps to four lines at 30px, and the display face's natural
+   glyph box at that size was ~39px against a 33.6px line box -- so
    consecutive lines physically overlapped by 6px and descenders ran into
    the next line's capitals. Measured on the homepage at 375px. */
 @media (max-width: 640px) {
@@ -237,29 +275,26 @@ h1.headline {
   font-size: var(--t-micro); color: var(--slate); margin-top: 1px;
 }
 
-/* Hero is centred, matching the design reference. The two coloured
-   phrases in the headline use the site's existing cyan and violet
-   accents -- no new colours introduced. */
-.hero-centered { text-align: center; }
+/* LEFT-ALIGNED, since the September 2026 restyle. A centred hero with
+   two coloured phrases in the headline is a landing-page template; a
+   report starts at the left margin and lets the headline be plain. The
+   class keeps its name because it scopes the rules below. */
+.hero-centered { text-align: left; }
 .hero-centered .eyebrow { margin-bottom: 10px; }
-.hero-centered .sub { margin-left: auto; margin-right: auto; }
 /* The market selector spans the full content width so its edges line up
    with the snapshot card directly beneath it -- as an inline-flex row it
    shrank to its own content and sat visibly narrower. Scoped to the hero
    so the country tabs on Gulf Watch keep their compact sizing. */
 .hero-centered .tabs { display: flex; width: 100%; }
 .hero-centered .tabs .tab { flex: 1 1 150px; justify-content: center; }
-.hl-cyan { color: var(--accent); }
-.hl-violet { color: var(--accent-2); }
 .sub { font-size: var(--t-lead); color: var(--slate); max-width: 60ch; line-height: 1.6; margin: 0 0 28px; }
 
 .tabs {
   display: inline-flex; flex-wrap: wrap; background: var(--glass);
-  border: 1px solid var(--hair); border-radius: 12px; padding: 4px; gap: 2px; margin-bottom: 30px;
-  backdrop-filter: blur(10px);
+  border: 1px solid var(--hair); border-radius: 6px; padding: 4px; gap: 2px; margin-bottom: 30px;
 }
 .tab {
-  padding: 9px 16px; border-radius: 9px; font-size: var(--t-small); font-weight: 600;
+  padding: 9px 16px; border-radius: 4px; font-size: var(--t-small); font-weight: 600;
   color: var(--slate); cursor: pointer; border: none; background: none; font-family: inherit;
   /* min-height (not just padding) so the flag icon + text inside some
      .tab buttons don't stretch it past 44px while a plain-text one
@@ -267,7 +302,7 @@ h1.headline {
      minimum consistently, on both mobile and desktop. */
   min-height: 44px; display: inline-flex; align-items: center;
 }
-.tab.active { background: linear-gradient(135deg, var(--accent-2), #6D28D9); color: #fff; }
+.tab.active { background: var(--on-bg); color: var(--on-ink); }
 
 /* ============================================================
    CHOOSING A MARKET
@@ -285,9 +320,9 @@ h1.headline {
    faster than a country name is read, and it is the only part that
    survives being glanced at.
 
-   The selected state keeps the accent gradient .tab.active already
-   used, so this is a new shape in the existing visual language rather
-   than a new language.
+   Selected is a solid off-white fill with a gold underline -- the
+   same fill every other selected control uses, and the gold that marks
+   whatever is chosen.
 
    Chips wrap naturally at any count, which is the property .tabs did
    not have: this has been re-laid-out three times in two days as
@@ -297,7 +332,7 @@ h1.headline {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: center;
+  justify-content: flex-start;
   margin-bottom: 30px;
 }
 
@@ -309,38 +344,33 @@ h1.headline {
      without padding alone having to guarantee it. */
   min-height: 44px;
   padding: 9px 16px 9px 13px;
-  border-radius: 12px;
+  border-radius: 4px;
   border: 1px solid var(--hair);
-  background: var(--glass);
-  backdrop-filter: blur(10px);
+  background: transparent;
   color: var(--ink-soft);
   font-family: inherit;
   font-size: var(--t-small);
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
 .market-chip:hover {
-  border-color: var(--slate);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--hair-strong);
+  background: var(--hover);
   color: var(--ink);
 }
 
-/* Movement only for readers who want it. */
-@media (prefers-reduced-motion: no-preference) {
-  .market-chip:hover { transform: translateY(-1px); }
-}
-
-.market-chip.active {
-  background: linear-gradient(135deg, var(--accent-2), #6D28D9);
-  border-color: transparent;
-  color: #fff;
-}
-
+.market-chip.active,
 .market-chip.active:hover {
-  background: linear-gradient(135deg, var(--accent-2), #6D28D9);
-  color: #fff;
+  background: var(--on-bg);
+  border-color: var(--on-bg);
+  color: var(--on-ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-chip { transition: none; }
 }
 
 /* On a narrow phone the chips go full width in two columns rather than
@@ -350,7 +380,7 @@ h1.headline {
   /* 0 1, not 1 1. With grow enabled an odd market count leaves the last
      chip alone on its row and it stretches to full width -- nine markets
      made South Korea twice the size of every other country. Growth off,
-     basis half: the orphan stays a chip and centres. */
+     basis half: the orphan stays a chip, at the left margin. */
   .market-chip { flex: 0 1 calc(50% - 4px); justify-content: flex-start; }
 }
 
@@ -359,7 +389,7 @@ h1.headline {
    background of its own -- a vertical rule separates score from chart,
    matching the design reference. */
 .score-panel {
-  display: grid; grid-template-columns: minmax(210px, 260px) 1fr; gap: 34px; align-items: center;
+  display: grid; grid-template-columns: minmax(210px, 260px) 1fr; gap: 34px; align-items: start;
   padding: 24px 0 20px;
 }
 .score-panel > .score-right { border-left: 1px solid var(--hair); padding-left: 34px; }
@@ -368,11 +398,11 @@ h1.headline {
   .score-panel > .score-right { border-left: none; padding-left: 0; border-top: 1px solid var(--hair); padding-top: 22px; width: 100%; }
 }
 
-.gauge-num { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: var(--t-display); }
+.gauge-num { font-family: var(--font-num); font-weight: 500; font-size: var(--t-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .gauge-label { font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); font-weight: 700; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; }
-.band-pill { display: inline-block; margin-top: 10px; padding: 5px 14px; border-radius: 999px; font-size: var(--t-small); font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+.band-pill { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 5px 12px; border-radius: 3px; font-size: var(--t-small); font-weight: 700; font-family: "IBM Plex Mono", monospace; }
 
-.score-right h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h3); font-weight: 600; margin: 0 0 12px; }
+.score-right h2 { font-family: var(--font-display); font-size: var(--t-h3); font-weight: 600; margin: 0 0 12px; }
 .score-narrative { font-size: var(--t-body); color: var(--ink-soft); line-height: 1.65; margin: 0 0 16px; }
 .meta-row { display: flex; gap: 20px; flex-wrap: wrap; font-family: "IBM Plex Mono", monospace; font-size: var(--t-caption); color: var(--slate); }
 .meta-row b { color: var(--ink); }
@@ -404,12 +434,12 @@ h1.headline {
 .section:first-child { padding-top: 44px; }
 .hero + .section { padding-top: 10px; }
 .section-head h1,
-.section-head h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h2); font-weight: 600; margin: 0 0 8px; }
+.section-head h2 { font-family: var(--font-display); font-size: var(--t-h2); font-weight: 600; margin: 0 0 8px; text-wrap: balance; }
 .section-head p { color: var(--slate); font-size: var(--t-body); margin: 0; max-width: 64ch; }
 
 .pillar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; margin-top: 24px; }
-.pillar-card { background: var(--glass); border: 1px solid var(--hair); border-radius: 16px; padding: 22px 16px 18px; text-align: center; backdrop-filter: blur(10px); transition: border-color 0.2s ease, transform 0.2s ease; }
-.pillar-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
+.pillar-card { background: var(--glass); border: 1px solid var(--hair); border-radius: var(--card-radius); padding: 22px 16px 18px; text-align: center; transition: border-color 0.2s ease; }
+.pillar-card:hover { border-color: var(--hair-strong); }
 .pillar-name { font-size: var(--t-small); font-weight: 700; margin: 14px 0 2px; color: var(--ink); }
 .pillar-weight { font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); color: var(--slate); }
 /* One-line plain-language descriptor under each pillar name, so the five
@@ -421,7 +451,7 @@ h1.headline {
    would leave each ring about 90px wide with the label wrapping to four
    lines. */
 .dimension-grid { grid-template-columns: repeat(3, 1fr); }
-.dimension-question { font-size: var(--t-micro); color: var(--accent-2); font-style: italic; margin-top: 6px; line-height: 1.4; }
+.dimension-question { font-size: var(--t-micro); color: var(--ink-soft); font-style: italic; margin-top: 6px; line-height: 1.4; }
 
 /* ===== Featured Market Snapshot strip (brief §2) =====
    A compact context bar directly above the score card: what you're
@@ -431,7 +461,7 @@ h1.headline {
    headline indicators -- not four separate floating panels. */
 .snapshot-card {
   background: var(--card-bg); border: 1px solid var(--hair);
-  border-radius: 20px; backdrop-filter: blur(12px);
+  border-radius: 8px;
   padding: 4px 22px 22px; margin-bottom: 8px;
 }
 .snapshot-strip {
@@ -442,8 +472,8 @@ h1.headline {
 .snapshot-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 11px; border-radius: 999px;
-  border: 1px solid var(--hair); background: rgba(255,255,255,0.03);
+  padding: 5px 11px; border-radius: 4px;
+  border: 1px solid var(--hair); background: transparent;
   font-size: var(--t-caption); font-weight: 600; color: var(--ink-soft);
   white-space: nowrap;
 }
@@ -467,14 +497,14 @@ h1.headline {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 22px 12px 18px; text-align: center; text-decoration: none;
   background: var(--card-bg); border: 1px solid var(--hair);
-  border-radius: var(--card-radius); backdrop-filter: blur(10px);
-  transition: border-color 0.18s ease, transform 0.18s ease;
+  border-radius: var(--card-radius);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
 }
 /* It is a <button> now, not a link: choosing a market selects it on this
    page instead of navigating to another one. Buttons inherit none of a
    link's defaults, so the reset is explicit. */
 .compare-chip { font: inherit; color: inherit; cursor: pointer; width: 100%; }
-.compare-chip:hover { border-color: rgba(255,255,255,0.24); transform: translateY(-2px); }
+.compare-chip:hover { border-color: var(--hair-strong); background: var(--hover); }
 .compare-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* The chosen market. Without this the strip gives no sign of which one
@@ -482,13 +512,13 @@ h1.headline {
    place rather than navigating. */
 .compare-chip.on {
   border-color: var(--accent);
-  background: rgba(34, 211, 238, 0.07);
+  background: var(--hover);
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 .compare-chip.on .cc-name { color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   .compare-chip { transition: none; }
-  .compare-chip:hover { transform: none; }
 }
 .compare-chip .cc-name { font-size: var(--t-small); font-weight: 700; color: var(--ink); }
 /* Fixed height so all six shapes occupy the same block regardless of
@@ -499,7 +529,7 @@ h1.headline {
   height: 96px; display: flex; align-items: center; justify-content: center;
   margin: 4px 0 2px;
 }
-.compare-chip .cc-score { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: var(--t-h2); line-height: 1.1; }
+.compare-chip .cc-score { font-family: var(--font-num); font-weight: 500; font-size: var(--t-h2); line-height: 1.1; font-variant-numeric: tabular-nums; }
 .compare-chip .cc-band { font-size: var(--t-micro); color: var(--slate); }
 
 /* ===== Page header with a side insight card (design reference on the
@@ -514,11 +544,11 @@ h1.headline {
 @media (max-width: 900px) { .page-head-row { grid-template-columns: 1fr; } }
 .insight-card {
   background: var(--card-bg); border: 1px solid var(--hair);
-  border-radius: var(--card-radius); padding: 16px 18px; backdrop-filter: blur(10px);
+  border-radius: var(--card-radius); padding: 16px 18px;
 }
 .insight-card h2,
 .insight-card h3 {
-  font-family: "Space Grotesk", sans-serif; font-size: var(--t-body); font-weight: 600;
+  font-family: var(--font-display); font-size: var(--t-lead); font-weight: 600;
   margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
 }
 .insight-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
@@ -532,11 +562,11 @@ h1.headline {
    chart across the site. */
 .chart-card {
   background: var(--card-bg); border: 1px solid var(--hair);
-  border-radius: 18px; padding: 22px 24px; backdrop-filter: blur(12px);
+  border-radius: 8px; padding: 22px 24px;
 }
 .chart-card-label {
   font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); font-weight: 700;
-  color: var(--accent-2); letter-spacing: 1px; text-transform: uppercase;
+  color: var(--slate); letter-spacing: 1px; text-transform: uppercase;
   margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
 
@@ -545,16 +575,16 @@ h1.headline {
 .selector-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
 .selector-btn {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 16px; border-radius: 12px; cursor: pointer;
+  padding: 10px 16px; border-radius: 4px; cursor: pointer;
   font-family: inherit; font-size: var(--t-small); font-weight: 600;
   border: 1px solid var(--hair); background: var(--card-bg); color: var(--slate);
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   min-height: 44px;
 }
-.selector-btn:hover { color: var(--ink-soft); border-color: rgba(255,255,255,0.2); }
+.selector-btn:hover { color: var(--ink); border-color: var(--hair-strong); }
 .selector-btn.active {
-  border-color: var(--accent-2); color: #fff;
-  background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(109,40,217,0.18));
+  border-color: var(--on-bg); color: var(--on-ink);
+  background: var(--on-bg);
 }
 
 /* Five equal pillar cards that drive one chart below them (brief §26:
@@ -584,7 +614,7 @@ h1.headline {
 .data-table thead th {
   font-family: "IBM Plex Mono", monospace; font-size: var(--t-micro); font-weight: 700;
   letter-spacing: 1px; text-transform: uppercase; color: var(--slate);
-  background: rgba(255,255,255,0.03);
+  background: var(--hover);
 }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table td { font-size: var(--t-small); color: var(--ink-soft); }
@@ -598,26 +628,24 @@ h1.headline {
 .pillar-select-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; }
 .pillar-select-card {
   display: block; width: 100%; text-align: left; cursor: pointer;
-  padding: 16px 16px 14px; border-radius: 16px;
+  padding: 16px 16px 14px; border-radius: var(--card-radius);
   border: 1px solid var(--hair); background: var(--card-bg);
   font-family: inherit; font-size: inherit; color: inherit;
   -webkit-appearance: none; appearance: none;
-  backdrop-filter: blur(10px);
-  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.18s ease, background 0.18s ease;
 }
-.pillar-select-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
+.pillar-select-card:hover { border-color: var(--hair-strong); }
 .pillar-select-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .pillar-select-card { transition: none; }
-  .pillar-select-card:hover { transform: none; }
 }
-.pillar-select-card[aria-pressed="true"] { border-color: var(--accent-2); background: rgba(139,92,246,0.10); }
+.pillar-select-card[aria-pressed="true"] { border-color: var(--ink-soft); background: var(--hover); box-shadow: inset 0 -2px 0 var(--accent); }
 .pillar-select-card .psc-name {
-  font-family: "Space Grotesk", sans-serif; font-size: var(--t-small); font-weight: 600;
+  font-family: var(--font-body); font-size: var(--t-small); font-weight: 600;
   color: var(--ink-soft); line-height: 1.25;
 }
 .pillar-select-card .psc-score {
-  font-family: "Space Grotesk", sans-serif; font-size: var(--t-h1); font-weight: 700;
+  font-family: var(--font-num); font-size: var(--t-h1); font-weight: 500;
   line-height: 1; margin: 10px 0 2px; font-variant-numeric: tabular-nums;
 }
 .pillar-select-card .psc-desc { font-size: var(--t-caption); color: var(--slate); line-height: 1.4; margin-top: 6px; }
@@ -634,7 +662,7 @@ h1.headline {
   display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
   padding: 12px 14px;
   background: var(--card-bg); border: 1px solid var(--hair);
-  border-radius: 12px;
+  border-radius: var(--card-radius);
 }
 .signal-market { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-small); font-weight: 600; color: var(--ink); min-width: 0; }
 .signal-market span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -669,22 +697,83 @@ h1.headline {
 .cta-band {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 20px;
-  padding: 26px 30px; border-radius: 20px;
-  border: 1px solid rgba(139,92,246,0.3);
-  background: linear-gradient(120deg, rgba(139,92,246,0.14), rgba(34,211,238,0.07));
+  padding: 26px 30px; border-radius: 8px;
+  border: 1px solid var(--hair);
+  background: var(--card-bg);
 }
-.cta-band h2 { font-family: "Space Grotesk", sans-serif; font-size: var(--t-h3); font-weight: 600; margin: 0 0 6px; }
+.cta-band h2 { font-family: var(--font-display); font-size: var(--t-h3); font-weight: 600; margin: 0 0 6px; }
 .cta-band p { margin: 0; color: var(--slate); font-size: var(--t-body); }
+
+/* ============================================================
+   BUTTONS, DEFINED ONCE
+   The primary button was a violet gradient pasted inline into four
+   files, each with its own radius and padding. One class each now, so
+   a button looks the same on every page and changes in one place.
+   ============================================================ */
+.btn-primary,
+.btn-secondary,
+.btn-quiet {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+  border-radius: 4px;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.btn-primary,
+.btn-secondary { padding: 11px 22px; font-size: var(--t-small); }
+.btn-primary { background: var(--on-bg); color: var(--on-ink); border: 1px solid var(--on-bg); }
+.btn-primary:hover:not(:disabled) { background: #FFFFFF; border-color: #FFFFFF; }
+.btn-primary:disabled { cursor: default; opacity: 0.6; }
+.btn-secondary { background: transparent; color: var(--ink-soft); border: 1px solid var(--hair-strong); }
+.btn-secondary:hover { color: var(--ink); border-color: var(--slate); }
+/* The small outlined link-buttons under the score. Mono, because they sit
+   in the figures' part of the page. */
+.btn-quiet {
+  padding: 7px 14px; font-family: var(--font-mono); font-size: var(--t-micro);
+  color: var(--ink-soft); background: transparent; border: 1px solid var(--hair-strong);
+}
+.btn-quiet:hover { color: var(--ink); border-color: var(--slate); background: var(--hover); }
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-quiet:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .btn-secondary, .btn-quiet { transition: none; }
+}
+
+/* A form that has been sent. Was a violet-tinted box; now a plain panel
+   whose title says it worked -- the words carry it, not a colour. */
+.notice-done {
+  background: var(--card-bg); border: 1px solid var(--hair-strong);
+  border-radius: 8px; text-align: center;
+}
+.notice-done-title { font-family: var(--font-display); font-weight: 600; color: var(--ink); }
+
+/* LINKS IN RUNNING TEXT ARE UNDERLINED.
+   They used to be violet, and colour alone told them apart from the
+   words around them. With one accent reserved for what is current, a
+   link in a sentence is the same light neutral as the sentence -- so it
+   needs the underline a printed page would give it. Scoped to unclassed
+   links in the page body: buttons and chips carry a class, navigation
+   sits outside #main-content, and a link styled as a button inline sets
+   its own text-decoration, which wins. */
+#main-content a:not([class]) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--slate);
+  text-underline-offset: 3px;
+}
+/* !important only because every one of these links sets its colour
+   inline, and an inline style otherwise beats any stylesheet hover. */
+#main-content a:not([class]):hover { color: var(--ink) !important; text-decoration-color: var(--ink); }
 
 /* The only remaining user is the 6-card Gulf Watch grid (/gulf-watch and
    the homepage's Gulf Watch section) -- 3 columns divides 6 evenly with no
    orphaned card, unlike the 5-column layout this was originally built for. */
 .compare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 14px; margin-top: 24px; }
 .compare-card {
-  background: var(--glass); border: 1px solid var(--hair); border-radius: 16px;
-  padding: 16px 18px; cursor: pointer; transition: all .2s ease; backdrop-filter: blur(10px);
+  background: var(--glass); border: 1px solid var(--hair); border-radius: var(--card-radius);
+  padding: 16px 18px; cursor: pointer; transition: border-color .2s ease;
 }
-.compare-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-2px); }
+.compare-card:hover { border-color: var(--hair-strong); }
 .compare-name { font-weight: 700; font-size: var(--t-small); color: var(--ink); }
 
 /* Homepage Gulf strip: all six countries across one row, condensed,
@@ -747,7 +836,7 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
 .country-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .country-chip {
   display: inline-flex; align-items: center; gap: 7px;
-  padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  padding: 7px 12px; border-radius: 4px; cursor: pointer;
   font-family: inherit; font-size: var(--t-small); font-weight: 600;
   border: 1px solid var(--hair); background: var(--card-bg); color: var(--slate);
   min-height: 36px;
@@ -813,8 +902,8 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
    a number that means nothing without the spread behind it. One axis,
    drawn once, and the eye does the subtraction. */
 .dim-axis {
-  background: var(--glass); border: 1px solid var(--hair); border-radius: 16px;
-  padding: 16px 20px 14px; backdrop-filter: blur(10px); margin-top: 22px;
+  background: var(--glass); border: 1px solid var(--hair); border-radius: var(--card-radius);
+  padding: 16px 20px 14px; margin-top: 22px;
 }
 
 /* Three columns, shared by the head, every row and the foot -- that is
@@ -837,7 +926,7 @@ footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10
   transition: background-color .18s ease;
   margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: 8px;
 }
-a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
+a.dim-axis-row:hover { background: var(--hover); }
 .dim-axis-name { min-width: 0; }
 .dim-axis-title { display: block; font-size: var(--t-body); font-weight: 700; color: var(--ink); }
 .dim-axis-of { display: block; font-size: var(--t-micro); color: var(--slate); margin-top: 2px; }
@@ -846,22 +935,22 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 /* The rule is the axis; the stem is this row reaching back to it. The
    stem is what lets three rows be read as one comparison -- length from
    a shared origin, rather than three unanchored dots. */
-.dim-axis-rule { position: absolute; left: 0; right: 0; top: 9px; height: 2px; background: rgba(255,255,255,0.07); border-radius: 1px; }
-.dim-axis-mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.28); }
+.dim-axis-rule { position: absolute; left: 0; right: 0; top: 9px; height: 2px; background: var(--track); border-radius: 1px; }
+.dim-axis-mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--mid); }
 .dim-axis-stem {
   position: absolute; top: 9px; height: 2px; border-radius: 1px;
   transition: left .7s cubic-bezier(.22,1,.36,1), width .7s cubic-bezier(.22,1,.36,1);
 }
 .dim-axis-dot {
   position: absolute; top: 4px; width: 12px; height: 12px; margin-left: -6px;
-  border-radius: 50%; border: 2px solid var(--bg);
+  border-radius: 50%; border: 2px solid var(--card-bg);
   transition: left .7s cubic-bezier(.22,1,.36,1);
 }
 
 .dim-axis-read { text-align: right; min-width: 0; }
 .dim-axis-pct {
-  display: block; font-family: "Space Grotesk", sans-serif;
-  font-size: var(--t-h3); font-weight: 700; line-height: 1.1;
+  display: block; font-family: var(--font-num);
+  font-size: var(--t-h3); font-weight: 500; line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 .dim-axis-sd {
@@ -870,8 +959,10 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 }
 
 .dim-axis-foot { border-top: 1px solid var(--hair); padding-top: 7px; }
+/* grid-row 1 on both: two spans in the same column otherwise stack, and
+   "+2.5 sd" sat a line below "-2.5 sd" instead of level with it. */
 .dim-axis-foot > span {
-  grid-column: 2; font-family: "IBM Plex Mono", monospace;
+  grid-column: 2; grid-row: 1; font-family: "IBM Plex Mono", monospace;
   font-size: var(--t-micro); color: var(--slate);
 }
 .dim-axis-foot > span:first-child { justify-self: start; }
@@ -934,8 +1025,8 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 
 .coin-id { min-width: 0; flex: 1 1 auto; }
 .coin-sym {
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 700; font-size: var(--t-lead); color: var(--ink); line-height: 1.2;
+  font-family: var(--font-mono);
+  font-weight: 600; font-size: var(--t-lead); color: var(--ink); line-height: 1.2;
 }
 .coin-name {
   font-size: var(--t-caption); color: var(--slate); margin-top: 2px;
@@ -951,8 +1042,8 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 .coin-share { font-size: var(--t-micro); color: var(--slate); margin-top: 2px; }
 
 .coin-bar {
-  height: 9px; border-radius: 5px; margin: 12px 0 10px;
-  background: rgba(255, 255, 255, 0.05); overflow: hidden;
+  height: 9px; border-radius: 2px; margin: 12px 0 10px;
+  background: var(--track); overflow: hidden;
 }
 .coin-bar-fill { display: flex; height: 100%; border-radius: 5px; overflow: hidden; min-width: 3px; }
 .coin-bar-fill > span { display: block; height: 100%; }
@@ -1017,7 +1108,7 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
   display: inline-flex; align-items: center; gap: 8px;
   padding: 7px 13px;
   border: 1px solid var(--hair);
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--glass);
   color: var(--ink-soft);
   font-size: var(--t-small);
@@ -1025,7 +1116,8 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 .learn-index-link:hover,
-.learn-index-link:focus-visible { border-color: var(--accent); color: var(--ink); }
+.learn-index-link:focus-visible { border-color: var(--ink-soft); color: var(--ink); }
+.learn-index-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .learn-index-link > i { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
 
 /* Which dimension this indicator feeds, on the card itself. Same three
@@ -1033,18 +1125,19 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 .learn-tag {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 4px 11px;
-  border: 1px solid; border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid; border-radius: 3px;
+  background: transparent;
   font-family: "IBM Plex Mono", monospace;
   font-size: var(--t-micro); letter-spacing: 0.07em; text-transform: uppercase;
   margin-bottom: 12px;
 }
 .learn-tag > i { width: 6px; height: 6px; border-radius: 50%; }
 
-/* Georgia was the only serif on the site and appeared only here. */
+/* Georgia was once the only serif on the site and appeared only here.
+   The whole site's headings are a serif now, and this uses the same one. */
 .learn-h3 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: var(--t-h3); font-weight: 700; line-height: 1.3;
+  font-family: var(--font-display);
+  font-size: var(--t-h3); font-weight: 600; line-height: 1.3;
   margin: 0 0 12px; color: var(--ink);
   text-wrap: balance;
 }
@@ -1113,8 +1206,8 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
    Three treatments now, matching what each group actually is.
    ============================================================ */
 .learn-note {
-  border: 1px dashed var(--hair);
-  border-radius: 10px;
+  border: 1px dashed var(--hair-strong);
+  border-radius: var(--card-radius);
   padding: 13px 16px;
   margin-bottom: 12px;
 }
@@ -1133,11 +1226,10 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
    sceptic is one click from all of it. */
 .learn-calls {
   border: 1px solid var(--hair);
-  border-left: 3px solid var(--accent-2);
-  border-radius: 10px;
+  border-radius: var(--card-radius);
   padding: 13px 16px;
   margin-bottom: 14px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg);
 }
 .learn-calls > summary {
   cursor: pointer;
@@ -1207,10 +1299,9 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
 .ind-card {
   background: var(--glass);
   border: 1px solid var(--hair);
-  border-left: 3px solid;          /* colour set inline, per dimension */
-  border-radius: 12px;
+  border-left: 3px solid;          /* colour set inline, per dimension -- data, not decoration */
+  border-radius: var(--card-radius);
   padding: 13px 15px;
-  backdrop-filter: blur(10px);
 }
 .ind-card-label {
   font-family: "IBM Plex Mono", monospace;
@@ -1219,8 +1310,8 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
   color: var(--slate);
 }
 .ind-card-value {
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 700; font-size: var(--t-h2); line-height: 1.15;
+  font-family: var(--font-num);
+  font-weight: 500; font-size: var(--t-h2); line-height: 1.15;
   color: var(--ink); margin-top: 5px;
   font-variant-numeric: tabular-nums;
 }
@@ -1233,13 +1324,13 @@ a.dim-axis-row:hover { background: rgba(255,255,255,0.04); }
    historical average; right is better, whichever direction the
    raw figure happens to run. */
 .ind-track {
-  position: relative; height: 6px; border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  position: relative; height: 6px; border-radius: 1px;
+  background: var(--track);
   margin: 10px 0 7px; overflow: hidden;
 }
 .ind-track-mid {
   position: absolute; left: 50%; top: 0; bottom: 0;
-  width: 1px; background: rgba(255, 255, 255, 0.22);
+  width: 1px; background: var(--mid);
 }
 .ind-track-fill { position: absolute; top: 0; bottom: 0; }
 

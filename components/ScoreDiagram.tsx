@@ -1,5 +1,5 @@
 import {
-  DIMENSION_NAMES, DIMENSION_INDICATORS, INDICATOR_FIELD, INDICATOR_WEIGHT,
+  DIMENSION_NAMES, DIMENSION_INDICATORS, DIMENSION_TONE, INDICATOR_FIELD, INDICATOR_WEIGHT,
   computeMmai, dimensionPercentiles, explainDimension, standardiseDimensions,
   rawDimensions, type DimensionKey, type IndicatorKey,
 } from "@/lib/composite";
@@ -8,8 +8,10 @@ import { FALLBACK_MARKETS } from "@/lib/markets";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 
 const ORDER: DimensionKey[] = ["C", "D", "K"];
-const TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
-const FINAL = "#8B5CF6";
+const TONE = DIMENSION_TONE;
+// The result is the one current figure in the diagram, so it takes the
+// accent -- the same gold as the homepage score it explains.
+const FINAL = "#D4B06A";
 const N = REFERENCE_SET.length;
 
 /** A real worked example rather than an abstract one. Australia because it
@@ -106,10 +108,6 @@ export default function ScoreDiagram() {
                 <stop offset="100%" stopColor={TONE[d]} stopOpacity="0.75" />
               </linearGradient>
             ))}
-            <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="7" result="b" />
-              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
           </defs>
 
           {/* column headings */}
@@ -149,10 +147,10 @@ export default function ScoreDiagram() {
             const w = INDICATOR_WEIGHT[r.key];
             return (
               <g key={r.key}>
-                <rect x={IN_X} y={r.y} width={IN_W} height={IN_H} rx={12}
-                  fill="rgba(255,255,255,0.045)" stroke="var(--hair)" />
+                <rect x={IN_X} y={r.y} width={IN_W} height={IN_H} rx={6}
+                  fill="var(--card-bg)" stroke="var(--hair)" />
                 <rect x={IN_X} y={r.y} width={3.5} height={IN_H} rx={2} fill={TONE[r.dim]} opacity={0.9} />
-                <text x={IN_X + 16} y={r.y + 21} fontSize={12.5} fill="#fff" fontFamily="IBM Plex Sans, sans-serif">
+                <text x={IN_X + 16} y={r.y + 21} fontSize={12.5} fill="var(--ink)" fontFamily="IBM Plex Sans, sans-serif">
                   {f.label}
                 </text>
                 <text x={IN_X + 16} y={r.y + 38} fontSize={13} fill={TONE[r.dim]}
@@ -183,13 +181,16 @@ export default function ScoreDiagram() {
           {/* three dimensions */}
           {ORDER.map((d) => {
             const cy = band(d);
-            const h = DIMENSION_INDICATORS[d].length > 1 ? 96 : 72;
+            // 84, not 72: at 72 the one-indicator card put its subtitle and its
+            // percentile line 11px apart at 10.5 and 12px type, so "gdp growth"
+            // sat on top of "51 percentile". Found in the September 2026 review.
+            const h = DIMENSION_INDICATORS[d].length > 1 ? 96 : 84;
             const { parts } = explainDimension(d, EXAMPLE.raw, EXAMPLE.code);
             return (
               <g key={d}>
-                <rect x={DIM_X} y={cy - h / 2} width={DIM_W} height={h} rx={14}
+                <rect x={DIM_X} y={cy - h / 2} width={DIM_W} height={h} rx={6}
                   fill={`${TONE[d]}12`} stroke={TONE[d]} strokeOpacity={0.5} />
-                <text x={DIM_X + 18} y={cy - h / 2 + 26} fontSize={15} fontWeight={700} fill="#fff"
+                <text x={DIM_X + 18} y={cy - h / 2 + 26} fontSize={15} fontWeight={700} fill="var(--ink)"
                   fontFamily="IBM Plex Sans, sans-serif">
                   {DIMENSION_NAMES[d]}
                 </text>
@@ -210,21 +211,21 @@ export default function ScoreDiagram() {
           })}
 
           {/* the result */}
-          <rect x={OUT_X} y={centre - 62} width={OUT_W} height={124} rx={18}
-            fill="rgba(139,92,246,0.14)" stroke={FINAL} strokeOpacity={0.65} filter="url(#soft)" />
+          <rect x={OUT_X} y={centre - 62} width={OUT_W} height={124} rx={6}
+            fill="var(--card-bg)" stroke={FINAL} strokeOpacity={0.8} />
           <text x={OUT_X + OUT_W / 2} y={centre - 34} fontSize={10.5} fill="var(--slate)"
             textAnchor="middle" fontFamily="IBM Plex Mono, monospace" letterSpacing={0.8}>
             AVERAGE THE THREE
           </text>
-          <text x={OUT_X + OUT_W / 2} y={centre + 12} fontSize={42} fontWeight={700} fill={FINAL}
-            textAnchor="middle" fontFamily="Space Grotesk, sans-serif">
+          <text x={OUT_X + OUT_W / 2} y={centre + 12} fontSize={42} fontWeight={500} fill={FINAL}
+            textAnchor="middle" style={{ fontFamily: "var(--font-num)" }}>
             {result.percentile?.toFixed(1)}
           </text>
-          <text x={OUT_X + OUT_W / 2} y={centre + 34} fontSize={11.5} fill="#fff"
+          <text x={OUT_X + OUT_W / 2} y={centre + 34} fontSize={11.5} fill="var(--ink)"
             textAnchor="middle" fontFamily="IBM Plex Sans, sans-serif">
             better than {result.percentile?.toFixed(0)}% of
           </text>
-          <text x={OUT_X + OUT_W / 2} y={centre + 50} fontSize={11.5} fill="#fff"
+          <text x={OUT_X + OUT_W / 2} y={centre + 50} fontSize={11.5} fill="var(--ink)"
             textAnchor="middle" fontFamily="IBM Plex Sans, sans-serif">
             the last 26 years
           </text>
@@ -245,11 +246,11 @@ export default function ScoreDiagram() {
           ["Put the three level", "Each is divided by its own spread, so one cannot shout over the others."],
           ["Rank it", "The average becomes a place in the historical record. That is the score."],
         ].map(([head, body], i) => (
-          <li key={head} style={{ border: "1px solid var(--hair)", borderRadius: 12, padding: "12px 14px", background: "rgba(255,255,255,0.025)" }}>
+          <li key={head} style={{ border: "1px solid var(--hair)", borderRadius: 6, padding: "12px 14px", background: "var(--card-bg)" }}>
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: FINAL, marginBottom: 5 }}>
               {String(i + 1).padStart(2, "0")}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{head}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", marginBottom: 3 }}>{head}</div>
             <div style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.5 }}>{body}</div>
           </li>
         ))}

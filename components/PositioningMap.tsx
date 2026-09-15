@@ -191,27 +191,27 @@ function nearlyIdentical(ps: PositionPoint[]): [PositionPoint, PositionPoint][] 
         style={{ display: "block" }}
       >
         {/* Quadrant fills, faint enough to read as background */}
-        <rect x={x(50)} y={y(100)} width={plotW / 2} height={plotH / 2} fill="rgba(255,255,255,0.035)" />
-        <rect x={x(0)} y={y(50)} width={plotW / 2} height={plotH / 2} fill="rgba(255,255,255,0.015)" />
+        <rect x={x(50)} y={y(100)} width={plotW / 2} height={plotH / 2} fill="var(--hover)" />
+        <rect x={x(0)} y={y(50)} width={plotW / 2} height={plotH / 2} fill="var(--hover)" />
 
         {/* Axes */}
-        <line x1={PAD.left} y1={y(0)} x2={x(100)} y2={y(0)} stroke="rgba(255,255,255,0.18)" />
-        <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={y(0)} stroke="rgba(255,255,255,0.18)" />
+        <line x1={PAD.left} y1={y(0)} x2={x(100)} y2={y(0)} stroke="var(--hair-strong)" />
+        <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={y(0)} stroke="var(--hair-strong)" />
 
         {/* The midlines that make the quadrants */}
-        <line x1={x(50)} y1={PAD.top} x2={x(50)} y2={y(0)} stroke="rgba(255,255,255,0.12)" strokeDasharray="3 4" />
-        <line x1={PAD.left} y1={y(50)} x2={x(100)} y2={y(50)} stroke="rgba(255,255,255,0.12)" strokeDasharray="3 4" />
+        <line x1={x(50)} y1={PAD.top} x2={x(50)} y2={y(0)} stroke="var(--mid)" strokeDasharray="3 4" />
+        <line x1={PAD.left} y1={y(50)} x2={x(100)} y2={y(50)} stroke="var(--mid)" strokeDasharray="3 4" />
 
         {/* Quadrant captions, in the padding above and below the plot so a
             dot at an extreme cannot land on one. 11px is the smallest step
             on the site's type scale. */}
-        <text x={x(100)} y={PAD.top - 20} textAnchor="end" fontSize="11" fill="#8A8EA3">{q.tr}</text>
-        <text x={x(0)} y={PAD.top - 20} fontSize="11" fill="#8A8EA3">{q.tl}</text>
-        <text x={x(100)} y={y(0) + 30} textAnchor="end" fontSize="11" fill="#8A8EA3">{q.br}</text>
-        <text x={x(0)} y={y(0) + 30} fontSize="11" fill="#8A8EA3">{q.bl}</text>
+        <text x={x(100)} y={PAD.top - 20} textAnchor="end" fontSize="11" fill="var(--slate)">{q.tr}</text>
+        <text x={x(0)} y={PAD.top - 20} fontSize="11" fill="var(--slate)">{q.tl}</text>
+        <text x={x(100)} y={y(0) + 30} textAnchor="end" fontSize="11" fill="var(--slate)">{q.br}</text>
+        <text x={x(0)} y={y(0) + 30} fontSize="11" fill="var(--slate)">{q.bl}</text>
 
         {/* Axis titles */}
-        <text x={PAD.left + plotW / 2} y={HEIGHT - 8} textAnchor="middle" fontSize="12" fill="#C7C9D9">
+        <text x={PAD.left + plotW / 2} y={HEIGHT - 8} textAnchor="middle" fontSize="12" fill="var(--ink-soft)">
           {narrow ? "Direction — momentum" : "Direction — momentum, percentile"}
         </text>
         <text
@@ -219,14 +219,14 @@ function nearlyIdentical(ps: PositionPoint[]): [PositionPoint, PositionPoint][] 
           y={PAD.top + plotH / 2}
           textAnchor="middle"
           fontSize="12"
-          fill="#C7C9D9"
+          fill="var(--ink-soft)"
           transform={`rotate(-90 13 ${PAD.top + plotH / 2})`}
         >
           {narrow ? "Conditions — right now" : "Conditions — right now, percentile"}
         </text>
 
         {laid.map(({ p, cx, cy, r }) => {
-          const colour = MARKET_COLORS[p.code] ?? "#8A8EA3";
+          const colour = MARKET_COLORS[p.code] ?? "var(--slate)";
           return (
             <g key={p.code}>
               {/* THE DOT IS THE COUNTRY'S FLAG, CLIPPED TO A CIRCLE.
@@ -253,7 +253,7 @@ function nearlyIdentical(ps: PositionPoint[]): [PositionPoint, PositionPoint][] 
                   Moving either is off the table, so instead every dot
                   carves a rim out of its neighbour and the one behind
                   reads as a crescent rather than a smudge. */}
-              <circle cx={cx} cy={cy} r={r + 1.5} fill="none" stroke="#0B0B12" strokeWidth={3} />
+              <circle cx={cx} cy={cy} r={r + 1.5} fill="none" stroke="var(--card-bg)" strokeWidth={3} />
               <clipPath id={`${uid}-${p.code}`}>
                 <circle cx={cx} cy={cy} r={r} />
               </clipPath>
@@ -262,7 +262,7 @@ function nearlyIdentical(ps: PositionPoint[]): [PositionPoint, PositionPoint][] 
                   {/* Painted under the flag: several of these flags have
                       white in them, and an unpainted gap would show the
                       quadrant shading through. */}
-                  <circle cx={cx} cy={cy} r={r} fill="#12121A" />
+                  <circle cx={cx} cy={cy} r={r} fill="var(--card-bg)" />
                   <g transform={`translate(${cx - 1.4 * r}, ${cy - r}) scale(${r / 10})`}>
                     {FLAG_SHAPES[p.code]}
                   </g>
@@ -292,7 +292,7 @@ function nearlyIdentical(ps: PositionPoint[]): [PositionPoint, PositionPoint][] 
             structural -- no dot can cover a name, whatever the data does
             next. */}
         {laid.map(({ p, cx, cy, r, lx, ly, anchor }) => {
-          const colour = MARKET_COLORS[p.code] ?? "#8A8EA3";
+          const colour = MARKET_COLORS[p.code] ?? "var(--slate)";
           const moved = Math.abs(ly - (cy + 4)) > 2;
           return (
             <g key={`label-${p.code}`}>
@@ -319,13 +319,13 @@ function nearlyIdentical(ps: PositionPoint[]): [PositionPoint, PositionPoint][] 
                 fontSize="11"
                 fontWeight={700}
                 fill="none"
-                stroke="#0B0B12"
+                stroke="var(--card-bg)"
                 strokeWidth={3}
                 strokeLinejoin="round"
               >
                 {p.code}
               </text>
-              <text x={lx} y={ly} textAnchor={anchor} fontSize="11" fontWeight={700} fill="#F5F6FA">
+              <text x={lx} y={ly} textAnchor={anchor} fontSize="11" fontWeight={700} fill="var(--ink)">
                 {p.code}
               </text>
             </g>

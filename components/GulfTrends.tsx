@@ -15,7 +15,7 @@ import {
 import { latestPoint, annualizeCpi, pairAnnualSeries, type LatestPoint } from "@/lib/gulfHistoryHelpers";
 
 // Distinct from every indicator color already used elsewhere in this
-// file (#E14B4B inflation, #22D3EE FX reserves, #8B5CF6 current
+// file (#E85A5A inflation, #22D3EE FX reserves, #9B70F8 current
 // account, #D9A441 real estate) -- the scatter plot puts inflation and
 // FX reserves on its two AXES, so reusing either of those two colors
 // for a country would read as "this country is a variable", not "this
@@ -32,11 +32,10 @@ const COUNTRY_COLORS: Record<string, string> = {
 const RELATIONSHIP_TRAIL_YEARS = 6;
 
 const CARD_STYLE: React.CSSProperties = {
-  background: "rgba(255,255,255,0.035)",
+  background: "var(--card-bg)",
   border: "1px solid var(--hair)",
-  borderRadius: 16,
+  borderRadius: 6,
   padding: "18px 20px",
-  backdropFilter: "blur(14px)",
 };
 
 function seriesFor(
@@ -107,7 +106,7 @@ function ComparisonCell({ lp, kind, noSourceHint }: { lp: LatestPoint | null; ki
   }
   return (
     <div>
-      <div style={{ fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
+      <div style={{ fontFamily: "var(--font-num)", fontWeight: 600, fontSize: 13, color: "var(--ink)" }}>
         {formatValue(lp.point.value as number, kind)}
       </div>
       <div className="micro-note">
@@ -294,9 +293,9 @@ export default function GulfTrends() {
   const visibleSeries = cross.series.filter((s) => shown.has(s.key));
   const allShown = shown.size === GULF_COUNTRIES.length;
 
-  const cpi = seriesFor(current, "Inflation (YoY)", "#E14B4B", GULF_CPI_HISTORY);
+  const cpi = seriesFor(current, "Inflation (YoY)", "#E85A5A", GULF_CPI_HISTORY);
   const fx = seriesFor(current, "FX reserves (months of imports)", "#22D3EE", GULF_FX_RESERVES_HISTORY);
-  const ca = seriesFor(current, "Current account (% of GDP)", "#8B5CF6", GULF_CURRENT_ACCOUNT_HISTORY);
+  const ca = seriesFor(current, "Current account (% of GDP)", "#9B70F8", GULF_CURRENT_ACCOUNT_HISTORY);
   const re = seriesFor(current, "Real estate transactions", "#D9A441", GULF_REAL_ESTATE_HISTORY);
 
   // Static generated data (lib/gulfHistory.ts) -- computing this once
@@ -346,7 +345,7 @@ export default function GulfTrends() {
                   className={`country-chip${on ? " on" : ""}`}
                   aria-pressed={on}
                   onClick={() => toggleCountry(s.key)}
-                  style={on ? { borderColor: s.color, color: "#fff" } : undefined}
+                  style={on ? { borderColor: s.color, color: "var(--ink)" } : undefined}
                 >
                   <i style={{ background: on ? s.color : "transparent", borderColor: s.color }} />
                   {s.name}
@@ -371,7 +370,7 @@ export default function GulfTrends() {
                 : visibleSeries.length === 1
                   ? visibleSeries[0].name
                   : `${visibleSeries.length} of six`}
-              <span className="meta-label" style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}>
+              <span className="meta-label" style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 4, padding: "3px 9px" }}>
                 Annual
               </span>
             </div>
@@ -448,7 +447,7 @@ export default function GulfTrends() {
               sources compare fairly.
             </p>
           </div>
-          <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "24px 28px", backdropFilter: "blur(14px)" }}>
+          <div style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "24px 28px" }}>
             <TimeSliderScatter series={relationshipSeries} years={relationshipYears} xLabel="Inflation (%, annual average)" yLabel="FX reserves (months of imports)" height={380} />
             {relationshipExcluded.length > 0 && (
               <p style={{ fontSize: 11, color: "var(--slate)", margin: "14px 0 0", lineHeight: 1.6 }}>

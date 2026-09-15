@@ -1692,3 +1692,66 @@ market and every file at once, and runs in CI.
 - **Do not rewrite "six" where it describes the REFERENCE SET.** 148
   market-years from six economies is frozen and stays six however many
   markets are scored.
+
+## 26. The site stopped looking generated: "Editorial Dark" (2026-09-15)
+
+The owner felt the near-black + neon cyan/violet look (gradient buttons,
+frosted glass, a glow behind every page, Space Grotesk, centred hero) read
+as "made by AI". Three directions were mocked up on the real homepage with
+live scores; the owner picked a tightened dark one ("3B").
+
+**The palette** — all tokens in `app/globals.css :root`, with the rules
+written above them:
+- page `--paper #101826`, cards `--white/--card-bg/--glass #131D2E` (solid;
+  no glass anywhere), rules `--hair #253247`, text `--ink #E9ECF1`,
+  `--ink-soft #C5CCD7`, `--slate #9BA6B7`.
+- ONE accent, gold `--accent #D4B06A`, spent only on what is current or
+  chosen: the homepage score number, the selected market's underline, the
+  latest point on the trend, the result in the Learn diagram. `--accent-2`
+  is now a light neutral, not a second brand colour.
+- A selected control is a solid off-white fill (`--on-bg`) with navy text
+  (`--on-ink`). Buttons are `.btn-primary / .btn-secondary / .btn-quiet`.
+- Type: Source Serif 4 headings (`--font-display`), IBM Plex Sans body
+  (`--font-body`), IBM Plex Mono for figures (`--font-num`).
+- Links in running text are underlined (`#main-content a:not([class])`),
+  because they are no longer violet.
+
+**Data colours kept their meaning.** Market lines, dimension tones and the
+score ramp are data, not chrome. Three were lifted slightly because they
+fell under 4.5:1 on navy: UK / Conditions red `#E14B4B → #E85A5A`, Euro Area
+violet `#8B5CF6 → #9B70F8` (also the ramp stop), missing-score grey
+`#7B8096 → #838AA0`. The dimension tones now live once, as
+`DIMENSION_TONE` in `lib/composite.ts` (they were copied into five files).
+Gold is NOT a ramp stop — the earlier note about gold→cyan passing through
+green still applies to the ramp.
+
+**Homepage score:** the number is gold; the ramp colour moved to the bar
+and a swatch in the band pill, with the band written in words.
+
+**Nav:** the menu button now takes over below 1100px, not 900. Eleven links
+need ~1,045px on one row; at 960 every page scrolled 83px sideways.
+
+**Two new CI checks** (scoring job):
+- `scripts/check-palette.ts` — fails on Space Grotesk, blur, glow
+  (text-shadow, drop-shadow, feGaussianBlur, blurred box-shadow),
+  brightness/saturate filters, CSS gradients, the retired colours and the
+  pre-lift data colours. Self-tests every rule against a sample.
+- `scripts/check-palette-contrast.ts` — every text token, market, dimension
+  and stablecoin colour, the N/A grey and the whole score ramp (0–100 in
+  0.5 steps) against both page and card, read from globals.css. No browser,
+  so it is not at the mercy of the day's scores.
+`check-layout.ts` gained a 1101px width; `check-accessibility.ts` and
+`test-stablecoin-series.ts` measure against the navy grounds.
+
+**Found and fixed on the way** (both were live before the restyle): the
+Learn diagram's Direction card printed "gdp growth" on top of "51
+percentile"; the homepage axis put "+2.5 sd" a line below "−2.5 sd".
+
+**Do not** reintroduce a second accent, a gradient or a glow "just for
+emphasis" — the checks will fail, and that is the point.
+
+**Next (owner chose, not built yet):** homepage additions from the mockup —
+strongest/weakest dimension line, yearly score trend 2019–2025 + today, the
+period each figure describes under its bar, and an "Updated … · 9 markets"
+status line. No monthly score history exists; the trend uses yearly scores
+from `lib/history.ts` via `computeMmai`.

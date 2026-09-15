@@ -106,7 +106,7 @@ export default function WeeklyFeed() {
   const brentDeltaText = brentPaired ? (brentDelta ? brentDelta.text : "—") : "no comparison yet";
 
   return (
-    <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid var(--hair)", borderRadius: 18, padding: "20px 24px", backdropFilter: "blur(14px)" }}>
+    <div style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "20px 24px" }}>
       {brentNow != null && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, paddingBottom: 14, borderBottom: "1px dashed var(--hair)", fontFamily: "IBM Plex Mono, monospace" }}>
           <span style={{ fontSize: 11, color: "var(--slate)", textTransform: "uppercase", letterSpacing: 0.5 }}>Brent crude, YoY (shared across all markets)</span>
@@ -117,7 +117,7 @@ export default function WeeklyFeed() {
       )}
 
       {results?.some((r) => !r.isStale && r.buckets.length < 2) && (
-        <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 14, padding: "10px 12px", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10, fontSize: 12, color: "var(--ink-soft)", lineHeight: 1.6 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 14, padding: "10px 12px", background: "var(--hover)", border: "1px solid var(--hair)", borderRadius: 4, fontSize: 12, color: "var(--ink-soft)", lineHeight: 1.6 }}>
           <span aria-hidden="true">●</span>
           {/* Names the affected markets rather than implying all six are
               waiting. After a source swap only the swapped markets reset,
@@ -225,7 +225,7 @@ export default function WeeklyFeed() {
                   <>
                     <span className="signal-headline">
                       MMAI score{" "}
-                      <b style={{ color: colorForScore(now.composite), fontFamily: "Space Grotesk, sans-serif" }}>
+                      <b style={{ color: colorForScore(now.composite), fontFamily: "var(--font-num)", fontWeight: 600 }}>
                         {now.composite != null ? now.composite.toFixed(1) : "—"}
                       </b>
                       {scoreDelta && then ? (
@@ -294,7 +294,7 @@ export default function WeeklyFeed() {
 
               <span
                 className="signal-state"
-                style={{ background: `${stateColor === "var(--slate)" ? "rgba(255,255,255,0.06)" : "transparent"}`, border: `1px solid var(--hair)`, color: stateColor }}
+                style={{ background: `${stateColor === "var(--slate)" ? "var(--hover)" : "transparent"}`, border: `1px solid var(--hair)`, color: stateColor }}
                 aria-hidden="true"
               >
                 {scoreDelta ? scoreDelta.symbol : "·"}

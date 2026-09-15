@@ -15,6 +15,13 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
   // The label has to come from the same place the meta row beneath it
   // reads, or the page shows two different words for one number.
   const band = { color: colorForScore(score), label: percentileBandLabel(score) };
+  // THE NUMBER IS GOLD; THE BAR CARRIES THE RAMP. The figure is the one
+  // thing on the page that is current and chosen, which is exactly what
+  // the accent is for -- and the ramp colour on 46px text made red-to-cyan
+  // the page's focal point. The meaning is not lost: the bar and the
+  // swatch in the band pill are coloured by colorForScore(), and the band
+  // is written out in words. A missing score stays grey, never gold.
+  const numberColour = score === null ? "var(--slate)" : "var(--accent)";
   const target = score === null ? 0 : Math.min(100, Math.max(0, score));
 
   // Starts at 0 on every fresh mount (a page load, or navigating to a
@@ -43,36 +50,25 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "8px 0 18px" }}>
         <span
           className="gauge-num"
-          style={{
-            color: band.color,
-            // The composite is the page's headline figure, so it gets a
-            // stronger glow and a slight brightness lift than the same
-            // colour carries elsewhere. The hue still comes from
-            // colorForScore(), so the score-to-colour meaning is
-            // unchanged -- this is emphasis, not a different scale.
-            textShadow: `0 0 10px ${band.color}88, 0 0 34px ${band.color}55`,
-            filter: "brightness(1.15) saturate(1.1)",
-            transition: "color 0.4s ease, text-shadow 0.4s ease",
-          }}
+          style={{ color: numberColour, transition: "color 0.4s ease" }}
         >
           {score === null ? "N/A" : score.toFixed(1)}
         </span>
         <span
           className="band-pill"
-          style={{ background: `${band.color}22`, color: band.color, border: `1px solid ${band.color}55`, marginTop: 0 }}
+          style={{ background: "transparent", color: "var(--ink)", border: "1px solid var(--hair-strong)", marginTop: 0 }}
         >
+          <i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 1, background: band.color, flex: "none" }} />
           {band.label}
         </span>
       </div>
-      <div style={{ height: 10, background: "rgba(255,255,255,0.08)", borderRadius: 999, overflow: "hidden" }}>
+      <div style={{ height: 6, background: "var(--track)", borderRadius: 1, overflow: "hidden" }}>
         <div
           style={{
             height: "100%",
             width: `${progress}%`,
             background: band.color,
-            borderRadius: 999,
-            boxShadow: `0 0 16px 0 ${band.color}`,
-            filter: "brightness(1.15) saturate(1.1)",
+            borderRadius: 1,
             transition: "width 1.1s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease",
           }}
         />

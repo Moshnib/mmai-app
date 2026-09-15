@@ -18,7 +18,7 @@ import { percentileOf, compositeZ, standardiseDimensions, rawDimensions } from "
 import ScoreDiagram from "@/components/ScoreDiagram";
 import CorrelationMatrix from "@/components/CorrelationMatrix";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { indicatorFormula, INDICATOR_READING } from "@/lib/composite";
+import { indicatorFormula, INDICATOR_READING, DIMENSION_TONE } from "@/lib/composite";
 import { pageMetadata } from "@/lib/pageMetadata";
 
 // Rendered FROM INFLATION_TARGET rather than typed out as prose.
@@ -147,7 +147,7 @@ const TOPIC_DIMENSION: Record<string, DimensionKey | "none" | "all"> = {
   mmai: "all",
 };
 
-const DIM_TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
+const DIM_TONE = DIMENSION_TONE;
 
 /** WHICH TOPICS ARE ACTUALLY THE SCORE, derived rather than counted by
  *  hand. The heading used to say "five indicators" beside a list that
@@ -620,13 +620,12 @@ export default function LearnPage() {
               key={t.id}
               id={`topic-${t.id}`}
               style={{
-                background: "rgba(255,255,255,0.035)",
+                background: "var(--card-bg)",
                 border: "1px solid var(--hair)",
-                borderRadius: 18,
+                borderRadius: 8,
                 padding: "28px 32px",
                 marginBottom: 18,
                 scrollMarginTop: 90,
-                backdropFilter: "blur(14px)",
               }}
             >
               <DimensionTag topicId={t.id} />
@@ -894,13 +893,12 @@ export default function LearnPage() {
               key={t.id}
               id={`topic-${t.id}`}
               style={{
-                background: "rgba(255,255,255,0.035)",
+                background: "var(--card-bg)",
                 border: "1px solid var(--hair)",
-                borderRadius: 18,
+                borderRadius: 8,
                 padding: "28px 32px",
                 marginBottom: 18,
                 scrollMarginTop: 90,
-                backdropFilter: "blur(14px)",
               }}
             >
               <h3 className="learn-h3">{t.title}</h3>

@@ -23,7 +23,7 @@ const SUPABASE_ORIGIN = (() => {
  * destinations and no others:
  *
  *   self                     the pages, their scripts and stylesheets
- *   fonts.googleapis.com     the stylesheet for Space Grotesk / IBM Plex
+ *   fonts.googleapis.com     the stylesheet for Source Serif 4 / IBM Plex
  *   fonts.gstatic.com        the font files it pulls in
  *   <project>.supabase.co    the live indicator data, fetched client-side
  *

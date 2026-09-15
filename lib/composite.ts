@@ -38,6 +38,14 @@ export const DIMENSION_NAMES: Record<DimensionKey, string> = {
   K: "Capacity",
 };
 
+/** ONE COLOUR PER DIMENSION, DEFINED ONCE.
+ *  This map was copied into five files and they happened to agree; the
+ *  September 2026 restyle had to lift Conditions' red in all five for it
+ *  to read on the navy ground, which is the moment copies start to drift.
+ *  Hex literals, not CSS variables: ScoreDiagram appends an alpha suffix
+ *  to them, and scripts/check-palette-contrast.ts reads them directly. */
+export const DIMENSION_TONE: Record<DimensionKey, string> = { C: "#E85A5A", D: "#F0975B", K: "#22D3EE" };
+
 /** What each dimension is asking about, in the site's own voice. */
 export const DIMENSION_QUESTIONS: Record<DimensionKey, string> = {
   C: "How are prices and jobs right now?",

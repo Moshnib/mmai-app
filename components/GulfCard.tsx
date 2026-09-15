@@ -112,7 +112,7 @@ function Stat({
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", gap: 10 }}>
       <span style={{ fontSize: 12, color: "var(--slate)" }}>{label}</span>
       <span style={{ textAlign: "right" }}>
-        <span style={{ display: "block", fontFamily: "Space Grotesk, monospace", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
+        <span style={{ display: "block", fontFamily: "var(--font-num)", fontWeight: 600, fontSize: 13, color: "var(--ink)" }}>
           {value ?? "—"}
         </span>
         {/* Class rather than an inline font-size: at 9.5px this was the

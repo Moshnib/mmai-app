@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { REFERENCE_SET } from "@/lib/referenceSet";
-import { DIMENSION_NAMES, DIMENSION_QUESTIONS, type DimensionKey } from "@/lib/composite";
+import { DIMENSION_NAMES, DIMENSION_QUESTIONS, DIMENSION_TONE, type DimensionKey } from "@/lib/composite";
 import { MARKET_COUNT_WORD_CAP } from "@/lib/markets";
 import { pageMetadata } from "@/lib/pageMetadata";
 
@@ -21,7 +21,7 @@ const SPAN = `${Math.min(...YEARS)}–${Math.max(...YEARS)}`;
 const MARKETS = new Set(REFERENCE_SET.map((r) => r.m)).size;
 
 const ORDER: DimensionKey[] = ["C", "D", "K"];
-const TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
+const TONE = DIMENSION_TONE;
 
 /**
  * WHAT A READER CAN ACTUALLY DO WITH IT.
@@ -62,8 +62,7 @@ export default function AboutPage() {
         <div className="wrap">
           <p className="eyebrow">ABOUT</p>
           <h1 className="headline" style={{ maxWidth: "24ch" }}>
-            Everyone watches the market. Almost nobody watches{" "}
-            <span className="hl-cyan">what it is standing on</span>.
+            Everyone watches the market. Almost nobody watches what it is standing on.
           </h1>
           <p className="sub" style={{ maxWidth: "66ch" }}>
             Prices, jobs, growth, government debt and the cost of money decide the ground everything else is priced
@@ -210,7 +209,7 @@ export default function AboutPage() {
               that is the most useful message you can send.
             </p>
           </div>
-          <Link className="tap" href="/contact" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999, background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+          <Link className="tap btn-primary" href="/contact" style={{ marginTop: 18 }}>
             Send a message →
           </Link>
         </div>

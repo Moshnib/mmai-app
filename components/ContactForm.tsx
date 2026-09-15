@@ -53,8 +53,8 @@ export default function ContactForm() {
 
   if (status === "done") {
     return (
-      <div style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 16, padding: "24px 28px", textAlign: "center" }}>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--accent-2)" }}>Thanks — that&apos;s been sent ✓</div>
+      <div className="notice-done" style={{ padding: "24px 28px" }}>
+        <div className="notice-done-title" style={{ fontSize: 17 }}>Thanks — that&apos;s been sent ✓</div>
         <p style={{ fontSize: 13, color: "var(--slate)", margin: "8px 0 0" }}>
           We read every submission. If you left an email, we&apos;ll get back to you when there&apos;s something to say.
         </p>
@@ -63,7 +63,7 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ background: "var(--glass)", border: "1px solid var(--hair)", borderRadius: 18, padding: "28px 32px", backdropFilter: "blur(14px)" }}>
+    <form onSubmit={handleSubmit} style={{ background: "var(--glass)", border: "1px solid var(--hair)", borderRadius: 8, padding: "28px 32px" }}>
       <div className="form-row">
         <label style={fieldLabelStyle}>
           Who are you?
@@ -119,15 +119,12 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        style={{
-          marginTop: 18, padding: "10px 24px", borderRadius: 10, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13,
-          opacity: status === "loading" ? 0.6 : 1,
-        }}
+        className="btn-primary"
+        style={{ marginTop: 18 }}
       >
         {status === "loading" ? "Sending…" : "Send"}
       </button>
-      {status === "error" && <p style={{ color: "#E14B4B", fontSize: 12, marginTop: 10 }}>{errorMsg}</p>}
+      {status === "error" && <p style={{ color: "#E85A5A", fontSize: 12, marginTop: 10 }}>{errorMsg}</p>}
     </form>
   );
 }
@@ -143,9 +140,9 @@ const fieldLabelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   padding: "9px 14px",
-  borderRadius: 10,
-  border: "1px solid var(--hair)",
-  background: "rgba(255,255,255,0.04)",
+  borderRadius: 4,
+  border: "1px solid var(--hair-strong)",
+  background: "var(--paper)",
   color: "var(--ink)",
   fontSize: 13,
   fontWeight: 400,
@@ -156,16 +153,16 @@ const inputStyle: React.CSSProperties = {
 // (see the same fix already applied in app/compare/ComparePageInner.tsx).
 const selectStyle: React.CSSProperties = {
   padding: "9px 14px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.2)",
-  background: "#12121A",
-  color: "#F5F6FA",
+  borderRadius: 4,
+  border: "1px solid var(--hair-strong)",
+  background: "var(--paper)",
+  color: "var(--ink)",
   fontSize: 13,
   fontWeight: 400,
   cursor: "pointer",
 };
 
 const optionStyle: React.CSSProperties = {
-  background: "#12121A",
-  color: "#F5F6FA",
+  background: "var(--paper)",
+  color: "var(--ink)",
 };

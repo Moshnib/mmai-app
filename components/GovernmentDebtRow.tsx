@@ -26,12 +26,15 @@ const MARKET_NAMES = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.n
  *  is not a 0-100 score and must not look like one. A single hue at
  *  varying strength reads as "more/less", not "good/bad" -- which is
  *  the honest signal, since whether a given debt level is dangerous
- *  depends on who owes it and in what currency. */
+ *  depends on who owes it and in what currency.
+ *  The hue is the neutral bar colour, not violet: violet is the Euro
+ *  Area's line colour, and a violet bar beside a Euro Area row said
+ *  something it did not mean. */
 function barColor(pct: number): string {
-  if (pct >= 150) return "rgba(139, 92, 246, 0.95)";
-  if (pct >= 100) return "rgba(139, 92, 246, 0.75)";
-  if (pct >= 70) return "rgba(139, 92, 246, 0.55)";
-  return "rgba(139, 92, 246, 0.38)";
+  if (pct >= 150) return "rgba(174, 184, 200, 0.95)";
+  if (pct >= 100) return "rgba(174, 184, 200, 0.75)";
+  if (pct >= 70) return "rgba(174, 184, 200, 0.55)";
+  return "rgba(174, 184, 200, 0.38)";
 }
 
 export default async function GovernmentDebtRow() {
@@ -66,7 +69,7 @@ export default async function GovernmentDebtRow() {
             <span>Credit to general government, % of GDP</span>
             <span
               className="meta-label"
-              style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}
+              style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 4, padding: "3px 9px" }}
             >
               {period}
             </span>
@@ -85,22 +88,23 @@ export default async function GovernmentDebtRow() {
                 {/* Bar width is relative to the highest market, not to
                     100% -- Japan is well above 100 and a 100-anchored
                     bar would clip it. */}
-                <span style={{ height: 10, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+                <span style={{ height: 8, background: "var(--track)", borderRadius: 1, overflow: "hidden" }}>
                   <span
                     style={{
                       display: "block",
                       height: "100%",
                       width: `${(d.debtPctGdp / max) * 100}%`,
                       background: barColor(d.debtPctGdp),
-                      borderRadius: 999,
+                      borderRadius: 1,
                     }}
                   />
                 </span>
                 <b
                   style={{
-                    fontFamily: "Space Grotesk, sans-serif",
+                    fontFamily: "var(--font-num)",
                     fontSize: 15,
-                    color: "#fff",
+                    fontWeight: 500,
+                    color: "var(--ink)",
                     fontVariantNumeric: "tabular-nums",
                     minWidth: 62,
                     textAlign: "right",

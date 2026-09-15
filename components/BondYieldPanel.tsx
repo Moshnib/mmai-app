@@ -56,7 +56,7 @@ function joinWords(parts: string[], conjunction: string): string {
 // TWO OF THESE SIX USED TO BE THE SAME COLOUR. Japan was #5EC8D8 against
 // the US at #22D3EE -- a perceptual distance of 10.3, which is the range
 // where two colours simply read as one, and worse on a 2px line on a
-// phone. Australia at #B98CFF sat 28 from the Euro Area's #8B5CF6, close
+// phone. Australia's old orchid sat 28 from the Euro Area's old violet, close
 // enough that the two crowded at the top of the chart were hard to
 // separate. Six series were being drawn in four distinguishable hues.
 //
@@ -178,8 +178,8 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
               </div>
               <div
                 style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 700,
+                  fontFamily: "var(--font-num)",
+                  fontWeight: 500,
                   fontSize: 21,
                   color: COLORS[m.code],
                   fontVariantNumeric: "tabular-nums",
@@ -254,7 +254,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
                 className={`country-chip${on ? " on" : ""}`}
                 aria-pressed={on}
                 onClick={() => toggle(code)}
-                style={on ? { borderColor: COLORS[code], color: "#fff" } : undefined}
+                style={on ? { borderColor: COLORS[code], color: "var(--ink)" } : undefined}
               >
                 <i style={{ background: on ? COLORS[code] : "transparent", borderColor: COLORS[code] }} />
                 {MARKET_NAMES[code]}
@@ -276,7 +276,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
             <span>10-year government bond yield</span>
             <span
               className="meta-label"
-              style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}
+              style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 4, padding: "3px 9px" }}
             >
               Daily · {allDates.length} trading days
             </span>

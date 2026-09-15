@@ -39,8 +39,8 @@ export default function SubscribeForm() {
 
   if (status === "done") {
     return (
-      <div style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 16, padding: "20px 24px", textAlign: "center" }}>
-        <div style={{ fontFamily: "Space Grotesk, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--accent-2)" }}>You&apos;re on the list ✓</div>
+      <div className="notice-done" style={{ padding: "20px 24px" }}>
+        <div className="notice-done-title" style={{ fontSize: 15 }}>You&apos;re on the list ✓</div>
         {/* THIS ONCE SAID "You're subscribed" AND PROMISED EMAIL, which
             it could not keep: alerts send through Resend, which will not
             verify a vercel.app address as a sending domain, so every
@@ -61,8 +61,8 @@ export default function SubscribeForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ background: "var(--glass)", border: "1px solid var(--hair)", borderRadius: 16, padding: "20px 24px", backdropFilter: "blur(10px)" }}>
-      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--accent-2)", letterSpacing: 1, marginBottom: 10 }}>
+    <form onSubmit={handleSubmit} style={{ background: "var(--glass)", border: "1px solid var(--hair)", borderRadius: 8, padding: "20px 24px" }}>
+      <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--slate)", letterSpacing: 1, marginBottom: 10 }}>
         JOIN THE ALERT LIST
       </div>
       {/* TWO THINGS WERE WRONG HERE.
@@ -100,10 +100,10 @@ export default function SubscribeForm() {
             onClick={() => toggleMarket(m.code)}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer",
-              border: selected.includes(m.code) ? "1px solid var(--accent)" : "1px solid var(--hair)",
-              background: selected.includes(m.code) ? "rgba(139,92,246,0.18)" : "transparent",
-              color: selected.includes(m.code) ? "#fff" : "var(--slate)",
+              padding: "6px 12px", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              border: selected.includes(m.code) ? "1px solid var(--on-bg)" : "1px solid var(--hair)",
+              background: selected.includes(m.code) ? "var(--on-bg)" : "transparent",
+              color: selected.includes(m.code) ? "var(--on-ink)" : "var(--slate)",
             }}
           >
             <Flag code={m.code} size={14} />
@@ -120,23 +120,19 @@ export default function SubscribeForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={{
-            flex: 1, minWidth: 200, padding: "9px 14px", borderRadius: 10,
-            border: "1px solid var(--hair)", background: "rgba(255,255,255,0.04)", color: "var(--ink)", fontSize: 13,
+            flex: 1, minWidth: 200, padding: "9px 14px", borderRadius: 4,
+            border: "1px solid var(--hair-strong)", background: "var(--paper)", color: "var(--ink)", fontSize: 13,
           }}
         />
         <button
           type="submit"
           disabled={status === "loading"}
-          style={{
-            padding: "9px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff", fontWeight: 700, fontSize: 13,
-            opacity: status === "loading" ? 0.6 : 1,
-          }}
+          className="btn-primary"
         >
           {status === "loading" ? "Subscribing…" : "Subscribe"}
         </button>
       </div>
-      {status === "error" && <p style={{ color: "#E14B4B", fontSize: 12, marginTop: 10 }}>{errorMsg}</p>}
+      {status === "error" && <p style={{ color: "#E85A5A", fontSize: 12, marginTop: 10 }}>{errorMsg}</p>}
     </form>
   );
 }

@@ -56,11 +56,13 @@ const MOVE_EPSILON = 0.05;
 // (not by raw field name) so each value can be printed at its own
 // precision, and so a renamed RawIndicators key is a compile error here
 // rather than a blank cell -- the same reasoning as KeyRatesRow.
-// Colours match KeyRatesRow exactly, from the Ember-to-Ice palette in
-// lib/indicators.ts, so these three read as the same three things sitewide.
+// Three DISTINCT colours, because these are drawn as three lines on one
+// chart -- dimension tones would make inflation and unemployment the same
+// red. The homepage snapshot chips use this same mapping, so each rate
+// reads as the same thing on both pages.
 const RATE_INDICATORS: Array<{ indicator: IndicatorKey; color: string }> = [
-  { indicator: "infGap", color: "#E14B4B" },
-  { indicator: "rate", color: "#8B5CF6" },
+  { indicator: "infGap", color: "#E85A5A" },
+  { indicator: "rate", color: "#9B70F8" },
   { indicator: "une", color: "#22D3EE" },
 ];
 
@@ -387,7 +389,7 @@ export default function TrendsPageInner({
                       <i style={{ background: colorForScore(compositeCurrentScore) }} />
                       <span>
                         Composite score moved{" "}
-                        <b style={{ color: "#fff" }}>
+                        <b style={{ color: "var(--ink)" }}>
                           {changes.composite >= 0 ? "+" : ""}
                           {changes.composite.toFixed(1)}
                         </b>{" "}
@@ -405,7 +407,7 @@ export default function TrendsPageInner({
                     <li>
                       <i style={{ background: colorForScore(dimensionCurrentScores[changes.biggest.key]) }} />
                       <span>
-                        Largest move this period: <b style={{ color: "#fff" }}>{DIMENSION_NAMES[changes.biggest.key]}</b>,{" "}
+                        Largest move this period: <b style={{ color: "var(--ink)" }}>{DIMENSION_NAMES[changes.biggest.key]}</b>,{" "}
                         {changes.biggest.delta >= 0 ? "+" : ""}
                         {changes.biggest.delta.toFixed(1)} points.
                       </span>
@@ -415,7 +417,7 @@ export default function TrendsPageInner({
                     <li>
                       <i style={{ background: colorForScore(dimensionCurrentScores[changes.smallest.key]) }} />
                       <span>
-                        Smallest move this period: <b style={{ color: "#fff" }}>{DIMENSION_NAMES[changes.smallest.key]}</b>,{" "}
+                        Smallest move this period: <b style={{ color: "var(--ink)" }}>{DIMENSION_NAMES[changes.smallest.key]}</b>,{" "}
                         {changes.smallest.delta >= 0 ? "+" : ""}
                         {changes.smallest.delta.toFixed(1)} points.
                       </span>
@@ -426,7 +428,7 @@ export default function TrendsPageInner({
                       <i style={{ background: "var(--slate)" }} />
                       <span>
                         No current reading for{" "}
-                        <b style={{ color: "#fff" }}>{changes.missing.map((k) => DIMENSION_NAMES[k]).join(", ")}</b> —
+                        <b style={{ color: "var(--ink)" }}>{changes.missing.map((k) => DIMENSION_NAMES[k]).join(", ")}</b> —
                         excluded rather than guessed.
                       </span>
                     </li>
@@ -463,7 +465,7 @@ export default function TrendsPageInner({
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 11, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
               <span>
                 Built from {sourcesForMarket(marketNames[current]).length} sources — each institution is listed on the{" "}
-                <Link href="/sources" style={{ color: "var(--accent-2)" }}>Sources</Link> page
+                <Link href="/sources" style={{ color: "var(--accent-2)", textDecoration: "underline", textUnderlineOffset: 3 }}>Sources</Link> page
               </span>
               <span>Most recent point: {latestPoint?.year ?? "—"}</span>
             </div>
@@ -507,11 +509,7 @@ export default function TrendsPageInner({
                   </div>
                   <div
                     className="psc-score"
-                    style={{
-                      color: band.color,
-                      textShadow: val == null ? undefined : `0 0 14px ${band.color}55`,
-                      filter: val == null ? undefined : "brightness(1.12) saturate(1.05)",
-                    }}
+                    style={{ color: band.color }}
                   >
                     {val == null ? "—" : val.toFixed(0)}
                     <span style={{ fontSize: 11, fontWeight: 600, color: "var(--slate)", marginLeft: 4 }}>percentile</span>
@@ -571,12 +569,12 @@ export default function TrendsPageInner({
                       onClick={() => setRawPick(ind)}
                       aria-pressed={focusIndicator === ind}
                       style={{
-                        padding: "4px 10px", borderRadius: 999, cursor: "pointer",
+                        padding: "4px 10px", borderRadius: 4, cursor: "pointer",
                         fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
                         letterSpacing: 0.4, textTransform: "uppercase",
-                        border: focusIndicator === ind ? "1px solid var(--accent-2)" : "1px solid var(--hair)",
-                        background: focusIndicator === ind ? "rgba(139,92,246,0.18)" : "transparent",
-                        color: focusIndicator === ind ? "#fff" : "var(--slate)",
+                        border: focusIndicator === ind ? "1px solid var(--on-bg)" : "1px solid var(--hair)",
+                        background: focusIndicator === ind ? "var(--on-bg)" : "transparent",
+                        color: focusIndicator === ind ? "var(--on-ink)" : "var(--slate)",
                       }}
                     >
                       {INDICATOR_FIELD[ind].label}
@@ -590,7 +588,7 @@ export default function TrendsPageInner({
                   which from the tick spacing. */}
               <span
                 className="meta-label"
-                style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}
+                style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 4, padding: "3px 9px" }}
               >
                 {rawIsMonthly ? `Monthly · ${rawDetailSeries[0].data.length} points` : "Annual"}
               </span>
@@ -606,13 +604,12 @@ export default function TrendsPageInner({
                 )}
               </div>
 
-              <div style={{ border: "1px solid var(--hair)", borderRadius: 14, padding: "16px 18px", background: "rgba(255,255,255,0.03)" }}>
+              <div style={{ border: "1px solid var(--hair)", borderRadius: 6, padding: "16px 18px", background: "var(--card-bg)" }}>
                 <div className="meta-label">Current reading</div>
                 <div
                   style={{
-                    fontFamily: "'Space Grotesk', sans-serif", fontSize: 27, fontWeight: 700,
+                    fontFamily: "var(--font-num)", fontSize: 27, fontWeight: 500,
                     color: focusBand.color, margin: "6px 0 2px", fontVariantNumeric: "tabular-nums",
-                    filter: rawNow == null ? undefined : "brightness(1.12) saturate(1.05)",
                   }}
                 >
                   {rawNow == null ? "—" : rawNow.toFixed(INDICATOR_FIELD[focusIndicator].decimals)}
@@ -627,17 +624,17 @@ export default function TrendsPageInner({
                 <div style={{ borderTop: "1px solid var(--hair)", marginTop: 14, paddingTop: 12, display: "grid", gap: 8, fontSize: 12, color: "var(--slate)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span>Weight in score</span>
-                    <b style={{ color: "#fff" }}>{formatDimensionWeight()}</b>
+                    <b style={{ color: "var(--ink)" }}>{formatDimensionWeight()}</b>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span>Period</span>
-                    <b style={{ color: "#fff" }}>{latestPoint?.year ?? "—"}</b>
+                    <b style={{ color: "var(--ink)" }}>{latestPoint?.year ?? "—"}</b>
                   </div>
                   {focusSource && (
                     <>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
                         <span>Source</span>
-                        <b style={{ color: "#fff", textAlign: "right" }}>{focusSource.institution}</b>
+                        <b style={{ color: "var(--ink)", textAlign: "right" }}>{focusSource.institution}</b>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                         {/* Design tokens, not hardcoded colors -- the previous
@@ -646,7 +643,7 @@ export default function TrendsPageInner({
                             green survived in the UI. */}
                         <span
                           style={{
-                            padding: "2px 8px", borderRadius: 999, fontFamily: "IBM Plex Mono, monospace", fontSize: 11,
+                            padding: "2px 8px", borderRadius: 3, fontFamily: "IBM Plex Mono, monospace", fontSize: 11,
                             background: focusSource.status === "live" ? "var(--status-live-bg)" : "var(--status-manual-bg)",
                             color: focusSource.status === "live" ? "var(--status-live)" : "var(--accent-2)",
                           }}
@@ -685,7 +682,7 @@ export default function TrendsPageInner({
                     ))
                   : notEnough}
               </div>
-              <div style={{ border: "1px solid var(--hair)", borderRadius: 14, padding: "16px 18px", background: "rgba(255,255,255,0.03)" }}>
+              <div style={{ border: "1px solid var(--hair)", borderRadius: 6, padding: "16px 18px", background: "var(--card-bg)" }}>
                 <div className="meta-label">Why these three</div>
                 <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6, margin: "8px 0 0" }}>
                   A central bank raises its policy rate specifically to cool inflation — and that same rate hike
@@ -715,7 +712,7 @@ export default function TrendsPageInner({
                           <i style={{ width: 8, height: 8, borderRadius: "50%", background: color, flex: "none" }} />
                           {INDICATOR_FIELD[indicator].label}
                         </span>
-                        <b style={{ color: "#fff", fontVariantNumeric: "tabular-nums" }}>
+                        <b style={{ color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
                           {v == null ? "—" : `${v.toFixed(INDICATOR_FIELD[indicator].decimals)}%`}
                         </b>
                       </div>

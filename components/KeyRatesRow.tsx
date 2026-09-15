@@ -1,5 +1,5 @@
 import {
-  explainDimension, DIMENSION_NAMES, DIMENSION_QUESTIONS,
+  explainDimension, DIMENSION_NAMES, DIMENSION_QUESTIONS, DIMENSION_TONE,
   type DimensionKey, type IndicatorKey,
 } from "@/lib/composite";
 import { type PillarKey, type RawIndicators, inflationTargetFor } from "@/lib/indicators";
@@ -20,7 +20,7 @@ export const RAW_DECIMALS: Record<PillarKey, number> = {
 const ORDER: DimensionKey[] = ["C", "D", "K"];
 
 /** The same three colours the dimension cards and the diagram use. */
-const TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
+const TONE = DIMENSION_TONE;
 
 /** Everything in the record sits inside about two and a half standard
  *  deviations of the average, so that is the track -- the same limit the

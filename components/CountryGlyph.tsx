@@ -133,7 +133,7 @@ export default function CountryGlyph({
       width={size}
       height={size * 0.78}
       aria-hidden="true"
-      style={{ display: "block", overflow: "visible", filter: `drop-shadow(0 0 8px ${color}55)` }}
+      style={{ display: "block", overflow: "visible" }}
       preserveAspectRatio="xMidYMid meet"
     >
       {paths.map((d, i) => (

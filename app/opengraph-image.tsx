@@ -6,6 +6,8 @@ import { ImageResponse } from "next/og";
 //
 // Deliberately built from the site's own tokens (app/globals.css) rather than
 // a stock template, so a shared link looks like the product it points at.
+// LITERAL HEX, NOT var(): this is rendered to a PNG by Satori, which has no
+// stylesheet to resolve a variable against. Keep in step with :root.
 
 export const alt = "MMAI — Moshnib Macro Analysis Index";
 export const size = { width: 1200, height: 630 };
@@ -21,21 +23,14 @@ export default function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#08080D",
+          background: "#101826",
           padding: "72px 80px",
         }}
       >
-        {/* Brand row — the gradient dot + wordmark, matching the site nav */}
+        {/* Brand row — the gold mark + wordmark, matching the site nav */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #B98CFF, #22D3EE)",
-            }}
-          />
-          <div style={{ fontSize: 34, fontWeight: 700, color: "#F5F6FA", letterSpacing: 2 }}>MMAI</div>
+          <div style={{ width: 22, height: 22, borderRadius: 2, background: "#D4B06A" }} />
+          <div style={{ fontSize: 34, fontWeight: 700, color: "#E9ECF1", letterSpacing: 2 }}>MMAI</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -43,27 +38,23 @@ export default function OpengraphImage() {
             style={{
               fontSize: 62,
               fontWeight: 700,
-              color: "#F5F6FA",
+              color: "#E9ECF1",
               lineHeight: 1.15,
               maxWidth: 940,
             }}
           >
             Is today&apos;s macro environment supportive, or working against you?
           </div>
-          <div style={{ fontSize: 27, color: "#8A8EA3", marginTop: 28, maxWidth: 900, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 27, color: "#9BA6B7", marginTop: 28, maxWidth: 900, lineHeight: 1.4 }}>
             One transparent number — every formula published, every source licensed, no black box.
           </div>
         </div>
 
-        {/* Accent rule echoing the score gradient (red → orange → violet → cyan) */}
-        <div
-          style={{
-            display: "flex",
-            height: 8,
-            borderRadius: 99,
-            background: "linear-gradient(90deg, #E14B4B, #F0975B, #8B5CF6, #22D3EE)",
-          }}
-        />
+        {/* A printed rule with one gold segment -- the site's single accent,
+            where a report would put its section mark. */}
+        <div style={{ display: "flex", height: 2, background: "#253247" }}>
+          <div style={{ width: 120, height: 2, background: "#D4B06A" }} />
+        </div>
       </div>
     ),
     { ...size }
