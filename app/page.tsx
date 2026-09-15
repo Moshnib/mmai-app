@@ -484,7 +484,10 @@ export default function OverviewPage() {
                 >
                   <span className="cc-name">{m.name}</span>
                   <span className="cc-glyph">
-                    <CountryGlyph code={m.code} color={mBand.color} size={124} />
+                    {/* The shape identifies the country; it does not repeat the score.
+                        Nine shapes in nine ramp colours read as a paint chart
+                        above the numbers that actually carry the colour. */}
+                    <CountryGlyph code={m.code} color={m.code === current ? "var(--accent)" : "var(--glyph)"} size={124} />
                   </span>
                   <span className="cc-score" style={{ color: mBand.color }}>
                     {mScore === null ? "—" : mScore.toFixed(1)}

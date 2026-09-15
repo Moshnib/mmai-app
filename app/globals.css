@@ -89,6 +89,7 @@
   --bar: #AEB8C8;           /* a bar that is not encoding a colour */
   --on-bg: #E9ECF1;         /* a selected control's fill */
   --on-ink: #101826;        /* ...and its text */
+  --glyph: #6F7D94;         /* a country silhouette that is not selected */
 
   /* THE TYPE ROLES. Source Serif for headings -- a text face made for
      long reading, not a display face chosen to look expensive. IBM Plex
@@ -486,16 +487,24 @@ h1.headline {
    Replaces the full-width map as the primary cross-market read: name,
    score, status, nothing else. The map stays below as a secondary,
    de-emphasised navigation aid rather than the dominant element. */
+/* THREE BY THREE, NOT AUTO-FIT. Nine cards auto-fitted to seven across
+   and left two alone on a second row (reported from the live page). A
+   fixed three divides nine evenly at every width that can hold it, and a
+   phone gets one column. Two columns is never used: it orphans the ninth. */
 .compare-strip {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 10px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
   margin-top: 20px;
 }
+@media (max-width: 759px) { .compare-strip { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
 /* Sized to sit proportionally alongside the five pillar cards above:
    comparable padding, a shape block close to the pillar ring's 92px,
    and the same score type size. */
+/* Shape beside the words rather than above them: three wide columns
+   stacked vertically left a tall card with a small shape floating in it. */
 .compare-chip {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 22px 12px 18px; text-align: center; text-decoration: none;
+  display: grid; grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: auto auto auto;
+  column-gap: 16px; row-gap: 2px; align-items: center;
+  padding: 14px 16px; text-align: left; text-decoration: none;
   background: var(--card-bg); border: 1px solid var(--hair);
   border-radius: var(--card-radius);
   transition: border-color 0.18s ease, background-color 0.18s ease;
@@ -520,17 +529,53 @@ h1.headline {
 @media (prefers-reduced-motion: reduce) {
   .compare-chip { transition: none; }
 }
-.compare-chip .cc-name { font-size: var(--t-small); font-weight: 700; color: var(--ink); }
+.compare-chip .cc-name { grid-column: 2; font-size: var(--t-small); font-weight: 700; color: var(--ink); }
 /* Fixed height so all six shapes occupy the same block regardless of
    their aspect ratio -- otherwise a wide country (the US) and a tall
    one (the UK) push their score lines to different heights and the row
    stops reading as a set. */
 .compare-chip .cc-glyph {
-  height: 96px; display: flex; align-items: center; justify-content: center;
-  margin: 4px 0 2px;
+  grid-column: 1; grid-row: 1 / span 3; order: -1;
+  height: 76px; display: flex; align-items: center; justify-content: center;
 }
-.compare-chip .cc-score { font-family: var(--font-num); font-weight: 500; font-size: var(--t-h2); line-height: 1.1; font-variant-numeric: tabular-nums; }
-.compare-chip .cc-band { font-size: var(--t-micro); color: var(--slate); }
+.compare-chip .cc-glyph .country-glyph { width: 100%; height: 100%; }
+@media (max-width: 759px) {
+  .compare-chip { grid-template-columns: 64px minmax(0, 1fr); padding: 10px 14px; column-gap: 14px; }
+  .compare-chip .cc-glyph { height: 52px; }
+}
+.compare-chip .cc-score { grid-column: 2; font-family: var(--font-num); font-weight: 500; font-size: var(--t-h2); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.compare-chip .cc-band { grid-column: 2; font-size: var(--t-micro); color: var(--slate); }
+
+/* ===== The world map, beneath the cards ===== */
+.world-map {
+  position: relative; background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: 8px; padding: 22px 26px;
+}
+.world-map-tip {
+  position: absolute; transform: translate(-50%, calc(-100% - 10px)); pointer-events: none;
+  display: flex; gap: 8px; align-items: baseline; white-space: nowrap;
+  background: var(--paper); border: 1px solid var(--hair-strong); border-radius: 4px; padding: 7px 10px;
+  font-family: var(--font-mono); font-size: var(--t-caption); color: var(--ink);
+}
+.world-map-tip b { font-family: var(--font-body); font-weight: 600; }
+.world-map-tip-band { color: var(--slate); }
+/* The ranked key: every score, highest first, three columns like the
+   cards above so the two read as one section. */
+.world-map-key {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 18px;
+  margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--hair);
+}
+.world-map-key button {
+  display: grid; grid-template-columns: 8px auto minmax(0, 1fr) auto; gap: 8px; align-items: center;
+  padding: 7px 8px; border: 0; border-radius: 4px; background: transparent; cursor: pointer;
+  font: inherit; font-size: var(--t-small); color: var(--ink-soft); text-align: left;
+}
+.world-map-key button:hover { background: var(--hover); color: var(--ink); }
+.world-map-key button.on { background: var(--hover); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+.world-map-key button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.world-map-key i { width: 8px; height: 8px; border-radius: 1px; }
+.world-map-key-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.world-map-key-score { font-family: var(--font-num); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* ===== Page header with a side insight card (design reference on the
    Compare, Gulf Watch and Data Over Time pages) ===== */
@@ -1460,6 +1505,24 @@ a.dim-axis-row:hover { background: var(--hover); }
   background: var(--paper); border: 1px solid var(--hair); border-radius: 4px;
   padding: 10px 14px; margin-bottom: 14px; overflow-wrap: anywhere;
 }
+/* The formula in words first, the exact formula one click away. */
+.learn-plain { margin-bottom: 14px; }
+.learn-plain p { font-size: var(--t-body); color: var(--ink-soft); line-height: 1.7; margin: 0 0 8px; }
+.learn-plain .learn-plain-example { font-size: var(--t-small); color: var(--slate); }
+.learn-exact { margin-top: 10px; }
+.learn-exact > summary {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
+  font-family: var(--font-mono); font-size: var(--t-caption); color: var(--ink-soft);
+  border: 1px solid var(--hair-strong); border-radius: 4px; padding: 6px 10px; min-height: 36px;
+}
+.learn-exact > summary::-webkit-details-marker { display: none; }
+.learn-exact > summary::before { content: "▸"; color: var(--slate); transition: transform .15s ease; }
+.learn-exact[open] > summary::before { transform: rotate(90deg); }
+.learn-exact > summary:hover { color: var(--ink); border-color: var(--slate); }
+.learn-exact > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.learn-exact[open] > .learn-formula { margin: 10px 0 6px; }
+.learn-plain .learn-exact-note { font-size: var(--t-small); color: var(--slate); line-height: 1.6; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .learn-exact > summary::before { transition: none; } }
 .learn-box { border: 1px dashed var(--hair-strong); border-radius: 4px; padding: 13px 16px; margin-bottom: 14px; }
 .learn-targets {
   list-style: none; margin: 0; padding: 0;

@@ -53,6 +53,9 @@ const MARKET_COUNTRY_IDS: Record<string, string[]> = {
 const GLYPH_FOCUS: Record<string, [number, number, number, number]> = {
   US: [140, 100, 320, 180],
   EA: [430, 40, 590, 170],
+  // Svalbard, 700km north of the mainland, drew as a separate sliver
+  // floating above Norway's outline (reported from the live page).
+  NO: [480, 45, 600, 110],
 };
 
 // These rectangles are only meaningful in the 960x480 space the file
@@ -132,6 +135,7 @@ export default function CountryGlyph({
       viewBox={`${b.x - pad} ${b.y - pad} ${b.w + pad * 2} ${b.h + pad * 2}`}
       width={size}
       height={size * 0.78}
+      className="country-glyph"
       aria-hidden="true"
       style={{ display: "block", overflow: "visible" }}
       preserveAspectRatio="xMidYMid meet"

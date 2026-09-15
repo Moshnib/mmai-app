@@ -18,7 +18,7 @@ import { percentileOf, compositeZ, standardiseDimensions, rawDimensions } from "
 import ScoreDiagram from "@/components/ScoreDiagram";
 import CorrelationMatrix from "@/components/CorrelationMatrix";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { indicatorFormula, INDICATOR_READING, DIMENSION_TONE } from "@/lib/composite";
+import { indicatorFormula, INDICATOR_READING, DIMENSION_TONE, INDICATOR_STATS, q, type IndicatorKey } from "@/lib/composite";
 import { pageMetadata } from "@/lib/pageMetadata";
 
 // Rendered FROM INFLATION_TARGET rather than typed out as prose.
@@ -38,6 +38,72 @@ const TARGET_LIST = FALLBACK_MARKETS
 const REF_YEARS = REFERENCE_SET.map((r) => r.y);
 const REF_SPAN = `${Math.min(...REF_YEARS)}–${Math.max(...REF_YEARS)}`;
 const REF_N = REFERENCE_SET.length;
+
+// ============================================================
+//  EVERY FORMULA IN A SENTENCE FIRST
+//
+//  Each indicator card opened on "−( X − 83.170270 ) ÷ 46.452128". Correct,
+//  tested (scripts/verify-published-formulas.ts rebuilds a score from
+//  those strings), and the first thing a reader met -- which for most
+//  readers means the card was over before it began. The owner asked
+//  whether it was needed at all.
+//
+//  It is: "anyone can check the arithmetic" is a promise this site makes,
+//  and the formula is how it is kept. So it stays, exact and unrounded, one
+//  click away. What comes first is the same thing in words, with the
+//  average and the spread rounded for reading and two worked values, all
+//  computed by the engine so the sentence cannot disagree with the formula
+//  beneath it.
+// ============================================================
+const PLAIN: Record<IndicatorKey, {
+  subject: string; avg: (m: number) => string; step: (s: number) => string;
+  better: string; worse: string; examples: [number, string][];
+}> = {
+  infGap: {
+    subject: "How far inflation sits from the country’s own target",
+    avg: (m) => `${m.toFixed(1)} percentage points away`, step: (s) => `${s.toFixed(1)} points`,
+    better: "Closer than that", worse: "further away",
+    examples: [[0.5, "inflation half a point from target"], [4, "four points from target"]],
+  },
+  une: {
+    subject: "Unemployment",
+    avg: (m) => `${m.toFixed(1)}%`, step: (s) => `${s.toFixed(1)} points`,
+    better: "Lower than that", worse: "higher",
+    examples: [[3, "unemployment of 3%"], [8, "8%"]],
+  },
+  gdp: {
+    subject: "GDP growth",
+    avg: (m) => `${m.toFixed(1)}% a year`, step: (s) => `${s.toFixed(1)} points`,
+    better: "Faster than that", worse: "slower",
+    examples: [[3, "growth of 3%"], [-1, "a 1% contraction"]],
+  },
+  debt: {
+    subject: "Government debt",
+    avg: (m) => `${m.toFixed(0)}% of GDP`, step: (s) => `${s.toFixed(0)} points of GDP`,
+    better: "Lower than that", worse: "higher",
+    examples: [[45, "debt of 45% of GDP"], [176, "176%"]],
+  },
+  rate: {
+    subject: "The policy rate",
+    avg: (m) => `${m.toFixed(1)}%`, step: (s) => `${s.toFixed(1)} points`,
+    better: "Higher than that, meaning more room to cut,", worse: "lower",
+    examples: [[4, "a rate of 4%"], [0.5, "0.5%"]],
+  },
+};
+
+const signed = (v: number) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2);
+
+function plainFormula(key: IndicatorKey): { rule: string; example: string } {
+  const p = PLAIN[key];
+  const { mean, sd } = INDICATOR_STATS[key];
+  const [[v1, l1], [v2, l2]] = p.examples;
+  return {
+    rule:
+      `${p.subject} is compared with its average across the ${REF_N} market-years in the record: ${p.avg(mean)}. ` +
+      `${p.better} scores above zero, ${p.worse} scores below, and every ${p.step(sd)} away from the average moves the score by one.`,
+    example: `For example, ${l1} scores ${signed(q(key, v1))}; ${l2} scores ${signed(q(key, v2))}.`,
+  };
+}
 // Japan carries fewer rows than the others, and a reader comparing Japan
 // is owed that fact. Counted, not asserted.
 //
@@ -199,6 +265,7 @@ const TOPICS = [
     id: "cpi",
     title: "Inflation & CPI — the price of everything you buy",
     def: "The Consumer Price Index (CPI) tracks the price of a representative basket of everyday goods and services. Inflation is how fast that basket's total cost is rising year over year.",
+    indicator: "infGap" as IndicatorKey,
     formula: indicatorFormula("infGap"),
     formulaNote: INDICATOR_READING.infGap,
     targets: TARGET_LIST,
@@ -210,6 +277,7 @@ const TOPICS = [
     id: "gdp",
     title: "GDP Growth — is the economy actually expanding?",
     def: "Gross Domestic Product (GDP) is the total value of everything a country produces. GDP growth measures whether that total is expanding or shrinking.",
+    indicator: "gdp" as IndicatorKey,
     formula: indicatorFormula("gdp"),
     formulaNote: INDICATOR_READING.gdp,
     impact: "When growth is strong, businesses hire more and wages tend to rise. When it shrinks for two consecutive quarters, that's a recession.",
@@ -218,6 +286,7 @@ const TOPICS = [
     id: "unemployment",
     title: "Unemployment Rate — how easy is it to find or keep work?",
     def: "The share of people actively looking for work who can't find it, as a percentage of the labour force.",
+    indicator: "une" as IndicatorKey,
     formula: indicatorFormula("une"),
     formulaNote: INDICATOR_READING.une,
     impact: "Low unemployment means workers have leverage — more job offers, easier to negotiate a raise. High unemployment flips that.",
@@ -226,6 +295,7 @@ const TOPICS = [
     id: "rate",
     title: "Policy Interest Rate — the cost of money, and the room to move it",
     def: "The benchmark rate set by a central bank. It ripples out to set the tone for every other interest rate in the economy.",
+    indicator: "rate" as IndicatorKey,
     formula: indicatorFormula("rate"),
     formulaNote: INDICATOR_READING.rate,
     targetNote:
@@ -237,10 +307,11 @@ const TOPICS = [
     id: "debt",
     title: "Government Debt — how much room a country has left",
     def: "What a government owes, measured against the size of its economy. A country with low debt can borrow to cushion a recession; a country with high debt has less room to act and spends more of its budget on interest instead of services.",
+    indicator: "debt" as IndicatorKey,
     formula: indicatorFormula("debt"),
     formulaNote: INDICATOR_READING.debt,
     targetNote:
-      "The 60% mark is not our invention: it is the reference value written into the European Union's treaties, which is why it already applies to the euro area. It is a reference point, not a danger line — no such universal line exists. Debt at or below 60% scores full marks, and the penalty above it is deliberately gentle. Japan is the clearest reason why: its debt is the highest of the six by a wide margin, but it is owed almost entirely to its own citizens, in its own currency, at near-zero interest rates. That is a genuinely different situation from the same number elsewhere, and a harsh penalty would pretend otherwise.",
+      "There is no threshold and no cap: every point of debt counts the same, above the average or below it. Earlier versions of MMAI gave full marks to anything under the European Union's 60% reference value and penalised debt above it only gently; that method was retired on 5 September 2026 and is not used. Japan shows what the straight-line rule does. Its debt, far above the record's average, puts its Capacity near the bottom of the range — even though that debt is owed mostly to its own citizens, in its own currency. MMAI does not soften the arithmetic for that. It publishes all three dimensions beside the headline, and the homepage warns when one weak dimension is being hidden by two strong ones.",
     impact: "High government debt tends to show up in your life slowly — as higher taxes, tighter public spending, or less help from the state when the next downturn arrives.",
   },
   {
@@ -263,7 +334,7 @@ const TOPICS = [
     influenceNote:
       `Equal thirds is what the method DECLARES. Measured across the reference history (as of ${DIMENSION_INFLUENCE_MEASURED}), the effective influence is ${INFLUENCE_LIST} — a spread of ${INFLUENCE_SPREAD} points where the declared spread is zero, with ${MOST_INFLUENTIAL} doing the most work. The dimensions move together to different degrees, so the composite tracks some more closely than others. Standardising them equalised how much each VARIES, which is what it was for; it does not equalise how much each MATTERS, and nothing can while they stay correlated.`,
     ecNote:
-      `A measure every country scores alike cannot tell them apart, whatever weight it carries — the reason the global oil price stopped being scored. Asked of the three dimensions, for the current six, highest first: ${SEPARATION_LIST}. ${MOST_SEPARATING} does the most to distinguish one country from another; ${LEAST_SEPARATING} does the least. Re-measured rather than assumed, and it will shift as cycles diverge.`,
+      `A measure every country scores alike cannot tell them apart, whatever weight it carries — the reason the global oil price stopped being scored. Asked of the three dimensions, across the ${MARKET_COUNT_WORD} scored markets, highest first: ${SEPARATION_LIST}. ${MOST_SEPARATING} does the most to distinguish one country from another; ${LEAST_SEPARATING} does the least. Re-measured rather than assumed, and it will shift as cycles diverge.`,
     limitations: [
       {
         kind: "read",
@@ -498,7 +569,7 @@ const GULF_TOPICS = [
   {
     id: "gulf-no-score",
     title: "Why Gulf Watch Has No Composite Score",
-    def: `Gulf Watch deliberately does not combine these figures into one score the way MMAI does for its ${MARKET_COUNT_WORD} scored markets. A usable, legally licensable, automatable policy interest rate feed doesn't exist yet for any of these six countries, and MMAI's own rule requires at least 70% pillar coverage before a market earns a published score — so instead of filling the gap with a stand-in number, Gulf Watch shows exactly what's real and marks the rest \"N/A.\"`,
+    def: `Gulf Watch deliberately does not combine these figures into one score the way MMAI does for its ${MARKET_COUNT_WORD} scored markets. The reason is comparability, not missing data: Gulf unemployment largely reflects how migrant labour is counted, so it does not carry the same meaning as in the scored markets, and a score built on it would rank unlike things against each other. Instead of producing that number anyway, Gulf Watch shows exactly what each government publishes, with its own date, and marks the rest \"N/A.\"`,
     impact: "Every figure on Gulf Watch traces back to its source on the Sources page, same as every scored market. The missing score here isn't a gap in the site — it's the same honesty rule that keeps every other number on MMAI trustworthy, applied consistently even when it means showing less rather than more.",
   },
 ];
@@ -634,16 +705,25 @@ export default function LearnPage() {
                   The formulaNote directly below was already guarded the
                   same way, so the pattern was known here and this box was
                   simply missed. */}
-              {"formula" in t && t.formula && (
-                <div className="learn-formula">{t.formula}</div>
-              )}
-              {/* A z-score is not self-explanatory the way a 0-100 pillar score
-                  pretended to be, so every transform gets a line saying what
-                  zero means and which way is better. */}
-              {"formulaNote" in t && t.formulaNote && (
-                <p style={{ fontSize: 13, color: "var(--slate)", lineHeight: 1.6, margin: "-6px 0 14px" }}>
-                  {t.formulaNote as string}
-                </p>
+              {"indicator" in t && t.indicator ? (
+                (() => {
+                  const plain = plainFormula(t.indicator);
+                  return (
+                    <div className="learn-plain">
+                      <p>{plain.rule}</p>
+                      <p className="learn-plain-example">{plain.example}</p>
+                      <details className="learn-exact">
+                        <summary>Show the exact formula</summary>
+                        <div className="learn-formula">{t.formula}</div>
+                        <p className="learn-exact-note">
+                          X is the published figure. {"formulaNote" in t && t.formulaNote ? (t.formulaNote as string) : null}
+                        </p>
+                      </details>
+                    </div>
+                  );
+                })()
+              ) : (
+                "formula" in t && t.formula && <div className="learn-formula">{t.formula}</div>
               )}
               {"weights" in t && t.weights && (
                 <div
