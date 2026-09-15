@@ -260,6 +260,21 @@ jobs:
       - name: Every font size is on the scale
         run: npx tsx scripts/check-type-scale.ts
 
+      # THE RETIRED LOOK STAYS RETIRED. The September 2026 restyle removed
+      # neon cyan and violet, gradients, glass and glow from about forty
+      # files, and the review of the plan found twenty-five places the
+      # plan had missed. Drift on this site comes from copying an old
+      # component, so each marker of the old look fails the build.
+      - name: No glow, glass, gradients or retired colours
+        run: npx tsx scripts/check-palette.ts
+
+      # Every colour ever drawn as text, against both surfaces, with the
+      # whole score ramp swept -- because the browser check only sees
+      # today's scores and never measures SVG text. On navy, three colours
+      # fell under 4.5:1 and CI would have passed or failed by the day.
+      - name: Every text colour is legible on navy
+        run: npx tsx scripts/check-palette-contrast.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT "SWEDEN CONTRIBUTES 0".
       #
       # The Learn page ranked every scored market by how many rows it

@@ -263,8 +263,7 @@ export default function OverviewPage() {
       <StructuredData dataset />
       <div className="hero">
         <div className="wrap">
-          {/* Only the intro block is centred (design reference); the
-              score panel below keeps its left-aligned reading order. */}
+          {/* The intro block, left-aligned like everything beneath it. */}
           <div className="hero-centered">
           <p className="eyebrow">
             MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "SHOWING LAST KNOWN FIGURES — LIVE DATA UNREACHABLE"}
@@ -281,15 +280,14 @@ export default function OverviewPage() {
               belongs to, so this was a second copy of it in the one place
               it could not mean anything yet. */}
           <h1 className="headline">
-            Is today&apos;s macro environment <span className="hl-cyan">supportive</span> — or{" "}
-            <span className="hl-violet">working against you?</span>
+            Is today&apos;s macro environment supportive — or working against you?
           </h1>
           {/* One plain answer to "what even is this", for a visitor who
               has never heard of MMAI. It also absorbs the old strapline
               ("One composite score. Three economic dimensions. Verified
               market signals.") -- three fragments that promised what this
               says outright, and said "verified" without saying of what. */}
-          <p className="sub" style={{ maxWidth: "64ch", margin: "0 auto 28px" }}>
+          <p className="sub" style={{ maxWidth: "64ch", margin: "0 0 28px" }}>
             MMAI reads the economic figures governments publish about themselves — inflation, jobs, growth, debt
             and interest rates — and turns them into one score per country, rechecked every day and republished
             whenever a source moves. That score is a rank against {REFERENCE_COUNT} market-years, built from three dimensions
@@ -327,7 +325,6 @@ export default function OverviewPage() {
           <div className="snapshot-card" ref={detailRef}>
           <MarketSnapshotStrip
             marketName={market.name}
-            composite={composite}
             raw={market.raw}
             verifiedAt={lastUpdated ? formatUpdatedAt(lastUpdated) : null}
           />
@@ -352,7 +349,7 @@ export default function OverviewPage() {
                     padding: "11px 14px",
                     borderLeft: `3px solid ${colorForScore(masked.percentile)}`,
                     background: "var(--glass)",
-                    borderRadius: "0 8px 8px 0",
+                    borderRadius: "0 4px 4px 0",
                     color: "var(--ink-soft)",
                   }}
                 >
@@ -369,9 +366,9 @@ export default function OverviewPage() {
                     lineHeight: 1.6,
                     margin: '10px 0 0',
                     padding: '10px 13px',
-                    borderLeft: '3px solid var(--accent-2)',
+                    borderLeft: '3px solid var(--hair-strong)',
                     background: 'var(--glass)',
-                    borderRadius: '0 8px 8px 0',
+                    borderRadius: '0 4px 4px 0',
                     color: 'var(--ink-soft)',
                     fontFamily: 'IBM Plex Mono, monospace',
                   }}
@@ -390,14 +387,8 @@ export default function OverviewPage() {
                 <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--accent-2)" }}>view all</Link></span>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-                <Link className="tap"
+                <Link className="tap btn-quiet"
                   href="/learn#topic-mmai"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
-                    color: "var(--accent)", textDecoration: "none", padding: "7px 14px",
-                    border: "1px solid rgba(34,211,238,0.35)", borderRadius: 999, background: "rgba(34,211,238,0.08)",
-                  }}
                 >
                   Σ How is this score calculated? →
                 </Link>
@@ -409,12 +400,7 @@ export default function OverviewPage() {
                     email-capture form and its state. */}
                 <a
                   href="#subscribe"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
-                    color: "var(--accent-2)", textDecoration: "none", padding: "7px 14px",
-                    border: "1px solid rgba(139,92,246,0.35)", borderRadius: 999, background: "rgba(139,92,246,0.08)",
-                  }}
+                  className="btn-quiet"
                 >
                   🔔 Join the alert list for {market.name} →
                 </a>
@@ -602,23 +588,13 @@ export default function OverviewPage() {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link
                 href="/learn"
-                className="tap"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
-                  background: "linear-gradient(135deg, var(--accent-2), #6D28D9)", color: "#fff",
-                  fontWeight: 700, fontSize: 13, textDecoration: "none",
-                }}
+                className="tap btn-primary"
               >
                 How MMAI is calculated →
               </Link>
               <Link
                 href="/sources"
-                className="tap"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 999,
-                  border: "1px solid var(--hair)", color: "var(--ink-soft)",
-                  fontWeight: 700, fontSize: 13, textDecoration: "none",
-                }}
+                className="tap btn-secondary"
               >
                 Sources
               </Link>

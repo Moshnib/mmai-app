@@ -140,7 +140,7 @@ export const STABLECOIN_TOKEN_COLORS: Record<string, string> = {
   USDC: "#3B8FE0",
   USDS: "#A78BFA",
   DAI: "#F5AC37",
-  USDe: "#E14B4B",
+  USDe: "#E85A5A",
   PYUSD: "#94A3B8",
 };
 

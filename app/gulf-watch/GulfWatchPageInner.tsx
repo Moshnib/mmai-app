@@ -42,7 +42,7 @@ export default function GulfWatchPageInner() {
               </h2>
               <ul>
                 <li>
-                  <i style={{ background: "var(--accent)" }} />
+                  <i style={{ background: "var(--slate)" }} />
                   <span>{glance.withInflation} of {countries.length} report an inflation figure.</span>
                 </li>
                 <li>

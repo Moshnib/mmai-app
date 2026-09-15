@@ -59,13 +59,13 @@ export default function DimensionBreakdown({
             style={{
               border: "1px solid var(--hair)",
               borderLeft: `3px solid ${color}`,
-              borderRadius: 12,
+              borderRadius: 6,
               padding: "16px 18px",
-              background: "rgba(255,255,255,0.03)",
+              background: "var(--card-bg)",
             }}
           >
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <b style={{ fontSize: 15, color: "#fff" }}>{DIMENSION_NAMES[key]}</b>
+              <b style={{ fontSize: 15, color: "var(--ink)" }}>{DIMENSION_NAMES[key]}</b>
               <span style={{ fontSize: 12, color: "var(--accent-2)", fontStyle: "italic" }}>
                 {DIMENSION_QUESTIONS[key]}
               </span>
@@ -89,7 +89,7 @@ export default function DimensionBreakdown({
               {parts.map((p) => (
                 <div key={p.key} className="breakdown-row">
                   <span style={{ color: "var(--ink-soft)" }}>{p.label}</span>
-                  <span style={{ color: "#fff", fontVariantNumeric: "tabular-nums" }}>
+                  <span style={{ color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
                     {p.raw == null ? "—" : `${p.raw.toFixed(p.decimals)}${p.unit.startsWith("%") ? "%" : ""}`}
                   </span>
                   {/* The z-score, with its sign carrying the meaning: above
@@ -97,13 +97,13 @@ export default function DimensionBreakdown({
                       worse. Not "good/bad" -- better or worse than usual. */}
                   <span
                     title="Standard deviations from the historical average, with the sign flipped where lower is better."
-                    style={{ color: p.q == null ? "var(--slate)" : p.q >= 0 ? "#22D3EE" : "#E14B4B", fontVariantNumeric: "tabular-nums" }}
+                    style={{ color: p.q == null ? "var(--slate)" : p.q >= 0 ? "#22D3EE" : "#E85A5A", fontVariantNumeric: "tabular-nums" }}
                   >
                     {p.q == null ? "—" : `${p.q >= 0 ? "+" : ""}${p.q.toFixed(2)} sd`}
                   </span>
                   <span style={{ fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
                     × {p.weight === 1 ? "1" : p.weight.toFixed(3)} ={" "}
-                    <b style={{ color: "#fff" }}>
+                    <b style={{ color: "var(--ink)" }}>
                       {p.contribution == null ? "—" : `${p.contribution >= 0 ? "+" : ""}${p.contribution.toFixed(3)}`}
                     </b>
                   </span>
@@ -122,13 +122,13 @@ export default function DimensionBreakdown({
               }}
             >
               <div>
-                {parts.length > 1 ? "sum" : "score"} = <b style={{ color: "#fff" }}>
+                {parts.length > 1 ? "sum" : "score"} = <b style={{ color: "var(--ink)" }}>
                   {total == null ? "—" : `${total >= 0 ? "+" : ""}${total.toFixed(3)}`}
                 </b>
               </div>
               <div>
                 ÷ {sd.toFixed(6)} <span style={{ opacity: 0.7 }}>(this dimension&rsquo;s spread across the record)</span> ={" "}
-                <b style={{ color: "#fff" }}>
+                <b style={{ color: "var(--ink)" }}>
                   {total == null ? "—" : `${total / sd >= 0 ? "+" : ""}${(total / sd).toFixed(3)}`}
                 </b>
               </div>

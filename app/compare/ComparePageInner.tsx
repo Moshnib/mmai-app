@@ -307,11 +307,10 @@ export default function ComparePageInner() {
                     aria-pressed={active}
                     style={{
                       display: "flex", alignItems: "center", gap: 7,
-                      padding: "7px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer",
                       border: active ? `1px solid ${color}` : "1px solid var(--hair)",
-                      background: active ? `${color}22` : "transparent",
-                      color: active ? "#fff" : "var(--slate)",
-                      boxShadow: active ? `0 0 12px -4px ${color}` : "none",
+                      background: active ? "var(--hover)" : "transparent",
+                      color: active ? "var(--ink)" : "var(--slate)",
                     }}
                   >
                     <i style={{ width: 8, height: 8, borderRadius: "50%", background: active ? color : "var(--hair)" }} />
@@ -326,7 +325,7 @@ export default function ComparePageInner() {
           <div className="chart-card" style={{ marginBottom: 8 }}>
             <div className="chart-card-label">
               1. Composite MMAI score over time
-              <span className="meta-label" style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}>
+              <span className="meta-label" style={{ marginLeft: "auto", border: "1px solid var(--hair)", borderRadius: 4, padding: "3px 9px" }}>
                 Annual
               </span>
             </div>
@@ -388,12 +387,12 @@ export default function ComparePageInner() {
                     onClick={() => setPillarView(v)}
                     aria-pressed={pillarView === v}
                     style={{
-                      padding: "5px 12px", borderRadius: 999, cursor: "pointer",
+                      padding: "5px 12px", borderRadius: 4, cursor: "pointer",
                       fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700,
                       letterSpacing: 0.5, textTransform: "uppercase",
-                      border: pillarView === v ? "1px solid var(--accent-2)" : "1px solid var(--hair)",
-                      background: pillarView === v ? "rgba(139,92,246,0.18)" : "transparent",
-                      color: pillarView === v ? "#fff" : "var(--slate)",
+                      border: pillarView === v ? "1px solid var(--on-bg)" : "1px solid var(--hair)",
+                      background: pillarView === v ? "var(--on-bg)" : "transparent",
+                      color: pillarView === v ? "var(--on-ink)" : "var(--slate)",
                     }}
                   >
                     {v === "score" ? "Dimension rank" : "Raw rate"}
@@ -432,19 +431,19 @@ export default function ComparePageInner() {
 
 const selectStyle: React.CSSProperties = {
   padding: "7px 14px",
-  borderRadius: 8,
-  border: "1px solid rgba(255,255,255,0.2)",
-  background: "#12121A", // solid, not translucent -- native <option> lists often
+  borderRadius: 4,
+  border: "1px solid var(--hair-strong)",
+  background: "var(--paper)", // solid, not translucent -- native <option> lists often
                           // ignore rgba/transparent backgrounds on the parent
                           // <select> and fall back to a jarring default, which
                           // is what caused the reported color problem.
-  color: "#F5F6FA",
+  color: "var(--ink)",
   fontSize: 13,
   fontFamily: "IBM Plex Mono, monospace",
   cursor: "pointer",
 };
 
 const optionStyle: React.CSSProperties = {
-  background: "#12121A",
-  color: "#F5F6FA",
+  background: "var(--paper)",
+  color: "var(--ink)",
 };

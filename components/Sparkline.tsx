@@ -26,7 +26,7 @@ const H = 20;
 
 export default function Sparkline({
   values,
-  colour = "#C7C9D9",
+  colour = "var(--ink-soft)",
 }: {
   values: (number | null)[];
   colour?: string;

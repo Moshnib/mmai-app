@@ -36,7 +36,7 @@ const BACKING_TONE: Record<string, { fill: string; ring: string; label: string }
   "crypto-backed": { fill: "rgba(185,140,255,0.16)", ring: "#B98CFF", label: "Crypto-backed" },
   synthetic: { fill: "rgba(240,151,91,0.16)", ring: "#F0975B", label: "Synthetic" },
 };
-const FALLBACK_TONE = { fill: "rgba(255,255,255,0.06)", ring: "#8A8EA3", label: "Other" };
+const FALLBACK_TONE = { fill: "var(--hover)", ring: "var(--slate)", label: "Other" };
 
 /** The site's own palette rather than each network's brand colours: three
  *  hues that are already load-bearing elsewhere here, so the page stays

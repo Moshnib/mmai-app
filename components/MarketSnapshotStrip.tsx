@@ -1,6 +1,6 @@
 "use client";
 
-import { colorForScore, type RawIndicators } from "@/lib/indicators";
+import { type RawIndicators } from "@/lib/indicators";
 
 // ============================================================
 // "Featured Market Snapshot" context bar (design brief §2): a compact
@@ -41,14 +41,14 @@ function buildChips(raw: RawIndicators): Chip[] {
     chips.push({
       label:
         Math.abs(gap) <= NEAR ? "Inflation near target" : gap > 0 ? "Inflation above target" : "Inflation below target",
-      color: "#E14B4B",
+      color: "#E85A5A",
     });
   }
   if (policyRate != null) {
     const gap = policyRate - RATE_NEUTRAL;
     chips.push({
       label: Math.abs(gap) <= NEAR ? "Policy near neutral" : gap > 0 ? "Policy above neutral" : "Policy below neutral",
-      color: "#8B5CF6",
+      color: "#9B70F8",
     });
   }
   if (unemployment != null) {
@@ -64,21 +64,17 @@ function buildChips(raw: RawIndicators): Chip[] {
 
 export default function MarketSnapshotStrip({
   marketName,
-  composite,
   raw,
   verifiedAt,
 }: {
   marketName: string;
-  composite: number | null;
   raw: RawIndicators;
   verifiedAt: string | null;
 }) {
   const chips = buildChips(raw);
-  const accent = colorForScore(composite);
-
   return (
     <div className="snapshot-strip">
-      <span className="meta-label" style={{ color: accent, letterSpacing: 1.4 }}>
+      <span className="meta-label" style={{ letterSpacing: 1.4 }}>
         Featured Market Snapshot
       </span>
       <span style={{ fontSize: 12, color: "var(--slate)" }}>

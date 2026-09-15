@@ -146,9 +146,9 @@ export const MARKET_COUNT_WORD_CAP = MARKET_COUNT_WORD.charAt(0).toUpperCase() +
  */
 export const MARKET_COLORS: Record<string, string> = {
   US: "#22D3EE", // cyan
-  EA: "#8B5CF6", // violet
+  EA: "#9B70F8", // violet
   CA: "#F0975B", // amber
-  UK: "#E14B4B", // red
+  UK: "#E85A5A", // red
   JP: "#F472B6", // pink
   AU: "#FBBF24", // gold
   // Blue, chosen by measurement. Green was measured first and was the
@@ -156,13 +156,14 @@ export const MARKET_COLORS: Record<string, string> = {
   // green out entirely so a rising line is never read as a "good" line.
   // scripts/test-market-colours.ts enforces that, and caught it. This is
   // dE 44.3 from its nearest neighbour (US cyan), against 36.7 for the
-  // closest existing pair, and reads at 7.9:1 on the page.
+  // closest existing pair, and read at 7.9:1 on the old near-black page
+  // (7.00:1 on the navy of September 2026).
   SE: "#60A5FA", // blue
   // Warm sand, chosen the same way Sweden's blue was: measured, not
   // picked. dE 37.0 from its nearest neighbour (Canada's amber), which
   // is wider than the closest existing pair at 36.7, and 10.97:1 on the
-  // card. The obvious neutrals -- cream, stone, ice -- were all measured
-  // first and all rejected: each sat under 20 dE from the body text or
+  // old card (10.36:1 on the navy page). The obvious neutrals -- cream,
+  // stone, ice -- were all measured first and all rejected: each sat under 20 dE from the body text or
   // the missing-data grey, so a Norway line would have read as text or
   // as "no data" rather than as a country.
   NO: "#D8C3A0", // warm sand
@@ -171,7 +172,9 @@ export const MARKET_COLORS: Record<string, string> = {
   // only colours that clear every rule the site enforces, ranked by
   // distance from the nearest existing colour. dE 35.5 from Japan's pink,
   // which is the same separation as the closest existing pair, and 8.0:1
-  // on the card.
+  // on the old card (7.56:1 on the navy page). Live ratios for every
+  // colour are measured by scripts/check-palette-contrast.ts, not by
+  // these comments.
   //
   // The search also turned up a hole in the green ban -- see
   // scripts/test-market-colours.ts.

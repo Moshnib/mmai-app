@@ -1,5 +1,5 @@
 import {
-  DIMENSION_NAMES, DIMENSION_INDICATORS, INDICATOR_FIELD, INDICATOR_WEIGHT,
+  DIMENSION_NAMES, DIMENSION_INDICATORS, DIMENSION_TONE, INDICATOR_FIELD, INDICATOR_WEIGHT,
   computeMmai, dimensionPercentiles, explainDimension, standardiseDimensions,
   rawDimensions, type DimensionKey, type IndicatorKey,
 } from "@/lib/composite";
@@ -8,8 +8,10 @@ import { FALLBACK_MARKETS } from "@/lib/markets";
 import { REFERENCE_SET } from "@/lib/referenceSet";
 
 const ORDER: DimensionKey[] = ["C", "D", "K"];
-const TONE: Record<DimensionKey, string> = { C: "#E14B4B", D: "#F0975B", K: "#22D3EE" };
-const FINAL = "#8B5CF6";
+const TONE = DIMENSION_TONE;
+// The result is the one current figure in the diagram, so it takes the
+// accent -- the same gold as the homepage score it explains.
+const FINAL = "#D4B06A";
 const N = REFERENCE_SET.length;
 
 /** A real worked example rather than an abstract one. Australia because it
@@ -46,7 +48,9 @@ export default function ScoreDiagram() {
 
   // ---------- layout ----------
   const W = 940, H = 430;
-  const IN_X = 14, IN_W = 210, IN_H = 50;
+  // 250, not 210: at 210 "vs 2.5% target → 0.95 away" ran out of the
+  // inflation card and into the connector beside it.
+  const IN_X = 14, IN_W = 250, IN_H = 50;
   const DIM_X = 400, DIM_W = 216;
   const OUT_X = 726, OUT_W = 200;
 
@@ -76,7 +80,52 @@ export default function ScoreDiagram() {
 
   return (
     <figure style={{ margin: 0 }}>
-      <div style={{ overflowX: "auto" }}>
+      {/* TWO DRAWINGS OF ONE RECIPE. The flow below reads left to right
+          across 940px, and on a phone it became a sideways scroll that
+          showed the ingredients and hid the answer -- the owner met it
+          cut off at "Conditions" on a real iPhone. Scaling it down would
+          take its type under 8px. So a phone gets the same recipe read
+          top to bottom, in HTML that wraps: ingredients inside the group
+          they feed, then the average. Same numbers, same engine calls. */}
+      <ol className="recipe-narrow only-narrow" aria-label={`The recipe behind an MMAI score, using Australia as a worked example, ending in a score of ${result.percentile?.toFixed(1)}.`}>
+        <li className="recipe-intro">
+          <span className="recipe-eyebrow">Today’s published figures, grouped into three</span>
+          <span>Australia, as a worked example</span>
+        </li>
+        {ORDER.map((d) => (
+          <li key={d} className="recipe-group" style={{ borderColor: `${TONE[d]}66`, background: `${TONE[d]}0F` }}>
+            <ul className="recipe-inputs">
+              {DIMENSION_INDICATORS[d].map((k) => {
+                const w = INDICATOR_WEIGHT[k];
+                return (
+                  <li key={k} style={{ borderLeftColor: TONE[d] }}>
+                    <span className="recipe-input-name">{INDICATOR_FIELD[k].label}</span>
+                    <span className="recipe-input-value" style={{ color: TONE[d] }}>{valueOf(k)}</span>
+                    {w !== 1 && <span className="recipe-input-weight">{(w * 100).toFixed(0)}% of it</span>}
+                    {k === "infGap" && (
+                      <span className="recipe-input-note">
+                        vs {EXAMPLE_TARGET}% target → {Math.abs((EXAMPLE.raw.inflation as number) - EXAMPLE_TARGET).toFixed(2)} away
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="recipe-dim">
+              <span className="recipe-dim-name">{DIMENSION_NAMES[d]}</span>
+              <span className="recipe-dim-pct" style={{ color: TONE[d] }}>{dimPct[d].toFixed(0)} percentile</span>
+              <span className="recipe-dim-sd">{std[d] >= 0 ? "+" : ""}{std[d].toFixed(2)} sd</span>
+            </div>
+          </li>
+        ))}
+        <li className="recipe-result">
+          <span className="recipe-eyebrow">Average the three, then rank</span>
+          <span className="recipe-result-num">{result.percentile?.toFixed(1)}</span>
+          <span>better than {result.percentile?.toFixed(0)}% of the last 26 years</span>
+        </li>
+      </ol>
+
+      <div className="only-wide" style={{ overflowX: "auto" }}>
         {/* THE FLOOR MUST BE THE VIEWBOX WIDTH, or the SVG shrinks its
             own text. A 940-wide viewBox with a 680 floor is a scale of
             0.72, and an SVG scales text with everything else: the 10px
@@ -106,10 +155,6 @@ export default function ScoreDiagram() {
                 <stop offset="100%" stopColor={TONE[d]} stopOpacity="0.75" />
               </linearGradient>
             ))}
-            <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="7" result="b" />
-              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
           </defs>
 
           {/* column headings */}
@@ -149,10 +194,10 @@ export default function ScoreDiagram() {
             const w = INDICATOR_WEIGHT[r.key];
             return (
               <g key={r.key}>
-                <rect x={IN_X} y={r.y} width={IN_W} height={IN_H} rx={12}
-                  fill="rgba(255,255,255,0.045)" stroke="var(--hair)" />
+                <rect x={IN_X} y={r.y} width={IN_W} height={IN_H} rx={6}
+                  fill="var(--card-bg)" stroke="var(--hair)" />
                 <rect x={IN_X} y={r.y} width={3.5} height={IN_H} rx={2} fill={TONE[r.dim]} opacity={0.9} />
-                <text x={IN_X + 16} y={r.y + 21} fontSize={12.5} fill="#fff" fontFamily="IBM Plex Sans, sans-serif">
+                <text x={IN_X + 16} y={r.y + 21} fontSize={12.5} fill="var(--ink)" fontFamily="IBM Plex Sans, sans-serif">
                   {f.label}
                 </text>
                 <text x={IN_X + 16} y={r.y + 38} fontSize={13} fill={TONE[r.dim]}
@@ -170,8 +215,11 @@ export default function ScoreDiagram() {
                   </text>
                 )}
                 {/* the weight rides on the connector, where it belongs */}
+                {/* Above the connector when it climbs to its group, below it
+                    when it falls -- a label on the side the curve leaves
+                    empty. Always above, "62% of it" sat on its own line. */}
                 {w !== 1 && (
-                  <text x={IN_X + IN_W + 14} y={r.y + IN_H / 2 - 7} fontSize={10}
+                  <text x={IN_X + IN_W + 14} y={r.y + IN_H / 2 + (r.y + IN_H / 2 > band(r.dim) ? 17 : -8)} fontSize={10}
                     fill={TONE[r.dim]} fontFamily="IBM Plex Mono, monospace" opacity={0.95}>
                     {(w * 100).toFixed(0)}% of it
                   </text>
@@ -183,13 +231,16 @@ export default function ScoreDiagram() {
           {/* three dimensions */}
           {ORDER.map((d) => {
             const cy = band(d);
-            const h = DIMENSION_INDICATORS[d].length > 1 ? 96 : 72;
+            // 84, not 72: at 72 the one-indicator card put its subtitle and its
+            // percentile line 11px apart at 10.5 and 12px type, so "gdp growth"
+            // sat on top of "51 percentile". Found in the September 2026 review.
+            const h = DIMENSION_INDICATORS[d].length > 1 ? 96 : 84;
             const { parts } = explainDimension(d, EXAMPLE.raw, EXAMPLE.code);
             return (
               <g key={d}>
-                <rect x={DIM_X} y={cy - h / 2} width={DIM_W} height={h} rx={14}
+                <rect x={DIM_X} y={cy - h / 2} width={DIM_W} height={h} rx={6}
                   fill={`${TONE[d]}12`} stroke={TONE[d]} strokeOpacity={0.5} />
-                <text x={DIM_X + 18} y={cy - h / 2 + 26} fontSize={15} fontWeight={700} fill="#fff"
+                <text x={DIM_X + 18} y={cy - h / 2 + 26} fontSize={15} fontWeight={700} fill="var(--ink)"
                   fontFamily="IBM Plex Sans, sans-serif">
                   {DIMENSION_NAMES[d]}
                 </text>
@@ -210,21 +261,21 @@ export default function ScoreDiagram() {
           })}
 
           {/* the result */}
-          <rect x={OUT_X} y={centre - 62} width={OUT_W} height={124} rx={18}
-            fill="rgba(139,92,246,0.14)" stroke={FINAL} strokeOpacity={0.65} filter="url(#soft)" />
+          <rect x={OUT_X} y={centre - 62} width={OUT_W} height={124} rx={6}
+            fill="var(--card-bg)" stroke={FINAL} strokeOpacity={0.8} />
           <text x={OUT_X + OUT_W / 2} y={centre - 34} fontSize={10.5} fill="var(--slate)"
             textAnchor="middle" fontFamily="IBM Plex Mono, monospace" letterSpacing={0.8}>
             AVERAGE THE THREE
           </text>
-          <text x={OUT_X + OUT_W / 2} y={centre + 12} fontSize={42} fontWeight={700} fill={FINAL}
-            textAnchor="middle" fontFamily="Space Grotesk, sans-serif">
+          <text x={OUT_X + OUT_W / 2} y={centre + 12} fontSize={42} fontWeight={500} fill={FINAL}
+            textAnchor="middle" style={{ fontFamily: "var(--font-num)" }}>
             {result.percentile?.toFixed(1)}
           </text>
-          <text x={OUT_X + OUT_W / 2} y={centre + 34} fontSize={11.5} fill="#fff"
+          <text x={OUT_X + OUT_W / 2} y={centre + 34} fontSize={11.5} fill="var(--ink)"
             textAnchor="middle" fontFamily="IBM Plex Sans, sans-serif">
             better than {result.percentile?.toFixed(0)}% of
           </text>
-          <text x={OUT_X + OUT_W / 2} y={centre + 50} fontSize={11.5} fill="#fff"
+          <text x={OUT_X + OUT_W / 2} y={centre + 50} fontSize={11.5} fill="var(--ink)"
             textAnchor="middle" fontFamily="IBM Plex Sans, sans-serif">
             the last 26 years
           </text>
@@ -232,12 +283,7 @@ export default function ScoreDiagram() {
       </div>
 
       {/* the same thing in five sentences, for anyone who reads before they look */}
-      <ol
-        style={{
-          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(158px, 1fr))",
-          gap: 12, listStyle: "none", padding: 0, margin: "18px 0 0",
-        }}
-      >
+      <ol className="recipe-steps">
         {[
           ["Start with what is published", "Five official figures, each from a named national source — plus each country’s own inflation target."],
           ["Compare with history", `Not "is 4.35% high?" but "where does it sit among ${N} readings from these six economies since 2000?"`],
@@ -245,12 +291,10 @@ export default function ScoreDiagram() {
           ["Put the three level", "Each is divided by its own spread, so one cannot shout over the others."],
           ["Rank it", "The average becomes a place in the historical record. That is the score."],
         ].map(([head, body], i) => (
-          <li key={head} style={{ border: "1px solid var(--hair)", borderRadius: 12, padding: "12px 14px", background: "rgba(255,255,255,0.025)" }}>
-            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: FINAL, marginBottom: 5 }}>
-              {String(i + 1).padStart(2, "0")}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{head}</div>
-            <div style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.5 }}>{body}</div>
+          <li key={head}>
+            <span className="recipe-step-n">{String(i + 1).padStart(2, "0")}</span>
+            <span className="recipe-step-head">{head}</span>
+            <span className="recipe-step-body">{body}</span>
           </li>
         ))}
       </ol>

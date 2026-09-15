@@ -237,7 +237,7 @@ export default function Flag({ code, size = 20 }: { code: string; size?: number 
       // an unlabeled SVG can get read out as a bare "image", noise
       // right before the name that already says the same thing.
       aria-hidden="true"
-      style={{ borderRadius: 3, boxShadow: "0 0 0 1px rgba(255,255,255,0.15)", flexShrink: 0, display: "inline-block", verticalAlign: "middle" }}
+      style={{ borderRadius: 3, boxShadow: "0 0 0 1px var(--hair-strong)", flexShrink: 0, display: "inline-block", verticalAlign: "middle" }}
     >
       {content}
     </svg>

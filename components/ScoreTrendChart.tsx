@@ -88,7 +88,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
             later piece of work that needs monthly source series first. */}
         <span
           className="meta-label"
-          style={{ marginLeft: "auto", letterSpacing: 1, border: "1px solid var(--hair)", borderRadius: 999, padding: "3px 9px" }}
+          style={{ marginLeft: "auto", letterSpacing: 1, border: "1px solid var(--hair)", borderRadius: 4, padding: "3px 9px" }}
         >
           Annual
         </span>
@@ -97,7 +97,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", overflow: "visible" }} role="img" aria-label={`MMAI score from ${points[0].year} to ${last.year}`}>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={band.color} stopOpacity="0.38" />
+            <stop offset="0%" stopColor={band.color} stopOpacity="0.16" />
             <stop offset="100%" stopColor={band.color} stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -106,7 +106,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
           <g key={v}>
             <line
               x1={PAD_L} y1={y(v)} x2={W - PAD_R} y2={y(v)}
-              stroke={v === NEUTRAL ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)"}
+              stroke={v === NEUTRAL ? "var(--mid)" : "var(--hair)"}
               strokeWidth={1}
               strokeDasharray={v === NEUTRAL ? "5 5" : undefined}
             />
@@ -118,16 +118,15 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
 
         <path d={area} fill={`url(#${gradId})`} />
         {/* The score line is the chart's subject, so it carries a
-            heavier stroke and a stronger glow than the gridlines and
-            axis around it. Colour still comes from colorForScore(). */}
+            heavier stroke than the gridlines around it -- weight, not
+            glow. Colour still comes from colorForScore(). */}
         <path
           d={line}
           fill="none"
           stroke={band.color}
-          strokeWidth={3}
+          strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ filter: `drop-shadow(0 0 4px ${band.color}) drop-shadow(0 0 12px ${band.color}70) brightness(1.12) saturate(1.1)` }}
         />
 
         {points.map((p, i) =>
@@ -138,15 +137,14 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
           ) : null
         )}
 
-        <circle cx={x(points.length - 1)} cy={y(last.value)} r={5} fill={band.color} style={{ filter: `drop-shadow(0 0 10px ${band.color}) brightness(1.15)` }} />
+        <circle cx={x(points.length - 1)} cy={y(last.value)} r={4.5} fill="var(--accent)" stroke="var(--card-bg)" strokeWidth={2} />
         <text
           x={x(points.length - 1) + 10}
           y={y(last.value) + 4}
-          fontFamily="Space Grotesk, sans-serif"
-          fontWeight={700}
+          fontWeight={500}
           fontSize={15}
-          fill={band.color}
-          style={{ filter: "brightness(1.15) saturate(1.1)" }}
+          fill="var(--accent)"
+          style={{ fontFamily: "var(--font-num)" }}
         >
           {last.value.toFixed(1)}
         </text>

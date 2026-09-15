@@ -101,10 +101,10 @@ export function inflationTargetFor(market: string): number {
 //  ONE COLOUR RAMP, USED EVERYWHERE
 // ------------------------------------------------------------------
 
-const COLOR_STOPS = ["#E14B4B", "#F0975B", "#8B5CF6", "#22D3EE"];
+const COLOR_STOPS = ["#E85A5A", "#F0975B", "#9B70F8", "#22D3EE"];
 /** The colour of a figure that does not exist.
  *
- *  Was #6B7086, which measured 3.85:1 on a card and 4.08:1 on the page --
+ *  Was a darker grey (6B7086), which measured 3.85:1 on a card and 4.08:1 on the page --
  *  both under the 4.5:1 this site holds itself to. It went unnoticed
  *  because it only renders when something is MISSING, and on a fully
  *  populated site nothing was: scripts/check-accessibility.ts caught it
@@ -114,10 +114,12 @@ const COLOR_STOPS = ["#E14B4B", "#F0975B", "#8B5CF6", "#22D3EE"];
  *  was the text saying a number could not be shown -- the one a reader
  *  most needs to distinguish from a real figure.
  *
- *  #7B8096 is the same hue lifted until it clears the bar: 4.82:1 on a
- *  card, 5.11:1 on the page, and still 38.6 dE from the nearest market
- *  colour so an N/A is never mistaken for a country. */
-const NA_COLOR = "#7B8096";
+ *  #7B8096 was the same hue lifted until it cleared the bar on the old
+ *  near-black ground. The navy ground (September 2026 restyle) is lighter,
+ *  and #7B8096 fell to 4.32:1 on a card, so it was lifted again: #838AA0
+ *  is 4.91:1 on a card and 5.17:1 on the page.
+ *  scripts/check-palette-contrast.ts holds it there. */
+const NA_COLOR = "#838AA0";
 
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace("#", "");

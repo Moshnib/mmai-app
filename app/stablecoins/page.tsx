@@ -147,9 +147,8 @@ export default async function StablecoinsPage() {
             <div className="meta-label">Tokens in existence across Ethereum, Tron and Solana</div>
             <div
               style={{
-                fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 46, lineHeight: 1.05,
-                margin: "10px 0 6px", color: "var(--status-live)", fontVariantNumeric: "tabular-nums",
-                textShadow: "0 0 26px rgba(34,211,238,0.35)",
+                fontFamily: "var(--font-num)", fontWeight: 500, fontSize: 46, lineHeight: 1.05,
+                margin: "10px 0 6px", color: "var(--ink)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
               }}
             >
               {money(total)}
@@ -169,7 +168,7 @@ export default async function StablecoinsPage() {
             {chainTotals.map((c) => (
               <div key={c.chain} className="mmai-card">
                 <div className="meta-label">{CHAIN_LABEL[c.chain]}</div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 27, margin: "6px 0 4px", fontVariantNumeric: "tabular-nums" }}>
+                <div style={{ fontFamily: "var(--font-num)", fontWeight: 500, fontSize: 27, margin: "6px 0 4px", fontVariantNumeric: "tabular-nums" }}>
                   {money(c.total)}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.5 }}>{CHAIN_NOTE[c.chain]}</div>
@@ -277,7 +276,7 @@ export default async function StablecoinsPage() {
 
           <div className="signal-grid" style={{ marginTop: 18 }}>
             <div className="mmai-card">
-              <h3 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, margin: "0 0 8px" }}>What it signals</h3>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: 15, margin: "0 0 8px" }}>What it signals</h3>
               <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: 0, lineHeight: 1.65 }}>
                 A stablecoin is a dollar claim someone chose to hold outside the banking system. A rising total
                 means more people want dollars they can move without a bank — often in economies where dollars
@@ -286,7 +285,7 @@ export default async function StablecoinsPage() {
               </p>
             </div>
             <div className="mmai-card">
-              <h3 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, margin: "0 0 8px" }}>What it doesn&apos;t</h3>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: 15, margin: "0 0 8px" }}>What it doesn&apos;t</h3>
               <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: 0, lineHeight: 1.65 }}>
                 Supply is not a measure of anyone&apos;s reserves, solvency, or trustworthiness. It says how many
                 tokens exist, nothing about what stands behind them. It is also not part of the MMAI score, and
