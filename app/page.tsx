@@ -510,7 +510,7 @@ export default function OverviewPage() {
               alternative for "see the other markets"; now that it's
               gone, hiding the map with nothing in its place would leave
               phones with no way to explore markets other than the
-              currently-selected one at all. Hidden above 860px via
+              currently-selected one at all. Hidden above 900px via
               .map-mobile-links so it doesn't duplicate the map on desktop. */}
           <div className="map-mobile-links">
             {markets.filter((m) => m.code !== current).map((m) => (

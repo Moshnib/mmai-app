@@ -41,7 +41,9 @@ const CROP_HEIGHT = 400;
  *  its ring crossing the 180° line was one of the three stripes. */
 const COUNTRIES = worldPaths.countries
   .filter((c) => String(c.id) !== "010")
-  .map((c) => ({ id: String(c.id), d: repairSeam(c.d, worldPaths.width) }));
+  // Three shapes in the data carry no id (N. Cyprus, Somaliland, Kosovo),
+  // so the React key falls back to the index or all three would collide.
+  .map((c, i) => ({ id: String(c.id), key: c.id ? String(c.id) : `shape-${i}`, d: repairSeam(c.d, worldPaths.width) }));
 
 interface HoverState {
   code: string;
@@ -105,7 +107,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
           const market = marketCode ? marketByCode[marketCode] : undefined;
 
           if (!market) {
-            return <path key={c.id} d={c.d} fill="var(--track)" stroke="var(--card-bg)" strokeWidth={0.5} />;
+            return <path key={c.key} d={c.d} fill="var(--track)" stroke="var(--card-bg)" strokeWidth={0.5} />;
           }
 
           const { band } = scoreOf(market);
@@ -113,7 +115,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
 
           return (
             <path
-              key={c.id}
+              key={c.key}
               d={c.d}
               fill={band.color}
               fillOpacity={isSelected ? 0.95 : 0.55}

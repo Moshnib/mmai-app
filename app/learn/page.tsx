@@ -100,7 +100,7 @@ function plainFormula(key: IndicatorKey): { rule: string; example: string } {
   return {
     rule:
       `${p.subject} is compared with its average across the ${REF_N} market-years in the record: ${p.avg(mean)}. ` +
-      `${p.better} scores above zero, ${p.worse} scores below, and every ${p.step(sd)} away from the average moves the score by one.`,
+      `${p.better} scores above zero, ${p.worse} scores below, and every ${p.step(sd)} away from the average moves this indicator’s score by one.`,
     example: `For example, ${l1} scores ${signed(q(key, v1))}; ${l2} scores ${signed(q(key, v2))}.`,
   };
 }
@@ -311,7 +311,7 @@ const TOPICS = [
     formula: indicatorFormula("debt"),
     formulaNote: INDICATOR_READING.debt,
     targetNote:
-      "There is no threshold and no cap: every point of debt counts the same, above the average or below it. Earlier versions of MMAI gave full marks to anything under the European Union's 60% reference value and penalised debt above it only gently; that method was retired on 5 September 2026 and is not used. Japan shows what the straight-line rule does. Its debt, far above the record's average, puts its Capacity near the bottom of the range — even though that debt is owed mostly to its own citizens, in its own currency. MMAI does not soften the arithmetic for that. It publishes all three dimensions beside the headline, and the homepage warns when one weak dimension is being hidden by two strong ones.",
+      "There is no threshold and no cap: every point of debt counts the same, above the average or below it. Earlier versions of MMAI gave full marks to anything under the European Union's 60% reference value and penalised debt above it only gently; that method was retired on 5 September 2026 and is not used. Japan shows what the straight-line rule does. Its debt, far above the record's average, puts its Capacity near the bottom of the range — even though that debt is owed mostly to its own citizens, in its own currency. MMAI does not soften the arithmetic for that. It publishes all three dimensions beside the headline, and the homepage warns when the headline is hiding a weak dimension.",
     impact: "High government debt tends to show up in your life slowly — as higher taxes, tighter public spending, or less help from the state when the next downturn arrives.",
   },
   {

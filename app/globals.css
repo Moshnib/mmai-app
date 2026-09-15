@@ -496,9 +496,6 @@ h1.headline {
   margin-top: 20px;
 }
 @media (max-width: 759px) { .compare-strip { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
-/* Sized to sit proportionally alongside the five pillar cards above:
-   comparable padding, a shape block close to the pillar ring's 92px,
-   and the same score type size. */
 /* Shape beside the words rather than above them: three wide columns
    stacked vertically left a tall card with a small shape floating in it. */
 .compare-chip {
@@ -530,10 +527,9 @@ h1.headline {
   .compare-chip { transition: none; }
 }
 .compare-chip .cc-name { grid-column: 2; font-size: var(--t-small); font-weight: 700; color: var(--ink); }
-/* Fixed height so all six shapes occupy the same block regardless of
-   their aspect ratio -- otherwise a wide country (the US) and a tall
-   one (the UK) push their score lines to different heights and the row
-   stops reading as a set. */
+/* Fixed height so every shape occupies the same block regardless of its
+   aspect ratio -- otherwise a wide country (the US) and a tall one (the
+   UK) sit at different sizes and the grid stops reading as a set. */
 .compare-chip .cc-glyph {
   grid-column: 1; grid-row: 1 / span 3; order: -1;
   height: 76px; display: flex; align-items: center; justify-content: center;
@@ -839,8 +835,8 @@ h1.headline {
    to reach any market other than the one currently selected above. */
 .map-mobile-links { display: none; }
 @media (max-width: 900px) {
-  /* The world map's viewBox scales its per-market score labels down
-     with it -- confirmed illegible at phone width. */
+  /* At phone width the map is too small to pick out northern Europe or
+     South Korea; the cards above and the links below do that job. */
   .world-map-wrap { display: none; }
   /* margin-top must NOT be negative. It was -8px, meant to snug these
      links up under the map -- but the map is display:none in this very

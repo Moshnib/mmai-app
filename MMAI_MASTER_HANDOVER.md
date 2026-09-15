@@ -1777,7 +1777,8 @@ both); Antarctica is dropped below the crop. `scripts/test-map-seam.ts`
 (CI) asserts the raw data still crosses and the repaired data never jumps
 more than half the map.
 
-**No score labels on the map.** Norway/Sweden overlapped and South Korea
+**No score labels on the map** (supersedes the label anchors and
+CROP_HEIGHT 420 recorded in the earlier map section; the crop is now 400). Norway/Sweden overlapped and South Korea
 had no label at all. The map now shows where (soft ramp colour, selected
 market full strength with a gold outline); the ranked key beneath it —
 real buttons — carries every score. Country cards are a fixed 3×3 (one

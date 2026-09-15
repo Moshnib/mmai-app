@@ -23,13 +23,19 @@
 
 type Ring = Array<[number, number]>;
 
+/** A full number: sign, integer or leading-dot decimal, and exponent. A
+ *  narrower pattern read "1e-5" as two numbers and ".5" as "5". */
+const NUM = /-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi;
+
 function parse(d: string, width: number): Ring[] {
-  if (/[^MLZ\d\s.,\-]/i.test(d.replace(/e-?\d+/gi, ""))) {
-    throw new Error("map path uses commands other than M/L/Z; seam repair cannot handle it");
+  // Uppercase only: lowercase m/l/z are RELATIVE commands, and reading
+  // them as absolute would draw a wrong shape rather than fail.
+  if (/[^MLZ\d\s.,eE+\-]/.test(d)) {
+    throw new Error("map path uses commands other than absolute M/L/Z; seam repair cannot handle it");
   }
   const rings: Ring[] = [];
   for (const chunk of d.split(/(?=M)/)) {
-    const nums = chunk.match(/-?\d+(?:\.\d+)?/g);
+    const nums = chunk.match(NUM);
     if (!nums || nums.length < 4) continue;
     const ring: Ring = [];
     for (let i = 0; i + 1 < nums.length; i += 2) ring.push([Number(nums[i]), Number(nums[i + 1])]);
@@ -67,17 +73,19 @@ export function repairSeam(d: string, width: number): string {
     .join(" ");
 }
 
-/** Largest jump between consecutive points in any single ring, as drawn.
+/** Largest jump between consecutive points in any single ring, as drawn,
+ *  INCLUDING the closing line from the last point back to the first --
+ *  Z draws that line too, and it can be the stripe on its own.
  *  Used by scripts/test-map-seam.ts: after repair nothing may jump more
- *  than half the map, because that jump IS the stripe. */
+ *  than half the map. */
 export function widestJump(d: string): number {
   let worst = 0;
   for (const chunk of d.split(/(?=M)/)) {
-    const nums = chunk.match(/-?\d+(?:\.\d+)?/g);
-    if (!nums) continue;
-    for (let i = 2; i + 1 < nums.length; i += 2) {
-      worst = Math.max(worst, Math.abs(Number(nums[i]) - Number(nums[i - 2])));
-    }
+    const nums = chunk.match(NUM);
+    if (!nums || nums.length < 4) continue;
+    const xs = nums.filter((_, i) => i % 2 === 0).map(Number);
+    for (let i = 1; i < xs.length; i++) worst = Math.max(worst, Math.abs(xs[i] - xs[i - 1]));
+    worst = Math.max(worst, Math.abs(xs[xs.length - 1] - xs[0]));
   }
   return worst;
 }
