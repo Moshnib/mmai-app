@@ -1444,6 +1444,137 @@ a.dim-axis-row:hover { background: var(--hover); }
   flex: 1 1 100%; font-size: var(--t-micro); color: var(--slate); line-height: 1.6;
 }
 
+/* ============================================================
+   THE LEARN PAGE'S TOPIC CARDS
+   These were inline styles with 32px of side padding, and every box
+   inside them added 16px more. On a 390px phone that left the text a
+   260px column -- four words a line in a card about reading numbers.
+   Classes, so the padding can give way on a phone.
+   ============================================================ */
+.learn-topic {
+  background: var(--card-bg); border: 1px solid var(--hair); border-radius: 8px;
+  padding: 28px 32px; margin-bottom: 18px; scroll-margin-top: 90px;
+}
+.learn-formula {
+  font-family: var(--font-mono); font-size: var(--t-body);
+  background: var(--paper); border: 1px solid var(--hair); border-radius: 4px;
+  padding: 10px 14px; margin-bottom: 14px; overflow-wrap: anywhere;
+}
+.learn-box { border: 1px dashed var(--hair-strong); border-radius: 4px; padding: 13px 16px; margin-bottom: 14px; }
+.learn-targets {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 4px 16px;
+  font-family: var(--font-mono); font-size: var(--t-small); color: var(--ink-soft); line-height: 1.7;
+}
+.learn-targets > li { white-space: nowrap; }
+/* Was a cyan rail on a tinted panel: the accent-bar-on-a-card device,
+   in a colour the palette no longer uses for anything but "live". */
+.learn-impact { padding: 14px 16px; background: var(--hover); border: 1px solid var(--hair); border-radius: 4px; }
+.learn-impact-label {
+  font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-bottom: 6px;
+}
+.learn-impact p { font-size: var(--t-small); color: var(--ink-soft); line-height: 1.65; margin: 0; }
+@media (max-width: 640px) {
+  .learn-topic { padding: 20px 16px; }
+  .learn-formula { font-size: var(--t-small); padding: 10px 12px; }
+  .learn-box, .learn-note, .learn-calls { padding: 12px; }
+  .learn-impact { padding: 12px; }
+}
+
+/* ============================================================
+   ONE DIAGRAM, TWO DRAWINGS
+   A wide SVG in a phone is a sideways scroll that hides half the
+   picture; shrunk to fit, its type falls under 8px. The Learn page's
+   diagrams therefore ship a second, narrow drawing in HTML, and exactly
+   one of the pair is displayed. display:none also removes the hidden
+   one from the accessibility tree, so a screen reader hears it once.
+   ============================================================ */
+/* !important on the HIDE side only, and no display value on the show
+   side: each narrow drawing keeps its own display (grid, block). A plain
+   ".only-narrow { display: none }" lost to ".recipe-narrow { display:
+   grid }" further down, and desktop showed both drawings. */
+/* 1000, not a phone width: the recipe is 940px of drawing, so any column
+   narrower than that -- a tablet included -- would still scroll sideways. */
+@media (min-width: 1000px) {
+  .only-narrow { display: none !important; }
+}
+@media (max-width: 999px) {
+  .only-wide { display: none !important; }
+}
+
+/* The score recipe, top to bottom. */
+/* Capped on a tablet, where the stacked version is shown in a column
+   wide enough to stretch a name and its figure too far apart. */
+.recipe-narrow { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; max-width: 640px; }
+.recipe-narrow > li { min-width: 0; }
+.recipe-intro { display: grid; gap: 2px; font-size: var(--t-caption); color: var(--ink-soft); }
+.recipe-eyebrow {
+  font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: .12em;
+  text-transform: uppercase; color: var(--slate);
+}
+.recipe-group { border: 1px solid; border-radius: var(--card-radius); padding: 10px; display: grid; gap: 10px; }
+.recipe-inputs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.recipe-inputs > li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline;
+  background: var(--card-bg); border: 1px solid var(--hair); border-left: 3px solid;
+  border-radius: 4px; padding: 8px 10px;
+}
+.recipe-input-name { font-size: var(--t-small); color: var(--ink); }
+.recipe-input-value { font-family: var(--font-num); font-size: var(--t-small); font-weight: 600; text-align: right; }
+.recipe-input-weight, .recipe-input-note { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--slate); }
+.recipe-input-weight { grid-column: 2; text-align: right; }
+.recipe-input-note { grid-column: 1 / -1; }
+.recipe-input-weight + .recipe-input-note { grid-column: 1; grid-row: 2; }
+.recipe-dim {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline;
+  padding: 2px 4px 0;
+}
+.recipe-dim-name { font-weight: 700; font-size: var(--t-body); color: var(--ink); }
+.recipe-dim-name::before { content: "→ "; color: var(--slate); font-weight: 400; }
+.recipe-dim-pct { font-family: var(--font-num); font-size: var(--t-small); font-weight: 600; text-align: right; }
+.recipe-dim-sd { grid-column: 2; font-family: var(--font-mono); font-size: var(--t-micro); color: var(--slate); text-align: right; }
+.recipe-result {
+  display: grid; justify-items: center; gap: 2px; text-align: center;
+  border: 1px solid var(--accent); border-radius: var(--card-radius);
+  background: var(--card-bg); padding: 14px 12px;
+  font-size: var(--t-small); color: var(--ink);
+}
+.recipe-result-num { font-family: var(--font-num); font-size: var(--t-h1); font-weight: 500; color: var(--accent); line-height: 1.1; }
+
+/* The five steps. Five across on a desktop; below that auto-fit left a
+   single card alone on its last row (4 + 1 on a tablet, 2 + 2 + 1 on a
+   phone), so they become one column of rows, number beside the words. */
+.recipe-steps { list-style: none; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.recipe-steps > li {
+  display: grid; align-content: start; gap: 3px;
+  border: 1px solid var(--hair); border-radius: var(--card-radius); padding: 12px 14px; background: var(--card-bg);
+}
+.recipe-step-n { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--accent); margin-bottom: 2px; }
+.recipe-step-head { font-size: var(--t-small); font-weight: 600; color: var(--ink); }
+.recipe-step-body { font-size: var(--t-caption); color: var(--slate); line-height: 1.5; }
+@media (max-width: 999px) {
+  .recipe-steps { grid-template-columns: minmax(0, 1fr); gap: 8px; max-width: 640px; }
+  .recipe-steps > li { grid-template-columns: 26px minmax(0, 1fr); column-gap: 10px; padding: 10px 12px; }
+  .recipe-step-n { grid-row: 1 / span 2; margin: 2px 0 0; }
+  .recipe-step-head, .recipe-step-body { grid-column: 2; }
+}
+
+/* Correlations as a ranked list: names, plain reading, a bar for strength. */
+.pair-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 640px; }
+.pair-row {
+  display: grid; gap: 4px; padding: 10px 12px;
+  background: var(--card-bg); border: 1px solid var(--hair); border-radius: var(--card-radius);
+}
+.pair-names { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: var(--t-small); font-weight: 600; color: var(--ink); }
+.pair-names > i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.pair-join { color: var(--slate); font-weight: 400; padding: 0 2px; }
+.pair-read { font-size: var(--t-caption); color: var(--slate); }
+/* The bar takes its colour from "color", so the dashed variant can use
+   currentColor and stay in step with the solid one. */
+.pair-bar { display: block; height: 4px; margin-top: 2px; border-radius: 1px; background: currentColor; }
+.pair-bar.dashed { background: repeating-linear-gradient(to right, currentColor 0 6px, transparent 6px 10px); }
+
 /* The stablecoin correlation table. It used .breakdown-row, which stacks
    to one column below 640px -- correct for the dimension arithmetic,
    which is a label and a few values that read as a sentence, and wrong

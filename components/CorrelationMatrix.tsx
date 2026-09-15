@@ -121,7 +121,34 @@ export default function CorrelationMatrix() {
           the whole Learn page scrolled sideways. The scroll belongs to
           the diagram, not to the document. */}
       <figure style={{ margin: 0, minWidth: 0 }}>
-        <div style={{ overflowX: "auto" }}>
+        {/* ON A PHONE, THE SAME PAIRS AS A RANKED LIST. The ring needs
+            440px to keep its labels readable, so a phone met it as a
+            sideways scroll with half the ring off-screen. What the ring
+            shows is which pairs are strong and whether they sit inside
+            one dimension -- a list sorted by strength says exactly that,
+            with the same colours, the same dashed-means-across rule, and
+            a bar standing in for line thickness. */}
+        <p className="recipe-eyebrow only-narrow" style={{ margin: "0 0 8px" }}>Pairs of indicators, strongest first</p>
+        <ol className="pair-list only-narrow" aria-label="Pairs of indicators that move together, strongest first">
+          {[...pairs].reverse().map(({ a, b, r, same }) => (
+            <li key={`n-${a}-${b}`} className="pair-row">
+              <span className="pair-names">
+                <i style={{ background: TONE[INDICATOR_DIMENSION[a]] }} />{short[a]}
+                <span className="pair-join" aria-hidden="true">↔</span>
+                <i style={{ background: TONE[INDICATOR_DIMENSION[b]] }} />{short[b]}
+              </span>
+              <span className="pair-read">
+                {strengthWord(r)} · {same ? "same dimension" : "across dimensions"}
+              </span>
+              <span
+                className={`pair-bar${same ? "" : " dashed"}`}
+                style={{ width: `${Math.max(8, Math.abs(r) * 100)}%`, color: r > 0 ? "#22D3EE" : "#E85A5A" }}
+                aria-hidden="true"
+              />
+            </li>
+          ))}
+        </ol>
+        <div className="only-wide" style={{ overflowX: "auto" }}>
           <svg
             viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minWidth: 440 }}
             role="img"
@@ -235,7 +262,29 @@ export default function CorrelationMatrix() {
           the whole Learn page scrolled sideways. The scroll belongs to
           the diagram, not to the document. */}
       <figure style={{ margin: 0, minWidth: 0 }}>
-        <div style={{ overflowX: "auto" }}>
+        {/* Phone version of the triangle, for the same reason as the
+            ring above: 680px of drawing in a 358px column. Three links,
+            strongest first, each with its plain reading and its share. */}
+        <p className="recipe-eyebrow only-narrow" style={{ margin: "0 0 8px" }}>The three dimensions, strongest link first</p>
+        <ol className="pair-list only-narrow" aria-label="How closely the three dimensions move together">
+          {([["D", "K"], ["C", "D"], ["C", "K"]] as [DimensionKey, DimensionKey][])
+            .map(([a, b]) => ({ a, b, r: DIMENSION_CORRELATIONS[a][b] }))
+            .sort((p, q) => Math.abs(q.r) - Math.abs(p.r))
+            .map(({ a, b, r }) => (
+              <li key={`d-${a}${b}`} className="pair-row">
+                <span className="pair-names">
+                  <i style={{ background: TONE[a] }} />{DIMENSION_NAMES[a]}
+                  <span className="pair-join" aria-hidden="true">↔</span>
+                  <i style={{ background: TONE[b] }} />{DIMENSION_NAMES[b]}
+                </span>
+                <span className="pair-read">
+                  {strengthWord(r)} · <span style={{ color: "#22D3EE" }}>{sharedMovement(r)}</span>
+                </span>
+                <span className="pair-bar" style={{ width: `${Math.max(8, Math.abs(r) * 100)}%`, color: "#22D3EE" }} aria-hidden="true" />
+              </li>
+            ))}
+        </ol>
+        <div className="only-wide" style={{ overflowX: "auto" }}>
           {/* Floor equals the viewBox width so the scale is 1 and the
               labels render at the size they are written at. A 520 floor
               on a 680 viewBox was a scale of 0.76, taking 11px text to

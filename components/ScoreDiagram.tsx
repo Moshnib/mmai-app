@@ -48,7 +48,9 @@ export default function ScoreDiagram() {
 
   // ---------- layout ----------
   const W = 940, H = 430;
-  const IN_X = 14, IN_W = 210, IN_H = 50;
+  // 250, not 210: at 210 "vs 2.5% target → 0.95 away" ran out of the
+  // inflation card and into the connector beside it.
+  const IN_X = 14, IN_W = 250, IN_H = 50;
   const DIM_X = 400, DIM_W = 216;
   const OUT_X = 726, OUT_W = 200;
 
@@ -78,7 +80,52 @@ export default function ScoreDiagram() {
 
   return (
     <figure style={{ margin: 0 }}>
-      <div style={{ overflowX: "auto" }}>
+      {/* TWO DRAWINGS OF ONE RECIPE. The flow below reads left to right
+          across 940px, and on a phone it became a sideways scroll that
+          showed the ingredients and hid the answer -- the owner met it
+          cut off at "Conditions" on a real iPhone. Scaling it down would
+          take its type under 8px. So a phone gets the same recipe read
+          top to bottom, in HTML that wraps: ingredients inside the group
+          they feed, then the average. Same numbers, same engine calls. */}
+      <ol className="recipe-narrow only-narrow" aria-label={`The recipe behind an MMAI score, using Australia as a worked example, ending in a score of ${result.percentile?.toFixed(1)}.`}>
+        <li className="recipe-intro">
+          <span className="recipe-eyebrow">Today’s published figures, grouped into three</span>
+          <span>Australia, as a worked example</span>
+        </li>
+        {ORDER.map((d) => (
+          <li key={d} className="recipe-group" style={{ borderColor: `${TONE[d]}66`, background: `${TONE[d]}0F` }}>
+            <ul className="recipe-inputs">
+              {DIMENSION_INDICATORS[d].map((k) => {
+                const w = INDICATOR_WEIGHT[k];
+                return (
+                  <li key={k} style={{ borderLeftColor: TONE[d] }}>
+                    <span className="recipe-input-name">{INDICATOR_FIELD[k].label}</span>
+                    <span className="recipe-input-value" style={{ color: TONE[d] }}>{valueOf(k)}</span>
+                    {w !== 1 && <span className="recipe-input-weight">{(w * 100).toFixed(0)}% of it</span>}
+                    {k === "infGap" && (
+                      <span className="recipe-input-note">
+                        vs {EXAMPLE_TARGET}% target → {Math.abs((EXAMPLE.raw.inflation as number) - EXAMPLE_TARGET).toFixed(2)} away
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="recipe-dim">
+              <span className="recipe-dim-name">{DIMENSION_NAMES[d]}</span>
+              <span className="recipe-dim-pct" style={{ color: TONE[d] }}>{dimPct[d].toFixed(0)} percentile</span>
+              <span className="recipe-dim-sd">{std[d] >= 0 ? "+" : ""}{std[d].toFixed(2)} sd</span>
+            </div>
+          </li>
+        ))}
+        <li className="recipe-result">
+          <span className="recipe-eyebrow">Average the three, then rank</span>
+          <span className="recipe-result-num">{result.percentile?.toFixed(1)}</span>
+          <span>better than {result.percentile?.toFixed(0)}% of the last 26 years</span>
+        </li>
+      </ol>
+
+      <div className="only-wide" style={{ overflowX: "auto" }}>
         {/* THE FLOOR MUST BE THE VIEWBOX WIDTH, or the SVG shrinks its
             own text. A 940-wide viewBox with a 680 floor is a scale of
             0.72, and an SVG scales text with everything else: the 10px
@@ -168,8 +215,11 @@ export default function ScoreDiagram() {
                   </text>
                 )}
                 {/* the weight rides on the connector, where it belongs */}
+                {/* Above the connector when it climbs to its group, below it
+                    when it falls -- a label on the side the curve leaves
+                    empty. Always above, "62% of it" sat on its own line. */}
                 {w !== 1 && (
-                  <text x={IN_X + IN_W + 14} y={r.y + IN_H / 2 - 7} fontSize={10}
+                  <text x={IN_X + IN_W + 14} y={r.y + IN_H / 2 + (r.y + IN_H / 2 > band(r.dim) ? 17 : -8)} fontSize={10}
                     fill={TONE[r.dim]} fontFamily="IBM Plex Mono, monospace" opacity={0.95}>
                     {(w * 100).toFixed(0)}% of it
                   </text>
@@ -233,12 +283,7 @@ export default function ScoreDiagram() {
       </div>
 
       {/* the same thing in five sentences, for anyone who reads before they look */}
-      <ol
-        style={{
-          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(158px, 1fr))",
-          gap: 12, listStyle: "none", padding: 0, margin: "18px 0 0",
-        }}
-      >
+      <ol className="recipe-steps">
         {[
           ["Start with what is published", "Five official figures, each from a named national source — plus each country’s own inflation target."],
           ["Compare with history", `Not "is 4.35% high?" but "where does it sit among ${N} readings from these six economies since 2000?"`],
@@ -246,12 +291,10 @@ export default function ScoreDiagram() {
           ["Put the three level", "Each is divided by its own spread, so one cannot shout over the others."],
           ["Rank it", "The average becomes a place in the historical record. That is the score."],
         ].map(([head, body], i) => (
-          <li key={head} style={{ border: "1px solid var(--hair)", borderRadius: 6, padding: "12px 14px", background: "var(--card-bg)" }}>
-            <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: FINAL, marginBottom: 5 }}>
-              {String(i + 1).padStart(2, "0")}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", marginBottom: 3 }}>{head}</div>
-            <div style={{ fontSize: 12, color: "var(--slate)", lineHeight: 1.5 }}>{body}</div>
+          <li key={head}>
+            <span className="recipe-step-n">{String(i + 1).padStart(2, "0")}</span>
+            <span className="recipe-step-head">{head}</span>
+            <span className="recipe-step-body">{body}</span>
           </li>
         ))}
       </ol>

@@ -203,7 +203,7 @@ const TOPICS = [
     formulaNote: INDICATOR_READING.infGap,
     targets: TARGET_LIST,
     targetNote:
-      "The target is each central bank's own published objective, not one number applied to everyone. Five of the six aim at 2%. Australia is the exception: the Reserve Bank targets a 2–3% range and sets policy so inflation returns to the midpoint, so MMAI scores Australia against 2.5%. The United States is measured on the PCE price index rather than CPI, because that is the index the Federal Reserve defines its 2% target on.",
+      "The target is each central bank's own published objective, not one number applied to everyone. Every scored market aims at 2% except Australia: the Reserve Bank targets a 2–3% range and sets policy so inflation returns to the midpoint, so MMAI scores Australia against 2.5%. The United States is measured on the PCE price index rather than CPI, because that is the index the Federal Reserve defines its 2% target on.",
     impact: "When CPI rises faster than your income, your money buys less. This is why inflation directly shapes wage negotiations and why central banks raise interest rates specifically to slow it down.",
   },
   {
@@ -619,14 +619,7 @@ export default function LearnPage() {
             <div
               key={t.id}
               id={`topic-${t.id}`}
-              style={{
-                background: "var(--card-bg)",
-                border: "1px solid var(--hair)",
-                borderRadius: 8,
-                padding: "28px 32px",
-                marginBottom: 18,
-                scrollMarginTop: 90,
-              }}
+              className="learn-topic"
             >
               <DimensionTag topicId={t.id} />
               <h3 className="learn-h3">{t.title}</h3>
@@ -642,19 +635,7 @@ export default function LearnPage() {
                   same way, so the pattern was known here and this box was
                   simply missed. */}
               {"formula" in t && t.formula && (
-                <div
-                  style={{
-                    fontFamily: "IBM Plex Mono, monospace",
-                    fontSize: 15,
-                    background: "var(--paper)",
-                    border: "1px solid var(--hair)",
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    marginBottom: 14,
-                  }}
-                >
-                  {t.formula}
-                </div>
+                <div className="learn-formula">{t.formula}</div>
               )}
               {/* A z-score is not self-explanatory the way a 0-100 pillar score
                   pretended to be, so every transform gets a line saying what
@@ -671,10 +652,11 @@ export default function LearnPage() {
                     fontSize: 13,
                     background: "var(--paper)",
                     border: "1px solid var(--hair)",
-                    borderRadius: 8,
+                    borderRadius: 4,
                     padding: "10px 14px",
                     marginBottom: 14,
                     color: "var(--ink-soft)",
+                    overflowWrap: "anywhere",
                     lineHeight: 1.8,
                   }}
                 >
@@ -693,18 +675,21 @@ export default function LearnPage() {
                   limitations block on 31 August, found the same way, by
                   opening the page. */}
               {"targets" in t && t.targets && (
-                <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
+                <div className="learn-box">
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate)", marginBottom: 8 }}>
                     Each market’s own target
                   </div>
-                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.8 }}>
-                    {t.targets}
-                  </div>
+                  {/* One unbreakable item per market. As a single joined string it
+                      wrapped mid-entry on a phone -- "· Canada 2%" at the start of
+                      a line, "South" and "Korea 2%" split across two. */}
+                  <ul className="learn-targets">
+                    {String(t.targets).split("  ·  ").map((item) => <li key={item}>{item}</li>)}
+                  </ul>
                 </div>
               )}
 
               {"targetNote" in t && t.targetNote && (
-                <div style={{ border: "1px dashed var(--hair)", borderRadius: 10, padding: "13px 16px", marginBottom: 14 }}>
+                <div className="learn-box">
                   <p style={{ fontSize: 13, color: "var(--slate)", margin: 0, lineHeight: 1.7 }}>{t.targetNote}</p>
                 </div>
               )}
@@ -783,14 +768,7 @@ export default function LearnPage() {
                   describes intent and this describes behaviour. Measured, not
                   asserted -- see DIMENSION_EFFECTIVE_INFLUENCE in lib/composite.ts. */}
               {"influence" in t && t.influence && (
-                <div
-                  style={{
-                    border: "1px dashed var(--hair)",
-                    borderRadius: 10,
-                    padding: "13px 16px",
-                    marginBottom: 14,
-                  }}
-                >
+                <div className="learn-box">
                   <div
                     style={{
                       fontFamily: "IBM Plex Mono, monospace",
@@ -835,18 +813,9 @@ export default function LearnPage() {
                   )}
                 </div>
               )}
-              <div
-                style={{
-                  padding: "14px 16px",
-                  borderLeft: "3px solid var(--status-live)",
-                  background: "var(--status-live-bg)",
-                  borderRadius: "0 10px 10px 0",
-                }}
-              >
-                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
-                  WHY THIS AFFECTS YOU
-                </div>
-                <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
+              <div className="learn-impact">
+                <div className="learn-impact-label">Why this affects you</div>
+                <p>{t.impact}</p>
               </div>
             </div>
           ))}
@@ -863,7 +832,7 @@ export default function LearnPage() {
       <div className="section">
         <div className="wrap">
           <div className="section-head" style={{ marginBottom: 16 }}>
-            <p className="eyebrow">COMMON QUESTIONS</p>
+            <p className="eyebrow">BEFORE YOU RELY ON IT</p>
             <h2>Common questions</h2>
             <p>
               What the score is for, what it can tell you, and how it holds up against a year everybody
@@ -892,29 +861,13 @@ export default function LearnPage() {
             <div
               key={t.id}
               id={`topic-${t.id}`}
-              style={{
-                background: "var(--card-bg)",
-                border: "1px solid var(--hair)",
-                borderRadius: 8,
-                padding: "28px 32px",
-                marginBottom: 18,
-                scrollMarginTop: 90,
-              }}
+              className="learn-topic"
             >
               <h3 className="learn-h3">{t.title}</h3>
               <p style={{ fontSize: 15, color: "var(--ink-soft)", lineHeight: 1.7, margin: "0 0 16px" }}>{t.def}</p>
-              <div
-                style={{
-                  padding: "14px 16px",
-                  borderLeft: "3px solid var(--status-live)",
-                  background: "var(--status-live-bg)",
-                  borderRadius: "0 10px 10px 0",
-                }}
-              >
-                <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--status-live)", letterSpacing: 1, marginBottom: 6 }}>
-                  WHY THIS AFFECTS YOU
-                </div>
-                <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.65, margin: 0 }}>{t.impact}</p>
+              <div className="learn-impact">
+                <div className="learn-impact-label">Why this affects you</div>
+                <p>{t.impact}</p>
               </div>
             </div>
           ))}

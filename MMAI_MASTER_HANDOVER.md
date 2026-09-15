@@ -1755,3 +1755,14 @@ strongest/weakest dimension line, yearly score trend 2019–2025 + today, the
 period each figure describes under its bar, and an "Updated … · 9 markets"
 status line. No monthly score history exists; the trend uses yearly scores
 from `lib/history.ts` via `computeMmai`.
+
+**Learn page on phones and tablets (same PR, after the owner tested the
+preview on an iPhone).** The two wide diagrams — the 940px score recipe and
+the correlation ring/triangle — were sideways scrolls that hid the answer.
+Below 1000px each now renders a second, stacked HTML drawing instead
+(`.only-narrow` / `.only-wide` in globals.css; exactly one is displayed, so
+a screen reader hears it once). Same engine numbers in both. Also: topic
+cards moved from inline styles to `.learn-topic` with phone padding; the
+per-market target list no longer breaks mid-entry; the five steps are one
+column below 1000px; desktop recipe labels no longer sit on their lines;
+and a stale "Five of the six aim at 2%" beside a list of nine was corrected.
