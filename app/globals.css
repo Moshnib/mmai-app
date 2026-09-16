@@ -44,7 +44,13 @@
      colour it did not expect. --gold-bg was worse: a translucent violet
      that could never match the "gold" foreground. The names stayed through
      the September 2026 restyle; the values did not. */
-  --accent: #D4B06A;        /* THE accent: gold. Current or chosen, nothing else. */
+  /* A LIT GOLD, NOT A DUSTY ONE. #D4B06A passed every contrast test at
+     9.3:1 and the owner still called it faded, which is the right word:
+     at 50% saturation it is the colour of old brass, and no amount of
+     contrast makes a desaturated colour look alive. This is 60%
+     saturated and 13.3:1, and it stays 20 dE clear of Australia amber
+     so "chosen" is never read as "Australia". */
+  --accent: #FFD166;        /* THE accent: gold. Current or chosen, nothing else. */
   /* Not a second brand colour any more. Every use of it was a label,
      a link or a quiet marker, so it is a light neutral now -- which is
      what keeps --accent singular. */
@@ -106,9 +112,9 @@
      owner compared it with the warmer mockup and preferred that one. Gold
      fill with navy text is 8.65:1, and it makes "chosen" the warmest
      thing on the page, which is what the accent is for. */
-  --on-bg: #D4B06A;         /* a selected control's fill */
+  --on-bg: #FFD166;         /* a selected control's fill */
   --on-ink: #0A0F1A;        /* ...and its text */
-  --on-bg-hover: #E0C088;   /* ...under the pointer */
+  --on-bg-hover: #FFDC8A;   /* ...under the pointer */
   --glyph: #6F7D94;         /* a country silhouette that is not selected */
 
   /* THE TYPE ROLES. Source Serif for headings -- a text face made for

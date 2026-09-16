@@ -11,7 +11,7 @@ const ORDER: DimensionKey[] = ["C", "D", "K"];
 const TONE = DIMENSION_TONE;
 // The result is the one current figure in the diagram, so it takes the
 // accent -- the same gold as the homepage score it explains.
-const FINAL = "#D4B06A";
+const FINAL = "#FFD166";
 const N = REFERENCE_SET.length;
 
 /** A real worked example rather than an abstract one. Australia because it
