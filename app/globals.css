@@ -22,8 +22,14 @@
      against both grounds, with no browser, on every build.
    ============================================================ */
 :root {
-  --ink: #E9ECF1;           /* primary text on the navy ground */
-  --ink-soft: #C5CCD7;      /* secondary text */
+/* BRIGHTER THAN WCAG ASKS FOR, DELIBERATELY. Every one of these already
+     passed 4.5:1 by a wide margin, and the owner still found the page hard
+     to read -- on a glossy screen in a bright room, a ratio that passes a
+     standard can still feel washed out. So the two secondary tones were
+     lifted until body copy reads as text rather than as a caption:
+     ink-soft 11.9 -> 14.8:1, slate 7.8 -> 10.3:1. */
+  --ink: #F2F5FA;           /* primary text on the navy ground */
+  --ink-soft: #DCE3EC;      /* secondary text */
   /* ALMOST BLACK, with a trace of navy left in it. The owner asked for
      more contrast and wanted black; measured, every colour on the site
      gains (gold 8.65 -> 9.32:1, the weakest score colour 4.85 -> 5.22),
@@ -52,7 +58,7 @@
   --status-live: #9FD8F7;
   --status-live-bg: rgba(159, 216, 247, 0.12);
   --status-manual-bg: rgba(197, 204, 215, 0.10);
-  --slate: #9BA6B7;         /* muted/meta text */
+  --slate: #B4BFCE;         /* muted/meta text */
 
   /* THE TYPE SCALE. Ten steps, and nothing outside them.
      The site had grown to twenty-seven distinct font sizes -- 12, 12.5 and
@@ -1799,8 +1805,14 @@ a.dim-axis-row:hover { background: var(--hover); }
 /* Fades at both ends, so items arrive and leave rather than being cut.
    A mask, not a gradient fill: nothing is painted over the page. */
 .ticker { -webkit-mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
-.ticker-track { display: flex; width: max-content; animation: ticker-scroll 64s linear infinite; }
-.ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
+/* 40s, not 64. At 64 the strip moved about 26 pixels a second, which on
+   a wide screen is slow enough that the owner read it as stopped. */
+.ticker-track { display: flex; width: max-content; animation: ticker-scroll 40s linear infinite; }
+/* Pause for a pointer resting on it, and for a KEYBOARD focus -- not for
+   any focus. Clicking an item leaves that button focused, so :focus-within
+   froze the strip for good the moment anyone used it. */
+.ticker:hover .ticker-track,
+.ticker:has(:focus-visible) .ticker-track { animation-play-state: paused; }
 @keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .ticker-row { display: flex; }
 .ticker-item {
