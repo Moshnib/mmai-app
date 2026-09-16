@@ -50,6 +50,18 @@ const EXPECTED_FAILURES: { match: RegExp; why: string }[] = [
   // 500 is a genuinely broken route and still fails this check,
   // because those arrive as a status rather than a failed request.
   { match: /[?&]_rsc=/, why: "aborted RSC prefetch — the router cancelling its own speculative request" },
+
+  // The homepage asks its own route for the ECB and ONS announcements as
+  // soon as it hydrates, and that route reads two outside feeds, so the
+  // request can still be in flight 2.5 seconds later when this script
+  // closes the tab. Same artifact as the prefetch above: the tab went
+  // away, the site is fine.
+  //
+  // This hides an ABORT and nothing else. The route catches its own
+  // errors and answers 200 with an empty list, so a real fault there
+  // arrives as a status and is still reported by the response handler
+  // below -- as would a 404 if the route were ever renamed.
+  { match: /\/api\/announcements/, why: "aborted announcements fetch -- the tab closed before two outside feeds answered" },
 ];
 
 interface Problem { page: string; kind: string; detail: string }

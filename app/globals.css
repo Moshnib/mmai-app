@@ -22,8 +22,14 @@
      against both grounds, with no browser, on every build.
    ============================================================ */
 :root {
-  --ink: #E9ECF1;           /* primary text on the navy ground */
-  --ink-soft: #C5CCD7;      /* secondary text */
+/* BRIGHTER THAN WCAG ASKS FOR, DELIBERATELY. Every one of these already
+     passed 4.5:1 by a wide margin, and the owner still found the page hard
+     to read -- on a glossy screen in a bright room, a ratio that passes a
+     standard can still feel washed out. So the two secondary tones were
+     lifted until body copy reads as text rather than as a caption:
+     ink-soft 11.9 -> 14.8:1, slate 7.8 -> 10.3:1. */
+  --ink: #F2F5FA;           /* primary text on the navy ground */
+  --ink-soft: #DCE3EC;      /* secondary text */
   /* ALMOST BLACK, with a trace of navy left in it. The owner asked for
      more contrast and wanted black; measured, every colour on the site
      gains (gold 8.65 -> 9.32:1, the weakest score colour 4.85 -> 5.22),
@@ -52,7 +58,7 @@
   --status-live: #9FD8F7;
   --status-live-bg: rgba(159, 216, 247, 0.12);
   --status-manual-bg: rgba(197, 204, 215, 0.10);
-  --slate: #9BA6B7;         /* muted/meta text */
+  --slate: #B4BFCE;         /* muted/meta text */
 
   /* THE TYPE SCALE. Ten steps, and nothing outside them.
      The site had grown to twenty-seven distinct font sizes -- 12, 12.5 and
@@ -1799,8 +1805,14 @@ a.dim-axis-row:hover { background: var(--hover); }
 /* Fades at both ends, so items arrive and leave rather than being cut.
    A mask, not a gradient fill: nothing is painted over the page. */
 .ticker { -webkit-mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
-.ticker-track { display: flex; width: max-content; animation: ticker-scroll 64s linear infinite; }
-.ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
+/* 40s, not 64. At 64 the strip moved about 26 pixels a second, which on
+   a wide screen is slow enough that the owner read it as stopped. */
+.ticker-track { display: flex; width: max-content; animation: ticker-scroll 40s linear infinite; }
+/* Pause for a pointer resting on it, and for a KEYBOARD focus -- not for
+   any focus. Clicking an item leaves that button focused, so :focus-within
+   froze the strip for good the moment anyone used it. */
+.ticker:hover .ticker-track,
+.ticker:has(:focus-visible) .ticker-track { animation-play-state: paused; }
 @keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .ticker-row { display: flex; }
 .ticker-item {
@@ -1834,3 +1846,62 @@ a.dim-axis-row:hover { background: var(--hover); }
   .trend-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   .trend-dot { opacity: 1; animation: none; }
 }
+
+/* An event in the strip: what one of the site's own figures just did.
+   Quieter than a score item -- it is prose, not a number to compare --
+   with a rule before it so the eye reads it as a separate kind of thing.
+   A band change is the one line here anyone might act on, so it alone
+   carries the accent. */
+.ticker-event {
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 9px 16px; border-right: 1px solid var(--hair);
+  font-family: var(--font-mono); font-size: var(--t-caption); color: var(--slate);
+}
+.ticker-event::before { content: "▸"; color: var(--hair-strong); }
+.ticker-event.is-band { color: var(--ink); }
+.ticker-event.is-band::before { content: "◆"; color: var(--accent); }
+
+/* ============================================================
+   WHAT LANDS NEXT, AND WHAT WAS JUST DECIDED
+   Two columns of first-hand announcements: the ONS release calendar and
+   the ECB's press feed. Deliberately plain -- a date, a title, and who
+   published it. The colour is spent on the date, because "tomorrow" is
+   the part a reader is scanning for.
+   ============================================================ */
+.news-band {
+  display: grid; gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 760px) { .news-band { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+.news-col {
+  background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: var(--card-radius); padding: 16px 18px;
+}
+.news-head {
+  margin: 0 0 10px; font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
+}
+.news-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.news-col li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px;
+  align-items: baseline; padding-top: 10px; border-top: 1px solid var(--hair);
+}
+.news-col li:first-child { padding-top: 0; border-top: 0; }
+.news-when {
+  font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 600;
+  color: var(--status-live); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.news-link {
+  font-size: var(--t-small); color: var(--ink); text-decoration: underline;
+  text-decoration-color: var(--hair-strong); text-underline-offset: 3px;
+}
+.news-link:hover { color: var(--accent); text-decoration-color: var(--accent); }
+.news-src {
+  grid-column: 2; font-family: var(--font-mono); font-size: var(--t-micro); color: var(--slate);
+}
+.news-empty { margin: 0; font-size: var(--t-small); color: var(--slate); }
+
+/* The same announcements, one line each, in the strip. */
+.ticker-event.is-feed { color: var(--ink-soft); gap: 6px; }
+.ticker-event.is-feed::before { content: "●"; color: var(--status-live); font-size: var(--t-micro); }
+.ticker-feed-title { color: var(--slate); }

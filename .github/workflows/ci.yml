@@ -65,7 +65,11 @@ jobs:
   scoring:
     name: Scoring correctness
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 20, not 10. This job grew: it installs Chromium, builds the site and
+    # runs five browser checks over eleven pages on top of ~25 offline
+    # ones. On 16 September it crossed ten minutes and GitHub cancelled it
+    # mid-layout-check -- which reads as a red build caused by nothing.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -281,6 +285,21 @@ jobs:
       # nothing threw, so no other check could see it.
       - name: The world map draws no stripes
         run: npx tsx scripts/test-map-seam.ts
+
+      # The strip along the top now carries the site's own figures moving.
+      # Two ways that goes wrong and neither throws: a rounding artefact
+      # printed as a change, and a three-week-old move scrolling as if it
+      # were this morning -- which is what makes a site look abandoned.
+      - name: The ticker only reports real, recent changes
+        run: npx tsx scripts/test-ticker-events.ts
+
+      # Two outside feeds reach the homepage now -- the ONS release
+      # calendar and the ECB press feed -- and neither is scored, which is
+      # exactly why they need pinning: nothing downstream would notice a
+      # speech printed as a rate decision, or a release that already
+      # happened shown as "next".
+      - name: The announcements band says only what those feeds said
+        run: npx tsx scripts/test-news-feeds.ts
 
       # THE ONE THAT WOULD HAVE CAUGHT "SWEDEN CONTRIBUTES 0".
       #

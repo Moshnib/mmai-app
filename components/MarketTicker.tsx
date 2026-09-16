@@ -1,10 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Flag from "@/components/Flag";
 import { colorForScore } from "@/lib/indicators";
 import { scoreMarketV2, type MarketData } from "@/lib/markets";
 import { HISTORY } from "@/lib/history";
 import { computeMmai } from "@/lib/composite";
+import { fetchAllWeeklyChanges } from "@/lib/weeklyChanges";
+import { buildTickerEvents, type TickerEvent } from "@/lib/tickerEvents";
+import type { FeedItem } from "@/lib/fetchers/newsFeeds";
 
 /** Last full year's score for a market, so the strip can say which way it
  *  has moved rather than only where it stands. Computed from the same
@@ -43,6 +47,34 @@ export default function MarketTicker({
   current: string | null;
   onSelect: (code: string) => void;
 }) {
+  // What the site's own figures have done lately. Five at most: a
+  // quarterly source can move every market at once, and eight lines of
+  // the same indicator turn the strip into a list rather than a feed. Its own query rather
+  // than a prop: the strip renders above everything and should not wait
+  // on the page's market load, and an empty result is a perfectly good
+  // answer -- then the strip is just the scores, as before.
+  const [events, setEvents] = useState<TickerEvent[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchAllWeeklyChanges()
+      .then((r) => { if (!cancelled) setEvents(buildTickerEvents(r, Date.now(), 5)); })
+      .catch(() => { /* the strip simply carries no events */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  // The same two feeds the news band shows, in one line each. Served
+  // by this site's own route because neither the ECB nor the ONS sends
+  // the CORS header a browser would need to read them directly.
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/announcements")
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => { if (!cancelled && Array.isArray(j.items)) setFeed(j.items.slice(0, 3)); })
+      .catch(() => { /* the strip simply carries no announcements */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const items = markets.map((m) => {
     const { percentile } = scoreMarketV2(m);
     const prev = lastFullYear(m.code);
@@ -52,6 +84,18 @@ export default function MarketTicker({
 
   const row = (key: string, ariaHidden: boolean) => (
     <div className="ticker-row" key={key} aria-hidden={ariaHidden || undefined}>
+      {feed.map((f) => (
+        <span className="ticker-event is-feed" key={f.url}>
+          {f.kind === "upcoming" ? "NEXT" : f.source}
+          <span className="ticker-feed-title">{f.title}</span>
+        </span>
+      ))}
+      {events.map((e) => (
+        <span className={`ticker-event${e.kind === "band" ? " is-band" : ""}`} key={`${e.marketCode}-${e.text}`}>
+          <Flag code={e.marketCode} size={15} />
+          {e.text}
+        </span>
+      ))}
       {items.map(({ m, percentile, delta, prevYear }) => {
         const label = percentile == null ? "N/A" : percentile.toFixed(1);
         const dir = delta == null ? null : delta >= 0 ? "up" : "down";

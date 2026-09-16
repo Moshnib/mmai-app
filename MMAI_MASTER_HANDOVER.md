@@ -1948,3 +1948,47 @@ navy left in it, keeping the site's own identity — with the panels, hairlines,
 hover and track greys re-tuned to match (they are navy-tinted, and on a
 pure black they would have read as blue boxes floating on black). Gold is
 now 9.32:1, the weakest point of the score ramp 5.22:1.
+
+## 30. The ticker carries news, from the institutions themselves (2026-09-16)
+
+The owner asked whether the ticker could carry news, and whether an API
+existed for it. General news APIs were researched and rejected: nearly
+all forbid republishing headlines or want a contract, which breaks this
+project’s rule of clean, already-granted licences. Three things shipped
+instead, all first-hand.
+
+**1. The site’s own figures as events** (`lib/tickerEvents.ts`). Two stored
+readings become one line: a band change ("Japan moved up into Above
+average") or a figure that moved ("UK inflation 2.9% → 3.1%"). Band
+changes win. Age gate 14 days, one line per market, five at most — BIS
+published government debt on 16 September and every market moved the same
+day, filling the strip with nine near-identical lines.
+
+**2. Two outside feeds** (`lib/fetchers/newsFeeds.ts`):
+- **ONS release calendar**, upcoming only, filtered to inflation, labour
+  market, GDP and public sector finances. Open Government Licence v3.0,
+  which grants commercial use with attribution.
+- **ECB press feed**, filtered to `/press/pr/` and the monetary policy
+  statement. The feed is mostly speeches (eleven of fifteen items the day
+  this was written); a speech is a person’s view, not a decision, so they
+  are dropped. ECB terms: reuse permitted, the ECB must be cited — which
+  is why every rendered item carries "ECB".
+Both are listed on the Sources page, marked "announcements — not scored".
+
+**3. `/api/announcements` + `components/NewsBand.tsx`**: a route with a
+15-minute cache (neither feed sends CORS headers, so the browser cannot
+read them directly), and a two-column band on the homepage — "Coming up"
+and "Just announced". **Nothing has to be run for it to stay current:** no
+cron, no table, no manual step. If both feeds are unreachable the band
+renders nothing rather than something stale.
+
+**Rejected and worth remembering:** Bank of England news (terms require
+written permission for commercial reuse — and the owner’s rule is no
+emails to institutions); BLS and RBA (both 403 automated requests);
+general and AI news (off-mission for a site whose claim is that every
+line traces to the institution that published it).
+
+Tests: `test-ticker-events.ts` and `test-news-feeds.ts`, both on fixtures
+with a pinned clock, both in CI, both mutation-tested.
+`check-runtime-errors.ts` gained one scoped exception: the announcements
+fetch can still be in flight when that script closes the tab.
