@@ -24,8 +24,13 @@
 :root {
   --ink: #E9ECF1;           /* primary text on the navy ground */
   --ink-soft: #C5CCD7;      /* secondary text */
-  --paper: #101826;         /* page background, deep navy */
-  --white: #131D2E;         /* card surfaces (solid panels, not literal white) */
+  /* ALMOST BLACK, with a trace of navy left in it. The owner asked for
+     more contrast and wanted black; measured, every colour on the site
+     gains (gold 8.65 -> 9.32:1, the weakest score colour 4.85 -> 5.22),
+     and keeping a few points of blue in the ground is what stops the
+     site looking like every other black-and-grey dark theme. */
+  --paper: #0A0F1A;         /* page background, near-black navy */
+  --white: #0F1522;         /* card surfaces (solid panels, not literal white) */
   /* NAMED FOR WHAT THEY DO, NOT WHAT THEY ONCE WERE.
      These were --gold, --gold-deep, --gold-bg, --teal and --teal-bg. The
      site was gold once; the palette moved to cyan and violet and the names
@@ -69,12 +74,12 @@
   --t-h1: 34px;         /* page headings */
   --t-display: 46px;    /* score display */
   --t-hero: 52px;       /* the page headline, desktop end of its clamp */
-  --hair: #253247;          /* borders and rules */
-  --hair-strong: #34445E;   /* a border under the pointer */
-  --mid: #4A5A73;           /* centre lines on axes and tracks */
+  --hair: #202B3D;          /* borders and rules */
+  --hair-strong: #2E3B52;   /* a border under the pointer */
+  --mid: #45546B;           /* centre lines on axes and tracks */
   /* Kept as a name because forty call sites use it. It is no longer
      glass: a solid panel, the same as --card-bg. */
-  --glass: #131D2E;
+  --glass: #0F1522;
 
   /* One card system, per the design brief's consistency rules (§7, §37):
      every card on every page uses these three values rather than
@@ -82,10 +87,10 @@
      hand-rolled cards are being migrated onto .mmai-card over time. */
   --card-radius: 10px;
   --card-pad: 20px 22px;
-  --card-bg: #131D2E;
+  --card-bg: #0F1522;
 
-  --hover: #182438;         /* a surface under the pointer */
-  --track: #1F2A3D;         /* the empty part of a bar */
+  --hover: #141C2B;         /* a surface under the pointer */
+  --track: #19222F;         /* the empty part of a bar */
   --bar: #AEB8C8;           /* a bar that is not encoding a colour */
   /* A SELECTED CONTROL IS GOLD, NOT OFF-WHITE. The first pass filled it
      off-white and spent gold only on the score, which read as dry -- the
@@ -93,7 +98,7 @@
      fill with navy text is 8.65:1, and it makes "chosen" the warmest
      thing on the page, which is what the accent is for. */
   --on-bg: #D4B06A;         /* a selected control's fill */
-  --on-ink: #101826;        /* ...and its text */
+  --on-ink: #0A0F1A;        /* ...and its text */
   --on-bg-hover: #E0C088;   /* ...under the pointer */
   --glyph: #6F7D94;         /* a country silhouette that is not selected */
 

@@ -1920,3 +1920,31 @@ unappealing. Three changes:
   Measured before shipping: nothing under 4.60:1 on either surface, no
   green, and 39 dE clear of the gold accent so a score is never mistaken
   for "chosen". Map fills went 0.55 → 0.72 opacity.
+
+### 29.2 Movement, and a darker ground (2026-09-16)
+
+The owner said three times that the site felt dead, and each answer was
+more colour. It was not colour: nothing on the page ever moved.
+
+- **`components/MarketTicker.tsx`**: every market scrolling along the top
+  — flag, code, score in its ramp colour, and the move against the last
+  FULL year (computed through `computeMmai` on `lib/history.ts`, never
+  typed). Pauses on hover and on focus; each item is a real button.
+- **The score counts up** to itself in ~650ms (`ScoreDisplay`), and the
+  homepage **trend line draws itself in** (`pathLength={1}` + a dash
+  animation). Every setState sits inside the animation frame: the lint
+  rule forbidding setState in an effect body is right, and both of these
+  were rewritten because of it.
+- All of it stops under `prefers-reduced-motion`, and nothing is hidden
+  when it does — the ticker wraps and reads as a list.
+- **`check-palette.ts` now allows a gradient inside `mask-image`** (the
+  ticker fades its own edges; a mask paints no colour), and self-tests
+  that exception alongside the repeating-gradient one.
+
+**A darker ground.** The owner asked for black, for contrast. Measured
+first: every colour GAINS on a darker ground, so nothing had to change
+for legibility. The ground went to `#0A0F1A` — near-black with a trace of
+navy left in it, keeping the site's own identity — with the panels, hairlines,
+hover and track greys re-tuned to match (they are navy-tinted, and on a
+pure black they would have read as blue boxes floating on black). Gold is
+now 9.32:1, the weakest point of the score ramp 5.22:1.

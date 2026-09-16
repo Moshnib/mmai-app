@@ -184,7 +184,7 @@ ok("the closest pair is still distinguishable", closest.d >= 20, `${closest.pair
 // run against a rendered page. Checking it here fails in a second.
 // The CARD, not the page: the legend sits inside a card, and the navy card
 // (September 2026) is the lighter, stricter of the two grounds.
-const PAGE_BG = "#131D2E";
+const PAGE_BG = "#0F1522";
 const relLum = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   const v = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((x) => {

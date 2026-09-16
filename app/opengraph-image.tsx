@@ -23,7 +23,7 @@ export default function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#101826",
+          background: "#0A0F1A",
           padding: "72px 80px",
         }}
       >
@@ -52,7 +52,7 @@ export default function OpengraphImage() {
 
         {/* A printed rule with one gold segment -- the site's single accent,
             where a report would put its section mark. */}
-        <div style={{ display: "flex", height: 2, background: "#253247" }}>
+        <div style={{ display: "flex", height: 2, background: "#202B3D" }}>
           <div style={{ width: 120, height: 2, background: "#D4B06A" }} />
         </div>
       </div>
