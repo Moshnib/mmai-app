@@ -14,6 +14,7 @@ import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
 import StructuredData from "@/components/StructuredData";
 import LiveBar from "@/components/LiveBar";
+import MarketTicker from "@/components/MarketTicker";
 import CountryGlyph from "@/components/CountryGlyph";
 import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
@@ -262,6 +263,9 @@ export default function OverviewPage() {
           rendered into the initial HTML despite this being a client
           component, so a crawler that runs no JavaScript still sees it. */}
       <StructuredData dataset />
+      {/* Every market, passing along the top, whether or not the reader
+          has chosen one yet. The page had nothing on it that moved. */}
+      <MarketTicker markets={markets} current={current} onSelect={selectMarket} />
       <div className="hero">
         <div className="wrap">
           {/* The intro block, left-aligned like everything beneath it. */}

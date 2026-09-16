@@ -40,7 +40,14 @@ const RULES: Rule[] = [
   { name: "drop-shadow glow", pattern: /drop-shadow\(/, why: "no glow on marks or lines" },
   { name: "SVG blur", pattern: /feGaussianBlur/, why: "no glow inside diagrams either" },
   { name: "brightness filter", pattern: /brightness\(/, why: "colours are chosen to read as they are" },
-  { name: "CSS gradient", pattern: /(?<!repeating-)(linear|radial)-gradient\(/, why: "flat fills; a selected control is var(--on-bg)" },
+  {
+    name: "CSS gradient",
+    // A MASK is not a fill. The ticker fades its own edges with
+    // mask-image, which paints no colour at all -- it only decides where
+    // the strip is visible. Every other gradient stays banned.
+    pattern: /(?<!mask-image:\s*)(?<!repeating-)(linear|radial)-gradient\(/,
+    why: "flat fills; a selected control is var(--on-bg)",
+  },
   { name: "old deep violet", pattern: /#6D28D9/i, why: "the gradient button colour" },
   {
     name: "old violet tint",
@@ -136,8 +143,16 @@ for (const rule of RULES) {
   const sample = SAMPLES[rule.name];
   if (!sample || !rule.pattern.test(sample)) problems.push(`  rule "${rule.name}" does not match its own sample -- it can never fail`);
 }
-if (/(?<!repeating-)(linear|radial)-gradient\(/.test("repeating-linear-gradient(")) {
-  problems.push(`  rule "CSS gradient" matches repeating-linear-gradient, which the correlation key legitimately uses`);
+// The two gradients that are not fills, and must stay allowed.
+const gradientRule = RULES.find((r) => r.name === "CSS gradient")!.pattern;
+for (const allowed of [
+  "repeating-linear-gradient(",
+  ".ticker { mask-image: linear-gradient(90deg, transparent, #000 40px); }",
+  ".ticker { -webkit-mask-image: linear-gradient(90deg, transparent, #000 40px); }",
+]) {
+  if (gradientRule.test(allowed)) {
+    problems.push(`  rule "CSS gradient" matches ${JSON.stringify(allowed)}, which is legitimate`);
+  }
 }
 
 console.log(`\nChecking ${scanned} files for the retired palette\n`);
