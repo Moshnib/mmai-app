@@ -1673,3 +1673,72 @@ a.dim-axis-row:hover { background: var(--hover); }
 }
 .corr-table-row + .corr-table-row { border-top: 1px solid var(--hair); }
 .corr-table-head { font-weight: 700; color: var(--ink-soft); }
+
+/* ============================================================
+   THE SOURCES PAGE, AS SOMETHING THAT IS RUNNING
+
+   It is a register of live feeds and it read like a filing cabinet:
+   every status the same weight, every timestamp the same grey as the
+   licence text beside it. The owner asked for the feel of a terminal
+   you can watch. Nothing here is glow or gradient -- it is contrast,
+   monospace figures, and one slow pulse on the dot that says "live".
+   ============================================================ */
+.live-bar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  margin: 0 0 18px; padding: 10px 14px;
+  background: var(--card-bg); border: 1px solid var(--hair); border-radius: 8px;
+  font-family: var(--font-mono); font-size: var(--t-caption); color: var(--slate);
+}
+.live-word { color: var(--status-live); font-weight: 700; letter-spacing: .12em; }
+/* When the figures are the last known ones, the bar says so in the
+   missing-data grey rather than flashing a live dot at a reader. */
+.live-bar.is-stale .live-word { color: var(--slate); }
+.live-bar.is-stale .live-dot { background: var(--slate); animation: none; }
+.live-sep { color: var(--hair-strong); padding-right: 8px; }
+
+/* The dot that says a feed is live. It breathes rather than blinks:
+   a blink pulls the eye off the table, a slow fade reads as a heartbeat. */
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--status-live);
+  animation: src-pulse 2.4s ease-in-out infinite;
+}
+@keyframes src-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+
+.src-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 700;
+  letter-spacing: .08em; padding: 3px 9px; border-radius: 3px;
+  border: 1px solid transparent;
+}
+.src-badge-live { background: var(--status-live-bg); color: var(--status-live); border-color: rgba(143, 179, 224, 0.45); }
+.src-badge-manual { background: var(--status-manual-bg); color: var(--ink-soft); border-color: var(--hair-strong); }
+.src-badge-unavailable { background: transparent; color: var(--slate); border-color: var(--hair); }
+.src-cadence { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--slate); margin-left: 8px; }
+
+/* The figures. Monospace and tabular so the column lines up as it ticks,
+   and in full ink rather than grey -- this is the live part of the row. */
+.src-refreshed { display: grid; gap: 1px; }
+.live-when, .src-when {
+  font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 600;
+  color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .02em;
+}
+.live-ago, .src-ago { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--status-live); font-variant-numeric: tabular-nums; }
+.src-indicator { font-weight: 700; color: var(--ink); }
+
+.src-link {
+  color: var(--ink-soft); text-decoration: underline;
+  text-decoration-color: var(--hair-strong); text-underline-offset: 3px;
+  transition: color .15s ease, text-decoration-color .15s ease;
+}
+.src-link:hover { color: var(--accent); text-decoration-color: var(--accent); }
+.src-link > span { color: var(--slate); font-size: var(--t-micro); }
+.src-link:hover > span { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .src-link { transition: none; } }
+
+/* A row under the pointer, the way a terminal highlights the line you
+   are reading. */
+.sources-row { transition: background-color .12s ease; }
+.sources-row:hover { background: var(--hover); }
+@media (prefers-reduced-motion: reduce) { .sources-row { transition: none; } }

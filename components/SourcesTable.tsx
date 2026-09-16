@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Flag from "@/components/Flag";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { FetchStatus } from "@/lib/sources";
+import LiveBar from "@/components/LiveBar";
+import { formatAgo, formatWhen, useNow } from "@/lib/liveTime";
 
 // Structural, not the concrete SourceEntry type: this lets both
 // lib/sources.ts's SourceEntry[] and lib/gulfSources.ts's
@@ -55,17 +57,6 @@ interface FreshRow {
   fetched_at: string;
 }
 
-function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-    timeZoneName: "short",
-  });
-}
-
 export default function SourcesTable({
   groups,
   codeForName,
@@ -82,6 +73,17 @@ export default function SourcesTable({
   freshnessKeyColumn?: "market" | "country_code";
 }) {
   const [freshness, setFreshness] = useState<Record<string, string> | null>(null);
+  // The clock behind "14 min ago", shared with the homepage bar.
+  const now = useNow();
+
+  /** The newest refresh anywhere in this table, for the status line. */
+  const newest = useMemo(() => {
+    const all = Object.values(freshness ?? {}).sort();
+    return all.length ? all[all.length - 1] : null;
+  }, [freshness]);
+
+  const liveCount = groups.reduce((n, g) => n + g.entries.filter((e) => e.status === "live").length, 0);
+  const totalCount = groups.reduce((n, g) => n + g.entries.length, 0);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,21 +120,27 @@ export default function SourcesTable({
     };
   }, [freshnessTable, freshnessKeyColumn]);
 
-  function refreshedFor(groupName: string, entry: DisplayableSource): string {
-    if (entry.status === "unavailable") return "—";
-    if (entry.status !== "live") return "not live";
-    if (!freshness) return "—";
+  /** The raw stamp for a row, or null where there is nothing to show. */
+  function stampFor(groupName: string, entry: DisplayableSource): string | null {
+    if (entry.status !== "live" || !freshness) return null;
     if (groupName === "All markets") {
       const all = Object.values(freshness).sort();
-      return all.length ? formatWhen(all[all.length - 1]) : "—";
+      return all.length ? all[all.length - 1] : null;
     }
     const code = codeForName[groupName];
-    const stamp = code ? freshness[code] : undefined;
-    return stamp ? formatWhen(stamp) : "—";
+    return (code ? freshness[code] : undefined) ?? null;
   }
 
   return (
     <>
+      {/* THE PAGE SHOULD READ LIKE SOMETHING THAT IS RUNNING.
+          It is a register of live feeds, and it looked like a filing
+          cabinet: every status the same weight, every timestamp the same
+          grey as the licence text beside it. The owner asked for the feel
+          of a terminal you can watch. So: a status line that counts the
+          live feeds and names the last refresh, a LIVE badge with a
+          pulsing dot, and times that tick over as you read. */}
+      <LiveBar facts={[`${liveCount} of ${totalCount} feeds live`]} stamp={newest} />
       {groups.map((group) => (
         <div key={group.name} style={{ marginBottom: 28 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
@@ -153,16 +161,16 @@ export default function SourcesTable({
                 className="sources-row"
                 style={{ borderTop: i > 0 ? "1px solid var(--hair)" : undefined }}
               >
-                <span data-label="Indicator" style={{ fontWeight: 700, color: "var(--ink)" }}>{e.indicator}</span>
+                <span data-label="Indicator" className="src-indicator">{e.indicator}</span>
                 <span data-label="Institution" style={{ color: "var(--ink-soft)" }}>
                   {e.url ? (
                     <a
                       href={e.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: "var(--ink-soft)", textDecoration: "underline", textDecorationColor: "var(--hair)", textUnderlineOffset: 3 }}
+                      className="src-link"
                     >
-                      {e.institution} <span style={{ color: "var(--slate)", fontSize: 11 }}>↗</span>
+                      {e.institution} <span aria-hidden="true">↗</span>
                     </a>
                   ) : (
                     e.institution
@@ -173,30 +181,30 @@ export default function SourcesTable({
                   {e.note && <div style={{ fontSize: 11, fontStyle: "italic", color: "var(--accent-2)", marginTop: 2 }}>{e.note}</div>}
                 </span>
                 <span data-label="Status">
-                  <span
-                    style={{
-                      fontFamily: "IBM Plex Mono, monospace",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "3px 9px",
-                      borderRadius: 3,
-                      background: e.status === "live" ? "var(--status-live-bg)" : e.status === "manual" ? "var(--status-manual-bg)" : "rgba(255,255,255,0.06)",
-                      color: e.status === "live" ? "var(--status-live)" : e.status === "manual" ? "var(--accent-2)" : "var(--slate)",
-                    }}
-                  >
+                  <span className={`src-badge src-badge-${e.status}`}>
+                    {e.status === "live" && <i className="live-dot" aria-hidden="true" />}
                     {e.status === "live" ? "LIVE" : e.status === "manual" ? "MANUAL" : "UNAVAILABLE"}
                   </span>
                   {/* Audit M-5: "live" says the FETCHER works, not that the
                       figure is current. A World Bank annual series fetched
                       today is working, not new. Cadence separates the two. */}
                   {e.status === "live" && e.cadence && (
-                    <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)", marginLeft: 7 }}>
-                      {cadenceLabel(e.cadence)}
-                    </span>
+                    <span className="src-cadence">{cadenceLabel(e.cadence)}</span>
                   )}
                 </span>
-                <span data-label="Last refreshed" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: "var(--slate)" }}>
-                  {refreshedFor(group.name, e)}
+                <span data-label="Last refreshed" className="src-refreshed">
+                  {(() => {
+                    const stamp = stampFor(group.name, e);
+                    if (e.status === "unavailable") return "—";
+                    if (e.status !== "live") return "not live";
+                    if (!stamp) return "—";
+                    return (
+                      <>
+                        <span className="src-when">{formatWhen(stamp)}</span>
+                        {now !== null && <span className="src-ago">{formatAgo(stamp, now)}</span>}
+                      </>
+                    );
+                  })()}
                 </span>
               </div>
             ))}

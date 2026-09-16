@@ -13,6 +13,7 @@ import WeeklyFeed from "@/components/WeeklyFeed";
 import SubscribeForm from "@/components/SubscribeForm";
 import Flag from "@/components/Flag";
 import StructuredData from "@/components/StructuredData";
+import LiveBar from "@/components/LiveBar";
 import CountryGlyph from "@/components/CountryGlyph";
 import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
@@ -265,9 +266,18 @@ export default function OverviewPage() {
         <div className="wrap">
           {/* The intro block, left-aligned like everything beneath it. */}
           <div className="hero-centered">
-          <p className="eyebrow">
-            MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY · {dataSource === "live" ? "LIVE DATA" : "SHOWING LAST KNOWN FIGURES — LIVE DATA UNREACHABLE"}
-          </p>
+          <p className="eyebrow">MOSHNIB MACRO ANALYSIS INDEX · MEASURING THE PULSE OF THE ECONOMY</p>
+          {/* The page opens on something that is running: a breathing dot,
+              the market count, and a refresh time that ticks over while
+              the reader is on the page. The old line said "LIVE DATA" in
+              the eyebrow, in the same grey as everything else, which is a
+              claim rather than a sign of life. */}
+          <LiveBar
+            live={dataSource === "live"}
+            facts={[`${MARKET_COUNT_WORD_CAP.toLowerCase()} markets · rechecked three times a day`]}
+            stamp={lastUpdated}
+            staleLabel="LAST KNOWN FIGURES — LIVE DATA UNREACHABLE"
+          />
           {/* ORDER: hook, then explanation, then the choice.
               It used to run the other way about -- a refresh timestamp,
               then an explanation, then the headline the explanation was

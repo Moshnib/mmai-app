@@ -101,7 +101,21 @@ export function inflationTargetFor(market: string): number {
 //  ONE COLOUR RAMP, USED EVERYWHERE
 // ------------------------------------------------------------------
 
-const COLOR_STOPS = ["#E85A5A", "#F0975B", "#9B70F8", "#22D3EE"];
+/** THE SCORE RAMP. Clay red below the historical average, neutral at it,
+ *  blue above -- a diverging scale, which is what a percentile against a
+ *  record actually is.
+ *
+ *  It used to run red → orange → violet → cyan, four hues from the neon
+ *  palette the site retired in September 2026. On the navy ground those
+ *  middle stops went muddy: nine countries on the homepage map came out
+ *  brown and purple, which the owner reported as "not appealing".
+ *
+ *  Measured before it shipped, across the whole 0-100 sweep: nothing
+ *  under 4.60:1 on either surface, no green anywhere (channel AND hue),
+ *  and the closest point to the gold accent is 39 dE away, so a scored
+ *  colour is never mistaken for "this is the one you chose".
+ *  scripts/check-palette-contrast.ts sweeps it on every build. */
+const COLOR_STOPS = ["#CF6660", "#A9AEBC", "#63C3E6"];
 /** The colour of a figure that does not exist.
  *
  *  Was a darker grey (6B7086), which measured 3.85:1 on a card and 4.08:1 on the page --

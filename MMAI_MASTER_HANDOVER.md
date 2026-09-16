@@ -1894,3 +1894,29 @@ back, deliberately short of the full mockup:
 
 What did NOT come back: gradients, glow, glass. `check-palette.ts` still
 fails the build on all three, and every contrast check still passes.
+
+### 29.1 Signs of life, and a score ramp that suits the ground (same PR)
+
+The owner asked for the Sources page to read "like a live terminal of a
+stock exchange", said the homepage felt dead, and called the map colours
+unappealing. Three changes:
+
+- **`components/LiveBar.tsx` + `lib/liveTime.ts`**: a breathing dot, the
+  word LIVE, the facts that belong beside it, and a refresh time that
+  TICKS — "22 h 07 m ago", moving every 30 seconds. On the homepage hero
+  and at the top of Sources. The clock is `useSyncExternalStore` with a
+  null server snapshot (no hydration mismatch) and a tick-bucketed client
+  snapshot (no render loop); an effect that called setState failed lint
+  for exactly that reason.
+- **The Sources table reads like a register that is running**: LIVE badge
+  with its own pulsing dot, timestamps in full ink and mono tabular
+  figures with the relative time beneath, institution links that turn
+  gold on hover, and a row highlight under the pointer. The pulse stops
+  under prefers-reduced-motion.
+- **The score ramp was retuned** (`lib/indicators.ts`): clay red → neutral
+  → blue, a diverging scale, which is what a percentile against a record
+  is. The old red → orange → violet → cyan was left over from the neon
+  palette and went muddy on navy — the map came out brown and purple.
+  Measured before shipping: nothing under 4.60:1 on either surface, no
+  green, and 39 dE clear of the gold accent so a score is never mistaken
+  for "chosen". Map fills went 0.55 → 0.72 opacity.
