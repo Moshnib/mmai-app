@@ -1834,3 +1834,17 @@ a.dim-axis-row:hover { background: var(--hover); }
   .trend-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   .trend-dot { opacity: 1; animation: none; }
 }
+
+/* An event in the strip: what one of the site's own figures just did.
+   Quieter than a score item -- it is prose, not a number to compare --
+   with a rule before it so the eye reads it as a separate kind of thing.
+   A band change is the one line here anyone might act on, so it alone
+   carries the accent. */
+.ticker-event {
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 9px 16px; border-right: 1px solid var(--hair);
+  font-family: var(--font-mono); font-size: var(--t-caption); color: var(--slate);
+}
+.ticker-event::before { content: "▸"; color: var(--hair-strong); }
+.ticker-event.is-band { color: var(--ink); }
+.ticker-event.is-band::before { content: "◆"; color: var(--accent); }

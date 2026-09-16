@@ -282,6 +282,13 @@ jobs:
       - name: The world map draws no stripes
         run: npx tsx scripts/test-map-seam.ts
 
+      # The strip along the top now carries the site's own figures moving.
+      # Two ways that goes wrong and neither throws: a rounding artefact
+      # printed as a change, and a three-week-old move scrolling as if it
+      # were this morning -- which is what makes a site look abandoned.
+      - name: The ticker only reports real, recent changes
+        run: npx tsx scripts/test-ticker-events.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT "SWEDEN CONTRIBUTES 0".
       #
       # The Learn page ranked every scored market by how many rows it
