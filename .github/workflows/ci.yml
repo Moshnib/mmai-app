@@ -65,7 +65,11 @@ jobs:
   scoring:
     name: Scoring correctness
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 20, not 10. This job grew: it installs Chromium, builds the site and
+    # runs five browser checks over eleven pages on top of ~25 offline
+    # ones. On 16 September it crossed ten minutes and GitHub cancelled it
+    # mid-layout-check -- which reads as a red build caused by nothing.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
