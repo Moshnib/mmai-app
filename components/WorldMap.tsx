@@ -127,7 +127,7 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
               <path
                 d={c.d}
                 fill={band.color}
-                fillOpacity={isSelected ? 1 : 0.88}
+                fillOpacity={isSelected ? 1 : 0.94}
                 stroke={isSelected ? "var(--accent)" : "var(--paper)"}
                 strokeWidth={isSelected ? 1.6 : 0.6}
                 style={{ cursor: "pointer", transition: "fill-opacity 0.15s ease" }}

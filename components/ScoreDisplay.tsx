@@ -52,15 +52,20 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
   const [shown, setShown] = useState<number | null>(score === null ? null : 0);
   useEffect(() => {
     const quiet = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const DURATION = 650;
+    // 1.4s, not 650ms: at two thirds of a second the count was over
+    // before the eye had settled on it. The owner asked for it slower,
+    // and a figure that takes a beat to arrive is the point of counting
+    // it up at all.
+    const DURATION = 1400;
     let raf = 0;
     const start = performance.now();
     const tick = (t: number) => {
       if (score === null) { setShown(null); return; }
       if (quiet) { setShown(score); return; }
       const p = Math.min(1, (t - start) / DURATION);
-      // Ease out: quick at first, settling onto the real figure.
-      setShown(score * (1 - Math.pow(1 - p, 3)));
+      // Ease out, fourth power: it runs, then settles onto the real
+      // figure rather than stopping dead on it.
+      setShown(score * (1 - Math.pow(1 - p, 4)));
       if (p < 1) raf = requestAnimationFrame(tick);
       else setShown(score);
     };
