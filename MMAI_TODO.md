@@ -1,5 +1,5 @@
 # MMAI — To-Do List
-*Last updated: 2026-08-26 (Gulf Watch: fully live, debugged, and expanded with history/charts)*
+*Last updated: 2026-09-16 (Editorial Dark restyle live; map and Learn-page fixes live)*
 
 ## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
 While testing Gulf Watch's new refresh job, discovered the password
@@ -138,3 +138,22 @@ and Gulf Watch content on the "Learn More" page. Along the way:
 - Never commit or push without saying "GO" first.
 - The full technical handover doc (if a new chat ever needs it) is the
   file already sent to you: `MMAI_MASTER_HANDOVER.md`.
+
+## ✅ Since 2026-09-12
+- [x] Norway and South Korea added — nine scored markets.
+- [x] The Observatory (Denmark, Finland): tracked, deliberately unscored.
+- [x] SEO: canonical URLs, social cards, structured data.
+- [x] "Editorial Dark" restyle across every page, email and social card.
+- [x] Homepage map stripes fixed; country cards evened up; Learn-page
+      formulas explained in plain words with the exact formula behind a
+      button; three false statements corrected.
+
+## ▶️ Next up (owner has already chosen these)
+- [ ] Homepage additions: strongest/weakest part, yearly trend line since
+      2019, how recent each figure is, and an "updated" status line.
+- [ ] More Observatory countries — Poland, Czechia and Hungary are the
+      strongest candidates (see §28 of the handover for the full list that
+      was tested live).
+
+> The current state of the whole project, in one page, is §28 of
+> MMAI_MASTER_HANDOVER.md. Start there in a new chat.

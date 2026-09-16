@@ -1,7 +1,11 @@
 # MMAI — MASTER HANDOVER DOCUMENT
 
-**Last updated:** 2026-08-26
-**Reflects commit:** `a20e596` ("Add Gulf Watch's currency-stability pillar (FX reserves + current account)")
+**Last updated:** 2026-09-16
+**Reflects commit:** `b07c8a7` ("The homepage map drew stripes across the world, and the Learn page described a retired method")
+
+> **START HERE IF THIS IS A NEW CHAT:** read §28 first — it is the whole
+> current state on one page: what is live, what is open, and how to pick up.
+> Everything before it is history, newest section last.
 **Purpose:** Paste or upload this entire document into a new chat with Claude Code to continue the MMAI project with zero loss of context.
 
 > **New since 2026-08-25:** Gulf Watch's entire data layer is now built and verified live — all 6 countries have a complete 3-pillar dataset (cost of living, currency stability, and real estate where available) refreshing daily, confirmed by checking actual database rows after a manual trigger, not just a success response. **Nothing is visible on the site yet**, since the page itself doesn't exist. Full details in **§11**. Also: a real security gap predating Gulf Watch entirely (`CRON_SECRET` silently not being enforced on both refresh endpoints) was found and fixed on 2026-08-26 — see §11.6.
@@ -1793,3 +1797,77 @@ the debt note described the retired five-pillar 60% rule ("full marks",
 "gentle penalty"); "for the current six" (nine are measured); and Gulf
 Watch's "no policy-rate feed / 70% pillar coverage" (Saudi and Kuwait are
 live via BIS; the real reason is labour-market comparability).
+
+## 28. WHERE THINGS STAND — 16 September 2026 (read this first)
+
+Everything below was true at commit `b07c8a7`, with `main` clean and
+deployed. Sections 1–27 are history; this is the state.
+
+### What is live
+- **Nine scored markets:** US, Euro Area, Canada, UK, Japan, Australia,
+  Sweden, Norway, South Korea. Scored by the three-dimension composite in
+  `lib/composite.ts` (Conditions, Direction, Capacity), published as a
+  percentile against **148 market-years from six economies, 2000–2025** —
+  a frozen reference set that stays six however many markets are scored.
+- **Gulf Watch:** six Gulf countries, raw indicators, deliberately no
+  score (labour-market figures are not comparable). Saudi and Kuwait carry
+  a BIS policy rate.
+- **The Observatory:** Denmark and Finland, tracked with real figures and
+  no score, each with a published reason. Sources: ECB HICP, Eurostat
+  (unemployment, GDP, 10-year yields), BIS (policy rate, debt).
+- **Look and feel:** "Editorial Dark" (§26, §27) — navy ground, one gold
+  accent for what is current or chosen, Source Serif headings, IBM Plex
+  Sans body, Plex Mono figures. No gradients, glow, glass or Space
+  Grotesk; `scripts/check-palette.ts` fails the build if they return.
+- **Refresh:** GitHub Actions, three times daily, writing to Supabase.
+  OECD is unreachable from Vercel, so Japan and Korea come via a relay
+  step in the workflow (§25).
+
+### Open, and waiting on the owner
+1. **Homepage additions the owner already chose** (mocked up, not built):
+   strongest/weakest dimension line; a yearly score trend 2019–2025 plus
+   today (no monthly score history exists — use `lib/history.ts` through
+   `computeMmai`); the period each figure describes under its bar; an
+   "Updated … · 9 markets · rechecked daily" status line.
+2. **More Observatory countries.** Probed live on 16 September against the
+   existing sources, so no new licences are needed:
+   - Full data today: **Poland, Czechia, Hungary** (own central banks);
+     Germany, France, Italy, Spain, Netherlands, Belgium, Austria,
+     Ireland, Portugal (euro members, ECB rate). Luxembourg works but its
+     GDP figure runs ~6 months behind.
+   - Everything except BIS debt: Romania, Bulgaria, Croatia, Slovakia,
+     Slovenia, Estonia, Latvia, Lithuania, Cyprus, Malta.
+   - **Greece works but Eurostat files it under `EL`, not `GR`.**
+   - Switzerland and Iceland need new sources (no ECB HICP, no Eurostat
+     10-year yield).
+3. **A tenth scored market.** Czechia is the strongest candidate. Israel
+   was declined by the owner. Brazil has the best data found anywhere but
+   its licence is share-alike (ODbL) and needs a decision.
+4. **Owner-only tasks:** buy the domain, then set `NEXT_PUBLIC_SITE_URL`
+   in Vercel and the `SITE_URL` repo variable; verify the Resend sending
+   domain so band-change alerts can actually send; take a database backup.
+
+### How this project is run (do not skip)
+- The owner is **not a developer**. Explain in plain language, and never
+  hand over a diff to judge.
+- **A reviewer reads every plan and every diff before merge** — Fable
+  when it has credits, otherwise Opus. Both gates: before writing code,
+  and before merging.
+- **Commit and push only when the owner says so.** Before merging, assert
+  every check is SUCCESS (`gh pr view <n> --json statusCheckRollup`).
+- **Verify against the live source before wiring anything in** — this rule
+  has caught a dead Eurostat dataset, the wrong Swedish inflation series,
+  and three rotten OECD series.
+- **Every new test gets a mutation run**: break the thing on purpose and
+  confirm the test fails.
+- Local checks: `npx tsc --noEmit`, `npm run lint`, `npm run build`, then
+  the scripts in `.github/workflows/ci.yml`. Five of them need a local
+  server: `npx next start -p 3123` (on Windows, stop it by port, not by
+  name).
+
+### The files that carry the context
+- `MMAI_MASTER_HANDOVER.md` (this file) — the full history, section by
+  section, and this state page.
+- `MMAI_TODO.md` — the plain-language to-do list.
+- `MMAI_CHANGE_LOG.md` — what changed and why, per change.
+- `AGENTS.md` / `CLAUDE.md` — instructions for the coding assistant.
