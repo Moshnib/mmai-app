@@ -47,8 +47,10 @@
   /* Source status, used by the Sources table and the Trends panel. Kept
      separate from --accent, and since September 2026 a different colour:
      "live" is a fact about a source, not something chosen or current. */
-  --status-live: #8FB3E0;
-  --status-live-bg: rgba(143, 179, 224, 0.12);
+  /* Brighter than the surrounding text on purpose: this is the colour
+     that says something is happening right now. */
+  --status-live: #9FD8F7;
+  --status-live-bg: rgba(159, 216, 247, 0.12);
   --status-manual-bg: rgba(197, 204, 215, 0.10);
   --slate: #9BA6B7;         /* muted/meta text */
 
@@ -91,6 +93,7 @@
 
   --hover: #141C2B;         /* a surface under the pointer */
   --track: #19222F;         /* the empty part of a bar */
+  --land: #1B2636;          /* countries the index does not score */
   --bar: #AEB8C8;           /* a bar that is not encoding a colour */
   /* A SELECTED CONTROL IS GOLD, NOT OFF-WHITE. The first pass filled it
      off-white and spent gold only on the score, which read as dry -- the
@@ -565,6 +568,14 @@ h1.headline {
 }
 .compare-chip .cc-score { grid-column: 2; font-family: var(--font-num); font-weight: 500; font-size: var(--t-h2); line-height: 1.1; font-variant-numeric: tabular-nums; }
 .compare-chip .cc-band { grid-column: 2; font-size: var(--t-micro); color: var(--slate); }
+
+/* The key to the map's colours: five steps, ends named. */
+.map-scale {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-top: 12px; font-family: var(--font-mono); font-size: var(--t-micro); color: var(--slate);
+}
+.map-scale-swatches { display: inline-flex; gap: 3px; }
+.map-scale-swatches i { width: 26px; height: 8px; border-radius: 2px; }
 
 /* ===== The world map, beneath the cards ===== */
 .world-map {
@@ -1694,22 +1705,42 @@ a.dim-axis-row:hover { background: var(--hover); }
   background: var(--card-bg); border: 1px solid var(--hair); border-radius: 8px;
   font-family: var(--font-mono); font-size: var(--t-caption); color: var(--slate);
 }
-.live-word { color: var(--status-live); font-weight: 700; letter-spacing: .12em; }
+.live-word { color: var(--status-live); font-weight: 700; letter-spacing: .14em; }
 /* When the figures are the last known ones, the bar says so in the
    missing-data grey rather than flashing a live dot at a reader. */
 .live-bar.is-stale .live-word { color: var(--slate); }
-.live-bar.is-stale .live-dot { background: var(--slate); animation: none; }
+.live-bar.is-stale .live-dot { background: var(--slate); box-shadow: none; animation: none; }
+.live-bar.is-stale .live-dot::after { display: none; }
 .live-sep { color: var(--hair-strong); padding-right: 8px; }
 
-/* The dot that says a feed is live. It breathes rather than blinks:
-   a blink pulls the eye off the table, a slow fade reads as a heartbeat. */
+/* The dot that says a feed is live. It breathes rather than blinks: a
+   blink pulls the eye off the table, a slow fade reads as a heartbeat.
+   The halo is deliberate and it is the only one on the site -- 7px of
+   light around a 7px dot, which is what a lit indicator looks like. The
+   glow that made the old site look generated was a 34px aura behind a
+   46px numeral, which is a different thing entirely. */
 .live-dot {
+  position: relative;
   width: 7px; height: 7px; border-radius: 50%; flex: none;
   background: var(--status-live);
+  box-shadow: 0 0 7px rgba(159, 216, 247, 0.65); /* allow-glow: the live indicator */
   animation: src-pulse 2.4s ease-in-out infinite;
 }
-@keyframes src-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+/* A ring that expands and fades out of it, like a signal leaving. */
+.live-dot::after {
+  content: ""; position: absolute; inset: -2px; border-radius: 50%;
+  border: 1px solid var(--status-live);
+  animation: live-ring 2.4s ease-out infinite;
+}
+@keyframes live-ring {
+  0% { transform: scale(0.7); opacity: .7; }
+  70%, 100% { transform: scale(2.1); opacity: 0; }
+}
+@keyframes src-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+  .live-dot::after { animation: none; opacity: 0; }
+}
 
 .src-badge {
   display: inline-flex; align-items: center; gap: 6px;
