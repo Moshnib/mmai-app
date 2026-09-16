@@ -1871,3 +1871,26 @@ deployed. Sections 1–27 are history; this is the state.
 - `MMAI_TODO.md` — the plain-language to-do list.
 - `MMAI_CHANGE_LOG.md` — what changed and why, per change.
 - `AGENTS.md` / `CLAUDE.md` — instructions for the coding assistant.
+
+## 29. Warmer, on the owner’s judgement (2026-09-16)
+
+The owner compared the live site with the original mockup and said the
+tightened version read "a bit dry". Four of direction 3’s warmer moves came
+back, deliberately short of the full mockup:
+
+- **A selected control is GOLD, not off-white** (`--on-bg`), so "chosen" is
+  the warmest thing on the page — selected market, active nav item, active
+  filter, primary button. Navy on gold is 8.65:1.
+- **One accented phrase per headline**: `.hl` — italic, gold, used on the
+  homepage and About hero only.
+- **Section eyebrows are gold** rather than grey.
+- **Fraunces** replaces Source Serif for headlines (it carries the true
+  italic the accented phrase needs).
+- **Softer shapes**: card radius 6 → 10px, controls 4 → 6/8px, a little more
+  padding, and the 2px hover lift back on cards (under
+  prefers-reduced-motion: no-preference).
+- The band pill beside the score is gold-tinted again, keeping the ramp
+  swatch that says which band it is.
+
+What did NOT come back: gradients, glow, glass. `check-palette.ts` still
+fails the build on all three, and every contrast check still passes.

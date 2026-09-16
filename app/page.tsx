@@ -280,7 +280,7 @@ export default function OverviewPage() {
               belongs to, so this was a second copy of it in the one place
               it could not mean anything yet. */}
           <h1 className="headline">
-            Is today&apos;s macro environment supportive — or working against you?
+            Is today&apos;s macro environment <span className="hl">supportive</span> — or working against you?
           </h1>
           {/* One plain answer to "what even is this", for a visitor who
               has never heard of MMAI. It also absorbs the old strapline

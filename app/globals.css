@@ -80,22 +80,30 @@
      every card on every page uses these three values rather than
      re-inventing a radius/padding/border per component. Existing
      hand-rolled cards are being migrated onto .mmai-card over time. */
-  --card-radius: 6px;
-  --card-pad: 18px 20px;
+  --card-radius: 10px;
+  --card-pad: 20px 22px;
   --card-bg: #131D2E;
 
   --hover: #182438;         /* a surface under the pointer */
   --track: #1F2A3D;         /* the empty part of a bar */
   --bar: #AEB8C8;           /* a bar that is not encoding a colour */
-  --on-bg: #E9ECF1;         /* a selected control's fill */
+  /* A SELECTED CONTROL IS GOLD, NOT OFF-WHITE. The first pass filled it
+     off-white and spent gold only on the score, which read as dry -- the
+     owner compared it with the warmer mockup and preferred that one. Gold
+     fill with navy text is 8.65:1, and it makes "chosen" the warmest
+     thing on the page, which is what the accent is for. */
+  --on-bg: #D4B06A;         /* a selected control's fill */
   --on-ink: #101826;        /* ...and its text */
+  --on-bg-hover: #E0C088;   /* ...under the pointer */
   --glyph: #6F7D94;         /* a country silhouette that is not selected */
 
   /* THE TYPE ROLES. Source Serif for headings -- a text face made for
      long reading, not a display face chosen to look expensive. IBM Plex
      Sans for everything a reader reads, and Plex Mono for figures, so
      digits line up and a number never looks like prose. */
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  /* Fraunces, for headlines with some character in them. It carries a
+     true italic, which the accented phrase in the hero headline needs. */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
   --font-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --font-num: "IBM Plex Mono", ui-monospace, monospace;
@@ -198,7 +206,7 @@ body {
 .brand .dot { width: 8px; height: 8px; border-radius: 1px; background: var(--accent); }
 .navlinks { display: flex; gap: 2px; font-size: var(--t-small); font-weight: 600; }
 .navlink {
-  padding: 8px 10px; border-radius: 4px; color: var(--slate); white-space: nowrap;
+  padding: 8px 10px; border-radius: 6px; color: var(--slate); white-space: nowrap;
   text-decoration: none; background: none; border: none; cursor: pointer;
   font-family: inherit; font-size: var(--t-small); font-weight: 600;
 }
@@ -252,7 +260,7 @@ body {
 .hero { padding: 48px 0 36px; position: relative; z-index: 1; }
 .eyebrow {
   font-family: var(--font-mono); font-size: var(--t-caption); font-weight: 600;
-  color: var(--slate);
+  color: var(--accent);
   letter-spacing: 2px; margin: 0 0 14px;
 }
 h1.headline {
@@ -288,6 +296,11 @@ h1.headline {
    so the country tabs on Gulf Watch keep their compact sizing. */
 .hero-centered .tabs { display: flex; width: 100%; }
 .hero-centered .tabs .tab { flex: 1 1 150px; justify-content: center; }
+/* The one phrase that carries the accent, in the hero headline and
+   nowhere else on a page. Italic and gold: the warmest thing in the
+   type, and still one accent doing one job. */
+.hl { color: var(--accent); font-style: italic; }
+
 .sub { font-size: var(--t-lead); color: var(--slate); max-width: 60ch; line-height: 1.6; margin: 0 0 28px; }
 
 .tabs {
@@ -295,7 +308,7 @@ h1.headline {
   border: 1px solid var(--hair); border-radius: 6px; padding: 4px; gap: 2px; margin-bottom: 30px;
 }
 .tab {
-  padding: 9px 16px; border-radius: 4px; font-size: var(--t-small); font-weight: 600;
+  padding: 9px 16px; border-radius: 6px; font-size: var(--t-small); font-weight: 600;
   color: var(--slate); cursor: pointer; border: none; background: none; font-family: inherit;
   /* min-height (not just padding) so the flag icon + text inside some
      .tab buttons don't stretch it past 44px while a plain-text one
@@ -345,7 +358,7 @@ h1.headline {
      without padding alone having to guarantee it. */
   min-height: 44px;
   padding: 9px 16px 9px 13px;
-  border-radius: 4px;
+  border-radius: 8px;
   border: 1px solid var(--hair);
   background: transparent;
   color: var(--ink-soft);
@@ -367,7 +380,6 @@ h1.headline {
   background: var(--on-bg);
   border-color: var(--on-bg);
   color: var(--on-ink);
-  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -511,6 +523,13 @@ h1.headline {
    link's defaults, so the reset is explicit. */
 .compare-chip { font: inherit; color: inherit; cursor: pointer; width: 100%; }
 .compare-chip:hover { border-color: var(--hair-strong); background: var(--hover); }
+/* A small lift, for readers who have not asked for less movement. It was
+   removed with the gradients and glow; it is neither, and without it the
+   cards felt inert. */
+@media (prefers-reduced-motion: no-preference) {
+  .compare-chip, .pillar-card, .pillar-select-card { transition: border-color .18s ease, background-color .18s ease, transform .18s ease; }
+  .compare-chip:hover, .pillar-card:hover, .pillar-select-card:hover { transform: translateY(-2px); }
+}
 .compare-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* The chosen market. Without this the strip gives no sign of which one
@@ -616,7 +635,7 @@ h1.headline {
 .selector-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
 .selector-btn {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 16px; border-radius: 4px; cursor: pointer;
+  padding: 10px 16px; border-radius: 6px; cursor: pointer;
   font-family: inherit; font-size: var(--t-small); font-weight: 600;
   border: 1px solid var(--hair); background: var(--card-bg); color: var(--slate);
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
@@ -756,13 +775,13 @@ h1.headline {
 .btn-quiet {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 .btn-primary,
 .btn-secondary { padding: 11px 22px; font-size: var(--t-small); }
 .btn-primary { background: var(--on-bg); color: var(--on-ink); border: 1px solid var(--on-bg); }
-.btn-primary:hover:not(:disabled) { background: #FFFFFF; border-color: #FFFFFF; }
+.btn-primary:hover:not(:disabled) { background: var(--on-bg-hover); border-color: var(--on-bg-hover); }
 .btn-primary:disabled { cursor: default; opacity: 0.6; }
 .btn-secondary { background: transparent; color: var(--ink-soft); border: 1px solid var(--hair-strong); }
 .btn-secondary:hover { color: var(--ink); border-color: var(--slate); }

@@ -56,7 +56,7 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
         </span>
         <span
           className="band-pill"
-          style={{ background: "transparent", color: "var(--ink)", border: "1px solid var(--hair-strong)", marginTop: 0 }}
+          style={{ background: "rgba(212, 176, 106, 0.10)", color: "var(--accent)", border: "1px solid rgba(212, 176, 106, 0.45)", marginTop: 0 }}
         >
           <i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 1, background: band.color, flex: "none" }} />
           {band.label}
