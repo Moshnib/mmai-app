@@ -62,7 +62,8 @@ export default function AboutPage() {
         <div className="wrap">
           <p className="eyebrow">ABOUT</p>
           <h1 className="headline" style={{ maxWidth: "24ch" }}>
-            Everyone watches the market. Almost nobody watches what it is standing on.
+            Everyone watches the market. Almost nobody watches{" "}
+            <span className="hl">what it is standing on</span>.
           </h1>
           <p className="sub" style={{ maxWidth: "66ch" }}>
             Prices, jobs, growth, government debt and the cost of money decide the ground everything else is priced

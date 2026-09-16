@@ -40,7 +40,14 @@ const RULES: Rule[] = [
   { name: "drop-shadow glow", pattern: /drop-shadow\(/, why: "no glow on marks or lines" },
   { name: "SVG blur", pattern: /feGaussianBlur/, why: "no glow inside diagrams either" },
   { name: "brightness filter", pattern: /brightness\(/, why: "colours are chosen to read as they are" },
-  { name: "CSS gradient", pattern: /(?<!repeating-)(linear|radial)-gradient\(/, why: "flat fills; a selected control is var(--on-bg)" },
+  {
+    name: "CSS gradient",
+    // A MASK is not a fill. The ticker fades its own edges with
+    // mask-image, which paints no colour at all -- it only decides where
+    // the strip is visible. Every other gradient stays banned.
+    pattern: /(?<!mask-image:\s*)(?<!repeating-)(linear|radial)-gradient\(/,
+    why: "flat fills; a selected control is var(--on-bg)",
+  },
   { name: "old deep violet", pattern: /#6D28D9/i, why: "the gradient button colour" },
   {
     name: "old violet tint",
@@ -81,6 +88,16 @@ const RULES: Rule[] = [
   { name: "saturate filter", pattern: /saturate\(/, why: "colours are chosen to read as they are" },
 ];
 
+/** The one way to keep a glow: end the declaration with a CSS comment
+ *  containing the marker below, naming what it is for.
+ *
+ *  It exists because the owner asked for the live indicator to glow a
+ *  little, and a small halo on a 7px dot is not what made the old site
+ *  look generated -- 34px auras behind 46px numerals were. Marking each
+ *  use keeps that judgement visible, and keeps it from spreading: every
+ *  unmarked glow still fails. */
+const GLOW_ALLOWED = "allow-glow:";
+
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = `${dir}/${e.name}`;
@@ -99,6 +116,7 @@ for (const file of ROOTS.flatMap((r) => walk(r))) {
   lines.forEach((line, i) => {
     for (const rule of RULES) {
       if (rule.allow?.includes(file)) continue;
+      if (rule.name === "coloured glow shadow" && line.includes(GLOW_ALLOWED)) continue;
       if (rule.pattern.test(line)) {
         problems.push(`  ${file}:${i + 1}  ${rule.name} -- ${rule.why}\n      ${line.trim().slice(0, 110)}`);
       }
@@ -132,12 +150,33 @@ const SAMPLES: Record<string, string> = {
 if (RULES.find((r) => r.name === "coloured glow shadow")!.pattern.test(`boxShadow: "0 0 0 1px var(--hair-strong)"`)) {
   problems.push(`  rule "coloured glow shadow" matches Flag's zero-blur hairline ring, which is not a glow`);
 }
+// The marked exception must work, and must not leak: a glow with no
+// marker on it still has to fail.
+{
+  const glow = RULES.find((r) => r.name === "coloured glow shadow")!;
+  const marked = `  box-shadow: 0 0 9px rgba(1,2,3,.4); /* ${GLOW_ALLOWED} the live dot */`;
+  const bare = "  box-shadow: 0 0 9px rgba(1,2,3,.4);";
+  if (!glow.pattern.test(marked)) problems.push('  the glow rule no longer matches a marked glow, so the marker proves nothing');
+  if (!glow.pattern.test(bare)) problems.push('  the glow rule no longer matches an unmarked glow');
+  const glowCount = ROOTS.flatMap((r) => walk(r))
+    .flatMap((f) => readFileSync(f, "utf8").split(/\r?\n/))
+    .filter((l) => l.includes(GLOW_ALLOWED)).length;
+  if (glowCount > 2) problems.push(`  ${glowCount} glows are marked allowed; the exception was for the live indicator alone`);
+}
 for (const rule of RULES) {
   const sample = SAMPLES[rule.name];
   if (!sample || !rule.pattern.test(sample)) problems.push(`  rule "${rule.name}" does not match its own sample -- it can never fail`);
 }
-if (/(?<!repeating-)(linear|radial)-gradient\(/.test("repeating-linear-gradient(")) {
-  problems.push(`  rule "CSS gradient" matches repeating-linear-gradient, which the correlation key legitimately uses`);
+// The two gradients that are not fills, and must stay allowed.
+const gradientRule = RULES.find((r) => r.name === "CSS gradient")!.pattern;
+for (const allowed of [
+  "repeating-linear-gradient(",
+  ".ticker { mask-image: linear-gradient(90deg, transparent, #000 40px); }",
+  ".ticker { -webkit-mask-image: linear-gradient(90deg, transparent, #000 40px); }",
+]) {
+  if (gradientRule.test(allowed)) {
+    problems.push(`  rule "CSS gradient" matches ${JSON.stringify(allowed)}, which is legitimate`);
+  }
 }
 
 console.log(`\nChecking ${scanned} files for the retired palette\n`);

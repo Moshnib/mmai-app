@@ -107,7 +107,7 @@ const PROBE = `(() => {
     if (fgm && fgm.length > 3 && Number(fgm[3]) < 0.5) continue;
 
     // The nearest ancestor that actually paints something.
-    var bg = "rgb(16, 24, 38)", e = el;
+    var bg = "rgb(10, 15, 26)", e = el;
     while (e) {
       var c = getComputedStyle(e).backgroundColor;
       var mm = String(c).match(/[0-9.]+/g);

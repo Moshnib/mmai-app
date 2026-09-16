@@ -1871,3 +1871,80 @@ deployed. Sections 1–27 are history; this is the state.
 - `MMAI_TODO.md` — the plain-language to-do list.
 - `MMAI_CHANGE_LOG.md` — what changed and why, per change.
 - `AGENTS.md` / `CLAUDE.md` — instructions for the coding assistant.
+
+## 29. Warmer, on the owner’s judgement (2026-09-16)
+
+The owner compared the live site with the original mockup and said the
+tightened version read "a bit dry". Four of direction 3’s warmer moves came
+back, deliberately short of the full mockup:
+
+- **A selected control is GOLD, not off-white** (`--on-bg`), so "chosen" is
+  the warmest thing on the page — selected market, active nav item, active
+  filter, primary button. Navy on gold is 8.65:1.
+- **One accented phrase per headline**: `.hl` — italic, gold, used on the
+  homepage and About hero only.
+- **Section eyebrows are gold** rather than grey.
+- **Fraunces** replaces Source Serif for headlines (it carries the true
+  italic the accented phrase needs).
+- **Softer shapes**: card radius 6 → 10px, controls 4 → 6/8px, a little more
+  padding, and the 2px hover lift back on cards (under
+  prefers-reduced-motion: no-preference).
+- The band pill beside the score is gold-tinted again, keeping the ramp
+  swatch that says which band it is.
+
+What did NOT come back: gradients, glow, glass. `check-palette.ts` still
+fails the build on all three, and every contrast check still passes.
+
+### 29.1 Signs of life, and a score ramp that suits the ground (same PR)
+
+The owner asked for the Sources page to read "like a live terminal of a
+stock exchange", said the homepage felt dead, and called the map colours
+unappealing. Three changes:
+
+- **`components/LiveBar.tsx` + `lib/liveTime.ts`**: a breathing dot, the
+  word LIVE, the facts that belong beside it, and a refresh time that
+  TICKS — "22 h 07 m ago", moving every 30 seconds. On the homepage hero
+  and at the top of Sources. The clock is `useSyncExternalStore` with a
+  null server snapshot (no hydration mismatch) and a tick-bucketed client
+  snapshot (no render loop); an effect that called setState failed lint
+  for exactly that reason.
+- **The Sources table reads like a register that is running**: LIVE badge
+  with its own pulsing dot, timestamps in full ink and mono tabular
+  figures with the relative time beneath, institution links that turn
+  gold on hover, and a row highlight under the pointer. The pulse stops
+  under prefers-reduced-motion.
+- **The score ramp was retuned** (`lib/indicators.ts`): clay red → neutral
+  → blue, a diverging scale, which is what a percentile against a record
+  is. The old red → orange → violet → cyan was left over from the neon
+  palette and went muddy on navy — the map came out brown and purple.
+  Measured before shipping: nothing under 4.60:1 on either surface, no
+  green, and 39 dE clear of the gold accent so a score is never mistaken
+  for "chosen". Map fills went 0.55 → 0.72 opacity.
+
+### 29.2 Movement, and a darker ground (2026-09-16)
+
+The owner said three times that the site felt dead, and each answer was
+more colour. It was not colour: nothing on the page ever moved.
+
+- **`components/MarketTicker.tsx`**: every market scrolling along the top
+  — flag, code, score in its ramp colour, and the move against the last
+  FULL year (computed through `computeMmai` on `lib/history.ts`, never
+  typed). Pauses on hover and on focus; each item is a real button.
+- **The score counts up** to itself in ~650ms (`ScoreDisplay`), and the
+  homepage **trend line draws itself in** (`pathLength={1}` + a dash
+  animation). Every setState sits inside the animation frame: the lint
+  rule forbidding setState in an effect body is right, and both of these
+  were rewritten because of it.
+- All of it stops under `prefers-reduced-motion`, and nothing is hidden
+  when it does — the ticker wraps and reads as a list.
+- **`check-palette.ts` now allows a gradient inside `mask-image`** (the
+  ticker fades its own edges; a mask paints no colour), and self-tests
+  that exception alongside the repeating-gradient one.
+
+**A darker ground.** The owner asked for black, for contrast. Measured
+first: every colour GAINS on a darker ground, so nothing had to change
+for legibility. The ground went to `#0A0F1A` — near-black with a trace of
+navy left in it, keeping the site's own identity — with the panels, hairlines,
+hover and track greys re-tuned to match (they are navy-tinted, and on a
+pure black they would have read as blue boxes floating on black). Gold is
+now 9.32:1, the weakest point of the score ramp 5.22:1.

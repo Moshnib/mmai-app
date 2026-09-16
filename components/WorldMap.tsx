@@ -107,25 +107,35 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
           const market = marketCode ? marketByCode[marketCode] : undefined;
 
           if (!market) {
-            return <path key={c.key} d={c.d} fill="var(--track)" stroke="var(--card-bg)" strokeWidth={0.5} />;
+            // The rest of the world is land, not background: a shade above
+            // the card, outlined in the card colour so coastlines and
+            // borders read as drawn rather than as a silhouette.
+            return <path key={c.key} d={c.d} fill="var(--land)" stroke="var(--card-bg)" strokeWidth={0.5} />;
           }
 
           const { band } = scoreOf(market);
           const isSelected = marketCode === current;
 
           return (
-            <path
-              key={c.key}
-              d={c.d}
-              fill={band.color}
-              fillOpacity={isSelected ? 0.95 : 0.55}
-              stroke={isSelected ? "var(--accent)" : "var(--card-bg)"}
-              strokeWidth={isSelected ? 1.4 : 0.5}
-              style={{ cursor: "pointer", transition: "fill-opacity 0.15s ease" }}
-              onClick={() => onSelect(marketCode)}
-              onMouseMove={(e) => handleHoverMove(marketCode, e)}
-              onMouseLeave={handleHoverEnd}
-            />
+            <g key={c.key}>
+              {/* The chosen country wears a soft ring: the same outline,
+                  drawn wider and faint underneath, so it lifts off the map
+                  without a filter or a glow. */}
+              {isSelected && (
+                <path d={c.d} fill="none" stroke="var(--accent)" strokeOpacity={0.3} strokeWidth={5} strokeLinejoin="round" />
+              )}
+              <path
+                d={c.d}
+                fill={band.color}
+                fillOpacity={isSelected ? 1 : 0.94}
+                stroke={isSelected ? "var(--accent)" : "var(--paper)"}
+                strokeWidth={isSelected ? 1.6 : 0.6}
+                style={{ cursor: "pointer", transition: "fill-opacity 0.15s ease" }}
+                onClick={() => onSelect(marketCode)}
+                onMouseMove={(e) => handleHoverMove(marketCode, e)}
+                onMouseLeave={handleHoverEnd}
+              />
+            </g>
           );
         })}
       </svg>
@@ -137,6 +147,20 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
           <span className="world-map-tip-band">{hoverScore.band.label}</span>
         </div>
       )}
+
+      {/* What the colours mean, in five steps rather than a gradient
+          bar: the scale is read in bands anyway ("top fifth", "below
+          average"), and five swatches say that where a smooth strip
+          pretends to a precision the eye does not have. */}
+      <div className="map-scale" aria-hidden="true">
+        <span>Below average</span>
+        <span className="map-scale-swatches">
+          {[5, 27.5, 50, 72.5, 95].map((v) => (
+            <i key={v} style={{ background: colorForScore(v) }} />
+          ))}
+        </span>
+        <span>Above average</span>
+      </div>
 
       {/* The keyboard and screen-reader way in. The country shapes stay
           mouse and touch only: the Euro Area alone is eleven shapes, and

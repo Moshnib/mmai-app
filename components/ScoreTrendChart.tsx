@@ -120,8 +120,14 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
         {/* The score line is the chart's subject, so it carries a
             heavier stroke than the gridlines around it -- weight, not
             glow. Colour still comes from colorForScore(). */}
+        {/* Drawn rather than printed: the line runs from 2019 to now in
+            about a second, so the chart arrives the way the history did.
+            pathLength normalises the dash to 1 whatever the real length
+            is, and the whole thing is off under prefers-reduced-motion. */}
         <path
+          className="trend-line"
           d={line}
+          pathLength={1}
           fill="none"
           stroke={band.color}
           strokeWidth={2.5}
@@ -137,7 +143,7 @@ export default function ScoreTrendChart({ marketCode, currentScore }: { marketCo
           ) : null
         )}
 
-        <circle cx={x(points.length - 1)} cy={y(last.value)} r={4.5} fill="var(--accent)" stroke="var(--card-bg)" strokeWidth={2} />
+        <circle className="trend-dot" cx={x(points.length - 1)} cy={y(last.value)} r={4.5} fill="var(--accent)" stroke="var(--card-bg)" strokeWidth={2} />
         <text
           x={x(points.length - 1) + 10}
           y={y(last.value) + 4}

@@ -39,6 +39,40 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
     return () => clearTimeout(id);
   }, [target]);
 
+  // THE FIGURE COUNTS UP TO ITSELF. The bar already filled; the number it
+  // belongs to simply appeared, which is the moment a reader is actually
+  // looking at. It runs once per value, in about two thirds of a second,
+  // and not at all for a reader who has asked for less motion -- then the
+  // real figure is there from the first frame.
+  // THE FIGURE COUNTS UP TO ITSELF. The bar already filled; the number it
+  // belongs to simply appeared, which is the moment a reader is actually
+  // looking at. Every setState happens inside the animation frame, never
+  // in the effect body -- the lint rule that forbids the latter is right:
+  // a state write during an effect is a second render before paint.
+  const [shown, setShown] = useState<number | null>(score === null ? null : 0);
+  useEffect(() => {
+    const quiet = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // 1.4s, not 650ms: at two thirds of a second the count was over
+    // before the eye had settled on it. The owner asked for it slower,
+    // and a figure that takes a beat to arrive is the point of counting
+    // it up at all.
+    const DURATION = 1400;
+    let raf = 0;
+    const start = performance.now();
+    const tick = (t: number) => {
+      if (score === null) { setShown(null); return; }
+      if (quiet) { setShown(score); return; }
+      const p = Math.min(1, (t - start) / DURATION);
+      // Ease out, fourth power: it runs, then settles onto the real
+      // figure rather than stopping dead on it.
+      setShown(score * (1 - Math.pow(1 - p, 4)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else setShown(score);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [score]);
+
   return (
     // maxWidth (not a fixed width) -- .score-panel's padding on a phone
     // leaves less than 260px of content width available; a fixed width
@@ -52,11 +86,11 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
           className="gauge-num"
           style={{ color: numberColour, transition: "color 0.4s ease" }}
         >
-          {score === null ? "N/A" : score.toFixed(1)}
+          {shown === null ? "N/A" : shown.toFixed(1)}
         </span>
         <span
           className="band-pill"
-          style={{ background: "transparent", color: "var(--ink)", border: "1px solid var(--hair-strong)", marginTop: 0 }}
+          style={{ background: "rgba(212, 176, 106, 0.10)", color: "var(--accent)", border: "1px solid rgba(212, 176, 106, 0.45)", marginTop: 0 }}
         >
           <i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 1, background: band.color, flex: "none" }} />
           {band.label}
