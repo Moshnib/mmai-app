@@ -8,6 +8,7 @@ import { HISTORY } from "@/lib/history";
 import { computeMmai } from "@/lib/composite";
 import { fetchAllWeeklyChanges } from "@/lib/weeklyChanges";
 import { buildTickerEvents, type TickerEvent } from "@/lib/tickerEvents";
+import type { FeedItem } from "@/lib/fetchers/newsFeeds";
 
 /** Last full year's score for a market, so the strip can say which way it
  *  has moved rather than only where it stands. Computed from the same
@@ -61,6 +62,19 @@ export default function MarketTicker({
     return () => { cancelled = true; };
   }, []);
 
+  // The same two feeds the news band shows, in one line each. Served
+  // by this site's own route because neither the ECB nor the ONS sends
+  // the CORS header a browser would need to read them directly.
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/announcements")
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => { if (!cancelled && Array.isArray(j.items)) setFeed(j.items.slice(0, 3)); })
+      .catch(() => { /* the strip simply carries no announcements */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const items = markets.map((m) => {
     const { percentile } = scoreMarketV2(m);
     const prev = lastFullYear(m.code);
@@ -70,6 +84,12 @@ export default function MarketTicker({
 
   const row = (key: string, ariaHidden: boolean) => (
     <div className="ticker-row" key={key} aria-hidden={ariaHidden || undefined}>
+      {feed.map((f) => (
+        <span className="ticker-event is-feed" key={f.url}>
+          {f.kind === "upcoming" ? "NEXT" : f.source}
+          <span className="ticker-feed-title">{f.title}</span>
+        </span>
+      ))}
       {events.map((e) => (
         <span className={`ticker-event${e.kind === "band" ? " is-band" : ""}`} key={`${e.marketCode}-${e.text}`}>
           <Flag code={e.marketCode} size={15} />

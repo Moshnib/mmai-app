@@ -15,6 +15,7 @@ import Flag from "@/components/Flag";
 import StructuredData from "@/components/StructuredData";
 import LiveBar from "@/components/LiveBar";
 import MarketTicker from "@/components/MarketTicker";
+import NewsBand from "@/components/NewsBand";
 import CountryGlyph from "@/components/CountryGlyph";
 import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
@@ -538,6 +539,27 @@ export default function OverviewPage() {
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+{/* THE CALENDAR, BEFORE THE FEED OF WHAT ALREADY MOVED.
+          "The next UK inflation figure lands tomorrow" is the one thing
+          on this page a reader can act on, and it belongs above the
+          record of what has already happened. Both columns come straight
+          from the institutions -- the ONS release calendar and the ECB's
+          own press feed -- and both refresh themselves. */}
+      <div className="section">
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">ON THE CALENDAR</p>
+            <h2>What lands next, and what was just decided</h2>
+            <p>
+              Straight from the institutions that publish it: the UK release calendar from the Office for
+              National Statistics, and rate decisions from the European Central Bank. Nobody&apos;s headlines,
+              and nothing here is an opinion.
+            </p>
+          </div>
+          <NewsBand />
         </div>
       </div>
 

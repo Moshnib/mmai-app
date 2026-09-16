@@ -1848,3 +1848,48 @@ a.dim-axis-row:hover { background: var(--hover); }
 .ticker-event::before { content: "▸"; color: var(--hair-strong); }
 .ticker-event.is-band { color: var(--ink); }
 .ticker-event.is-band::before { content: "◆"; color: var(--accent); }
+
+/* ============================================================
+   WHAT LANDS NEXT, AND WHAT WAS JUST DECIDED
+   Two columns of first-hand announcements: the ONS release calendar and
+   the ECB's press feed. Deliberately plain -- a date, a title, and who
+   published it. The colour is spent on the date, because "tomorrow" is
+   the part a reader is scanning for.
+   ============================================================ */
+.news-band {
+  display: grid; gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 760px) { .news-band { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+.news-col {
+  background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: var(--card-radius); padding: 16px 18px;
+}
+.news-head {
+  margin: 0 0 10px; font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
+}
+.news-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.news-col li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px;
+  align-items: baseline; padding-top: 10px; border-top: 1px solid var(--hair);
+}
+.news-col li:first-child { padding-top: 0; border-top: 0; }
+.news-when {
+  font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 600;
+  color: var(--status-live); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.news-link {
+  font-size: var(--t-small); color: var(--ink); text-decoration: underline;
+  text-decoration-color: var(--hair-strong); text-underline-offset: 3px;
+}
+.news-link:hover { color: var(--accent); text-decoration-color: var(--accent); }
+.news-src {
+  grid-column: 2; font-family: var(--font-mono); font-size: var(--t-micro); color: var(--slate);
+}
+.news-empty { margin: 0; font-size: var(--t-small); color: var(--slate); }
+
+/* The same announcements, one line each, in the strip. */
+.ticker-event.is-feed { color: var(--ink-soft); gap: 6px; }
+.ticker-event.is-feed::before { content: "●"; color: var(--status-live); font-size: var(--t-micro); }
+.ticker-feed-title { color: var(--slate); }

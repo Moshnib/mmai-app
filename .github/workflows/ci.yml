@@ -289,6 +289,14 @@ jobs:
       - name: The ticker only reports real, recent changes
         run: npx tsx scripts/test-ticker-events.ts
 
+      # Two outside feeds reach the homepage now -- the ONS release
+      # calendar and the ECB press feed -- and neither is scored, which is
+      # exactly why they need pinning: nothing downstream would notice a
+      # speech printed as a rate decision, or a release that already
+      # happened shown as "next".
+      - name: The announcements band says only what those feeds said
+        run: npx tsx scripts/test-news-feeds.ts
+
       # THE ONE THAT WOULD HAVE CAUGHT "SWEDEN CONTRIBUTES 0".
       #
       # The Learn page ranked every scored market by how many rows it

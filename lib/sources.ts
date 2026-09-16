@@ -188,6 +188,15 @@ export const SOURCES: SourceEntry[] = [
   // ---------- Shared across all markets ----------
   { market: "All markets", indicator: "Brent Crude (context only — not scored)", cadence: "monthly", institution: "U.S. Energy Information Administration", shortName: "EIA", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "NO LONGER SCORED as of 1 September 2026. This is a single global oil price: the identical figure applied to all six markets, so as a pillar it moved every score together and could not affect the ranking of one country against another. It is still shown in the weekly feed, where a global price is exactly what it claims to be." , url: "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm" },
 
+  // ---------- Announcements, not figures ----------
+  // These two feed the calendar band and the ticker, not a score. Listed
+  // here anyway: the page promises every source on the site, with its
+  // licence, and an announcement a reader sees is a source like any
+  // other. Both licences require naming the institution, which is why
+  // "ONS" and "ECB" appear on every item rendered from them.
+  { market: "All markets", indicator: "UK release calendar (announcements — not scored)", cadence: "daily", institution: "UK Office for National Statistics", shortName: "ONS", license: "Open Government Licence v3.0 — permits commercial use with attribution", status: "live", lastVerified: "2026-09-16", note: "Upcoming releases only, filtered to inflation, the labour market, GDP and public sector finances. Feeds the homepage calendar band and the ticker; nothing here enters a score.", url: "https://www.ons.gov.uk/releasecalendar" },
+  { market: "All markets", indicator: "ECB decisions and statements (announcements — not scored)", cadence: "per decision", institution: "European Central Bank", shortName: "ECB", license: "Free reuse provided the information appears accurately and the ECB is cited as the source", status: "live", lastVerified: "2026-09-16", note: "Press releases and monetary policy statements only — the feed also carries speeches and interviews, which are a person’s view rather than a decision, and are dropped. Nothing here enters a score.", url: "https://www.ecb.europa.eu/press/html/index.en.html" },
+
   // ---------- Fiscal Resilience — one BIS series, published per country ----------
   // BIS returns all six in a single request, but these are SIX DIFFERENT
   // national figures, not one shared number. Listed per market so the
