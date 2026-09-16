@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { colorForScore } from "@/lib/indicators";
 import { percentileBandLabel, percentileReading } from "@/lib/composite";
+import { useMotion } from "@/lib/motion";
 
 // Replaces the old semicircle "speedometer" Gauge -- that design had a
 // real geometry bug (the animated arc traced the wrong half-circle,
@@ -49,9 +50,15 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
   // looking at. Every setState happens inside the animation frame, never
   // in the effect body -- the lint rule that forbids the latter is right:
   // a state write during an effect is a second render before paint.
+  // The same switch the ticker uses: the system's setting by default,
+  // the reader's own choice when they have made one. Before this the
+  // count-up asked matchMedia directly, so a reader who pressed play on
+  // the strip still got a figure that simply appeared.
+  const { running } = useMotion();
+
   const [shown, setShown] = useState<number | null>(score === null ? null : 0);
   useEffect(() => {
-    const quiet = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const quiet = !running;
     // 1.4s, not 650ms: at two thirds of a second the count was over
     // before the eye had settled on it. The owner asked for it slower,
     // and a figure that takes a beat to arrive is the point of counting
@@ -71,7 +78,7 @@ export default function ScoreDisplay({ score }: { score: number | null }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [score]);
+  }, [score, running]);
 
   return (
     // maxWidth (not a fixed width) -- .score-panel's padding on a phone

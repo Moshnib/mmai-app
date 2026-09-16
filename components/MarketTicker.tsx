@@ -8,6 +8,7 @@ import { HISTORY } from "@/lib/history";
 import { computeMmai } from "@/lib/composite";
 import { fetchAllWeeklyChanges } from "@/lib/weeklyChanges";
 import { buildTickerEvents, type TickerEvent } from "@/lib/tickerEvents";
+import { useMotion } from "@/lib/motion";
 import type { FeedItem } from "@/lib/fetchers/newsFeeds";
 
 /** Last full year's score for a market, so the strip can say which way it
@@ -34,9 +35,17 @@ function lastFullYear(code: string): { year: string; value: number } | null {
  * passing in front of you, whether or not you asked for it.
  *
  * It scrolls by itself, pauses under the pointer, and stops entirely for
- * a reader who has asked for less motion (then it simply wraps onto two
- * lines and reads as a list). Every item is a real button: this is also
+ * a reader whose system asks for less motion -- then it wraps onto two
+ * lines and reads as a list. Every item is a real button: this is also
  * the fastest way to switch market from the top of the page.
+ *
+ * AND IT CAN BE STARTED BY HAND. The owner reported the strip as "not
+ * moving" twice, from a desktop with Windows animation effects switched
+ * off -- which is exactly what prefers-reduced-motion reports, and the
+ * site was honouring it. That setting is right to respect for anything
+ * that moves WITHOUT being asked; it is not a reason to refuse a reader
+ * who asks. So there is a button, it says which state it is in, and the
+ * choice is remembered.
  */
 export default function MarketTicker({
   markets,
@@ -47,6 +56,8 @@ export default function MarketTicker({
   current: string | null;
   onSelect: (code: string) => void;
 }) {
+  const { running, toggle } = useMotion();
+
   // What the site's own figures have done lately. Five at most: a
   // quarterly source can move every market at once, and eight lines of
   // the same indicator turn the strip into a list rather than a feed. Its own query rather
@@ -127,7 +138,21 @@ export default function MarketTicker({
   );
 
   return (
-    <div className="ticker" role="region" aria-label="Every market's score, moving">
+    <div
+      className={`ticker${running ? " is-playing" : " is-still"}`}
+      role="region"
+      aria-label="Every market's score"
+    >
+      <button
+        type="button"
+        className="ticker-motion"
+        onClick={toggle}
+        aria-pressed={running}
+        aria-label={running ? "Stop the scrolling strip" : "Scroll the strip of market scores"}
+        title={running ? "Stop scrolling" : "Scroll the market strip"}
+      >
+        <span aria-hidden="true">{running ? "❙❙" : "▶"}</span>
+      </button>
       <div className="ticker-track">
         {row("a", false)}
         {/* A second copy, hidden from screen readers: the loop is seamless
