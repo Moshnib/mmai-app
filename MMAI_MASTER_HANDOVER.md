@@ -2103,3 +2103,30 @@ New `scripts/check-site-functions.ts` (in CI after check-nav) tests back to
 top, the address on all three pages including Back and reload, and copy
 link. Round 2 (next): Sources page navigation, downloads beside charts,
 term explanations.
+
+### 33.1 The site has its own domain: mmai.markets (2026-09-17)
+
+Bought at Cloudflare Registrar, so the DNS stays at Cloudflare (that
+registrar requires its own nameservers). Two records, both **grey cloud /
+DNS only** — proxying in front of Vercel breaks certificate issuance and
+can loop redirects:
+
+    A      @      216.198.79.1
+    CNAME  www    ec37a0b58b1582ce.vercel-dns-017.com
+
+**www is canonical**; the bare domain 308s to it, which is how Vercel set
+it up and what it recommends. `NEXT_PUBLIC_SITE_URL` is set to
+`https://www.mmai.markets` in the Vercel project (Config, not Secret), and
+`lib/siteUrl.ts`'s FALLBACK now matches, so a build without the variable
+still produces the right canonicals. Everything else on the site derives
+from SITE_URL: page canonicals, the sitemap, robots.txt, the structured
+data, OG images, unsubscribe links and the credit line on downloaded
+charts. Verified on a production build: canonical, sitemap and robots all
+read https://www.mmai.markets.
+
+Still to do, when wanted: subscriber emails. They have never been able to
+send because a vercel.app sender cannot be verified; with a real domain,
+Resend verification (a few more Cloudflare records, also grey cloud) makes
+`alerts@mmai.markets` possible. `ALERT_FROM` already derives from
+SITE_URL's hostname, and `IS_VERCEL_DOMAIN` (which explains the failure in
+the refresh route) will go false on its own.

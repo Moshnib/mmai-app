@@ -120,7 +120,9 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       today's date when saving to the database.
 
 ## 🤔 Decide when ready (no rush)
-- [ ] **Domain name** — keep `mmai-app.vercel.app`, or buy a dedicated
+- [x] **Domain name** — bought 17 September 2026: **mmai.markets**, at
+      Cloudflare, DNS there (grey cloud, proxy off) pointing at Vercel;
+      www is canonical. Was: keep `mmai-app.vercel.app`, or buy a dedicated
       domain like `marketpuls.com`? (Discussed: reasonable name, but the
       missing "e" reads as a typo and it's a bit generic — worth weighing
       against something built around "Moshnib" or "MMAI" instead.)
