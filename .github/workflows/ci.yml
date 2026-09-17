@@ -417,6 +417,9 @@ jobs:
           # panel that will not close or hangs off the screen moves nothing
           # the checks above measure.
           npx tsx scripts/check-nav.ts
+          # And the strip along the top: how fast it travels, that a finger
+          # stops it, and that a moving market button can be tapped.
+          npx tsx scripts/check-ticker.ts
           # Seventh: back to top, the address remembering a choice, and
           # sharing -- behaviour a layout or accessibility check cannot see.
           npx tsx scripts/check-site-functions.ts

@@ -1914,10 +1914,29 @@ a.dim-axis-row:hover { background: var(--hover); }
 /* Fades at both ends, so items arrive and leave rather than being cut.
    A mask, not a gradient fill: nothing is painted over the page. */
 .ticker { -webkit-mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
-/* 40s, not 64. At 64 the strip moved about 26 pixels a second, which on
-   a wide screen is slow enough that the owner read it as stopped. */
+/* 18px on a phone: 40 at each end dimmed a fifth of a 390px screen, which
+   is what "fading" meant when the strip was reported. */
+@media (max-width: 640px) {
+  .ticker { -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+}
+/* A READING SPEED, NOT A FIXED DURATION. This was 40s for one pass
+   whatever the strip carried, and the strip grew: the row is about
+   4,700px wide now, so 40s meant 118 pixels a second at every screen
+   size -- rushed to read and, on a phone, almost impossible to tap.
+   components/MarketTicker.tsx measures the row and sets
+   --ticker-seconds from it (about 55 px/s with a mouse, 45 with a
+   finger). The 40s here is only the fallback for the frame before that
+   measurement lands. */
 .ticker-track { display: flex; width: max-content; }
-.ticker.is-playing .ticker-track { animation: ticker-scroll 40s linear infinite; }
+.ticker.is-playing .ticker-track { animation: ticker-scroll var(--ticker-seconds, 40s) linear infinite; }
+/* Between "the reader wants movement" and "the strip is complete": the
+   two feeds it carries arrive a moment after the markets, and starting
+   before then made the strip jump sideways as each landed. */
+.ticker.is-waiting .ticker-track { animation: none; }
+/* A finger holds it still (MarketTicker's pointer handlers), so a moving
+   button can be tapped. pan-y keeps the page's own vertical scroll. */
+.ticker { touch-action: pan-y pinch-zoom; }
+.ticker.is-paused .ticker-track { animation-play-state: paused; }
 /* Stopped by the reader (or by their system): the strip holds still and
    wraps, so every market is readable at once rather than half of them
    sitting off the edge. */
@@ -1925,11 +1944,16 @@ a.dim-axis-row:hover { background: var(--hover); }
 .ticker.is-still .ticker-row { flex-wrap: wrap; }
 .ticker.is-still .ticker-row[aria-hidden="true"] { display: none; }
 .ticker.is-still { -webkit-mask-image: none; mask-image: none; }
-/* Pause for a pointer resting on it, and for a KEYBOARD focus -- not for
-   any focus. Clicking an item leaves that button focused, so :focus-within
-   froze the strip for good the moment anyone used it. */
-.ticker:hover .ticker-track,
+/* Pause for a KEYBOARD focus -- not for any focus. Clicking an item
+   leaves that button focused, so :focus-within froze the strip for good
+   the moment anyone used it. */
 .ticker:has(:focus-visible) .ticker-track { animation-play-state: paused; }
+/* And for a pointer resting on it, where a pointer can rest. Without the
+   query a phone's lingering hover after a tap could stop the strip for
+   good, which is how it was reported. */
+@media (hover: hover) and (pointer: fine) {
+  .ticker:hover .ticker-track { animation-play-state: paused; }
+}
 @keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .ticker-row { display: flex; }
 .ticker-item {
@@ -2028,4 +2052,9 @@ a.dim-axis-row:hover { background: var(--hover); }
 /* The same announcements, one line each, in the strip. */
 .ticker-event.is-feed { color: var(--ink-soft); gap: 6px; }
 .ticker-event.is-feed::before { content: "●"; color: var(--status-live); font-size: var(--t-micro); }
-.ticker-feed-title { color: var(--slate); }
+/* A HEADLINE IS CUT TO A LENGTH A STRIP CAN CARRY. Measured live, one
+   ONS title ran 648px -- nearly two phone screens of a single line. The
+   full title is still the link's own text on the news band below; here it
+   is an alert, not the article. */
+.ticker-feed-title { color: var(--slate); max-width: 42ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) { .ticker-feed-title { max-width: 24ch; } }
