@@ -1,5 +1,6 @@
 "use client";
 
+import Term from "@/components/Term";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Flag from "@/components/Flag";
@@ -458,7 +459,7 @@ export default function DashboardInner() {
                 </table>
               </div>
               <p style={NOTE}>
-                <b style={{ color: "var(--ink-soft)" }}>The spread is the ten-year minus the policy rate.</b>{" "}
+                <b style={{ color: "var(--ink-soft)" }}>The <Term k="yield spread">spread</Term> is the ten-year minus the <Term k="policy rate">policy rate</Term>.</b>{" "}
                 Positive is the ordinary state: lenders want more for locking money away for a decade.
                 Negative &mdash; an inverted curve &mdash; means markets are pricing rate cuts, which has
                 often preceded recessions, though it is a signal and not a schedule. Sweden reads N/A

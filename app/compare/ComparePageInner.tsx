@@ -3,6 +3,8 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, setQuery } from "@/lib/urlState";
 import ShareButton from "@/components/ShareButton";
+import Term from "@/components/Term";
+import { SCORE_SOURCE, INDICATOR_SOURCE } from "@/lib/chartSources";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
@@ -271,7 +273,7 @@ export default function ComparePageInner() {
                   page has one; without it this page reads to a search engine and
                   a screen reader as sections with no subject. */}
               <h1>{MARKET_COUNT_WORD_CAP} economies on one scale</h1>
-              <p>The same five official figures, rebuilt so the comparison actually holds — then ranked against the same {REFERENCE_COUNT} market-years. Every line here means the same thing.</p>
+              <p>The same five official figures, rebuilt so the comparison actually holds — then ranked against the same {REFERENCE_COUNT} <Term k="market-year">market-years</Term>. Every line here means the same thing.</p>
               <div className="share-row"><ShareButton title="MMAI — markets compared" /></div>
             </div>
 
@@ -361,7 +363,7 @@ export default function ComparePageInner() {
                 Annual
               </span>
             </div>
-            <TrendChart series={compositeSeries} height={340} yDomain={[0, 100]} showDots={false} />
+            <TrendChart series={compositeSeries} height={340} yDomain={[0, 100]} showDots={false} download={{ title: "MMAI score, markets compared", source: SCORE_SOURCE }} />
           </div>
         </div>
       </div>
@@ -433,9 +435,9 @@ export default function ComparePageInner() {
               </span>
             </div>
             {pillarView === "score" ? (
-              <TrendChart series={pillarScoreSeries} height={340} yDomain={[0, 100]} showDots={false} />
+              <TrendChart series={pillarScoreSeries} height={340} yDomain={[0, 100]} showDots={false} download={{ title: `${DIMENSION_NAMES[selectedDimension]} score, markets compared`, source: SCORE_SOURCE }} />
             ) : (
-              <TrendChart series={rawIndicatorSeries} height={340} yLabel={RAW_CHOICES.find((c) => c.key === selectedRaw)!.unit} showDots={false} />
+              <TrendChart series={rawIndicatorSeries} height={340} yLabel={RAW_CHOICES.find((c) => c.key === selectedRaw)!.unit} showDots={false} download={{ title: `${RAW_CHOICES.find((c) => c.key === selectedRaw)!.label}, markets compared`, source: INDICATOR_SOURCE, unit: RAW_CHOICES.find((c) => c.key === selectedRaw)!.unit }} />
             )}
           </div>
         </div>

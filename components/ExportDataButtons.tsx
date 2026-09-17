@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getPublicSupabaseClient } from "@/lib/supabase";
+import { toCsv, csvBlob, downloadBlob } from "@/lib/download";
 
 // Public read access only (same RLS policy every chart on the site
 // already reads through) -- this doesn't touch anything not already
@@ -55,40 +56,9 @@ async function fetchAllRows(table: TableName): Promise<Array<Record<string, unkn
   return rows;
 }
 
-function toCSV(rows: Array<Record<string, unknown>>): string {
-  if (rows.length === 0) return "";
-  const headers = Object.keys(rows[0]);
-  const escape = (v: unknown) => {
-    if (v === null || v === undefined) return "";
-    const s = String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const lines = [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))];
-  return lines.join("\n");
-}
-
-function downloadCSV(filename: string, csv: string) {
-  // Leading BOM so Excel on Windows reads this as UTF-8 rather than the
-  // system codepage -- without it, the em dash in source_note ("...
-  // PARTIAL this run") renders as mangled characters.
-  // String.fromCharCode(0xFEFF), not a literal BOM character in the source
-  // file -- an invisible codepoint sitting in source is fragile (a
-  // formatter, linter --fix, or copy-paste can silently strip it with no
-  // visible git diff); building it explicitly survives all of that.
-  const BOM = String.fromCharCode(0xfeff);
-  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Deferred a tick -- revoking synchronously right after click() has been
-  // flaky in Firefox, which can still be resolving the download when the
-  // blob URL disappears.
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-}
+// CSV building and the download itself live in lib/download.ts, shared with
+// the per-chart downloads. The BOM, the escaping and the Firefox revoke
+// delay are all kept there.
 
 type Status = "idle" | "loading" | "error" | "empty";
 
@@ -103,7 +73,7 @@ export default function ExportDataButtons() {
         setStatus((s) => ({ ...s, [table]: "empty" }));
         return;
       }
-      downloadCSV(filename, toCSV(rows));
+      downloadBlob(filename, csvBlob(toCsv(rows)));
       setStatus((s) => ({ ...s, [table]: "idle" }));
     } catch {
       setStatus((s) => ({ ...s, [table]: "error" }));

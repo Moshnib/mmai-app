@@ -12,12 +12,19 @@
 //                  Trends and Compare keep their controls there too, and
 //                  a reload keeps the view.
 //    Share         on a desktop, copies the address and says so.
+//    Sources       jump links and a #hash open their folded group;
+//                  Open all opens every group.
+//    Downloads     a chart's CSV has the right header and credit lines;
+//                  its PNG is a real image, not an empty file.
+//    Terms         a term opens on tap, speaks, stays on a phone screen,
+//                  and closes on Escape.
 //
 //    npm run build && npx next start -p 3123 &
 //    npx tsx scripts/check-site-functions.ts
 // ============================================================
 
-import { chromium, type Page } from "playwright";
+import { readFileSync } from "node:fs";
+import { chromium, devices, type Browser, type Page } from "playwright";
 
 const BASE = process.env.LAYOUT_TEST_URL ?? "http://localhost:3123";
 
@@ -101,6 +108,87 @@ async function share(page: Page) {
   check((status ?? "").includes("copied"), "says the link was copied");
 }
 
+async function sources(page: Page) {
+  console.log("\nSources page");
+  await page.goto(`${BASE}/sources`, { waitUntil: "load" });
+  const openCount = () => page.evaluate(() => [...document.querySelectorAll("details.sources-group")].filter((d) => (d as HTMLDetailsElement).open).length);
+  check((await openCount()) === 0, "groups start folded");
+  await page.click('.sources-jump a[href="#src-japan"]');
+  await page.waitForTimeout(300);
+  check(await page.evaluate(() => (document.getElementById("src-japan") as HTMLDetailsElement | null)?.open === true), "a jump link opens its group");
+  await page.click(".sources-folds-btn >> text=Open all");
+  await page.waitForTimeout(200);
+  const total = await page.evaluate(() => document.querySelectorAll("details.sources-group").length);
+  check((await openCount()) >= Math.min(total, 10), "Open all opens the groups");
+
+  await page.goto(`${BASE}/sources#gulf-oman`, { waitUntil: "load" });
+  await page.waitForTimeout(800);
+  check(await page.evaluate(() => (document.getElementById("gulf-oman") as HTMLDetailsElement | null)?.open === true), "an address ending #gulf-oman opens Oman");
+}
+
+async function downloads(page: Page) {
+  console.log("\nChart downloads");
+  await page.goto(`${BASE}/trends?market=JP`, { waitUntil: "load" });
+  await page.waitForTimeout(1500);
+  const row = page.locator(".chart-download").first();
+
+  const [csv] = await Promise.all([page.waitForEvent("download"), row.locator("button", { hasText: "Data" }).click()]);
+  // The file starts with a byte-order mark so Excel reads it as UTF-8.
+  const csvText = readFileSync((await csv.path())!, "utf8").replace(/^\uFEFF/, "");
+  check(csvText.startsWith("Period,") && /\n\d{4},/.test(csvText), `CSV starts with a Period column and yearly rows (${csv.suggestedFilename()})`);
+  check(/\nSource,/.test(csvText), "CSV carries its credit line");
+
+  const [png] = await Promise.all([page.waitForEvent("download"), row.locator("button", { hasText: "Image" }).click()]);
+  const bytes = readFileSync((await png.path())!);
+  const size = await page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    return { w: img.naturalWidth, h: img.naturalHeight };
+  }, bytes.toString("base64")).catch(() => ({ w: 0, h: 0 }));
+  // Drawn at 2x, and the chart alone is 320px tall, so anything under
+  // 640px high has lost the chart and kept only its title and footer.
+  check(size.w > 800 && size.h > 640, `PNG is a real image with the chart in it (${size.w}×${size.h})`);
+}
+
+async function terms(browser: Browser) {
+  console.log("\nTerm explanations, on a phone");
+  const context = await browser.newContext({ ...devices["iPhone 13"], viewport: { width: 375, height: 812 } });
+  const page = await context.newPage();
+  await page.goto(`${BASE}/`, { waitUntil: "load" });
+  const btn = page.locator(".term-btn", { hasText: "market-years" }).first();
+  await btn.tap();
+  await page.waitForTimeout(200);
+  const said = await page.locator(".term", { has: btn }).locator(".term-status").textContent();
+  check((said ?? "").includes("economy in one year"), "tapping a term fills its explanation");
+  const box = await page.locator(".term-bubble").first().boundingBox();
+  check(!!box && box.x >= 0 && box.x + box.width <= 375, "the explanation stays on the screen");
+  const docWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  check(docWidth <= 375, "opening it does not make the page scroll sideways");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(150);
+  check((await page.locator(".term-bubble").count()) === 0, "Escape closes it");
+  await context.close();
+
+  // With a mouse: resting on the word previews it, a click pins it, and a
+  // second click closes it even though the pointer is still on the word.
+  console.log("\nTerm explanations, with a mouse");
+  const desk = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const dp = await desk.newPage();
+  await dp.goto(`${BASE}/`, { waitUntil: "load" });
+  const word = dp.locator(".term-btn", { hasText: "market-years" }).first();
+  await word.hover();
+  await dp.waitForTimeout(150);
+  check((await dp.locator(".term-bubble").count()) === 1, "resting the pointer on it previews it");
+  await word.click();
+  await dp.waitForTimeout(150);
+  check((await dp.locator(".term-bubble").count()) === 1, "a click pins it open");
+  await word.click();
+  await dp.waitForTimeout(150);
+  check((await dp.locator(".term-bubble").count()) === 0, "a second click closes it with the pointer still on it");
+  await desk.close();
+}
+
 async function main() {
   console.log(`Checking everyday controls against ${BASE}`);
   const browser = await chromium.launch();
@@ -111,6 +199,9 @@ async function main() {
   await backToTop(page);
   await address(page);
   await share(page);
+  await sources(page);
+  await downloads(page);
+  await terms(browser);
   await browser.close();
 
   console.log("");
@@ -118,7 +209,7 @@ async function main() {
     console.error(`${failures.length} problem(s):\n  ${failures.join("\n  ")}\n`);
     process.exit(1);
   }
-  console.log("Back to top, the address and sharing all behave.");
+  console.log("Back to top, the address, sharing, sources, downloads and terms all behave.");
 }
 
 main().catch((e) => {

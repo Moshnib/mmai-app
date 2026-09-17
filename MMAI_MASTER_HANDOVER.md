@@ -2104,6 +2104,35 @@ top, the address on all three pages including Back and reload, and copy
 link. Round 2 (next): Sources page navigation, downloads beside charts,
 term explanations.
 
+### 32.1 Round 2: sources navigation, chart downloads, term explanations (2026-09-17)
+
+- **/sources folds** — each market group is a native `<details>` (closed by
+  default, DOM-owned `open`, never React state), with "Open all / Close
+  all" and an "On this page" row (`components/SourcesJumpNav.tsx`) of plain
+  `#src-japan` / `#gulf-oman` links. A hash opens its group on arrival and
+  on hashchange; a click opens it too (same hash twice fires no event). A
+  real h2 now heads the scored table, because headings inside `<summary>`
+  are dropped by screen readers.
+- **Downloads beside charts** — `TrendChart` takes `download={{ title,
+  source, unit }}` and renders `components/ChartDownload.tsx`: PNG (the
+  chart's largest `svg.recharts-surface` with computed styles inlined,
+  drawn with title, legend and credit lines onto a 2x canvas) and CSV
+  (ISO period where the chart has one, BOM, quoted Source rows). Credit
+  lines live in `lib/chartSources.ts`; the six daily bond curves are NOT
+  on /sources, so their lines are spelled out there, including the OGL
+  v3.0 statement and "data processed by MMAI" for RBA (CC BY 4.0) and
+  Japan (PDL 1.0). Nothing claims a licence for the downloaded file.
+  Shared CSV/download helpers: `lib/download.ts` (ExportDataButtons uses
+  them too).
+- **Term explanations** — `components/Term.tsx` toggletip (click pins,
+  mouse hover previews, Escape/outside/resize close; always-mounted status
+  region) with text from `lib/glossary.ts`, every number derived from the
+  reference set. Placed in the Home hero and meta row, Compare subtitle,
+  bond spread note and Dashboard spread note — never inside headings.
+
+`scripts/check-site-functions.ts` now also covers folds, both downloads
+(PNG decoded, must contain the chart) and terms on a phone and with a mouse.
+
 ## 33. The strip along the top, rebuilt after a phone report (2026-09-17)
 
 Reported as "pausing and fading and not working good even on mobile",

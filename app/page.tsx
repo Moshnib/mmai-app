@@ -30,6 +30,7 @@ import { useGulfIndicators } from "@/lib/useGulfIndicators";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
 import { useQuery, setQuery } from "@/lib/urlState";
 import ShareButton from "@/components/ShareButton";
+import Term from "@/components/Term";
 
 function formatUpdatedAt(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
@@ -319,7 +320,7 @@ export default function OverviewPage() {
           <p className="sub" style={{ maxWidth: "64ch", margin: "0 0 28px" }}>
             MMAI reads the economic figures governments publish about themselves — inflation, jobs, growth, debt
             and interest rates — and turns them into one score per country, rechecked every day and republished
-            whenever a source moves. That score is a rank against {REFERENCE_COUNT} market-years, built from three dimensions
+            whenever a source moves. That score is a <Term k="rank">rank</Term> against {REFERENCE_COUNT} <Term k="market-year">market-years</Term>, built from <Term k="dimensions">three dimensions</Term>
             you can open up and check. It is not investment advice.
           </p>
 
@@ -408,7 +409,7 @@ export default function OverviewPage() {
               )}
               <ScoreTrendChart marketCode={market.code} currentScore={composite} />
               <div className="meta-row" style={{ marginTop: 14 }}>
-                <span>Band: <b>{percentileBandLabel(composite)}</b></span>
+                <span><Term k="band">Band</Term>: <b>{percentileBandLabel(composite)}</b></span>
                 <span>Ranked against: <b>{REFERENCE_COUNT} market-years, {REFERENCE_SPAN}</b></span>
                 {/* Source COUNT, not the licence-review date -- that date is
                     maintenance metadata (see lib/sources.ts) and reads as

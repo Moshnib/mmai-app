@@ -6,6 +6,7 @@ import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeRangeFilter, { ANNUAL_RANGES } from "@/components/TimeRangeFilter";
 import { useQuery, setQuery } from "@/lib/urlState";
 import ShareButton from "@/components/ShareButton";
+import { SCORE_SOURCE, INDICATOR_SOURCE } from "@/lib/chartSources";
 import Flag from "@/components/Flag";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
 import { useLiveHistory } from "@/lib/useLiveHistory";
@@ -481,7 +482,7 @@ export default function TrendsPageInner({
             <div style={{ marginBottom: 10 }}>
               <TimeRangeFilter options={ANNUAL_RANGES} selected={rangeDays} onChange={setRangeDays} />
             </div>
-            {hasTrend ? <TrendChart series={compositeSeries} height={320} yDomain={[0, 100]} /> : notEnough}
+            {hasTrend ? <TrendChart series={compositeSeries} height={320} yDomain={[0, 100]} download={{ title: `MMAI score over time — ${marketNames[current]}`, source: SCORE_SOURCE }} /> : notEnough}
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 11, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
               <span>
                 Built from {sourcesForMarket(marketNames[current]).length} sources — each institution is listed on the{" "}
@@ -551,7 +552,7 @@ export default function TrendsPageInner({
         <div className="wrap">
           <div className="chart-card">
             {sectionLabel(3, `${DIMENSION_NAMES[focusDimension]} over time — ${marketNames[current]}`)}
-            {hasTrend ? <TrendChart series={focusSeries} height={300} yDomain={[0, 100]} showLegend={false} /> : notEnough}
+            {hasTrend ? <TrendChart series={focusSeries} height={300} yDomain={[0, 100]} showLegend={false} download={{ title: `${DIMENSION_NAMES[focusDimension]} score over time — ${marketNames[current]}`, source: SCORE_SOURCE }} /> : notEnough}
 
             {/* The chart shows where this dimension sits. This shows WHY --
                 which indicators are behind it and what each contributes.
@@ -616,7 +617,7 @@ export default function TrendsPageInner({
             <div className="detail-split">
               <div>
                 {hasTrend ? (
-                  <TrendChart series={rawDetailSeries} height={280} showLegend={false} yLabel={INDICATOR_FIELD[focusIndicator].unit} />
+                  <TrendChart series={rawDetailSeries} height={280} showLegend={false} yLabel={INDICATOR_FIELD[focusIndicator].unit} download={{ title: `${INDICATOR_FIELD[focusIndicator].label} — ${marketNames[current]}`, source: INDICATOR_SOURCE, unit: INDICATOR_FIELD[focusIndicator].unit }} />
                 ) : (
                   <p style={{ color: "var(--slate)", fontSize: 13, padding: "40px 0", textAlign: "center" }}>
                     Not enough history yet for {marketNames[current]}.

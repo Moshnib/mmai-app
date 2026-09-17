@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { slugify } from "@/lib/download";
 import Flag from "@/components/Flag";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { FetchStatus } from "@/lib/sources";
@@ -62,6 +63,7 @@ export default function SourcesTable({
   codeForName,
   freshnessTable = "raw_indicators",
   freshnessKeyColumn = "market",
+  idPrefix,
 }: {
   groups: Array<{ name: string; entries: DisplayableSource[] }>;
   codeForName: Record<string, string>;
@@ -71,7 +73,34 @@ export default function SourcesTable({
   /** The column identifying which group a freshness row belongs to --
    *  "market" for the 6 scored markets, "country_code" for Gulf Watch. */
   freshnessKeyColumn?: "market" | "country_code";
+  /** Prefix for each group's id ("src" -> #src-japan), which the jump
+   *  links at the top of /sources point at. */
+  idPrefix: string;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // A group named in the address (#src-japan) opens itself, on arrival and
+  // whenever the hash changes. The DOM owns each <details>' open state --
+  // never React -- so a re-render when the freshness times arrive cannot
+  // snap an open group shut.
+  useEffect(() => {
+    const openFromHash = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      if (!id.startsWith(`${idPrefix}-`)) return;
+      const el = document.getElementById(id);
+      if (el instanceof HTMLDetailsElement && !el.open) {
+        el.open = true;
+        el.scrollIntoView({ block: "start" });
+      }
+    };
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, [idPrefix]);
+
+  function setAll(open: boolean) {
+    containerRef.current?.querySelectorAll("details").forEach((d) => { d.open = open; });
+  }
   const [freshness, setFreshness] = useState<Record<string, string> | null>(null);
   // The clock behind "14 min ago", shared with the homepage bar.
   const now = useNow();
@@ -141,12 +170,29 @@ export default function SourcesTable({
           live feeds and names the last refresh, a LIVE badge with a
           pulsing dot, and times that tick over as you read. */}
       <LiveBar facts={[`${liveCount} of ${totalCount} feeds live`]} stamp={newest} />
-      {groups.map((group) => (
-        <div key={group.name} style={{ marginBottom: 28 }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, margin: "0 0 12px", color: "var(--ink)", display: "flex", alignItems: "center", gap: 10 }}>
-            {codeForName[group.name] && <Flag code={codeForName[group.name]} size={22} />}
-            {group.name}
-          </h2>
+      {/* FOLDED BY DEFAULT. Open, every group made /sources 32 screens long
+          on a phone. Each fold still says how many sources it holds and how
+          many are live, so the page reads as a register at a glance. */}
+      <div className="sources-folds-bar">
+        <button type="button" className="sources-folds-btn" onClick={() => setAll(true)}>Open all</button>
+        <button type="button" className="sources-folds-btn" onClick={() => setAll(false)}>Close all</button>
+      </div>
+      <div ref={containerRef}>
+      {groups.map((group) => {
+        const live = group.entries.filter((e) => e.status === "live").length;
+        return (
+        <details key={group.name} id={`${idPrefix}-${slugify(group.name)}`} className="sources-group">
+          <summary className="sources-summary">
+            {codeForName[group.name] && (
+              <span aria-hidden="true" className="sources-summary-flag"><Flag code={codeForName[group.name]} size={22} /></span>
+            )}
+            <span className="sources-summary-name">{group.name}</span>
+            <span className="sources-summary-meta">
+              {group.entries.length} source{group.entries.length === 1 ? "" : "s"}
+              <span aria-hidden="true"> · {live} live</span>
+            </span>
+            <span className="sources-summary-chevron" aria-hidden="true">▾</span>
+          </summary>
           <div style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 6, overflow: "hidden" }}>
             <div className="sources-head" style={{ background: "var(--hover)", fontFamily: "IBM Plex Mono, monospace", fontWeight: 700, color: "var(--slate)", letterSpacing: 0.5 }}>
               <span>INDICATOR</span>
@@ -209,8 +255,10 @@ export default function SourcesTable({
               </div>
             ))}
           </div>
-        </div>
-      ))}
+        </details>
+        );
+      })}
+      </div>
     </>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { GULF_SOURCE } from "@/lib/chartSources";
 import { useMemo, useState } from "react";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
@@ -374,7 +375,7 @@ export default function GulfTrends() {
                 Annual
               </span>
             </div>
-            <TrendChart series={visibleSeries} height={360} yLabel={crossMeta.axis} showDots connectNulls={false} />
+            <TrendChart series={visibleSeries} height={360} yLabel={crossMeta.axis} showDots connectNulls={false} download={{ title: `${crossMeta.label}, Gulf economies`, source: GULF_SOURCE, unit: crossMeta.axis }} />
             <p style={{ fontSize: 11, color: "var(--slate)", margin: "12px 0 0", lineHeight: 1.6 }}>
               {crossMeta.note}
               {cross.excluded.length > 0 && ` No comparable data in this window for: ${cross.excluded.join(", ")}.`}
