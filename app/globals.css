@@ -110,7 +110,7 @@
   /* A SELECTED CONTROL IS GOLD, NOT OFF-WHITE. The first pass filled it
      off-white and spent gold only on the score, which read as dry -- the
      owner compared it with the warmer mockup and preferred that one. Gold
-     fill with navy text is 8.65:1, and it makes "chosen" the warmest
+     fill with navy text is 13.3:1 (#FFD166; it was 8.65:1 with the older #D4B06A), and it makes "chosen" the warmest
      thing on the page, which is what the accent is for. */
   --on-bg: #FFD166;         /* a selected control's fill */
   --on-ink: #0A0F1A;        /* ...and its text */
@@ -1831,6 +1831,7 @@ a.dim-axis-row:hover { background: var(--hover); }
    wraps, so every market is readable at once rather than half of them
    sitting off the edge. */
 .ticker.is-still .ticker-track { animation: none; width: 100%; flex-wrap: wrap; }
+.ticker.is-still .ticker-row { flex-wrap: wrap; }
 .ticker.is-still .ticker-row[aria-hidden="true"] { display: none; }
 .ticker.is-still { -webkit-mask-image: none; mask-image: none; }
 /* Pause for a pointer resting on it, and for a KEYBOARD focus -- not for
@@ -1870,8 +1871,9 @@ a.dim-axis-row:hover { background: var(--hover); }
 @media (prefers-reduced-motion: reduce) {
   /* The default under this setting is still -- but only until the reader
      says otherwise. data-motion="play" is their explicit request, and
-     :not() lets it through here rather than forcing everything off. */
-  .ticker-row { flex-wrap: wrap; }
+     :not() lets it through here rather than forcing everything off.
+     The ticker is not here: it follows .is-still, which the button sets
+     on any system, not only this one. */
   :root:not([data-motion="play"]) .trend-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   :root:not([data-motion="play"]) .trend-dot { opacity: 1; animation: none; }
   :root:not([data-motion="play"]) .live-dot { animation: none; }

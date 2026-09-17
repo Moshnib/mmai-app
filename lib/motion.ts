@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 // ============================================================
 //  ONE SWITCH FOR EVERYTHING THAT MOVES
@@ -21,15 +21,24 @@ import { useEffect, useState } from "react";
 //    still  the reader asked for none
 //
 //  It is published as data-motion on <html> so CSS animations can read
-//  it, and returned as a boolean so components can read it too. Both
-//  come from the same place, which is the point: before this, the
-//  ticker, the score and the chart each decided for themselves.
+//  it, and returned as a boolean so components can read it too.
+//
+//  ONE STORE, NOT ONE STATE PER CALLER. The first version kept the
+//  setting in each component's own useState, so pressing play on the
+//  ticker updated the ticker and nothing else: the score on the same page
+//  went on appearing instantly. Every caller now reads the same store,
+//  and a toggle anywhere notifies all of them.
+//
+//  Scope, honestly: this drives the ticker, the counting score, the trend
+//  line and the live dot. A few smaller transitions elsewhere in
+//  globals.css still follow the system setting alone.
 // ============================================================
 
 export type MotionSetting = "auto" | "play" | "still";
 const STORE_KEY = "mmai.motion";
+const QUERY = "(prefers-reduced-motion: reduce)";
 
-function read(): MotionSetting {
+function readSetting(): MotionSetting {
   try {
     const v = window.localStorage.getItem(STORE_KEY);
     return v === "play" || v === "still" ? v : "auto";
@@ -40,27 +49,46 @@ function read(): MotionSetting {
   }
 }
 
+// The reader's choice for this visit. Kept in memory as well as in
+// storage, so a blocked localStorage still toggles for the whole page.
+let current: MotionSetting | null = null;
+const listeners = new Set<() => void>();
+
+function notify() {
+  listeners.forEach((l) => l());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  const mq = window.matchMedia(QUERY);
+  mq.addEventListener("change", listener);
+  return () => {
+    listeners.delete(listener);
+    mq.removeEventListener("change", listener);
+  };
+}
+
+/** "play" | "still" | "auto-play" | "auto-still": a string, so the
+ *  snapshot compares equal between renders. */
+function getSnapshot(): string {
+  if (current === null) current = readSetting();
+  const systemStill = window.matchMedia(QUERY).matches;
+  return current === "auto" ? (systemStill ? "auto-still" : "auto-play") : current;
+}
+
+// The server, and the first client render, see "server" (not ready, so
+// nothing runs): a page that has
+// not yet read the system setting must not start moving and then stop,
+// and a hydration mismatch is worse than a beat of delay.
+function getServerSnapshot(): string {
+  return "server";
+}
+
 export function useMotion(): { setting: MotionSetting; running: boolean; toggle: () => void } {
-  // Starts "still" on the server and on the first client render: a page
-  // that has not yet read the system setting must not start moving and
-  // then stop, and a hydration mismatch is worse than a beat of delay.
-  const [setting, setSetting] = useState<MotionSetting>("auto");
-  const [systemStill, setSystemStill] = useState(true);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const apply = () => {
-      setSystemStill(mq.matches);
-      setSetting(read());
-      setReady(true);
-    };
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  const running = ready && (setting === "play" || (setting === "auto" && !systemStill));
+  const snap = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const ready = snap !== "server";
+  const running = snap === "play" || snap === "auto-play";
+  const setting: MotionSetting = snap.startsWith("auto") || !ready ? "auto" : (snap as MotionSetting);
 
   // Published for the stylesheet. Written on every change, including the
   // first, so CSS and components can never disagree about the state.
@@ -71,12 +99,13 @@ export function useMotion(): { setting: MotionSetting; running: boolean; toggle:
 
   function toggle() {
     const next: MotionSetting = running ? "still" : "play";
-    setSetting(next);
+    current = next;
     try {
       window.localStorage.setItem(STORE_KEY, next);
     } catch {
       // The choice applies to this visit; it just will not be remembered.
     }
+    notify();
   }
 
   return { setting, running, toggle };
