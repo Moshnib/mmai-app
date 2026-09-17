@@ -62,6 +62,14 @@ const EXPECTED_FAILURES: { match: RegExp; why: string }[] = [
   // arrives as a status and is still reported by the response handler
   // below -- as would a 404 if the route were ever renamed.
   { match: /\/api\/announcements/, why: "aborted announcements fetch -- the tab closed before two outside feeds answered" },
+
+  // Vercel Web Analytics (app/layout.tsx). On Vercel this script is served
+  // at the site's own origin; under a local `next start` nothing serves it,
+  // so it 404s here and only here, and Chrome then also refuses the 404
+  // body as a script ("MIME type ('text/plain') is not executable").
+  // Exactly this one file -- any other /_vercel path, or the beacon
+  // itself, still fails the check.
+  { match: /\/_vercel\/insights\/script\.js(?=$|['"\s])/, why: "analytics script exists only on Vercel, not under a local next start" },
 ];
 
 interface Problem { page: string; kind: string; detail: string }
@@ -78,6 +86,13 @@ async function inspect(page: Page, path: string, base: string): Promise<Problem[
 
   page.on("console", (m) => {
     if (m.type() !== "error") return;
+    // A failed resource is reported twice: as a response, and as a console
+    // line whose text omits the URL. The same exceptions apply to both.
+    const at = m.location()?.url ?? "";
+    if (at && EXPECTED_FAILURES.some((e) => e.match.test(at))) return;
+    // Some refusals name the resource only in the message itself.
+    const text = m.text();
+    if (/^Refused to execute script from '/.test(text) && EXPECTED_FAILURES.some((e) => e.match.test(text))) return;
     add("console", m.text().slice(0, 200));
   });
   // An uncaught exception is not the same as console.error and is

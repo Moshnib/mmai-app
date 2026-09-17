@@ -2064,3 +2064,42 @@ Breakpoint 1100px → **760px**; `scripts/check-layout.ts` "nav-row" is now
 761. New `scripts/check-nav.ts` (wired into CI after check-accessibility)
 opens both groups at 761 and 1280 and on a 740×360 touch phone and asserts
 every behaviour above. Reviewed before coding and before merge.
+
+## 32. Everyday controls, round 1 of the functionality review (2026-09-17)
+
+The owner asked for a review against comparable data sites (Our World in
+Data, FRED, Trading Economics) and approved all eight recommendations.
+Built in two rounds. Round 1:
+
+- **Back to top** — `components/BackToTop.tsx`, in the layout. Not in the
+  page until the reader is two screens down (measured: Sources is 32
+  phone-screens, Learn 19). Returns to the top and focuses `<main>`
+  (`tabIndex=-1`). Footer bottom padding is 88px so it never covers the
+  last footer line on a phone.
+- **The address remembers the choice** — `lib/urlState.ts`
+  (`useQuery` via useSyncExternalStore; `setQuery(changes, push|replace)`).
+  Home `?market=`; Trends `?market=&dimension=&range=&raw=`; Compare
+  `?markets=&from=&to=&dim=&raw=&view=`. Choosing a market PUSHES (Back
+  returns to the previous one); every other control REPLACES. Defaults are
+  omitted so untouched pages keep clean addresses. Never rAF for this —
+  it does not fire in a tab that is not painting.
+- **Share this view** — `components/ShareButton.tsx`: phone share sheet on
+  touch devices, copy-link with a "Link copied" status on desktop, a
+  selected text box if copying is refused. On Home's market detail, Trends
+  and Compare.
+- **Friendly errors** — `app/error.tsx` (inside the layout; Try again /
+  homepage / Report it) and `app/global-error.tsx` (own document, literal
+  colours). Next 16 names the recovery prop `retry`, not `reset`. Verified
+  with a temporary client-throwing route, since deleted.
+- **Visitor statistics** — `@vercel/analytics`, `<Analytics />` in the
+  layout, production only. Cookieless and same-origin, so the CSP is
+  unchanged. **The owner must click Enable under Analytics in the Vercel
+  project** or nothing is counted. Hobby plan: 50,000 page views a month,
+  one month of reporting, no custom events (Pro only). The About page
+  states what is counted. `check-runtime-errors.ts` ignores exactly the
+  analytics script, which does not exist under a local `next start`.
+
+New `scripts/check-site-functions.ts` (in CI after check-nav) tests back to
+top, the address on all three pages including Back and reload, and copy
+link. Round 2 (next): Sources page navigation, downloads beside charts,
+term explanations.

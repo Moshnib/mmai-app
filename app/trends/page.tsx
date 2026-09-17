@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import TrendsPageInner from "./TrendsPageInner";
 import BondYieldPanel from "@/components/BondYieldPanel";
 import { readBondYields } from "@/lib/bondYieldsRead";
-import { FALLBACK_MARKETS } from "@/lib/markets";
 import type { DimensionKey } from "@/lib/composite";
 import { pageMetadata } from "@/lib/pageMetadata";
 
@@ -22,14 +21,19 @@ const VALID_DIMENSIONS: DimensionKey[] = ["C", "D", "K"];
 export default async function TrendsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ market?: string; dimension?: string }>;
+  searchParams: Promise<{ market?: string; dimension?: string; range?: string; raw?: string }>;
 }) {
-  const { market, dimension } = await searchParams;
+  const { market, dimension, range, raw } = await searchParams;
 
   // Validate against the real market/pillar lists -- these come straight from
   // the URL, so a junk value shouldn't reach the chart logic.
-  const validMarket = FALLBACK_MARKETS.some((m) => m.code === market) ? market! : "US";
   const validDimension = VALID_DIMENSIONS.includes(dimension as DimensionKey) ? (dimension as DimensionKey) : null;
+  // What the server rendered with, so the first paint matches the address
+  // and the client picks up from there (lib/urlState.ts). The component
+  // validates every param again, because the client reads the raw address.
+  const serverQuery = new URLSearchParams(
+    Object.entries({ market, dimension, range, raw }).filter((e): e is [string, string] => typeof e[1] === "string")
+  ).toString();
 
  // Read on the SERVER and passed down as plain objects. The bond table
   // is the one genuinely daily series on the site, and reading it here
@@ -39,7 +43,7 @@ export default async function TrendsPage({
 
   return (
     <>
-      <TrendsPageInner initialMarket={validMarket} initialDimension={validDimension} />
+      <TrendsPageInner initialDimension={validDimension} serverQuery={serverQuery} />
       <BondYieldPanel points={bondPoints} />
     </>
   );

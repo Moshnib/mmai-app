@@ -213,6 +213,14 @@ export default function AboutPage() {
           <Link className="tap btn-primary" href="/contact" style={{ marginTop: 18 }}>
             Send a message →
           </Link>
+          {/* Said plainly, where a reader asking "what does this site
+              collect?" would look. Keep it true if the counting changes. */}
+          <p style={{ fontSize: 13, color: "var(--slate)", lineHeight: 1.7, margin: "22px 0 0" }}>
+            <strong style={{ color: "var(--ink-soft)" }}>What this site counts.</strong> Visits are counted with
+            Vercel Web Analytics: which pages are read, roughly where from, and on what kind of device. It sets no
+            cookies and records nothing that identifies you. Email addresses are held only if you subscribe, and
+            every email has an unsubscribe link.
+          </p>
         </div>
       </div>
     </>
