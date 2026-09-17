@@ -42,4 +42,12 @@ export const IS_VERCEL_DOMAIN = /\.vercel\.app$/.test(new URL(SITE_URL).hostname
 /** The address alerts are sent FROM. Separate from SITE_URL because the
  *  sending domain has to be verified with Resend independently -- pointing
  *  the site at a new domain does not by itself make email work from it. */
-export const ALERT_FROM = process.env.ALERT_FROM_ADDRESS || `MMAI Alerts <alerts@${new URL(SITE_URL).hostname}>`;
+/** The domain mail is sent FROM: the site's hostname without any www.
+ *  An email provider treats www.mmai.markets as a different domain from
+ *  mmai.markets, and it is mmai.markets that is verified with Resend --
+ *  so sending from the www form would be rejected every time. The site
+ *  is served at www (Vercel's own recommendation) and sends from the
+ *  bare domain, which is what the DKIM and SPF records cover. */
+export const MAIL_DOMAIN = new URL(SITE_URL).hostname.replace(/^www./, "");
+
+export const ALERT_FROM = process.env.ALERT_FROM_ADDRESS || `MMAI Alerts <alerts@${MAIL_DOMAIN}>`;
