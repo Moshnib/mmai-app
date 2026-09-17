@@ -44,7 +44,13 @@
      colour it did not expect. --gold-bg was worse: a translucent violet
      that could never match the "gold" foreground. The names stayed through
      the September 2026 restyle; the values did not. */
-  --accent: #D4B06A;        /* THE accent: gold. Current or chosen, nothing else. */
+  /* A LIT GOLD, NOT A DUSTY ONE. #D4B06A passed every contrast test at
+     9.3:1 and the owner still called it faded, which is the right word:
+     at 50% saturation it is the colour of old brass, and no amount of
+     contrast makes a desaturated colour look alive. This is 60%
+     saturated and 13.3:1, and it stays 20 dE clear of Australia amber
+     so "chosen" is never read as "Australia". */
+  --accent: #FFD166;        /* THE accent: gold. Current or chosen, nothing else. */
   /* Not a second brand colour any more. Every use of it was a label,
      a link or a quiet marker, so it is a light neutral now -- which is
      what keeps --accent singular. */
@@ -104,11 +110,11 @@
   /* A SELECTED CONTROL IS GOLD, NOT OFF-WHITE. The first pass filled it
      off-white and spent gold only on the score, which read as dry -- the
      owner compared it with the warmer mockup and preferred that one. Gold
-     fill with navy text is 8.65:1, and it makes "chosen" the warmest
+     fill with navy text is 13.3:1 (#FFD166; it was 8.65:1 with the older #D4B06A), and it makes "chosen" the warmest
      thing on the page, which is what the accent is for. */
-  --on-bg: #D4B06A;         /* a selected control's fill */
+  --on-bg: #FFD166;         /* a selected control's fill */
   --on-ink: #0A0F1A;        /* ...and its text */
-  --on-bg-hover: #E0C088;   /* ...under the pointer */
+  --on-bg-hover: #FFDC8A;   /* ...under the pointer */
   --glyph: #6F7D94;         /* a country silhouette that is not selected */
 
   /* THE TYPE ROLES. Source Serif for headings -- a text face made for
@@ -1743,10 +1749,7 @@ a.dim-axis-row:hover { background: var(--hover); }
   70%, 100% { transform: scale(2.1); opacity: 0; }
 }
 @keyframes src-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
-@media (prefers-reduced-motion: reduce) {
-  .live-dot { animation: none; }
-  .live-dot::after { animation: none; opacity: 0; }
-}
+
 
 .src-badge {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1801,13 +1804,36 @@ a.dim-axis-row:hover { background: var(--hover); }
   position: relative; overflow: hidden;
   border-bottom: 1px solid var(--hair);
   background: var(--card-bg);
+  /* Room for the motion button, which sits over the left edge. */
+  padding-left: 34px;
 }
+
+/* START AND STOP, BY HAND. The site honours prefers-reduced-motion, and
+   a reader with Windows animation effects off met a strip that never
+   moved and no way to ask it to. Respecting the setting by default is
+   right; refusing the reader who asks is not. */
+.ticker-motion {
+  position: absolute; left: 0; top: 0; bottom: 0; z-index: 2;
+  width: 34px; display: flex; align-items: center; justify-content: center;
+  border: 0; border-right: 1px solid var(--hair); background: var(--paper);
+  color: var(--slate); cursor: pointer; font-size: var(--t-micro); line-height: 1;
+}
+.ticker-motion:hover { color: var(--accent); }
+.ticker-motion:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 /* Fades at both ends, so items arrive and leave rather than being cut.
    A mask, not a gradient fill: nothing is painted over the page. */
 .ticker { -webkit-mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
 /* 40s, not 64. At 64 the strip moved about 26 pixels a second, which on
    a wide screen is slow enough that the owner read it as stopped. */
-.ticker-track { display: flex; width: max-content; animation: ticker-scroll 40s linear infinite; }
+.ticker-track { display: flex; width: max-content; }
+.ticker.is-playing .ticker-track { animation: ticker-scroll 40s linear infinite; }
+/* Stopped by the reader (or by their system): the strip holds still and
+   wraps, so every market is readable at once rather than half of them
+   sitting off the edge. */
+.ticker.is-still .ticker-track { animation: none; width: 100%; flex-wrap: wrap; }
+.ticker.is-still .ticker-row { flex-wrap: wrap; }
+.ticker.is-still .ticker-row[aria-hidden="true"] { display: none; }
+.ticker.is-still { -webkit-mask-image: none; mask-image: none; }
 /* Pause for a pointer resting on it, and for a KEYBOARD focus -- not for
    any focus. Clicking an item leaves that button focused, so :focus-within
    froze the strip for good the moment anyone used it. */
@@ -1830,21 +1856,28 @@ a.dim-axis-row:hover { background: var(--hover); }
 .ticker-delta.up { color: var(--status-live); }
 .ticker-delta.down { color: #CF6660; }
 
-/* The line arrives the way the history did. */
+/* The line arrives the way the history did -- unless the page is in its
+   still state, which is the system's setting or the reader's choice; see
+   lib/motion.ts, which publishes it as data-motion on <html>. */
 .trend-line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: trend-draw 1.1s cubic-bezier(.22,1,.36,1) forwards; }
+:root[data-motion="still"] .trend-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+:root[data-motion="still"] .trend-dot { opacity: 1; animation: none; }
+:root[data-motion="still"] .live-dot { animation: none; }
+:root[data-motion="still"] .live-dot::after { animation: none; opacity: 0; }
 @keyframes trend-draw { to { stroke-dashoffset: 0; } }
 .trend-dot { opacity: 0; animation: trend-pop .4s ease-out 1s forwards; }
 @keyframes trend-pop { to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Everything holds still, and nothing is hidden: the strip wraps onto
-     as many lines as it needs and reads as a plain list of scores. */
-  .ticker-track { animation: none; width: 100%; flex-wrap: wrap; }
-  .ticker-row[aria-hidden="true"] { display: none; }
-  .ticker-row { flex-wrap: wrap; }
-  .ticker { -webkit-mask-image: none; mask-image: none; }
-  .trend-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
-  .trend-dot { opacity: 1; animation: none; }
+  /* The default under this setting is still -- but only until the reader
+     says otherwise. data-motion="play" is their explicit request, and
+     :not() lets it through here rather than forcing everything off.
+     The ticker is not here: it follows .is-still, which the button sets
+     on any system, not only this one. */
+  :root:not([data-motion="play"]) .trend-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+  :root:not([data-motion="play"]) .trend-dot { opacity: 1; animation: none; }
+  :root:not([data-motion="play"]) .live-dot { animation: none; }
+  :root:not([data-motion="play"]) .live-dot::after { animation: none; opacity: 0; }
 }
 
 /* An event in the strip: what one of the site's own figures just did.

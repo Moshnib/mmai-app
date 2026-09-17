@@ -122,7 +122,7 @@ export function inflationTargetFor(market: string): number {
  *  and the closest point to the gold accent is 54 dE away, so a scored
  *  colour is never mistaken for "this is the one you chose".
  *  scripts/check-palette-contrast.ts sweeps it on every build. */
-const COLOR_STOPS = ["#E85C63", "#B978B0", "#3FC4EE"];
+const COLOR_STOPS = ["#FF4D6A", "#C05CE0", "#17BFEF"];
 /** The colour of a figure that does not exist.
  *
  *  Was a darker grey (6B7086), which measured 3.85:1 on a card and 4.08:1 on the page --

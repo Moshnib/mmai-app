@@ -29,7 +29,7 @@ export default function OpengraphImage() {
       >
         {/* Brand row — the gold mark + wordmark, matching the site nav */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ width: 22, height: 22, borderRadius: 2, background: "#D4B06A" }} />
+          <div style={{ width: 22, height: 22, borderRadius: 2, background: "#FFD166" }} />
           <div style={{ fontSize: 34, fontWeight: 700, color: "#E9ECF1", letterSpacing: 2 }}>MMAI</div>
         </div>
 
@@ -53,7 +53,7 @@ export default function OpengraphImage() {
         {/* A printed rule with one gold segment -- the site's single accent,
             where a report would put its section mark. */}
         <div style={{ display: "flex", height: 2, background: "#202B3D" }}>
-          <div style={{ width: 120, height: 2, background: "#D4B06A" }} />
+          <div style={{ width: 120, height: 2, background: "#FFD166" }} />
         </div>
       </div>
     ),

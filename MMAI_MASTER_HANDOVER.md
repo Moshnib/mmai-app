@@ -1992,3 +1992,29 @@ Tests: `test-ticker-events.ts` and `test-news-feeds.ts`, both on fixtures
 with a pinned clock, both in CI, both mutation-tested.
 `check-runtime-errors.ts` gained one scoped exception: the announcements
 fetch can still be in flight when that script closes the tab.
+
+### 30.1 One switch for everything that moves (2026-09-16)
+
+The owner reported the desktop as "horrible, nothing is working" while
+the phone was fine. Nothing was broken. Windows had animation effects
+turned off, Chrome reported prefers-reduced-motion, and the site
+correctly stopped the ticker, the counting score, the self-drawing trend
+line and the live pulse — every sign of life at once, with no way to ask
+for it back. The phone had no such setting, so the phone looked alive.
+
+Driving the live desktop site first ruled out an actual fault: no
+horizontal scroll, no console errors, market chips, navigation and the
+news band all working at 1920 and 1440.
+
+`lib/motion.ts` now holds one preference — auto (follow the system),
+play, or still — remembered in localStorage and published as
+`data-motion` on `<html>` so CSS reads the same state the components do.
+A button at the left edge of the ticker toggles it. Under
+prefers-reduced-motion the CSS rules are written as
+`:root:not([data-motion="play"])`, so the system still wins by default
+and a reader who asks is not refused.
+
+Verified in three states: system-still with no press (score appears
+instantly, strip static), system-still after pressing play (counts up,
+strip moves 115px/1.2s, trend line draws, dot pulses), and system-normal
+(all of it, as before).

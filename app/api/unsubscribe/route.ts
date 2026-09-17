@@ -89,14 +89,14 @@ function page(status: number, title: string, message: string, confirmToken?: str
   // Only fixed strings and a validated UUID are ever interpolated here.
   const form = confirmToken
     ? `<form method="post" action="/api/unsubscribe?token=${confirmToken}" style="margin-top:24px;">
-      <button type="submit" style="font:inherit;font-weight:600;padding:10px 22px;border-radius:4px;border:1px solid #D4B06A;background:#D4B06A;color:#0A0F1A;cursor:pointer;">Unsubscribe</button>
+      <button type="submit" style="font:inherit;font-weight:600;padding:10px 22px;border-radius:4px;border:1px solid #FFD166;background:#FFD166;color:#0A0F1A;cursor:pointer;">Unsubscribe</button>
     </form>`
     : "";
   const body = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>MMAI — ${title}</title></head>
 <body style="margin:0;background:#0A0F1A;color:#E9ECF1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;">
   <main style="text-align:center;max-width:420px;padding:40px 24px;">
-    <div style="font-family:monospace;font-size:12px;color:#D4B06A;letter-spacing:2px;margin-bottom:16px;">MMAI</div>
+    <div style="font-family:monospace;font-size:12px;color:#FFD166;letter-spacing:2px;margin-bottom:16px;">MMAI</div>
     <h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 12px;">${title}</h1>
     <p style="color:#C5CCD7;line-height:1.6;margin:0;">${message}</p>${form}
     <p style="margin-top:28px;"><a href="${SITE_URL}" style="color:#C5CCD7;">Back to MMAI</a></p>
