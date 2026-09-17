@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
@@ -97,6 +98,16 @@ export default function SiteFooter() {
 
   return (
     <footer>
+      {/* Contact left the top bar in September 2026; this is where readers
+          look for it, beside the pages about the index itself. */}
+      <nav className="wrap" aria-label="Site information">
+        <ul className="site-footer-links">
+          <li><Link href="/about">About MMAI</Link></li>
+          <li><Link href="/learn">How the score works</Link></li>
+          <li><Link href="/sources">Data sources</Link></li>
+          <li><Link href="/contact">Contact</Link></li>
+        </ul>
+      </nav>
       <div className="wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <span>© 2026 MMAI — Moshnib Macro Analysis Index. Measuring the Pulse of the Economy. An analytical communication tool, not investment advice.</span>
         {lastUpdated && (

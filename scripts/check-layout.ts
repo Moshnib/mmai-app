@@ -61,10 +61,11 @@ const VIEWPORTS = [
   { name: "small", width: 620, height: 800 },
   { name: "tablet", width: 700, height: 1024 },
   { name: "wide-tab", width: 880, height: 900 },
-  // 1px above the 1100px nav breakpoint, the narrowest width at which
-  // every link shares one row. At 960 (its first setting) the row pushed
-  // every page 83px sideways, which is why the breakpoint moved.
-  { name: "nav-row", width: 1101, height: 900 },
+  // 1px above the 760px nav breakpoint, the narrowest width at which the
+  // full bar shows. When it listed eleven links the breakpoint was 1100
+  // (at 960 the row pushed every page 83px sideways); five entries brought
+  // it down, and this keeps the new edge honest.
+  { name: "nav-row", width: 761, height: 900 },
   { name: "desktop", width: 1280, height: 900 },
 ];
 

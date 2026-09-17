@@ -413,6 +413,10 @@ jobs:
           # colour token changes in one commit while a claim goes stale in
           # the next.
           npx tsx scripts/check-accessibility.ts
+          # Sixth: does the top bar behave? Its two groups open panels, and a
+          # panel that will not close or hangs off the screen moves nothing
+          # the checks above measure.
+          npx tsx scripts/check-nav.ts
           # Fifth question, same server: what does a SEARCH ENGINE get,
           # and what does a person see when the link is pasted into a
           # chat? Neither is visible on the site itself.

@@ -13,7 +13,7 @@ export default function NotFound() {
           <h1 className="headline" style={{ maxWidth: "20ch" }}>That page doesn&apos;t exist</h1>
           <p className="sub">
             The link may be out of date, or the address mistyped. Everything on MMAI is reachable from the
-            menu above — or start from the <Link href="/" style={{ color: "var(--accent-2)" }}>Overview</Link>.
+            menu above — or start from the <Link href="/" style={{ color: "var(--accent-2)" }}>homepage</Link>.
           </p>
         </div>
       </div>
