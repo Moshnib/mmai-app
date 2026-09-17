@@ -2104,6 +2104,45 @@ top, the address on all three pages including Back and reload, and copy
 link. Round 2 (next): Sources page navigation, downloads beside charts,
 term explanations.
 
+## 33. The strip along the top, rebuilt after a phone report (2026-09-17)
+
+Reported as "pausing and fading and not working good even on mobile",
+with a photo of the live site showing an apparently EMPTY strip. Measured
+on the live site rather than guessed; five separate faults:
+
+1. **118 px/s at every width.** The animation was a fixed 40s for one
+   pass, and the row had grown to ~4,700px. `components/MarketTicker.tsx`
+   now measures the row (ResizeObserver, only while playing) and writes
+   `--ticker-seconds`, so it travels ~55 px/s with a mouse and ~45 with a
+   finger. Measured: 56 and 45.
+2. **A moving button cannot be tapped** -- Playwright literally timed out
+   on it. A touch now holds the strip still while the finger is down and
+   for 3s after (10s ceiling, in case the OS takes the gesture); a
+   cancelled gesture releases at once. `touch-action: pan-y pinch-zoom`.
+3. **A phone's lingering hover could freeze it.** The hover pause now
+   sits inside `@media (hover: hover) and (pointer: fine)`; the
+   `:has(:focus-visible)` pause stays for keyboards.
+4. **The strip jumped** as each of its two queries landed and widened the
+   row mid-scroll. Both now land together (`extras`, one state) and the
+   animation only starts after they do -- with a 4s deadline, so a hanging
+   route can never leave the strip stopped.
+5. **THE ACTUAL PHOTO.** Order was: every announcement, then every weekly
+   change, then the scores. The first three headlines measured 656, 361
+   and 721px -- nearly two phone screens each -- so a phone reader watched
+   ~2,400px of news (about a minute) before the first score, and often saw
+   a fragment of one headline and nothing else. Scores lead now, with one
+   other line dealt in after every three, and `.ticker-feed-title` is
+   clipped to 42ch (24ch on a phone). Row: 4,702px -> 3,715px; first score
+   at 0px; widest item 365px.
+
+Also: the edge fade is 18px under 640px (was 40px each end, a fifth of a
+390px screen -- the "fading" in the report).
+
+`scripts/check-ticker.ts` (CI, after check-nav) measures speed on a touch
+phone and a desktop, the finger hold, the tap, the width staying put, and
+the shape of the strip: a score within the first screenful, no item wider
+than 470px, no run over 900px without a score.
+
 ### 33.1 The site has its own domain: mmai.markets (2026-09-17)
 
 Bought at Cloudflare Registrar, so the DNS stays at Cloudflare (that
