@@ -7,7 +7,7 @@ import type { DimensionKey } from "@/lib/composite";
 import { pageMetadata } from "@/lib/pageMetadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Data Over Time",
+  title: "Trends",
   description:
     "How each market's MMAI score and its three dimensions have moved since 2019 — with the raw inflation, growth, unemployment, debt and policy-rate figures behind them.",
   path: "/trends",

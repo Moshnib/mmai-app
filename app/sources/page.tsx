@@ -91,7 +91,7 @@ export default function SourcesPage() {
             </p>
             <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.75, margin: 0 }}>
               Every formula used to turn these raw figures into the three dimension scores and the composite MMAI
-              percentile is published in full on the <Link href="/learn" style={{ color: "var(--accent-2)" }}>Learn More</Link> page,
+              percentile is published in full on the <Link href="/learn" style={{ color: "var(--accent-2)" }}>How the score works</Link> page,
               together with the reference table the scores are ranked against — so the averages behind them can be checked
               rather than taken on trust. Nothing in the calculation is hidden or proprietary, and the page states plainly
               which numbers were measured and which were decided.

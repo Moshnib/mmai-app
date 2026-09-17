@@ -2018,3 +2018,49 @@ Verified in three states: system-still with no press (score appears
 instantly, strip static), system-still after pressing play (counts up,
 strip moves 115px/1.2s, trend line draws, dot pulses), and system-normal
 (all of it, as before).
+
+Two defects the pre-merge review found, fixed before PR #60 merged: each
+component had kept its own copy of the setting, so play on the ticker did
+not reach the score on the same page (now one store read through
+`useSyncExternalStore`); and the rule that wraps a stopped strip lived
+only under prefers-reduced-motion, so stopping it on an ordinary desktop
+cut off every market past the right edge (now `.ticker.is-still`).
+GitHub Actions minutes were exhausted for the month, so #60 was verified
+locally: tsc, lint, every offline script, a production build and all five
+browser checks.
+
+## 31. The top bar: eleven links became five entries (2026-09-17)
+
+The owner found the bar too long and oddly ordered. It listed every page
+in the order each was built — Overview, Dashboard, Data Over Time,
+Compare, Gulf Watch, Observatory, Stablecoins, Learn More, Sources, About,
+Contact — so a scored tool, an unscored watchlist and a contact form sat
+at the same level. Offered three structures; the owner chose this one and
+named the groups:
+
+- **Dashboard · Compare · Trends** — the scored tools, in the order used.
+- **Beyond the score ▾** — Gulf Watch, Observatory, Stablecoins.
+- **About the index ▾** — How the score works (`/learn`), Data sources,
+  About MMAI.
+- **Overview** dropped (the logo goes home). **Contact** moved to a new
+  link row in the footer, beside About, How the score works and Sources.
+- Renamed to match: "Data Over Time" → **Trends**, "Learn More" →
+  **How the score works** (page titles too; URLs unchanged).
+
+How it is built (`components/NavBar.tsx`): the groups are disclosures —
+a button with `aria-expanded` showing a panel of plain links — not ARIA
+menus. Opened by click, never hover. One open at a time; closes on
+Escape (focus back to its button), a click outside, focus leaving the
+group, and following any link, including the link to the current page.
+The focus-leaving rule ignores a null `relatedTarget`, because Safari does
+not focus a clicked link and closing then would swallow the click. The
+group holding the current page gets a gold underline (`.has-active`); the
+page itself keeps the gold fill. On a phone the groups are laid out in
+full under paragraph labels (not headings, so each page's h1 comes first),
+and the panel scrolls on its own so a phone held sideways reaches the
+last link.
+
+Breakpoint 1100px → **760px**; `scripts/check-layout.ts` "nav-row" is now
+761. New `scripts/check-nav.ts` (wired into CI after check-accessibility)
+opens both groups at 761 and 1280 and on a 740×360 touch phone and asserts
+every behaviour above. Reviewed before coding and before merge.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,31 +10,81 @@ import { usePathname } from "next/navigation";
 // in app/layout.tsx, above every page's <Suspense> boundary, so it
 // stays visible even during a page's loading fallback (Compare's
 // fallback used to hide the entire nav while its data loaded).
-const NAV_ITEMS = [
-  { href: "/", label: "Overview" },
+//
+// FIVE ENTRIES, NOT ELEVEN. The bar used to list every page in the order
+// each was built: Overview, Dashboard, Data Over Time, Compare, Gulf
+// Watch, Observatory, Stablecoins, Learn More, Sources, About, Contact.
+// The owner found it too long and oddly ordered, and it was both -- a
+// scored tool, an unscored watchlist and a contact form all at the same
+// level. In September 2026 it became:
+//
+//   the three scored tools, in the order a reader uses them;
+//   "Beyond the score"  -- the pages that track without scoring;
+//   "About the index"   -- how it is built, where the data comes from.
+//
+// Overview went because the logo already goes home, and Contact moved to
+// the footer, where readers look for it.
+
+interface NavLink { href: string; label: string; note?: string }
+interface NavGroup { id: string; label: string; items: NavLink[] }
+type NavEntry = NavLink | NavGroup;
+
+const NAV: NavEntry[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/trends", label: "Data Over Time" },
   { href: "/compare", label: "Compare" },
-  { href: "/gulf-watch", label: "Gulf Watch" },
-  // Next to Gulf Watch deliberately: both show countries with real
-  // figures and no score. Gulf Watch keeps its own name -- it reached
-  // that conclusion first and has its own sources.
-  { href: "/observatory", label: "Observatory" },
-  { href: "/stablecoins", label: "Stablecoins" },
-  { href: "/learn", label: "Learn More" },
-  { href: "/sources", label: "Sources" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+  { href: "/trends", label: "Trends" },
+  {
+    id: "beyond",
+    label: "Beyond the score",
+    items: [
+      // Gulf Watch and the Observatory side by side deliberately: both
+      // show countries with real figures and no score.
+      { href: "/gulf-watch", label: "Gulf Watch", note: "Six Gulf economies, figure by figure" },
+      { href: "/observatory", label: "Observatory", note: "Tracked, and deliberately not scored" },
+      { href: "/stablecoins", label: "Stablecoins", note: "How many dollars exist on a blockchain" },
+    ],
+  },
+  {
+    id: "about",
+    label: "About the index",
+    items: [
+      { href: "/learn", label: "How the score works", note: "Every indicator and formula, in plain words" },
+      { href: "/sources", label: "Data sources", note: "Where each number comes from, and its licence" },
+      { href: "/about", label: "About MMAI", note: "Who makes it, and why" },
+    ],
+  },
 ];
+
+function isGroup(e: NavEntry): e is NavGroup {
+  return "items" in e;
+}
+
+/** The current page is a link that says so, not a do-nothing button:
+ *  inside a list of links a dead button reads as broken to a screen
+ *  reader. Following it simply reloads the same page. */
+function PageLink({ item, pathname, className, onFollow }: { item: NavLink; pathname: string; className: string; onFollow: () => void }) {
+  const active = item.href === pathname;
+  return (
+    <Link
+      href={item.href}
+      className={`${className}${active ? " active" : ""}`}
+      aria-current={active ? "page" : undefined}
+      onClick={onFollow}
+    >
+      {item.label}
+    </Link>
+  );
+}
 
 export default function NavBar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   // The panel would otherwise stay open across a client-side navigation
-  // -- this component lives in the layout now, so it persists (doesn't
-  // remount) between pages, unlike when nav markup was copy-pasted into
-  // each page and reset for free. Adjusted directly during render (React's
+  // -- this component lives in the layout, so it persists (doesn't
+  // remount) between pages. Adjusted directly during render (React's
   // documented pattern for "reset state when a prop changes") rather than
   // via a setState-in-effect, which the react-hooks/purity rule flags as
   // an extra, avoidable render pass.
@@ -42,27 +92,94 @@ export default function NavBar() {
   if (pathname !== prevPathname) {
     setPrevPathname(pathname);
     setOpen(false);
+    setOpenGroup(null);
   }
 
+  // Following any link closes whatever is open. The pathname reset above
+  // cannot do it alone: following the link to the page you are already on
+  // changes no pathname, and the menu would stay open over the page.
+  const closeAll = () => {
+    setOpen(false);
+    setOpenGroup(null);
+  };
+
+  // A dropdown closes when the reader clicks anywhere else or presses
+  // Escape. Escape hands focus back to the button that opened it, so a
+  // keyboard reader is left where they were rather than at the top.
+  useEffect(() => {
+    if (!openGroup) return;
+    const onPointer = (e: PointerEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenGroup(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      document.getElementById(`navgroup-btn-${openGroup}`)?.focus();
+      setOpenGroup(null);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openGroup]);
+
   return (
-    // No inline position here -- globals.css's `nav { position: sticky }`
-    // was silently losing to an inline `position: relative` that existed
-    // only to anchor .navpanel's `position: absolute` dropdown. `sticky`
-    // establishes the same containing block relative/absolute/fixed do,
-    // so the dropdown still positions correctly with the nav now actually
-    // sticking to the top of the viewport while scrolling, as the
-    // stylesheet already intended.
-    <nav className="sitenav">
+    // No inline position here -- globals.css's `.sitenav { position: sticky }`
+    // establishes the containing block the absolute panels position against.
+    <nav className="sitenav" ref={navRef}>
       <div className="navrow">
-        <Link href="/" className="brand"><span className="dot" />MMAI</Link>
+        <Link href="/" className="brand" aria-label="MMAI home"><span className="dot" />MMAI</Link>
 
         <div className="navlinks">
-          {NAV_ITEMS.map((item) => {
-            const active = item.href === pathname;
-            return active ? (
-              <button key={item.href} className="navlink active" aria-current="page">{item.label}</button>
-            ) : (
-              <Link key={item.href} href={item.href} className="navlink" style={{ textDecoration: "none", display: "inline-block" }}>{item.label}</Link>
+          {NAV.map((entry) => {
+            if (!isGroup(entry)) {
+              return <PageLink key={entry.href} item={entry} pathname={pathname} className="navlink" onFollow={closeAll} />;
+            }
+            const expanded = openGroup === entry.id;
+            const hasActive = entry.items.some((i) => i.href === pathname);
+            return (
+              <div
+                key={entry.id}
+                className="navgroup"
+                // Tabbing out of an open menu closes it. Only when focus
+                // actually lands somewhere else: Safari does not focus a
+                // clicked link, so relatedTarget is null mid-click, and
+                // closing then would swallow the click on the item.
+                onBlur={(e) => {
+                  const to = e.relatedTarget as Node | null;
+                  if (to && !e.currentTarget.contains(to)) setOpenGroup(null);
+                }}
+              >
+                <button
+                  type="button"
+                  id={`navgroup-btn-${entry.id}`}
+                  className={`navlink navgroup-btn${hasActive ? " has-active" : ""}`}
+                  aria-expanded={expanded}
+                  aria-controls={`navmenu-${entry.id}`}
+                  onClick={() => setOpenGroup(expanded ? null : entry.id)}
+                >
+                  {entry.label}
+                  <span className="navgroup-caret" aria-hidden="true">▾</span>
+                </button>
+                <div id={`navmenu-${entry.id}`} className={`navmenu${expanded ? " open" : ""}`}>
+                  {entry.items.map((item) => {
+                    const active = item.href === pathname;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`navmenu-link${active ? " active" : ""}`}
+                        aria-current={active ? "page" : undefined}
+                        onClick={closeAll}
+                      >
+                        <span className="navmenu-label">{item.label}</span>
+                        {item.note && <span className="navmenu-note">{item.note}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>
@@ -81,15 +198,22 @@ export default function NavBar() {
         </button>
       </div>
 
+      {/* On a phone nothing is nested: the groups are laid out in full
+          under a label each. Labels are paragraphs, not headings -- every
+          page's own h1 should be the first heading a reader meets. */}
       <div id="mobile-nav-panel" className={`navpanel${open ? " open" : ""}`}>
-        {NAV_ITEMS.map((item) => {
-          const active = item.href === pathname;
-          return active ? (
-            <button key={item.href} className="navpanel-link active" aria-current="page">{item.label}</button>
+        {NAV.map((entry) =>
+          isGroup(entry) ? (
+            <div key={entry.id} className="navpanel-group" role="group" aria-labelledby={`navpanel-label-${entry.id}`}>
+              <p id={`navpanel-label-${entry.id}`} className="navpanel-label">{entry.label}</p>
+              {entry.items.map((item) => (
+                <PageLink key={item.href} item={item} pathname={pathname} className="navpanel-link" onFollow={closeAll} />
+              ))}
+            </div>
           ) : (
-            <Link key={item.href} href={item.href} className="navpanel-link">{item.label}</Link>
-          );
-        })}
+            <PageLink key={entry.href} item={entry} pathname={pathname} className="navpanel-link" onFollow={closeAll} />
+          ),
+        )}
       </div>
     </nav>
   );
