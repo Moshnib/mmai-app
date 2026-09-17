@@ -1,3 +1,4 @@
+import { STABLECOIN_SOURCE } from "@/lib/chartSources";
 import type { Metadata } from "next";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
@@ -218,7 +219,7 @@ export default async function StablecoinsPage() {
                 {money(history[0].total)} in {history[0].date.slice(0, 4)} → {money(history[history.length - 1].total)} today
               </span>
             </div>
-            <TrendChart series={historySeries} height={320} yLabel="$B" showLegend={false} showDots={false} />
+            <TrendChart series={historySeries} height={320} yLabel="$B" showLegend={false} showDots={false} download={{ title: "Total stablecoin supply on Ethereum", source: STABLECOIN_SOURCE, unit: "$B" }} />
             <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", paddingTop: 12, borderTop: "1px dashed var(--hair)", lineHeight: 1.7 }}>
               <b style={{ color: "var(--ink-soft)" }}>Read this line carefully.</b> Ethereum&apos;s stablecoin
               supply peaked near {money(peak.total)} in {peak.date.slice(0, 7)} and has fallen since. That is not
@@ -241,7 +242,7 @@ export default async function StablecoinsPage() {
                 Tether {usdtFirstShare}% → {usdtLastShare}% over the period
               </span>
             </div>
-            <TrendChart series={composition} height={320} yLabel="%" showLegend showDots={false} />
+            <TrendChart series={composition} height={320} yLabel="%" showLegend showDots={false} download={{ title: "Share of Ethereum stablecoin supply, by token", source: STABLECOIN_SOURCE, unit: "%" }} />
             <p style={{ fontSize: 12, color: "var(--slate)", margin: "14px 0 0", paddingTop: 12, borderTop: "1px dashed var(--hair)", lineHeight: 1.7 }}>
               <b style={{ color: "var(--ink-soft)" }}>What the total cannot show.</b> Tether and USD Coin
               still hold most of Ethereum&apos;s stablecoin supply between them, but the newer tokens are

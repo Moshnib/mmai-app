@@ -6,6 +6,7 @@ import { GULF_SOURCES, GULF_NAME_TO_CODE } from "@/lib/gulfSources";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import ExportDataButtons from "@/components/ExportDataButtons";
 import SourcesTable from "@/components/SourcesTable";
+import SourcesJumpNav from "@/components/SourcesJumpNav";
 import { pageMetadata } from "@/lib/pageMetadata";
 
 export const metadata: Metadata = pageMetadata({
@@ -35,12 +36,24 @@ export default function SourcesPage() {
           <p className="eyebrow">SOURCES &amp; FRESHNESS</p>
           <h1 className="headline" style={{ maxWidth: "22ch" }}>Every number, traced back to where it actually came from</h1>
           <p className="sub">Institution, licence, live-or-manual status, and the date each figure actually refers to — for every chart and widget on the site, including the ones MMAI decided it could not use.</p>
+          <SourcesJumpNav
+            scored={grouped.map((g) => ({ name: g.name, code: codeForName[g.name] }))}
+            gulf={gulfGrouped.map((g) => ({ name: g.name, code: GULF_NAME_TO_CODE[g.name] }))}
+          />
         </div>
       </div>
 
       <div className="section">
         <div className="wrap">
-          <SourcesTable groups={grouped} codeForName={codeForName} />
+          {/* A real heading for this table: its market names became fold
+              labels (a heading inside <summary> is dropped by screen
+              readers), so without this the page went h1 straight to a
+              list of buttons. */}
+          <div className="section-head" style={{ marginBottom: 8 }}>
+            <p className="eyebrow">SCORED MARKETS</p>
+            <h2>Where every scored figure comes from</h2>
+          </div>
+          <SourcesTable groups={grouped} codeForName={codeForName} idPrefix="src" />
         </div>
       </div>
 
@@ -61,19 +74,19 @@ export default function SourcesPage() {
               <b>UNAVAILABLE</b> below mean exactly that: no source exists at all, not that one is simply unused.
             </p>
           </div>
-          <SourcesTable groups={gulfGrouped} codeForName={GULF_NAME_TO_CODE} freshnessTable="gulf_indicators" freshnessKeyColumn="country_code" />
+          <SourcesTable groups={gulfGrouped} codeForName={GULF_NAME_TO_CODE} freshnessTable="gulf_indicators" freshnessKeyColumn="country_code" idPrefix="gulf" />
         </div>
       </div>
 
       <div className="section">
-        <div className="wrap">
+        <div className="wrap" id="export">
           <ExportDataButtons />
         </div>
       </div>
 
       <div className="section">
         <div className="wrap">
-          <div style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "28px 32px", color: "var(--ink)" }}>
+          <div id="disclaimer" style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "28px 32px", color: "var(--ink)" }}>
             <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, fontWeight: 700, color: "var(--slate)", letterSpacing: 1, marginBottom: 10 }}>
               DISCLAIMER
             </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+import ChartDownload, { type ChartDownloadSpec } from "@/components/ChartDownload";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Dot } from "recharts";
 
 export interface Series {
@@ -78,6 +80,7 @@ export default function TrendChart({
   showLegend = true,
   showDots = true,
   connectNulls = true,
+  download,
 }: {
   series: Series[];
   height?: number;
@@ -90,7 +93,11 @@ export default function TrendChart({
   // lib/fetchers/historyUtils.ts) that must render as gaps, not as an
   // interpolated line implying data that doesn't exist -- pass false there.
   connectNulls?: boolean;
+  /** Adds "Download: Image · Data" under the chart. Left off the small
+   *  multiples, where a download row would outweigh the chart. */
+  download?: ChartDownloadSpec;
 }) {
+  const chartRef = useRef<HTMLDivElement>(null);
   // Recharts wants one array of objects keyed by series name, not separate arrays.
   // The x-axis is a CATEGORY axis, so the order of this array is the order
   // the chart draws in. Sorting the LABELS worked only because every caller
@@ -228,6 +235,8 @@ export default function TrendChart({
       : "Line chart with no data.";
 
   return (
+    <>
+    <div ref={chartRef}>
     <ResponsiveContainer width="100%" height={height}>
       {/* role="img" collapses the SVG's internals for assistive tech and
           presents the description instead, rather than reading out
@@ -279,5 +288,8 @@ export default function TrendChart({
         ))}
       </LineChart>
     </ResponsiveContainer>
+    </div>
+    {download && <ChartDownload spec={download} series={series} chartRef={chartRef} />}
+    </>
   );
 }

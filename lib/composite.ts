@@ -435,7 +435,7 @@ export function dimensionPercentiles(standardised: Dimensions): Record<Dimension
  *  "Better than most of the last 26 years" is a claim the method can
  *  actually support; "Strongly Supportive" is an editorial verdict the old
  *  0-100 composite was never entitled to make. */
-const PERCENTILE_BANDS = [
+export const PERCENTILE_BANDS = [
   { min: 80, label: "Top fifth" },
   { min: 60, label: "Above average" },
   { min: 40, label: "Middle of the range" },

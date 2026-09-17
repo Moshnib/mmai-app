@@ -1,5 +1,7 @@
 "use client";
 
+import Term from "@/components/Term";
+import { BOND_SOURCE } from "@/lib/chartSources";
 import { useMemo, useState } from "react";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import Flag from "@/components/Flag";
@@ -294,7 +296,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
               across the gap is what a yield curve means, and a source
               that genuinely stops is caught by verify-freshness, which
               is the right place for it -- not by shredding a chart. */}
-          <TrendChart series={series} height={340} yLabel="%" showDots={false} connectNulls />
+          <TrendChart series={series} height={340} yLabel="%" showDots={false} connectNulls download={{ title: "Ten-year government bond yields", source: BOND_SOURCE, unit: "%" }} />
           <p
             style={{
               fontSize: 12,
@@ -311,7 +313,7 @@ export default function BondYieldPanel({ points }: { points: BondYieldPoint[] })
             reading {fmtDay(newestDate)}.
           </p>
           <p style={{ fontSize: 12, color: "var(--slate)", margin: "8px 0 0", lineHeight: 1.7 }}>
-            <b style={{ color: "var(--ink-soft)" }}>On the 10y−2y spread</b>, shown for the{" "}
+            <b style={{ color: "var(--ink-soft)" }}>On the 10y−2y <Term k="yield spread">spread</Term></b>, shown for the{" "}
             {countWord(latest.filter((m) => m.spread != null).length)} markets that publish both maturities: a
             negative number means lenders want more to lend for two years than for ten. That is
             unusual, and worth reading alongside everything else rather than on its own.
