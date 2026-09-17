@@ -28,6 +28,8 @@ import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { sourcesForMarket } from "@/lib/sources";
 import { useGulfIndicators } from "@/lib/useGulfIndicators";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
+import { useQuery, setQuery } from "@/lib/urlState";
+import ShareButton from "@/components/ShareButton";
 
 function formatUpdatedAt(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
@@ -116,7 +118,12 @@ export default function OverviewPage() {
   // open on the United States, which is an odd thing for an index that
   // covers six markets to assert, and it meant a first-time reader met a
   // country's score before being told what the score was.
-  const [current, setCurrent] = useState<string | null>(null);
+  //
+  // AND IT LIVES IN THE ADDRESS (?market=JP), so a link opens on the same
+  // market and Back returns to the one before. See lib/urlState.ts.
+  const query = useQuery();
+  const marketParam = query.get("market");
+  const current = marketParam && FALLBACK_MARKETS.some((m) => m.code === marketParam) ? marketParam : null;
   const [dataSource, setDataSource] = useState<"live" | "fallback">("fallback");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const { countries: gulfCountries, loaded: gulfLoaded } = useGulfIndicators();
@@ -130,16 +137,23 @@ export default function OverviewPage() {
   const hasScrolledToDetail = useRef(false);
 
   function selectMarket(code: string) {
-    setCurrent(code);
-    if (hasScrolledToDetail.current) return;
-    hasScrolledToDetail.current = true;
-    // The panel does not exist yet at click time; wait for the render.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() =>
-        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-      )
-    );
+    setQuery({ market: code }, "push");
   }
+
+  // The first market on screen -- chosen here, or arriving in a shared
+  // link -- brings the detail into view. After that, switching (and Back)
+  // swaps the numbers in place. setTimeout, not requestAnimationFrame: rAF
+  // never fires in a tab that is not painting, and the flag is spent inside
+  // the callback so StrictMode's double effect cannot use it up.
+  useEffect(() => {
+    if (!current || hasScrolledToDetail.current) return;
+    const id = setTimeout(() => {
+      if (hasScrolledToDetail.current) return;
+      hasScrolledToDetail.current = true;
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+    return () => clearTimeout(id);
+  }, [current]);
 
   useEffect(() => {
     async function loadLiveData() {
@@ -338,6 +352,7 @@ export default function OverviewPage() {
           {market && (
             <>
           <div className="snapshot-card" ref={detailRef}>
+          <div className="share-row"><ShareButton title={`MMAI — ${market.name}`} /></div>
           <MarketSnapshotStrip
             marketName={market.name}
             raw={market.raw}

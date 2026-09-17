@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useQuery, setQuery } from "@/lib/urlState";
+import ShareButton from "@/components/ShareButton";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeSliderScatter, { type TimeSliderSeriesData } from "@/components/TimeSliderScatter";
 import Flag from "@/components/Flag";
@@ -34,23 +36,41 @@ const ORDER: DimensionKey[] = ["C", "D", "K"];
 // been scored for some time. Both are gone; the one map lives in
 // lib/markets.ts.
 
+// Module level: fixed lists, so the memoised charts below never see a new
+// array on every render.
+const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
+const ALL_MARKET_CODES: string[] = FALLBACK_MARKETS.map((m) => m.code);
+
 export default function ComparePageInner() {
   const { history: liveHistory } = useLiveHistory();
-  const marketNames = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
-  const allMarketCodes = FALLBACK_MARKETS.map((m) => m.code);
+  const marketNames = MARKET_NAMES;
+  const allMarketCodes = ALL_MARKET_CODES;
 
-  const [selectedMarkets, setSelectedMarkets] = useState<string[]>(allMarketCodes);
+  // EVERY CONTROL ON THIS PAGE LIVES IN THE ADDRESS, so a shared link
+  // opens on the same markets, years and chart. Written with replace, not
+  // push: these fine-tune one view, and Back should leave the page rather
+  // than step through every toggle. Read on the client (lib/urlState.ts),
+  // so this component needs nothing from the server to render a view.
+  const query = useQuery();
+  const marketsParam = query.get("markets");
+  // Memoised on the param string, so the chart series below are rebuilt
+  // only when the selection actually changes.
+  const selectedMarkets = useMemo(() => {
+    const picked = marketsParam?.split(",").filter((code) => ALL_MARKET_CODES.includes(code)) ?? [];
+    return picked.length > 0 ? Array.from(new Set(picked)) : ALL_MARKET_CODES;
+  }, [marketsParam]);
 
   function toggleMarket(code: string) {
-    setSelectedMarkets((prev) => {
-      if (prev.includes(code)) {
-        // Keep at least one market selected -- an empty chart isn't useful
-        // and there's no clear "nothing selected" state designed for these charts.
-        if (prev.length === 1) return prev;
-        return prev.filter((c) => c !== code);
-      }
-      return [...prev, code];
-    });
+    let next: string[];
+    if (selectedMarkets.includes(code)) {
+      // Keep at least one market selected -- an empty chart isn't useful
+      // and there's no clear "nothing selected" state designed for these charts.
+      if (selectedMarkets.length === 1) return;
+      next = selectedMarkets.filter((c) => c !== code);
+    } else {
+      next = [...selectedMarkets, code];
+    }
+    setQuery({ markets: next.length === allMarketCodes.length ? null : next.join(",") }, "replace");
   }
 
   // Union of every year that appears across ALL markets' history (not just
@@ -68,8 +88,13 @@ export default function ComparePageInner() {
   // fixed default captured once at mount, that new year would silently
   // never appear in the chart. Deriving the default from allYears on every
   // render keeps it current, while still honoring an explicit user pick.
-  const [fromYear, setFromYear] = useState<string | null>(null);
-  const [toYear, setToYear] = useState<string | null>(null);
+  const fromYear = query.get("from");
+  const toYear = query.get("to");
+  // The first and last years are the default range, so picking them clears
+  // the param: an untouched range keeps a clean address and keeps tracking
+  // the newest year as it arrives.
+  const setFromYear = (y: string) => setQuery({ from: y === allYears[0] ? null : y }, "replace");
+  const setToYear = (y: string) => setQuery({ to: y === allYears[allYears.length - 1] ? null : y }, "replace");
   // An explicit pick only counts if it's still a real year -- the live
   // merge REPLACES each market's last point rather than appending, so a
   // year like "2026" can vanish from allYears the moment live data lands;
@@ -77,11 +102,17 @@ export default function ComparePageInner() {
   // the range to a single year instead of falling back to the new default.
   const effectiveFromYear = fromYear && allYears.includes(fromYear) ? fromYear : allYears[0];
   const effectiveToYear = toYear && allYears.includes(toYear) ? toYear : allYears[allYears.length - 1];
-  const [selectedDimension, setSelectedDimension] = useState<DimensionKey>("C");
-  const [selectedRaw, setSelectedRaw] = useState<(typeof RAW_CHOICES)[number]["key"]>("inflation");
+  const dimParam = query.get("dim");
+  const selectedDimension: DimensionKey = dimParam === "D" || dimParam === "K" ? dimParam : "C";
+  const setSelectedDimension = (key: DimensionKey) => setQuery({ dim: key === "C" ? null : key }, "replace");
+  const rawParam = query.get("raw");
+  const selectedRaw = RAW_CHOICES.find((c) => c.key === rawParam)?.key ?? "inflation";
+  const setSelectedRaw = (key: (typeof RAW_CHOICES)[number]["key"]) =>
+    setQuery({ raw: key === "inflation" ? null : key }, "replace");
   // Which view the single chart area shows: the dimension's rank against
   // history, or one raw indicator on its own units.
-  const [pillarView, setPillarView] = useState<"score" | "raw">("score");
+  const pillarView: "score" | "raw" = query.get("view") === "raw" ? "raw" : "score";
+  const setPillarView = (v: "score" | "raw") => setQuery({ view: v === "score" ? null : v }, "replace");
 
   const yearsInRange = useMemo(() => {
     const fromIdx = allYears.indexOf(effectiveFromYear);
@@ -241,6 +272,7 @@ export default function ComparePageInner() {
                   a screen reader as sections with no subject. */}
               <h1>{MARKET_COUNT_WORD_CAP} economies on one scale</h1>
               <p>The same five official figures, rebuilt so the comparison actually holds — then ranked against the same {REFERENCE_COUNT} market-years. Every line here means the same thing.</p>
+              <div className="share-row"><ShareButton title="MMAI — markets compared" /></div>
             </div>
 
             {/* "What stands out now" (brief §9). Deliberately factual --

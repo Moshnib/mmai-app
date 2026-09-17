@@ -4,6 +4,8 @@ import NavBar from "@/components/NavBar";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/siteUrl";
 import StructuredData from "@/components/StructuredData";
+import BackToTop from "@/components/BackToTop";
+import { Analytics } from "@vercel/analytics/next";
 
 const DESCRIPTION =
   "A transparent macro-market intelligence index — every formula published, every source licensed, no black box.";
@@ -80,11 +82,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             boundary, so it stays visible during a page's loading fallback
             instead of disappearing with the rest of the content. */}
         <NavBar />
-        <main id="main-content">{children}</main>
+        {/* tabIndex -1 so Back to top can hand focus to the content. */}
+        <main id="main-content" tabIndex={-1}>{children}</main>
         {/* One footer for every page, rendered here rather than copy-pasted
             into each one -- it carries a live "last updated" stamp, so it has
             to be a single component that can re-check on its own. */}
         <SiteFooter />
+        <BackToTop />
+        {/* VISITOR STATISTICS: page views and where visitors came from,
+            counted by Vercel with no cookies and nothing that identifies
+            a person. Production only -- in development the package loads
+            a debug script from another origin, which the CSP blocks. The
+            owner switches the counting on in the Vercel project. */}
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   );

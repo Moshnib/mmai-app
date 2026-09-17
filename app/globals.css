@@ -960,11 +960,49 @@ h1.headline {
   }
 }
 
+/* SHARE THIS VIEW (components/ShareButton.tsx). A quiet outlined button:
+   it is a utility beside the content, not the page's call to action. */
+.share-row { display: flex; justify-content: flex-end; margin: 0 0 10px; }
+.section-head .share-row, .page-head-row .share-row { justify-content: flex-start; }
+.share { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.share-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px;
+  border: 1px solid var(--hair-strong); border-radius: 999px; background: transparent;
+  color: var(--ink-soft); font-family: inherit; font-size: var(--t-small); font-weight: 600; cursor: pointer;
+}
+.share-btn:hover { color: var(--ink); border-color: var(--accent); }
+.share-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.share-status { color: var(--status-live); font-size: var(--t-caption); font-weight: 600; }
+.share-fallback {
+  min-width: 0; width: min(100%, 340px); padding: 8px 10px; border-radius: 6px;
+  border: 1px solid var(--hair-strong); background: var(--paper); color: var(--ink);
+  font-family: var(--font-mono); font-size: var(--t-caption);
+}
+
+/* BACK TO TOP (components/BackToTop.tsx). Only in the page once the reader
+   is two screens down. Clear of the phone's home-bar area. */
+.back-to-top {
+  position: fixed; z-index: 40;
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card-bg); border: 1px solid var(--hair-strong); color: var(--accent); cursor: pointer;
+}
+.back-to-top:hover { border-color: var(--accent); background: var(--hover); }
+.back-to-top:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* Focus handed to the content by Back to top: the whole page outlined in
+   gold would read as an error, and the reader already knows where they are. */
+main:focus { outline: none; }
+
 /* Contact, and the pages a reader looks for at the bottom of a site. */
 .site-footer-links { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0 0 14px; padding: 0; list-style: none; }
 .site-footer-links a { color: var(--ink-soft); text-decoration: none; font-weight: 600; }
 .site-footer-links a:hover { color: var(--accent); }
-footer { border-top: 1px solid var(--hair); padding: 28px 0 44px; margin-top: 10px; font-size: var(--t-caption); color: var(--slate); position: relative; z-index: 1; }
+/* 88px at the bottom, not 44: the Back to top button sits in the corner
+   once the reader is far down, and at the very end of the page it covered
+   the last word of the "Data last updated" line on a phone. */
+footer { border-top: 1px solid var(--hair); padding: 28px 0 88px; margin-top: 10px; font-size: var(--t-caption); color: var(--slate); position: relative; z-index: 1; }
 
 /* ===== Country filter for the Gulf cross-country chart =====
    Six lines on one axis is legible on a desktop and genuinely not on a

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import TrendChart, { type Series } from "@/components/TrendChart";
 import TimeRangeFilter, { ANNUAL_RANGES } from "@/components/TimeRangeFilter";
+import { useQuery, setQuery } from "@/lib/urlState";
+import ShareButton from "@/components/ShareButton";
 import Flag from "@/components/Flag";
 import { MONTHLY_HISTORY, type MonthlyPoint } from "@/lib/monthlyHistory";
 import { useLiveHistory } from "@/lib/useLiveHistory";
@@ -73,21 +75,36 @@ const RATE_INDICATORS: Array<{ indicator: IndicatorKey; color: string }> = [
 // "Loading…". Every crawler that doesn't run JavaScript (LinkedIn, Slack,
 // WhatsApp, X, Bing) saw an empty page.
 export default function TrendsPageInner({
-  initialMarket = "US",
   initialDimension = null,
+  serverQuery = "",
 }: {
-  initialMarket?: string;
   initialDimension?: DimensionKey | null;
+  serverQuery?: string;
 }) {
-  const [current, setCurrent] = useState(initialMarket);
+  // EVERY CHOICE ON THIS PAGE LIVES IN THE ADDRESS, so a shared link opens
+  // on the same market, dimension, range and indicator. Choosing a market
+  // is a new place to go Back to; the rest adjust the view in place.
+  const query = useQuery(serverQuery);
+  const marketParam = query.get("market");
+  const current = marketParam && FALLBACK_MARKETS.some((m) => m.code === marketParam) ? marketParam : "US";
+  const setCurrent = (code: string) => setQuery({ market: code === "US" ? null : code }, "push");
   // Annual points, so the presets are years. Default to the full record --
   // eight points is readable, and narrowing is the exception here rather
   // than the rule it is for daily bond data.
-  const [rangeDays, setRangeDays] = useState<number | null>(null);
+  const rangeLabel = query.get("range")?.toUpperCase();
+  const rangeDays = ANNUAL_RANGES.find((r) => r.days !== null && r.label === rangeLabel)?.days ?? null;
+  const setRangeDays = (days: number | null) => {
+    const label = ANNUAL_RANGES.find((r) => r.days === days && days !== null)?.label;
+    setQuery({ range: label ? label.toLowerCase() : null }, "replace");
+  };
   // Always a dimension selected, never null: the page's shape is "cards
   // driving one chart", so an empty selection would leave two sections
   // rendering nothing at all.
-  const [focusDimension, setFocusDimension] = useState<DimensionKey>(initialDimension ?? "C");
+  const dimParam = query.get("dimension");
+  const focusDimension: DimensionKey = dimParam === "C" || dimParam === "D" || dimParam === "K" ? dimParam : "C";
+  // A new dimension clears the indicator pick: it belonged to the old one,
+  // and a shared link should not carry a choice that does nothing.
+  const setFocusDimension = (key: DimensionKey) => setQuery({ dimension: key === "C" ? null : key, raw: null }, "replace");
   // Which raw indicator the detail chart shows. Conditions and Capacity
   // hold two each, so a dimension no longer maps to a single raw series
   // the way a pillar did.
@@ -97,7 +114,9 @@ export default function TrendsPageInner({
   // that says GDP growth, and needs a second render to fix itself. Falling
   // back here means the pick can never be outside the selected dimension
   // at any point.
-  const [rawPick, setRawPick] = useState<IndicatorKey | null>(null);
+  const rawParam = query.get("raw");
+  const rawPick: IndicatorKey | null = (["infGap", "une", "gdp", "debt", "rate"] as const).find((k) => k === rawParam) ?? null;
+  const setRawPick = (ind: IndicatorKey) => setQuery({ raw: ind }, "replace");
   const pillarSectionRef = useRef<HTMLDivElement>(null);
   const arrivedWithPillar = useRef(initialDimension !== null);
 
@@ -333,7 +352,7 @@ export default function TrendsPageInner({
         <div className="wrap">
           <div className="page-head-row">
             <div>
-              <p className="eyebrow">DATA OVER TIME</p>
+              <p className="eyebrow">TRENDS</p>
               <h1 className="headline" style={{ maxWidth: "20ch" }}>
                 How the score — and everything behind it — has moved
               </h1>
@@ -346,7 +365,8 @@ export default function TrendsPageInner({
                   this was) left the panel floating with 150px of dead
                   space under it, which is what made its position read
                   as wrong. These two columns now fill each other out. */}
-              <div className="market-picker" style={{ marginTop: 20, justifyContent: "flex-start" }}>
+              <div className="share-row" style={{ marginTop: 14 }}><ShareButton title={`MMAI trends — ${MARKET_NAMES[current] ?? current}`} /></div>
+              <div className="market-picker" style={{ marginTop: 14, justifyContent: "flex-start" }}>
                 {FALLBACK_MARKETS.map((m) => (
                   <button
                     key={m.code}

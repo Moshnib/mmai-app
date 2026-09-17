@@ -27,7 +27,10 @@ const SUPABASE_ORIGIN = (() => {
  *   fonts.gstatic.com        the font files it pulls in
  *   <project>.supabase.co    the live indicator data, fetched client-side
  *
- * No analytics, no ad network, no third-party script of any kind. The
+ * No ad network and no third-party script of any kind. Visitor statistics
+ * are Vercel Web Analytics, which is served from this site's own origin
+ * (/_vercel/insights/*) and sets no cookies, so 'self' already covers it
+ * and nothing is added here. The
  * blockchain and statistics APIs are called from the SERVER, so a browser
  * never contacts them and they must not be listed here.
  *
