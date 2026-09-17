@@ -24,7 +24,12 @@ function normalise(url: string): string {
   return url.trim().replace(/\/+$/, "");
 }
 
-const FALLBACK = "https://mmai-app.vercel.app";
+// The site's own address, bought 17 September 2026. Cloudflare holds the
+// DNS (its registrar requires that) and points at Vercel with the proxy
+// OFF; www is the canonical host and the bare domain redirects to it.
+// NEXT_PUBLIC_SITE_URL still wins -- a preview deployment sets its own --
+// and this is what a build without that variable falls back to.
+const FALLBACK = "https://www.mmai.markets";
 
 export const SITE_URL = normalise(process.env.NEXT_PUBLIC_SITE_URL || FALLBACK);
 

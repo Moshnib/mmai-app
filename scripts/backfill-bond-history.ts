@@ -24,7 +24,7 @@
 
 interface Row { market: string; date: string; y10: number; y5: number | null }
 
-const UA = { "User-Agent": "Mozilla/5.0 (compatible; MMAI/1.0; +https://mmai-app.vercel.app)" };
+const UA = { "User-Agent": "Mozilla/5.0 (compatible; MMAI/1.0; +https://www.mmai.markets)" };
 
 /** Quote-aware CSV line splitter. The naive split(",") that abs.ts once
  *  used breaks the moment a source puts a comma inside a quoted note --
