@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { limitPublicWrite } from "@/lib/rateLimit";
 import { randomUUID } from "crypto";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
+import { sendWelcomeEmail } from "@/lib/notify";
 
 const VALID_CODES = FALLBACK_MARKETS.map((m) => m.code);
+/** Codes are stored; a reader should never be shown "KR". */
+const MARKET_NAMES: Record<string, string> = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.code, m.name]));
 
 function isValidEmail(email: string): boolean {
   // Deliberately simple — good enough to catch typos, not a full RFC 5322 parser.
@@ -90,6 +93,42 @@ export async function POST(request: Request) {
   if (error) {
     console.error("Subscribe error:", error);
     return NextResponse.json({ error: "Something went wrong — try again in a moment" }, { status: 500 });
+  }
+
+  // ONE EMAIL, AND ONLY WHEN SOMETHING ACTUALLY CHANGED.
+  //
+  // This is the form's own abuse control, not a nicety. Anyone can type
+  // in an address that is not theirs; mailing it is better than silence,
+  // because the owner finds out and the message carries a one-click
+  // unsubscribe. Sending only on a CHANGED market list is what stops that
+  // being a way to mail someone repeatedly: markets merge and never
+  // shrink here, so a stranger can cause at most one email per market,
+  // ever. Re-submitting the same markets sends nothing.
+  //
+  // (limitPublicWrite above is a per-IP volume limit held in one server's
+  // memory. It slows a flood; it is not a per-address guarantee, and this
+  // rule is what actually bounds the damage.)
+  // Set membership, not a length comparison: mergedMarkets is re-filtered
+  // against the current market list, so a stored code that has since been
+  // retired -- or a duplicate in an old row -- makes the two lengths agree
+  // while the contents differ, and the opposite. Asking "is anything here
+  // that was not there before" is exact.
+  const existingSet = new Set(((existing?.markets as string[] | null) ?? []));
+  const changed = !existing || mergedMarkets.some((code) => !existingSet.has(code));
+
+  if (changed) {
+    const names = mergedMarkets.map((code) => MARKET_NAMES[code] ?? code);
+    // after(), so the sign-up form answers immediately and a mail problem
+    // can never turn a saved subscription into an error on screen. Vercel
+    // keeps the function alive for this, unlike a bare floating promise.
+    after(async () => {
+      try {
+        await sendWelcomeEmail(email, names, unsubscribeToken, Boolean(existing));
+      } catch (mailErr) {
+        // The subscription is saved either way; this is the only trace.
+        console.error(`Welcome email to ${email} failed:`, mailErr);
+      }
+    });
   }
 
   // Deliberately does NOT echo the market list. It used to echo what was

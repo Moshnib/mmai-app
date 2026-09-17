@@ -50,7 +50,7 @@ export async function GET(request: Request) {
   return page(
     200,
     "Unsubscribe from MMAI alerts?",
-    "You'll stop receiving band-change emails for every market you follow.",
+    "You'll stop receiving band-change emails for every market you follow. If you never signed up, this removes your address completely.",
     token,
   );
 }
