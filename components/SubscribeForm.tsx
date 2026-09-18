@@ -52,9 +52,12 @@ export default function SubscribeForm() {
             to himself. A reader needs one thing from this screen: when
             email starts, and that nothing comes before it. Both are
             still here. */}
+        {/* Was: "Alerts begin when MMAI moves to its own domain." That
+            move happened on 17 September 2026 and sending is live, so the
+            promise is now simply the promise. */}
         <p style={{ fontSize: 13, color: "var(--slate)", margin: "6px 0 0", lineHeight: 1.6 }}>
-          Alerts begin when MMAI moves to its own domain. You will be included in the first one, and nothing will
-          arrive before it.
+          If this address is new to the list, a confirmation is on its way. After that, you will only hear from
+          MMAI when one of your markets crosses into a different band.
         </p>
       </div>
     );

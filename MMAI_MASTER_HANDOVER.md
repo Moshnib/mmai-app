@@ -2198,3 +2198,41 @@ Resend verification (a few more Cloudflare records, also grey cloud) makes
 `alerts@mmai.markets` possible. `ALERT_FROM` already derives from
 SITE_URL's hostname, and `IS_VERCEL_DOMAIN` (which explains the failure in
 the refresh route) will go false on its own.
+
+### 33.2 Email actually sends: welcome message on sign-up (2026-09-18)
+
+With mmai.markets verified in Resend (DKIM TXT + two SPF CNAMEs + DMARC,
+all at Cloudflare, grey cloud) and RESEND_API_KEY set in Vercel, the site
+can send for the first time. Two things were wrong before it could:
+
+1. **ALERT_FROM was alerts@www.mmai.markets.** The site is served at www;
+   the VERIFIED domain is the bare one. `MAIL_DOMAIN` in lib/siteUrl.ts
+   now strips a leading `www.`, so mail sends as alerts@mmai.markets.
+2. **A rejected send counted as a success.** `resend.emails.send` resolves
+   with `{ data, error }` rather than throwing, and every call sat inside
+   a try/catch — so the refresh route's `sent`/`failed` tallies could not
+   see a rejection. One `send()` helper in lib/notify.ts now unwraps that
+   and throws; both emails go through it.
+
+**The welcome email** (`sendWelcomeEmail`) goes out from the subscribe
+route via `after()`, so the form answers instantly and a mail failure can
+never turn a saved subscription into an error on screen. It is sent only
+when the stored market list actually CHANGED (set membership, not length:
+mergedMarkets is re-filtered against current markets, so lengths lie).
+That rule is the form's abuse control, and it is load-bearing: anyone can
+type in someone else's address, and this caps what a stranger can inflict
+at one email per market, ever. The message names the markets by NAME,
+carries the RFC 8058 one-click unsubscribe headers, and tells a reader
+who never signed up exactly what to do. Rejected: a per-address cooldown
+(needs a manual schema change for a bound the above already gives).
+
+Copy corrected in the same change: SubscribeForm no longer promises that
+"alerts begin when MMAI moves to its own domain" (it has), and says "if
+this address is new to the list" because a repeat submission sends
+nothing; the unsubscribe page covers the never-signed-up case.
+
+`scripts/test-welcome-email.ts` (CI, beside test-alert-guard) renders the
+message offline and pins the market names, the tokenised absolute
+unsubscribe URL, the didn't-sign-up line, no undefined/NaN/null, that
+every market has a display name, and that the sender is on the bare
+domain. The send path itself is proved by subscribing on the live site.

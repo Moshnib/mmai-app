@@ -139,6 +139,12 @@ jobs:
       - name: Subscriber alert guard survives the engine change
         run: npx tsx scripts/test-alert-guard.ts
 
+      # The first email anyone gets. It goes to an address that may not
+      # belong to whoever typed it, so the unsubscribe link and the "if you
+      # didn't sign up" line are the parts that must never break.
+      - name: The welcome email reads correctly
+        run: npx tsx scripts/test-welcome-email.ts
+
       # The change feed is event-driven, not calendar-driven: it compares
       # against the most recent DIFFERENT reading. These pin that it reaches
       # past still days, refuses a stale comparison, and ignores the one
