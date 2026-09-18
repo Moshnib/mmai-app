@@ -1798,10 +1798,12 @@ the debt note described the retired five-pillar 60% rule ("full marks",
 Watch's "no policy-rate feed / 70% pillar coverage" (Saudi and Kuwait are
 live via BIS; the real reason is labour-market comparability).
 
-## 28. WHERE THINGS STAND — 16 September 2026 (read this first)
+## 28. WHERE THINGS STAND — 18 September 2026 (read this first)
 
-Everything below was true at commit `b07c8a7`, with `main` clean and
-deployed. Sections 1–27 are history; this is the state.
+Everything below was true at commit `939d93b`, with `main` clean and
+deployed. Sections 1–34 are history; this is the state. Sections 29–34
+were written after this page was first dated 16 September, so where they
+disagree with an older paragraph here, they are the later word.
 
 ### What is live
 - **Nine scored markets:** US, Euro Area, Canada, UK, Japan, Australia,
@@ -1822,6 +1824,15 @@ deployed. Sections 1–27 are history; this is the state.
 - **Refresh:** GitHub Actions, three times daily, writing to Supabase.
   OECD is unreachable from Vercel, so Japan and Korea come via a relay
   step in the workflow (§25).
+- **Its own address:** **www.mmai.markets** is canonical (§33.1). The old
+  `mmai-app.vercel.app` 308s to it on an exact-host match, so preview
+  deployments still answer (§34.1).
+- **Email sends, for the first time** (§33.2). mmai.markets is verified in
+  Resend and a welcome email goes out on sign-up, from the BARE domain.
+  Band-change alerts use the same path but have still never fired in
+  anger — no band has crossed since it started working.
+- **Next 16.3.5**, pinned on 18 September to clear two critical advisories
+  (§34). Re-run `npm audit --omit=dev` after every dependency change.
 
 ### Open, and waiting on the owner
 1. **Homepage additions the owner already chose** (mocked up, not built):
@@ -1843,9 +1854,19 @@ deployed. Sections 1–27 are history; this is the state.
 3. **A tenth scored market.** Czechia is the strongest candidate. Israel
    was declined by the owner. Brazil has the best data found anywhere but
    its licence is share-alike (ODbL) and needs a decision.
-4. **Owner-only tasks:** buy the domain, then set `NEXT_PUBLIC_SITE_URL`
-   in Vercel and the `SITE_URL` repo variable; verify the Resend sending
-   domain so band-change alerts can actually send; take a database backup.
+4. **A news feed from the institutions themselves — IN FLIGHT.** Branch
+   `news-sources`, commit `d63bd98`, pushed but NOT merged. It adds RSS
+   1.0/RDF, Atom and iCalendar parsing to `lib/fetchers/newsFeeds.ts` and
+   a seven-source registry in `lib/newsSources.ts` (the Fed, Bank of
+   Canada, RBA, Statistics Norway and the US BLS release calendar, on top
+   of the existing ECB and ONS). **Deliberately not wired in:**
+   `app/api/announcements` still calls the original two-source fetcher,
+   and the five new institutions still need licence rows in
+   `lib/sources.ts` before any of it goes live. `scripts/tmp-parse-check.ts`
+   is scratch and should go before merge.
+5. **Owner-only tasks:** take a database backup — the last one standing.
+   (Domain bought and wired, `NEXT_PUBLIC_SITE_URL` set, and the Resend
+   sending domain verified, all on 17–18 September; see §33.1 and §33.2.)
 
 ### How this project is run (do not skip)
 - The owner is **not a developer**. Explain in plain language, and never
@@ -1869,8 +1890,29 @@ deployed. Sections 1–27 are history; this is the state.
 - `MMAI_MASTER_HANDOVER.md` (this file) — the full history, section by
   section, and this state page.
 - `MMAI_TODO.md` — the plain-language to-do list.
-- `MMAI_CHANGE_LOG.md` — what changed and why, per change.
+- `MMAI_CHANGE_LOG.md` — what changed and why, per change. **Stopped being
+  maintained after 2026-09-05**; since then the per-change record is the
+  numbered section in this file plus the commit message. Read it as
+  history, not as the current log.
 - `AGENTS.md` / `CLAUDE.md` — instructions for the coding assistant.
+
+### If a chat is lost, corrupted or blocked (recovery)
+Nothing about this project lives in a chat. The code is in git and pushed
+to `github.com/Moshnib/mmai-app`; the site is served by Vercel from that
+repo; the context is these files, which are committed alongside the code.
+A lost chat costs the conversation and nothing else.
+
+To pick up in a new chat, open it in the project folder and say:
+
+> Read §28 of MMAI_MASTER_HANDOVER.md and MMAI_TODO.md, then tell me
+> where we are before changing anything.
+
+Two habits keep that promise true, and both are the assistant's job to
+propose, not the owner's to remember: **push at the end of every working
+session** (unpushed work is the only thing a dead laptop can take), and
+**update §28 and `MMAI_TODO.md` in the same commit as the code**, so the
+recovery page is never more than one session behind. If §28's date is
+older than the last commit to `main`, trust the commits and fix the page.
 
 ## 29. Warmer, on the owner’s judgement (2026-09-16)
 

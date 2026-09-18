@@ -1,5 +1,39 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-16 (Editorial Dark restyle live; map and Learn-page fixes live)*
+*Last updated: 2026-09-18 (own domain live; email sends; security patch)*
+
+> **If a chat breaks, nothing is lost.** The code is on GitHub, the site
+> runs from there, and these notes are committed beside the code. Open a
+> new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
+> and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ Since 2026-09-17 — the site got its own address, and can send email
+- [x] **mmai.markets is live**, bought at Cloudflare. `www` is the real
+      address; the bare domain and the old `mmai-app.vercel.app` both
+      forward to it, so there is one address to share and the visitor
+      count stops being split in two.
+- [x] **Email works for the first time.** The sending domain is verified,
+      and someone who subscribes now gets a welcome email. Two bugs were
+      in the way: it was sending from the wrong version of the domain
+      (`www.`, which isn't the verified one), and a **rejected** email was
+      being counted as a successful one — so the site would have reported
+      success while sending nothing.
+- [x] **Security patch.** A full review found the framework version in use
+      carried two critical vulnerabilities; patched the same day. The rest
+      of the review came back clean (database permissions, secrets, page
+      headers, the contact and subscribe forms).
+- [x] **Top-bar fixes** — "Home" is a working link again and the bar keeps
+      its spacing.
+
+## 🚧 In flight — the news feed (branch `news-sources`, not merged)
+Five more institutions were added for the news ticker — the US Fed, Bank
+of Canada, the Reserve Bank of Australia, Statistics Norway and the US
+labour-statistics release calendar, joining the ECB and the UK's ONS.
+
+**It is saved and pushed but deliberately switched off.** Before it can go
+live, each of the five needs its licence checked and recorded on the
+Sources page, the same way every other source on the site was. That's the
+next piece of work, and it's a decision point for you rather than a
+typing job.
 
 ## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
 While testing Gulf Watch's new refresh job, discovered the password
@@ -103,10 +137,11 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       the Overview page makes two separate database queries where one would
       do. Neither is wrong or visible to a visitor — worth revisiting only
       if you want strict like-for-like comparison across markets.
-- [ ] **Turn on email alerts.** The feature is built (people get an email
-      when a market's score crosses into a new category), but needs a
-      free Resend account + a verified sending domain before it can
-      actually send anything.
+- [x] **Turn on email alerts.** Done 18 September — the account and the
+      verified sending domain are both in place. One caveat: the
+      band-crossing alert has still never actually fired, because no
+      market's score has crossed into a new category since it started
+      working. The welcome email proves the send path works.
 - [ ] **Add BEA_API_KEY and EIA_API_KEY to your local `.env.local`** if you
       ever want local testing on this machine to fully match production
       (currently only in Vercel).
@@ -138,6 +173,11 @@ and Gulf Watch content on the "Learn More" page. Along the way:
 - Always get Fable's (or Opus, when Fable's out of credits) review before
   writing code, and again before merging.
 - Never commit or push without saying "GO" first.
+- **Push at the end of every working session.** Work that is only on the
+  laptop is the one thing a broken chat or a dead machine can actually
+  take. Once it's pushed, it's safe.
+- **Update this file and §28 of the handover in the same commit as the
+  code**, so a new chat is never more than one session behind.
 - The full technical handover doc (if a new chat ever needs it) is the
   file already sent to you: `MMAI_MASTER_HANDOVER.md`.
 
