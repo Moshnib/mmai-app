@@ -29,6 +29,7 @@
 
 import { SOURCES, sourcesForMarket, sourceForPillar, sourceNoteFor } from "../lib/sources";
 import { FALLBACK_MARKETS } from "../lib/markets";
+import { NEWS_SOURCES } from "../lib/newsSources";
 import { PILLAR_CODES, type PillarKey } from "../lib/indicators";
 
 // PILLAR_CODES is already the list. It replaced PILLAR_WEIGHTS, which was
@@ -100,6 +101,28 @@ check("No published market credits the World Bank", creditsWorldBank, []);
 // a reader who wants to verify a figure has to go find the agency.
 const noUrl = SOURCES.filter((s) => s.status === "live" && !s.url).map((s) => `${s.market}/${s.indicator}`);
 check("Every live source links to the institution's own page", noUrl, []);
+
+// ---------- every news feed is licensed, by its own row ----------
+// A feed in lib/newsSources.ts reaches the homepage the moment it is
+// added. Its licence row is what puts it on the Sources page -- and it
+// must be ITS row. Matching by institution name would pass on the data
+// rows alone (BLS, the RBA, the Bank of Canada and Statistics Norway are
+// all already listed for their figures), and a figure's licence is not a
+// headline's: the RBA excludes its Cash Rate from the CC BY 4.0 that
+// covers its media releases. So the tie is an explicit id.
+const unlicensedFeeds: string[] = [];
+for (const feed of NEWS_SOURCES) {
+  const rows = SOURCES.filter((s) => s.newsSourceId === feed.id);
+  if (rows.length !== 1) unlicensedFeeds.push(`${feed.id} — ${rows.length} licence rows`);
+  else if (rows[0].market !== "All markets" || rows[0].pillar != null) unlicensedFeeds.push(`${feed.id} — its row is not an unscored "All markets" row`);
+  // The name on an item's tooltip must be the name on the Sources page.
+  else if (rows[0].institution !== feed.institution || rows[0].shortName !== feed.shortName)
+    unlicensedFeeds.push(`${feed.id} — named "${feed.institution}" / "${feed.shortName}", its row says "${rows[0].institution}" / "${rows[0].shortName}"`);
+}
+const orphanRows = SOURCES
+  .filter((s) => s.newsSourceId != null && !NEWS_SOURCES.some((f) => f.id === s.newsSourceId))
+  .map((s) => `${s.indicator} — names feed "${s.newsSourceId}", which does not exist`);
+check("Every news feed has exactly one licence row of its own", [...unlicensedFeeds, ...orphanRows], []);
 
 // ---------- no duplicates ----------
 const seen = new Set<string>();

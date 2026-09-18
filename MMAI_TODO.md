@@ -1,5 +1,5 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-18 (own domain live; email sends; security patch)*
+*Last updated: 2026-09-18 (own domain live; email sends; security patch; news feed built)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
@@ -24,12 +24,26 @@
 - [x] **Top-bar fixes** — "Home" is a working link again and the bar keeps
       its spacing.
 
-## 🚧 In flight — the news feed (branch `news-sources`, not merged)
-Five more institutions were added for the news ticker — the US Fed, Bank
-of Canada, the Reserve Bank of Australia, Statistics Norway and the US
-labour-statistics release calendar, joining the ECB and the UK's ONS.
+## 🚧 Built, waiting for review and your GO — the news feed (branch `news-sources`)
+The homepage news section and the strip along the top now read seven
+institutions: the US Fed, the ECB, the Bank of Canada, the Reserve Bank
+of Australia, the UK's ONS, Statistics Norway and the US labour-statistics
+release calendar. Tested against all seven live feeds on 18 September.
 
-**It is saved and pushed but deliberately switched off.**
+- The homepage section now opens with "Latest: 2 h ago" and groups items
+  as Today / Yesterday / Last 30 days / Coming up, showing only groups
+  that have something.
+- Each of the five new institutions has its licence listed on the Sources
+  page, and the site's checks now refuse a news feed without one.
+- **You'll notice "Sources: N" on a market got smaller** (the US goes
+  from 8 to 4). That's a fix: it was counting the oil price and the news
+  feeds, which don't feed the score, and counting one institution
+  several times.
+- **Your choice, done:** the Bank of Canada and RBA feeds are filtered to
+  economy news (rate decisions, policy reports, financial stability).
+  Bank notes, staff appointments and payments notices are dropped.
+
+**Left:** the reviewer's pre-merge check, then your GO to merge.
 
 The licence checks are **done** — seven feeds cleared. Refused, on their
 own published terms: the Bank of England and Bank of Japan (commercial
@@ -47,10 +61,6 @@ open licence that covers its media releases.
 The Bank of Canada and Australia feeds coming back empty was found and
 fixed in the same session — both publish a slightly different flavour of
 feed than the others, and the reader was looking for the common one.
-
-**Left to do:** record the news-feed licences on the Sources page, switch
-the feed on, and two small tidy-ups noted in the handover. Nothing here
-needs a decision from you — it's the finishing work.
 
 ## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
 While testing Gulf Watch's new refresh job, discovered the password

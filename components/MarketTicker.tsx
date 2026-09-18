@@ -10,6 +10,7 @@ import { fetchAllWeeklyChanges } from "@/lib/weeklyChanges";
 import { buildTickerEvents, type TickerEvent } from "@/lib/tickerEvents";
 import { useMotion } from "@/lib/motion";
 import type { FeedItem } from "@/lib/fetchers/newsFeeds";
+import { pickTickerFeed, feedKey } from "@/lib/newsGroups";
 
 /** Last full year's score for a market, so the strip can say which way it
  *  has moved rather than only where it stands. Computed from the same
@@ -41,7 +42,7 @@ function lastFullYear(code: string): { year: string; value: number } | null {
  *
  * IT MOVES AT A READING SPEED, NOT A FIXED DURATION. The animation used
  * to take 40 seconds whatever the strip held, and the strip grew: nine
- * markets, their weekly changes and two feeds make a row about 4,700px
+ * markets, their weekly changes and three announcements make a row about 4,700px
  * wide, so it ran at 118 pixels a second at every screen size. The owner
  * reported it as rushed and unusable on a phone -- and a test could not
  * even tap a market button, because the button never holds still. The
@@ -91,8 +92,11 @@ export default function MarketTicker({
   // width, so the strip jumped sideways as each landed. One state, set
   // once, and nothing moves until the strip is what it will be.
   //
-  // The second feed is served by this site's own route because neither
-  // the ECB nor the ONS sends the CORS header a browser would need.
+  // The second feed is served by this site's own route because none of
+  // the seven institutions sends the CORS header a browser would need.
+  // When that route's cache is cold it can take ~3.5s to read them all,
+  // so now and then the deadline below wins and the strip starts without
+  // announcements. That is the intended trade: scores never wait on news.
   const [extras, setExtras] = useState<{ events: TickerEvent[]; feed: FeedItem[] } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +104,7 @@ export default function MarketTicker({
       fetchAllWeeklyChanges().then((r) => buildTickerEvents(r, Date.now(), 5)),
       fetch("/api/announcements")
         .then((r) => (r.ok ? r.json() : { items: [] }))
-        .then((j) => (Array.isArray(j.items) ? (j.items as FeedItem[]).slice(0, 3) : [])),
+        .then((j) => (Array.isArray(j.items) ? pickTickerFeed(j.items as FeedItem[], Date.now()) : [])),
     ]).then(([e, f]) => {
       if (cancelled) return;
       // A failed query means the strip carries that much less, never that
@@ -194,8 +198,8 @@ export default function MarketTicker({
       </span>
     )),
     ...feed.map((f) => (
-      <span className="ticker-event is-feed" key={f.url}>
-        {f.kind === "upcoming" ? "NEXT" : f.source}
+      <span className="ticker-event is-feed" key={feedKey(f)} title={f.institution}>
+        {f.kind === "upcoming" ? `NEXT · ${f.source}` : f.source}
         <span className="ticker-feed-title">{f.title}</span>
       </span>
     )),

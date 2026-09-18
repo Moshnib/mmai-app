@@ -1854,71 +1854,29 @@ disagree with an older paragraph here, they are the later word.
 3. **A tenth scored market.** Czechia is the strongest candidate. Israel
    was declined by the owner. Brazil has the best data found anywhere but
    its licence is share-alike (ODbL) and needs a decision.
-4. **A news feed from the institutions themselves — IN FLIGHT.** Branch
-   `news-sources`, commit `d63bd98`, pushed but NOT merged. It adds RSS
-   1.0/RDF, Atom and iCalendar parsing to `lib/fetchers/newsFeeds.ts` and
-   a seven-source registry in `lib/newsSources.ts` (the Fed, Bank of
-   Canada, RBA, Statistics Norway and the US BLS release calendar, on top
-   of the existing ECB and ONS).
+4. **A news feed from the institutions themselves — BUILT, see §35.**
+   Branch `news-sources`. Seven feeds (the Fed, ECB, Bank of Canada, RBA,
+   ONS, Statistics Norway, the BLS release calendar) now reach the
+   homepage band and the ticker, each with its own licence row on the
+   Sources page. Status of the merge is in §35 and `MMAI_TODO.md`.
 
-   **The licence work is DONE, and its reasoning is in the header comment
-   of `lib/newsSources.ts`** — read it before re-opening any of it. Seven
-   feeds cleared; refused on their own terms: Bank of England (website
-   content needs written permission — only its DATABASE is open licensed,
-   which is why the Bank Rate figure is fine and the headlines are not),
-   Bank of Japan, Riksbank and Norges Bank (no confirmed reuse — the same
-   conclusion that sends their policy rates via BIS), IMF and OECD (block
-   automated readers, 403), and the commercial publishers. Note the trap
-   the check turned up: an institution already in `lib/sources.ts` is
-   cleared there for its DATA, and that is **not** the same licence as its
-   news feed — the RBA row says the Cash Rate is specifically excluded
-   from RBA's CC BY 4.0, while the media releases are covered by it.
+   **The licence work is in the header of `lib/newsSources.ts`** — read it
+   before re-opening any of it. Refused on their own terms: Bank of
+   England (only its DATABASE is open licensed — the Bank Rate figure is
+   fine, the headlines are not), Bank of Japan, Riksbank and Norges Bank
+   (no confirmed reuse — why their policy rates come via BIS), IMF and
+   OECD (block automated readers, 403), and the commercial publishers.
+   **The trap:** an institution already in `lib/sources.ts` is cleared
+   there for its DATA, which is not the licence of its news. The RBA's
+   Cash Rate is excluded from the CC BY 4.0 that covers its media
+   releases. `scripts/verify-sources.ts` therefore ties each feed to its
+   own row by `newsSourceId`, never by name.
 
-   Also already fixed against the live feeds: two sources serve Atom, not
-   RSS; Statistics Norway needs `?lang=en` or the headlines arrive in
-   Norwegian; the ONS publishes every release twice (the release and its
-   "time series" twin); calendar items must only ever be upcoming; and
-   Norway's bare "price" keyword pulled in the weekly salmon price.
-
-   The Bank of Canada and RBA feeds reading as empty was **found and
-   fixed** in the same session: both publish a variant whose items carry
-   attributes (`<item rdf:about="…">`) and whose date sits in a different
-   tag, so splitting on the literal `"<item>"` found nothing. `parseRss`
-   now splits on `/<item[^>]*>/` and accepts `dc:date` beside `pubDate`.
-
-   **What is left:** the news-feed licence rows in `lib/sources.ts` (the
-   file is untouched since 16 September), and wiring it up —
-   `app/api/announcements` still calls the original two-source fetcher.
-   `scripts/tmp-parse-check.ts` is scratch and should go before merge.
-
-   Two things to tidy when this is picked up, both spotted on 18 September
-   and neither breaking anything today:
-   - `getText` (the OLD two-source path) still guards with
-     `text.includes("<item>")` — the exact bug fixed in `parseRss` above,
-     surviving one function below it. Harmless while that path only reads
-     the ECB and ONS, which are both RSS 2.0; it would throw "no items in
-     the response" the moment it met an attribute-carrying feed.
-   - The comment at `parseRss` says the Bank of Canada and the RBA publish
-     RSS 1.0/RDF; the comment at `fetchOne` says they publish Atom. Both
-     cannot be right. The code is fine either way — `fetchOne` branches on
-     the content, not on the comment — but one of the two will mislead
-     whoever reads it next.
-
-   **A hazard, recorded because it cost that session three cycles:** Bash
+   **A hazard, recorded because it cost a session three cycles:** Bash
    heredocs in this environment silently eat backslashes. A regex written
-   to disk with `cat <<EOF` arrived with `[\s\S]` flattened to `[sS]`,
-   which matches nothing — so every feed read as empty and looked like a
-   dead source. The test scripts written the same way were corrupted too,
-   so they could not be trusted either. Write anything containing a
-   backslash with the editor, not the shell.
-
-   A design decision already taken, from the plan review: most days
-   "Today" is empty, because seven institutions do not publish daily. So
-   the section leads with a live "Latest: 2 hours ago" line and groups the
-   rest as Today / Yesterday / Last 30 days / Coming up, showing only the
-   groups that have something. Items step discretely every few seconds
-   rather than crawling continuously — a link sliding under a finger is a
-   mis-click, which is the lesson the ticker already taught.
+   with `cat <<EOF` arrived with `[\s\S]` flattened to `[sS]`, which
+   matches nothing, so every feed read as empty and looked like a dead
+   source. Write anything containing a backslash with the editor.
 5. **Owner-only tasks:** take a database backup — the last one standing.
    (Domain bought and wired, `NEXT_PUBLIC_SITE_URL` set, and the Resend
    sending domain verified, all on 17–18 September; see §33.1 and §33.2.)
@@ -2084,6 +2042,11 @@ written permission for commercial reuse — and the owner’s rule is no
 emails to institutions); BLS and RBA (both 403 automated requests);
 general and AI news (off-mission for a site whose claim is that every
 line traces to the institution that published it).
+
+**Superseded by §35 (18 September):** there are now seven feeds, not two,
+and the two-column band became a grouped list. BLS and the RBA are IN:
+BLS answers once the request carries a user-agent, and the RBA's media
+releases are CC BY 4.0. The Bank of England is still out.
 
 Tests: `test-ticker-events.ts` and `test-news-feeds.ts`, both on fixtures
 with a pinned clock, both in CI, both mutation-tested.
@@ -2397,3 +2360,82 @@ https://www.mmai.markets/dashboard, path kept), a preview host (200) and
 the real domain (200). It uses `node:http`, not `fetch`: fetch refuses to
 set a Host header, so the request arrives with the server's own host, the
 rule never matches, and the check reported a working redirect as broken.
+
+## 35. The news feed goes live: seven institutions (2026-09-18)
+
+Finishes the work parked on branch `news-sources` (§28 item 4). The plan
+was reviewed by Opus before coding (Fable was out of credits); all six
+required changes were taken.
+
+**The pipe.** `/api/announcements` now calls `fetchAllNews()` and answers
+`{ items, reachable, checkedAt }`. The old two-source path
+(`fetchAnnouncements`, `fetchEcbDecisions`, `fetchOnsUpcoming`, `getText`)
+is deleted, which removes the `getText` "<item>" guard bug by deletion.
+`lib/fetchers/newsFeeds.ts` is two halves: `fetchAllNews` (network; the
+3.5s budget runs on the real clock, never on the `now` argument) and
+`assembleNews` (pure: windows, per-feed caps, dedupe, order).
+
+**Format facts, checked against the live feeds:** the Bank of Canada and
+the RBA serve RSS 1.0/RDF, NOT Atom. The Fed, ECB, ONS and Statistics
+Norway serve RSS 2.0; BLS serves iCalendar. `parseAtom` and the `"<entry"`
+content sniff were deleted: nothing served Atom, and sniffing could send
+an RSS feed to the wrong parser. If an Atom source is ever added, choose
+the parser from the registry (`format`), never from the content.
+`parseRss` splits on `/<item(?:\s[^>]*)?>/`, which matches `<item>` and
+`<item rdf:about=…>` but not RDF's channel-level `<items>`. An iCalendar
+source other than BLS is REFUSED (`readFeed` throws): a calendar entry has
+no link, and only BLS has a map to its own pages.
+
+**The homepage band** (`components/NewsBand.tsx`, rules in
+`lib/newsGroups.ts`): a live "Latest: 2 h 10 m ago · ECB" line, then
+Today / Yesterday / Last 30 days / Coming up, only the groups that have
+items. One rule: anything not yet happened is Coming up, even if due this
+afternoon ("today, 13:30"); Today holds only what was published. Days are
+the READER's calendar days in the reader's zone. The list does not rotate
+or scroll. A credit line under it links to /sources. Each source label
+carries the full institution name as a tooltip.
+
+**The ticker** takes `pickTickerFeed`: the two newest announcements and
+the one soonest release, judged against the clock rather than the route's
+label. Before this, `slice(0, 3)` on a newest-date-first list would have
+announced the release furthest away. Upcoming items read "NEXT · BLS", so
+the institution is named there too. React keys are `url|at|title`,
+because BLS sends Employment Situation and Real Earnings to one page. On
+a cold cache the route can take ~3.5s and the strip's 4s deadline may
+win; the strip then starts without news, which is intended.
+
+**Licences** (`lib/sources.ts`, re-read on 18 September): five new "All
+markets" rows — Federal Reserve Board (public domain, cite the Board),
+Bank of Canada (Terms of Use: free use with attribution), RBA media
+releases (CC BY 4.0, "Source: Reserve Bank of Australia"), Statistics
+Norway (CC BY 4.0, credit and link to ssb.no), BLS (public domain, cite
+BLS). Each row names its feed in `newsSourceId`, and `verify-sources.ts`
+fails unless every feed has exactly one such row (mutation-tested by
+deleting one and by pointing two at the same feed).
+
+**"Sources: N" went DOWN, correctly.** The homepage market card and Trends
+counted `sourcesForMarket().length`: every "All markets" row, including
+Brent (retired from the score) and the announcement feeds (never in it),
+and one row per indicator. They now show `scoredInstitutionCount()`:
+distinct institutions behind the score. The US reads 4, where it read 8
+(and would have read 13 with the new feeds).
+
+**Tests.** `scripts/test-news-feeds.ts` was rewritten against the real
+registry: RSS 2.0, RDF, iCalendar (folding, escapes, 08:30 Eastern =
+12:30Z in September and 13:30Z in December), each feed's filters, the
+windows, caps, dedupe, grouping (including London vs Sydney, and "tomorrow"
+at 22:00), and the strip's pick. Twenty mutations, all caught (eighteen on the code, two on the bank filters).
+`scripts/tmp-parse-check.ts` is deleted.
+
+**Filtered by the owner's choice.** The Bank of Canada and RBA feeds carry
+everything each bank announces: on 18 September, a new vertical $20 note
+and a cash-transport licence next to rate decisions. The owner chose
+economy news only. Bank of Canada keeps "policy rate", "policy interest
+rate", "monetary policy", the financial system review and inflation. The
+RBA keeps "monetary policy", the Financial Stability Review and statements
+from the Governor, and drops any "appointment" (which catches
+"Appointment to the Monetary Policy Board"). Both filters were built from
+real titles: the Bank of Canada's live feed and 87 RBA releases from
+February 2024 to September 2026. Both are pinned in the test with those
+titles. Expect either feed to be empty for weeks between decisions. The
+other five fill the section.

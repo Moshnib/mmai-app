@@ -18,7 +18,7 @@ import {
   INDICATOR_FIELD, formatDimensionWeight, formatDimensionInfluence,
   type DimensionKey, type IndicatorKey, REFERENCE_COUNT } from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { sourcesForMarket, sourcesForDimension } from "@/lib/sources";
+import { scoredInstitutionCount, sourcesForDimension } from "@/lib/sources";
 
 const ORDER: DimensionKey[] = ["C", "D", "K"];
 
@@ -463,7 +463,7 @@ export default function TrendsPageInner({
               )}
 
               <p className="meta-label insight-card-foot">
-                Latest data: {latestPoint?.year ?? "—"} · Annual · {sourcesForMarket(marketNames[current]).length} sources
+                Latest data: {latestPoint?.year ?? "—"} · Annual · {scoredInstitutionCount(marketNames[current])} sources
               </p>
             </div>
           </div>
@@ -485,7 +485,7 @@ export default function TrendsPageInner({
             {hasTrend ? <TrendChart series={compositeSeries} height={320} yDomain={[0, 100]} download={{ title: `MMAI score over time — ${marketNames[current]}`, source: SCORE_SOURCE }} /> : notEnough}
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--hair)", fontSize: 11, color: "var(--slate)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
               <span>
-                Built from {sourcesForMarket(marketNames[current]).length} sources — each institution is listed on the{" "}
+                Built from {scoredInstitutionCount(marketNames[current])} sources — each institution is listed on the{" "}
                 <Link href="/sources" style={{ color: "var(--accent-2)", textDecoration: "underline", textUnderlineOffset: 3 }}>Sources</Link> page
               </span>
               <span>Most recent point: {latestPoint?.year ?? "—"}</span>

@@ -1,106 +1,94 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { FeedItem } from "@/lib/fetchers/newsFeeds";
-import { useNow } from "@/lib/liveTime";
+import { groupNews, feedKey } from "@/lib/newsGroups";
+import { useNow, formatAgo } from "@/lib/liveTime";
 
 /**
- * WHAT IS COMING, AND WHAT WAS JUST ANNOUNCED.
+ * WHAT THE INSTITUTIONS HAVE SAID, AND WHAT THEY WILL PUBLISH NEXT.
  *
- * Two columns, both first-hand: the ONS release calendar on the left
- * (the next UK figures and the day they land) and ECB decisions on the
- * right. No headlines from news outlets -- this site's whole claim is
- * that every line traces to the institution that published it, and an
- * aggregated headline cannot.
+ * Seven central banks and statistics offices, each read from its own
+ * feed (lib/newsSources.ts). No headlines from news outlets -- this
+ * site's whole claim is that every line traces to the institution that
+ * published it, and an aggregated headline cannot.
+ *
+ * Most days nothing is published "today", so the band leads with how
+ * recent the newest item is and shows only the groups that have
+ * something: Today / Yesterday / Last 30 days / Coming up (the grouping
+ * rules are in lib/newsGroups.ts). The list does not rotate or scroll: a
+ * link that moves under a finger is a mis-click, the lesson the ticker
+ * already taught.
  *
  * It refreshes itself: the route behind it re-reads the feeds every
  * fifteen minutes, and this asks again on the same rhythm, so a page
  * left open stays current with nothing run by hand.
- *
- * WHEN THERE IS NOTHING, IT SAYS SO. An empty band is better than a
- * stale one, and a band that quietly disappears makes a reader wonder
- * whether the site broke.
  */
 export default function NewsBand() {
-  const [items, setItems] = useState<FeedItem[] | null>(null);
+  const [data, setData] = useState<{ items: FeedItem[]; reachable: boolean } | null>(null);
   const now = useNow();
 
   useEffect(() => {
     let cancelled = false;
     const load = () =>
       fetch("/api/announcements")
-        .then((r) => (r.ok ? r.json() : { items: [] }))
-        .then((j) => { if (!cancelled) setItems(Array.isArray(j.items) ? j.items : []); })
-        .catch(() => { if (!cancelled) setItems([]); });
+        .then((r) => (r.ok ? r.json() : { items: [], reachable: false }))
+        .then((j) => {
+          if (cancelled) return;
+          // A cached answer from before this field existed has no
+          // `reachable`; it had items, so treat it as reachable.
+          setData({ items: Array.isArray(j.items) ? j.items : [], reachable: j.reachable !== false });
+        })
+        .catch(() => { if (!cancelled) setData({ items: [], reachable: false }); });
     load();
     const id = setInterval(load, 15 * 60 * 1000);
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  // Nothing at all: the section stays out of the page rather than
-  // printing two empty columns.
-  if (items !== null && items.length === 0) return null;
+  // Nothing at all, or no feed answered: the section stays out of the
+  // page rather than printing an empty box.
+  if (data !== null && (!data.reachable || data.items.length === 0)) return null;
 
-  const upcoming = (items ?? []).filter((i) => i.kind === "upcoming");
-  const announced = (items ?? []).filter((i) => i.kind === "announcement");
+  if (data === null || now === null) {
+    return (
+      <div className="news-band">
+        <p className="news-empty">Reading the central bank and statistics office feeds…</p>
+      </div>
+    );
+  }
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const { latest, groups } = groupNews(data.items, now, timeZone);
 
   return (
     <div className="news-band">
-      <div className="news-col">
-        <p className="news-head">Coming up</p>
-        {items === null ? (
-          <p className="news-empty">Reading the release calendars…</p>
-        ) : upcoming.length === 0 ? (
-          <p className="news-empty">Nothing scheduled in the next three weeks.</p>
-        ) : (
-          <ul>
-            {upcoming.map((i) => (
-              <li key={i.url}>
-                <span className="news-when">{when(i.at, now)}</span>
-                <a href={i.url} target="_blank" rel="noopener noreferrer" className="news-link">{i.title}</a>
-                <span className="news-src">{i.source}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {latest && (
+        <p className="news-latest">
+          <span className="live-dot" aria-hidden="true" />
+          Latest: <b>{formatAgo(latest.at, now)}</b> · {latest.source}
+        </p>
+      )}
+      <div className="news-groups">
+        {groups.map((g) => (
+          <div className="news-col" key={g.key}>
+            <p className="news-head">{g.label}</p>
+            <ul>
+              {g.items.map((i) => (
+                <li key={feedKey(i)}>
+                  <span className="news-when">{i.when}</span>
+                  <a href={i.url} target="_blank" rel="noopener noreferrer" className="news-link">{i.title}</a>
+                  <span className="news-src" title={i.institution}>{i.source}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
-
-      <div className="news-col">
-        <p className="news-head">Just announced</p>
-        {items === null ? (
-          <p className="news-empty">Reading the central bank feeds…</p>
-        ) : announced.length === 0 ? (
-          <p className="news-empty">No decisions published in the last three weeks.</p>
-        ) : (
-          <ul>
-            {announced.map((i) => (
-              <li key={i.url}>
-                <span className="news-when">{when(i.at, now)}</span>
-                <a href={i.url} target="_blank" rel="noopener noreferrer" className="news-link">{i.title}</a>
-                <span className="news-src">{i.source}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <p className="news-credit">
+        From each institution&rsquo;s own feed, under its own licence ·{" "}
+        <Link href="/sources">licences on the Sources page</Link>
+      </p>
     </div>
   );
-}
-
-/** "Tomorrow", "in 3 days", "2 days ago" -- and the date itself for
- *  anything further out, because "in 17 days" is not a thing anyone
- *  holds in their head. `now` is null until the browser has a clock, so
- *  the server and the first client render agree. */
-function when(iso: string, now: number | null): string {
-  const t = Date.parse(iso);
-  const date = new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-  if (now === null) return date;
-
-  const days = Math.round((t - now) / 86_400_000);
-  if (days === 0) return "today";
-  if (days === 1) return "tomorrow";
-  if (days === -1) return "yesterday";
-  if (days > 1 && days <= 6) return `in ${days} days`;
-  if (days < -1 && days >= -6) return `${Math.abs(days)} days ago`;
-  return date;
 }

@@ -72,6 +72,13 @@ export interface SourceEntry {
    *  verify a figure has to go find the agency themselves. Points at the
    *  human-readable landing page, not the raw API endpoint. */
   url?: string;
+  /** Set only on an announcement row: the `id` of the feed in
+   *  lib/newsSources.ts this row licenses. An institution already listed
+   *  for its FIGURES is not thereby cleared for its NEWS -- the RBA's Cash
+   *  Rate is excluded from the CC BY 4.0 that covers its media releases --
+   *  so scripts/verify-sources.ts matches each feed to its row by this id,
+   *  never by name. */
+  newsSourceId?: string;
 }
 
 export const SOURCES: SourceEntry[] = [
@@ -189,13 +196,20 @@ export const SOURCES: SourceEntry[] = [
   { market: "All markets", indicator: "Brent Crude (context only — not scored)", cadence: "monthly", institution: "U.S. Energy Information Administration", shortName: "EIA", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "NO LONGER SCORED as of 1 September 2026. This is a single global oil price: the identical figure applied to all six markets, so as a pillar it moved every score together and could not affect the ranking of one country against another. It is still shown in the weekly feed, where a global price is exactly what it claims to be." , url: "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm" },
 
   // ---------- Announcements, not figures ----------
-  // These two feed the calendar band and the ticker, not a score. Listed
-  // here anyway: the page promises every source on the site, with its
-  // licence, and an announcement a reader sees is a source like any
-  // other. Both licences require naming the institution, which is why
-  // "ONS" and "ECB" appear on every item rendered from them.
-  { market: "All markets", indicator: "UK release calendar (announcements — not scored)", cadence: "daily", institution: "UK Office for National Statistics", shortName: "ONS", license: "Open Government Licence v3.0 — permits commercial use with attribution", status: "live", lastVerified: "2026-09-16", note: "Upcoming releases only, filtered to inflation, the labour market, GDP and public sector finances. Feeds the homepage calendar band and the ticker; nothing here enters a score.", url: "https://www.ons.gov.uk/releasecalendar" },
-  { market: "All markets", indicator: "ECB decisions and statements (announcements — not scored)", cadence: "per decision", institution: "European Central Bank", shortName: "ECB", license: "Free reuse provided the information appears accurately and the ECB is cited as the source", status: "live", lastVerified: "2026-09-16", note: "Press releases and monetary policy statements only — the feed also carries speeches and interviews, which are a person’s view rather than a decision, and are dropped. Nothing here enters a score.", url: "https://www.ecb.europa.eu/press/html/index.en.html" },
+  // These seven feed the homepage news band and the ticker, not a score.
+  // Listed here anyway: the page promises every source on the site, with
+  // its licence, and an announcement a reader sees is a source like any
+  // other. Every licence below requires naming the institution, which is
+  // why its short name appears on every item rendered from it. Each row
+  // is tied to its feed by `newsSourceId`; which feeds were refused, and
+  // why, is the header of lib/newsSources.ts.
+  { market: "All markets", indicator: "UK release calendar (announcements — not scored)", cadence: "daily", institution: "UK Office for National Statistics", shortName: "ONS", license: "Open Government Licence v3.0 — permits commercial use with attribution", status: "live", lastVerified: "2026-09-16", note: "Upcoming releases only, filtered to inflation, the labour market, GDP and public sector finances. Feeds the homepage news band and the ticker; nothing here enters a score.", url: "https://www.ons.gov.uk/releasecalendar", newsSourceId: "ons-calendar" },
+  { market: "All markets", indicator: "ECB decisions and statements (announcements — not scored)", cadence: "per decision", institution: "European Central Bank", shortName: "ECB", license: "Free reuse provided the information appears accurately and the ECB is cited as the source", status: "live", lastVerified: "2026-09-16", note: "Press releases and monetary policy statements only — the feed also carries speeches and interviews, which are a person’s view rather than a decision, and are dropped. Nothing here enters a score.", url: "https://www.ecb.europa.eu/press/html/index.en.html", newsSourceId: "ecb-press" },
+  { market: "All markets", indicator: "Federal Reserve monetary policy releases (announcements — not scored)", cadence: "per decision", institution: "Board of Governors of the Federal Reserve System", shortName: "Federal Reserve", license: "Public domain — may be copied and distributed without permission; the Board asks to be cited as the source", status: "live", lastVerified: "2026-09-18", note: "The Board's monetary policy press releases only, not its whole press wire, which also carries bank supervision and enforcement notices. Nothing here enters a score.", url: "https://www.federalreserve.gov/newsevents/pressreleases.htm", newsSourceId: "fed-monetary" },
+  { market: "All markets", indicator: "Bank of Canada press releases (announcements — not scored)", cadence: "per decision", institution: "Bank of Canada", shortName: "Bank of Canada", license: "Bank of Canada Terms of Use — free to use, copy and distribute website content, with attribution to the Bank", status: "live", lastVerified: "2026-09-18", note: "Press releases filtered to rate decisions, monetary policy reports and the financial system review — the feed also carries bank notes, appointments and museum news, which are dropped. Nothing here enters a score.", url: "https://www.bankofcanada.ca/press/press-releases/", newsSourceId: "boc-press" },
+  { market: "All markets", indicator: "RBA media releases (announcements — not scored)", cadence: "per decision", institution: "Reserve Bank of Australia", shortName: "RBA", license: "CC BY 4.0 — Source: Reserve Bank of Australia", status: "live", lastVerified: "2026-09-18", note: "Filtered to monetary policy decisions, the Financial Stability Review and the Governor's statements; payments-system and staff notices are dropped. Media releases are covered by the RBA's CC BY 4.0 licence. That is NOT the licence of the Cash Rate figure listed under Australia, which the RBA excludes from CC BY 4.0 and covers by its own copyright notice — the same institution, two different permissions. Nothing here enters a score.", url: "https://www.rba.gov.au/media-releases/", newsSourceId: "rba-media" },
+  { market: "All markets", indicator: "Statistics Norway releases (announcements — not scored)", cadence: "daily", institution: "Statistics Norway (SSB)", shortName: "Statistics Norway", license: "CC BY 4.0 — credit Statistics Norway, with a link to ssb.no", status: "live", lastVerified: "2026-09-18", note: "The English-language release feed, filtered to prices, jobs, GDP and interest rates. Nothing here enters a score.", url: "https://www.ssb.no/en", newsSourceId: "ssb-news" },
+  { market: "All markets", indicator: "US release calendar (announcements — not scored)", cadence: "daily", institution: "U.S. Bureau of Labor Statistics", shortName: "BLS", license: "Public domain — U.S. federal government work; BLS asks to be cited as the source", status: "live", lastVerified: "2026-09-18", note: "Upcoming releases only, filtered to consumer and producer prices, the employment situation, real earnings and job openings. Nothing here enters a score.", url: "https://www.bls.gov/schedule/news_release/", newsSourceId: "bls-calendar" },
 
   // ---------- Fiscal Resilience — one BIS series, published per country ----------
   // BIS returns all six in a single request, but these are SIX DIFFERENT
@@ -217,6 +231,18 @@ export const SOURCES: SourceEntry[] = [
 
 export function sourcesForMarket(marketName: string): SourceEntry[] {
   return SOURCES.filter((s) => s.market === marketName || s.market === "All markets");
+}
+
+/** How many institutions a market's score is built from -- the number a
+ *  reader sees as "Sources: N".
+ *
+ *  Not sourcesForMarket().length. That counts every "All markets" row,
+ *  which includes Brent (retired from the score) and the announcement
+ *  feeds (never in it), so the number grew every time a news feed was
+ *  added. And it counts INSTITUTIONS, not rows: Statistics Canada
+ *  supplying three figures is one source, not three. */
+export function scoredInstitutionCount(marketName: string): number {
+  return new Set(sourcesForMarket(marketName).filter((s) => s.pillar != null).map((s) => s.institution)).size;
 }
 
 export function sourceForPillar(marketName: string, pillar: "PS" | "GM" | "LM" | "MC" | "FR"): SourceEntry | undefined {

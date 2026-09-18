@@ -81,7 +81,7 @@ export const NEWS_SOURCES: NewsSource[] = [
     // rates, prices and jobs, and the all-press feed carries bank
     // supervision and enforcement notices as well.
     id: "fed-monetary",
-    institution: "US Federal Reserve",
+    institution: "Board of Governors of the Federal Reserve System",
     shortName: "Federal Reserve",
     url: "https://www.federalreserve.gov/feeds/press_monetary.xml",
     format: "rss",
@@ -95,6 +95,12 @@ export const NEWS_SOURCES: NewsSource[] = [
     url: "https://www.bankofcanada.ca/content_type/press-releases/feed/",
     format: "rss",
     feedKind: "announcement",
+    // One feed for everything the Bank announces. Read on 18 September
+    // 2026 it carried a new $20 note, a museum award and a board vacancy
+    // beside three rate decisions. The owner chose economy news only:
+    // rate decisions ("maintains the policy rate at 2¼%"), the schedule
+    // for them, monetary policy reports and the financial system review.
+    keywords: /policy rate|policy interest rate|monetary policy|financial (system|stability) review|inflation/i,
     cap: 2,
   },
   {
@@ -104,11 +110,19 @@ export const NEWS_SOURCES: NewsSource[] = [
     url: "https://www.rba.gov.au/rss/rss-cb-media-releases.xml",
     format: "rss",
     feedKind: "announcement",
+    // Same reason, same choice. Of 87 media releases from February 2024
+    // to September 2026, most were payments-system and staff notices; the
+    // economy news is the rate decision ("Statement by the Monetary Policy
+    // Board: Monetary Policy Decision"), the Financial Stability Review and
+    // the Governor's own statements. "Appointment to the Monetary Policy
+    // Board" names the right board and is still a staff notice.
+    keywords: /monetary policy|financial stability review|statement from the governor/i,
+    exclude: /appointment/i,
     cap: 2,
   },
   {
     id: "ssb-news",
-    institution: "Statistics Norway",
+    institution: "Statistics Norway (SSB)",
     shortName: "Statistics Norway",
     // ?lang=en, because the bare feed is in Norwegian and a Norwegian
     // headline in an English news list is not an announcement, it is a
@@ -127,7 +141,7 @@ export const NEWS_SOURCES: NewsSource[] = [
     // it carries every scheduled US release date, which is what "what
     // lands next" is made of.
     id: "bls-calendar",
-    institution: "US Bureau of Labor Statistics",
+    institution: "U.S. Bureau of Labor Statistics",
     shortName: "BLS",
     url: "https://www.bls.gov/schedule/news_release/bls.ics",
     format: "ics",

@@ -2082,16 +2082,30 @@ a.dim-axis-row:hover { background: var(--hover); }
 
 /* ============================================================
    WHAT LANDS NEXT, AND WHAT WAS JUST DECIDED
-   Two columns of first-hand announcements: the ONS release calendar and
-   the ECB's press feed. Deliberately plain -- a date, a title, and who
-   published it. The colour is spent on the date, because "tomorrow" is
-   the part a reader is scanning for.
+   First-hand announcements from seven institutions, grouped Today /
+   Yesterday / Last 30 days / Coming up, only the groups that have
+   something. Deliberately plain -- a date, a title, and who published it.
+   The colour is spent on the date, because "tomorrow" is the part a
+   reader is scanning for.
    ============================================================ */
-.news-band {
+.news-band { display: grid; gap: 12px; }
+.news-groups {
   display: grid; gap: 12px;
   grid-template-columns: minmax(0, 1fr);
 }
-@media (min-width: 760px) { .news-band { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+@media (min-width: 760px) {
+  .news-groups { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+}
+/* "Latest: 2 h 10 m ago" -- on most days nothing is published today, and
+   this is what says the section is still being read. */
+.news-latest {
+  display: flex; align-items: center; gap: 8px; margin: 0;
+  font-family: var(--font-mono); font-size: var(--t-caption); color: var(--slate);
+}
+.news-latest b { color: var(--status-live); font-weight: 600; font-variant-numeric: tabular-nums; }
+.news-credit { margin: 0; font-size: var(--t-micro); color: var(--slate); }
+.news-credit a { color: var(--slate); text-decoration: underline; text-underline-offset: 3px; }
+.news-credit a:hover { color: var(--accent); }
 .news-col {
   background: var(--card-bg); border: 1px solid var(--hair);
   border-radius: var(--card-radius); padding: 16px 18px;

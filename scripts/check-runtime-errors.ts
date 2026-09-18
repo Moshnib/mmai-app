@@ -51,8 +51,8 @@ const EXPECTED_FAILURES: { match: RegExp; why: string }[] = [
   // because those arrive as a status rather than a failed request.
   { match: /[?&]_rsc=/, why: "aborted RSC prefetch — the router cancelling its own speculative request" },
 
-  // The homepage asks its own route for the ECB and ONS announcements as
-  // soon as it hydrates, and that route reads two outside feeds, so the
+  // The homepage asks its own route for the institutions' announcements as
+  // soon as it hydrates, and that route reads seven outside feeds, so the
   // request can still be in flight 2.5 seconds later when this script
   // closes the tab. Same artifact as the prefetch above: the tab went
   // away, the site is fine.
@@ -61,7 +61,7 @@ const EXPECTED_FAILURES: { match: RegExp; why: string }[] = [
   // errors and answers 200 with an empty list, so a real fault there
   // arrives as a status and is still reported by the response handler
   // below -- as would a 404 if the route were ever renamed.
-  { match: /\/api\/announcements/, why: "aborted announcements fetch -- the tab closed before two outside feeds answered" },
+  { match: /\/api\/announcements/, why: "aborted announcements fetch -- the tab closed before the outside feeds answered" },
 
   // Vercel Web Analytics (app/layout.tsx). On Vercel this script is served
   // at the site's own origin; under a local `next start` nothing serves it,
