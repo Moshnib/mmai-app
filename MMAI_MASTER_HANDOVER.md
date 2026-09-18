@@ -2236,3 +2236,41 @@ message offline and pins the market names, the tokenised absolute
 unsubscribe URL, the didn't-sign-up line, no undefined/NaN/null, that
 every market has a display name, and that the sender is on the bare
 domain. The send path itself is proved by subscribing on the live site.
+
+## 34. Security review, and the patch it found (2026-09-18)
+
+Full review at the owner's request. One real finding, five confirmations.
+
+**THE FINDING: Next 16.3.1 carried two CRITICAL advisories** — an
+unauthenticated RCE on Windows-hosted servers, and an unauthenticated RCE
+in the Image Optimization API when AVIF files are processed — plus a high
+one in the `sharp`/libheif chain it pulls in. Patched by pinning
+**next and eslint-config-next to 16.3.5**; `npm audit --omit=dev` then
+reports zero vulnerabilities. The site uses no `next/image`, which limits
+the second, but the framework serves that route regardless. Re-run
+`npm audit` after every dependency change; this is the first time it had
+found anything.
+
+**Confirmed sound, by testing rather than reading:**
+- **RLS holds.** With the PUBLIC key (the one in every visitor's bundle):
+  `subscribers` and `feedback_submissions` return `[]` (RLS on, no
+  policies = deny all); an INSERT into `raw_indicators` is refused with
+  42501; a DELETE against `subscribers` removes nothing (5 rows before
+  and after — PostgREST answers 204 for zero matched rows, which is not
+  evidence of success and was checked separately).
+- **The service-role client is imported only by route handlers**, never by
+  a file carrying "use client"; no SERVICE_ROLE reference outside
+  lib/supabase.ts.
+- **No secrets tracked**: .env.local and backups/ are gitignored, and a
+  scan of tracked content for key-shaped strings finds nothing.
+- **Headers on the live domain**: CSP, HSTS (2 years, preload),
+  X-Frame-Options DENY, frame-ancestors 'none', nosniff, Referrer-Policy,
+  Permissions-Policy.
+- **Cron routes fail closed**; forms validate, cap length and rate-limit;
+  unsubscribe tokens are UUIDs and GET has no side effect; the one
+  dangerouslySetInnerHTML builds from repo constants and escapes `<`.
+
+**Known, accepted limits** (documented, not new): the rate limiter is
+per-instance memory, so it slows a flood rather than stopping one; and the
+CSP allows 'unsafe-inline' for scripts, measured as necessary here (§ the
+next.config.ts header comment).
