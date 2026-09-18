@@ -53,6 +53,22 @@ async function speed(page: Page): Promise<number> {
   return rates.sort((x, y) => x - y)[Math.floor(rates.length / 2)];
 }
 
+/** Waits until the strip is actually running before anything is measured.
+ *  It holds still until both of its queries land (a four-second deadline in
+ *  MarketTicker), and on a cold server -- a fresh build in CI, the first
+ *  request after a deploy -- that is slower than any fixed pause. Measuring
+ *  through it reported 0 px/s and failed a strip that was merely waiting.
+ *  If the reader's system asks for less motion, this asks for movement the
+ *  way a reader would: by pressing the button. */
+async function ready(page: Page) {
+  await page.waitForSelector(".ticker-row .ticker-item", { timeout: 15_000 });
+  await page.waitForFunction(() => !document.querySelector(".ticker.is-waiting"), null, { timeout: 15_000 }).catch(() => {});
+  if (!(await page.locator(".ticker.is-playing").count())) await page.click(".ticker-motion");
+  await page.waitForSelector(".ticker.is-playing", { timeout: 10_000 });
+  // One beat, so the animation has somewhere to have moved from.
+  await page.waitForTimeout(600);
+}
+
 const rowWidth = (page: Page) =>
   page.evaluate(() => Math.round(document.querySelector(".ticker-row")?.getBoundingClientRect().width ?? 0));
 
@@ -64,9 +80,7 @@ async function phone() {
   await page.goto(`${BASE}/`, { waitUntil: "load" });
   // The reader's system may ask for less motion; this check is about the
   // strip when it is moving, so ask for movement the way a reader would.
-  await page.waitForTimeout(1200);
-  if (!(await page.locator(".ticker.is-playing").count())) await page.click(".ticker-motion");
-  await page.waitForTimeout(1200);
+  await ready(page);
 
   const widthAtStart = await rowWidth(page);
   const px = await speed(page);
@@ -130,9 +144,7 @@ async function desktop() {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   console.log("\nOn a desktop");
   await page.goto(`${BASE}/`, { waitUntil: "load" });
-  await page.waitForTimeout(1200);
-  if (!(await page.locator(".ticker.is-playing").count())) await page.click(".ticker-motion");
-  await page.waitForTimeout(1200);
+  await ready(page);
   const px = await speed(page);
   check(px > 30 && px < 85, `travels at a reading speed (${px.toFixed(0)} px/s)`);
 

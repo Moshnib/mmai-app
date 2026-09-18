@@ -1,8 +1,8 @@
 // ============================================================
 //  DOES THE TOP BAR WORK?
 //
-//  In September 2026 the bar went from eleven links to five entries, two
-//  of which open a panel. A panel is behaviour, and behaviour is what the
+//  In September 2026 the bar went from eleven links to six entries, two
+//  of which open a panel (Home, three tools, and the two groups). A panel is behaviour, and behaviour is what the
 //  other browser checks walk past: a menu that never closes, or one that
 //  hangs off the right edge of the screen, moves no layout box that
 //  check-layout polices while it is shut, throws nothing, and names every
@@ -92,10 +92,13 @@ async function phone() {
   await page.goto(`${BASE}/`, { waitUntil: "load" });
   await page.click(".navburger");
   const links = await page.locator("#mobile-nav-panel a").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
-  const expected = ["/dashboard", "/compare", "/trends", "/gulf-watch", "/observatory", "/stablecoins", "/learn", "/sources", "/about"];
+  const expected = ["/", "/dashboard", "/compare", "/trends", "/gulf-watch", "/observatory", "/stablecoins", "/learn", "/sources", "/about"];
   check(expected.every((h) => links.includes(h)), `the menu lists every page (${links.length} links)`);
   const labels = await page.locator("#mobile-nav-panel .navpanel-label").count();
   check(labels === 2, "the menu labels both groups");
+  // A reader deep inside the site must be able to get home from the menu,
+  // not only by knowing the logo is a link.
+  check(links.includes("/"), "the menu has a way home");
   // isVisible() says nothing about the screen edge, so measure: the panel
   // must scroll, and once scrolled the last link must sit inside 360px.
   const scrolls = await page.evaluate(() => { const p = document.getElementById("mobile-nav-panel")!; return p.scrollHeight > p.clientHeight; });
@@ -109,7 +112,7 @@ async function phone() {
 
 async function main() {
   console.log(`Checking the top bar against ${BASE}`);
-  await desktop(761);
+  await desktop(821);
   await desktop(1280);
   await phone();
   console.log("");
