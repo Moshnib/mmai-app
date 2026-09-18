@@ -2060,8 +2060,13 @@ full under paragraph labels (not headings, so each page's h1 comes first),
 and the panel scrolls on its own so a phone held sideways reaches the
 last link.
 
-Breakpoint 1100px → **760px**; `scripts/check-layout.ts` "nav-row" is now
-761. New `scripts/check-nav.ts` (wired into CI after check-accessibility)
+Breakpoint 1100px → 760px, then → **820px** on 18 September, when **Home
+came back as a sixth entry**: dropping it had left the logo as the only
+way home, which a reader has to know, and the phone menu had no route
+home at all. Six entries left ~55px of slack at 761, which is a fit but
+not one to trust to a fallback font, so the breakpoint moved.
+`scripts/check-layout.ts` "nav-row" is 821 and `check-nav` opens the
+groups there; check-nav also asserts the phone menu contains "/". New `scripts/check-nav.ts` (wired into CI after check-accessibility)
 opens both groups at 761 and 1280 and on a 740×360 touch phone and asserts
 every behaviour above. Reviewed before coding and before merge.
 

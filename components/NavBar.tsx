@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation";
 // stays visible even during a page's loading fallback (Compare's
 // fallback used to hide the entire nav while its data loaded).
 //
-// FIVE ENTRIES, NOT ELEVEN. The bar used to list every page in the order
+// SIX ENTRIES, NOT ELEVEN. The bar used to list every page in the order
 // each was built: Overview, Dashboard, Data Over Time, Compare, Gulf
 // Watch, Observatory, Stablecoins, Learn More, Sources, About, Contact.
 // The owner found it too long and oddly ordered, and it was both -- a
@@ -22,14 +22,26 @@ import { usePathname } from "next/navigation";
 //   "Beyond the score"  -- the pages that track without scoring;
 //   "About the index"   -- how it is built, where the data comes from.
 //
-// Overview went because the logo already goes home, and Contact moved to
-// the footer, where readers look for it.
+// Contact moved to the footer, where readers look for it.
+//
+// "Overview" went too -- on the reasoning that the logo already goes
+// home. That reasoning was wrong in one direction and the owner said so:
+// a logo is only a way home to someone who KNOWS it is, and on a phone
+// the menu had no route home at all, so a reader deep in the Sources page
+// had to close the menu and find the mark at the top. Home is a link
+// again, named Home, first in the row.
 
 interface NavLink { href: string; label: string; note?: string }
 interface NavGroup { id: string; label: string; items: NavLink[] }
 type NavEntry = NavLink | NavGroup;
 
 const NAV: NavEntry[] = [
+  // HOME IS A LINK AGAIN, and this time it is not the old "Overview".
+  // Dropping it left the logo as the only way back, which a reader has to
+  // KNOW; on a phone the menu had no route home at all, so someone deep
+  // in the Sources page had to close the menu and hunt for the logo. It
+  // is named Home, because that is what the word is.
+  { href: "/", label: "Home" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/compare", label: "Compare" },
   { href: "/trends", label: "Trends" },

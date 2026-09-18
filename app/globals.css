@@ -311,13 +311,16 @@ body {
 }
 .navpanel-link.active { background: var(--on-bg); color: var(--on-ink); }
 
-/* 760. When the bar listed eleven links it needed about 1,050px and this
+/* 820. When the bar listed eleven links it needed about 1,050px and this
    was 1100 -- at 960 the row pushed the whole page 83px sideways. Five
-   entries fit in roughly 650, so a tablet held upright keeps the full bar.
-   scripts/check-layout.ts holds a viewport 1px above this, and
-   scripts/check-nav.ts opens both groups there. Below it the menu button
-   takes over. */
-@media (max-width: 760px) {
+   entries fit in roughly 650 and it was 760; Home came back as a sixth on
+   18 September, which left about 55px of slack at 761 -- enough to fit,
+   and not enough to trust to a fallback font on a machine that cannot
+   reach Google Fonts. 820 restores the margin, and a tablet held upright
+   still keeps the full bar. scripts/check-layout.ts holds a viewport 1px
+   above this, and scripts/check-nav.ts opens both groups there. Below it
+   the menu button takes over. */
+@media (max-width: 820px) {
   .navlinks { display: none; }
   .navburger { display: flex; }
   .navpanel.open { display: flex; }

@@ -61,11 +61,12 @@ const VIEWPORTS = [
   { name: "small", width: 620, height: 800 },
   { name: "tablet", width: 700, height: 1024 },
   { name: "wide-tab", width: 880, height: 900 },
-  // 1px above the 760px nav breakpoint, the narrowest width at which the
+  // 1px above the 820px nav breakpoint, the narrowest width at which the
   // full bar shows. When it listed eleven links the breakpoint was 1100
   // (at 960 the row pushed every page 83px sideways); five entries brought
-  // it down, and this keeps the new edge honest.
-  { name: "nav-row", width: 761, height: 900 },
+  // it to 760, and Home returning as a sixth moved it to 820. This keeps
+  // the edge honest.
+  { name: "nav-row", width: 821, height: 900 },
   { name: "desktop", width: 1280, height: 900 },
 ];
 
