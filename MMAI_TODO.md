@@ -29,11 +29,28 @@ Five more institutions were added for the news ticker — the US Fed, Bank
 of Canada, the Reserve Bank of Australia, Statistics Norway and the US
 labour-statistics release calendar, joining the ECB and the UK's ONS.
 
-**It is saved and pushed but deliberately switched off.** Before it can go
-live, each of the five needs its licence checked and recorded on the
-Sources page, the same way every other source on the site was. That's the
-next piece of work, and it's a decision point for you rather than a
-typing job.
+**It is saved and pushed but deliberately switched off.**
+
+The licence checks are **done** — seven feeds cleared. Refused, on their
+own published terms: the Bank of England and Bank of Japan (commercial
+reuse needs written permission), the Riksbank and Norges Bank (terms don't
+confirm reuse — the same reason this site already takes their rates via
+BIS), and the IMF and OECD (they block automated readers outright). The
+reasoning is written into the code itself so it can't get lost.
+
+One thing worth knowing, because it's the sort of trap that bites later:
+an institution already on your Sources page is cleared there for its
+**numbers**, which is not the same permission as its **news headlines**.
+The RBA is the example — its cash rate is specifically excluded from the
+open licence that covers its media releases.
+
+The Bank of Canada and Australia feeds coming back empty was found and
+fixed in the same session — both publish a slightly different flavour of
+feed than the others, and the reader was looking for the common one.
+
+**Left to do:** record the news-feed licences on the Sources page, switch
+the feed on, and two small tidy-ups noted in the handover. Nothing here
+needs a decision from you — it's the finishing work.
 
 ## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
 While testing Gulf Watch's new refresh job, discovered the password

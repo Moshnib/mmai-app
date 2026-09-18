@@ -1859,11 +1859,66 @@ disagree with an older paragraph here, they are the later word.
    1.0/RDF, Atom and iCalendar parsing to `lib/fetchers/newsFeeds.ts` and
    a seven-source registry in `lib/newsSources.ts` (the Fed, Bank of
    Canada, RBA, Statistics Norway and the US BLS release calendar, on top
-   of the existing ECB and ONS). **Deliberately not wired in:**
-   `app/api/announcements` still calls the original two-source fetcher,
-   and the five new institutions still need licence rows in
-   `lib/sources.ts` before any of it goes live. `scripts/tmp-parse-check.ts`
-   is scratch and should go before merge.
+   of the existing ECB and ONS).
+
+   **The licence work is DONE, and its reasoning is in the header comment
+   of `lib/newsSources.ts`** — read it before re-opening any of it. Seven
+   feeds cleared; refused on their own terms: Bank of England (website
+   content needs written permission — only its DATABASE is open licensed,
+   which is why the Bank Rate figure is fine and the headlines are not),
+   Bank of Japan, Riksbank and Norges Bank (no confirmed reuse — the same
+   conclusion that sends their policy rates via BIS), IMF and OECD (block
+   automated readers, 403), and the commercial publishers. Note the trap
+   the check turned up: an institution already in `lib/sources.ts` is
+   cleared there for its DATA, and that is **not** the same licence as its
+   news feed — the RBA row says the Cash Rate is specifically excluded
+   from RBA's CC BY 4.0, while the media releases are covered by it.
+
+   Also already fixed against the live feeds: two sources serve Atom, not
+   RSS; Statistics Norway needs `?lang=en` or the headlines arrive in
+   Norwegian; the ONS publishes every release twice (the release and its
+   "time series" twin); calendar items must only ever be upcoming; and
+   Norway's bare "price" keyword pulled in the weekly salmon price.
+
+   The Bank of Canada and RBA feeds reading as empty was **found and
+   fixed** in the same session: both publish a variant whose items carry
+   attributes (`<item rdf:about="…">`) and whose date sits in a different
+   tag, so splitting on the literal `"<item>"` found nothing. `parseRss`
+   now splits on `/<item[^>]*>/` and accepts `dc:date` beside `pubDate`.
+
+   **What is left:** the news-feed licence rows in `lib/sources.ts` (the
+   file is untouched since 16 September), and wiring it up —
+   `app/api/announcements` still calls the original two-source fetcher.
+   `scripts/tmp-parse-check.ts` is scratch and should go before merge.
+
+   Two things to tidy when this is picked up, both spotted on 18 September
+   and neither breaking anything today:
+   - `getText` (the OLD two-source path) still guards with
+     `text.includes("<item>")` — the exact bug fixed in `parseRss` above,
+     surviving one function below it. Harmless while that path only reads
+     the ECB and ONS, which are both RSS 2.0; it would throw "no items in
+     the response" the moment it met an attribute-carrying feed.
+   - The comment at `parseRss` says the Bank of Canada and the RBA publish
+     RSS 1.0/RDF; the comment at `fetchOne` says they publish Atom. Both
+     cannot be right. The code is fine either way — `fetchOne` branches on
+     the content, not on the comment — but one of the two will mislead
+     whoever reads it next.
+
+   **A hazard, recorded because it cost that session three cycles:** Bash
+   heredocs in this environment silently eat backslashes. A regex written
+   to disk with `cat <<EOF` arrived with `[\s\S]` flattened to `[sS]`,
+   which matches nothing — so every feed read as empty and looked like a
+   dead source. The test scripts written the same way were corrupted too,
+   so they could not be trusted either. Write anything containing a
+   backslash with the editor, not the shell.
+
+   A design decision already taken, from the plan review: most days
+   "Today" is empty, because seven institutions do not publish daily. So
+   the section leads with a live "Latest: 2 hours ago" line and groups the
+   rest as Today / Yesterday / Last 30 days / Coming up, showing only the
+   groups that have something. Items step discretely every few seconds
+   rather than crawling continuously — a link sliding under a finger is a
+   mis-click, which is the lesson the ticker already taught.
 5. **Owner-only tasks:** take a database backup — the last one standing.
    (Domain bought and wired, `NEXT_PUBLIC_SITE_URL` set, and the Resend
    sending domain verified, all on 17–18 September; see §33.1 and §33.2.)
