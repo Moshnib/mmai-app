@@ -147,6 +147,30 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: SECURITY_HEADERS },
     ];
   },
+
+  // ONE ADDRESS FOR THE SITE.
+  //
+  // The project keeps its mmai-app.vercel.app alias forever, and both it
+  // and mmai.markets answered every request -- so a reader could bookmark
+  // either, a link could be shared as either, and the visitor counts
+  // arrived split between them (48 views on one and 19 on the other in the
+  // first hours). The canonical tag already named the real domain, which
+  // handles search engines; this handles people.
+  //
+  // MATCHED ON THE EXACT HOST, not a suffix: every preview deployment is
+  // also a *.vercel.app address (mmai-app-git-<branch>-mmai2.vercel.app),
+  // and those must keep working -- they are how a change is looked at
+  // before it goes live.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "mmai-app.vercel.app" }],
+        destination: "https://www.mmai.markets/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

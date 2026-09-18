@@ -2279,3 +2279,24 @@ found anything.
 per-instance memory, so it slows a flood rather than stopping one; and the
 CSP allows 'unsafe-inline' for scripts, measured as necessary here (§ the
 next.config.ts header comment).
+
+### 34.1 One address: mmai-app.vercel.app forwards to the domain (2026-09-18)
+
+The project keeps its `.vercel.app` alias forever, and both it and
+mmai.markets answered every request. Within hours the visitor counts were
+split (48 page views on one, 19 on the other) and either could be
+bookmarked or shared. The canonical tag already named the real domain,
+which settles it for search engines; this settles it for people.
+
+`next.config.ts` gains a `redirects()` rule matched on the EXACT host
+`mmai-app.vercel.app`, permanent (308), preserving the path. Exact, not a
+suffix: every preview deployment is also a `*.vercel.app` address
+(`mmai-app-git-<branch>-mmai2.vercel.app`) and those must keep answering,
+because they are how a change is looked at before it ships.
+
+`scripts/check-site-functions.ts` asks the local server with each Host
+header in turn -- the old address (expects 308 to
+https://www.mmai.markets/dashboard, path kept), a preview host (200) and
+the real domain (200). It uses `node:http`, not `fetch`: fetch refuses to
+set a Host header, so the request arrives with the server's own host, the
+rule never matches, and the check reported a working redirect as broken.

@@ -24,6 +24,7 @@
 // ============================================================
 
 import { readFileSync } from "node:fs";
+import { request } from "node:http";
 import { chromium, devices, type Browser, type Page } from "playwright";
 
 const BASE = process.env.LAYOUT_TEST_URL ?? "http://localhost:3123";
@@ -189,6 +190,49 @@ async function terms(browser: Browser) {
   await desk.close();
 }
 
+/** ONE ADDRESS. The project's mmai-app.vercel.app alias is permanent and
+ *  answered every request beside mmai.markets, which split the visitor
+ *  counts and let either be bookmarked or shared. next.config.ts forwards
+ *  it -- matched on the EXACT host, because every preview deployment is
+ *  also a *.vercel.app address and those must keep working.
+ *
+ *  Checked by asking the local server with each Host header in turn, which
+ *  is the only way to exercise a host rule without deploying. */
+async function oneAddress() {
+  console.log("\nOne address for the site");
+  // node:http, not fetch: fetch refuses to set a Host header (it is on the
+  // forbidden list), so the request arrives with the server's own host and
+  // the rule never matches -- which read as "the redirect is broken" when
+  // it was the test that could not ask the question.
+  const ask = (host: string, path = "/") =>
+    new Promise<{ status: number; location: string | null }>((resolve, reject) => {
+      const url = new URL(BASE);
+      const req = request(
+        { hostname: url.hostname, port: url.port, path, method: "GET", headers: { host } },
+        (res) => {
+          res.resume();
+          resolve({ status: res.statusCode ?? 0, location: res.headers.location ?? null });
+        }
+      );
+      req.on("error", reject);
+      req.end();
+    });
+
+  // Asked for a real page, not the root: this also proves the reader keeps
+  // the page they were on rather than being dropped on the homepage.
+  const old = await ask("mmai-app.vercel.app", "/dashboard");
+  check(
+    old.status === 308 && old.location === "https://www.mmai.markets/dashboard",
+    `the old address forwards to the real one, keeping the page (${old.status} -> ${old.location ?? "nowhere"})`
+  );
+
+  const preview = await ask("mmai-app-git-some-branch-mmai2.vercel.app");
+  check(preview.status === 200, `a preview link still answers for itself (${preview.status})`);
+
+  const real = await ask("www.mmai.markets");
+  check(real.status === 200, `the real address answers for itself (${real.status})`);
+}
+
 async function main() {
   console.log(`Checking everyday controls against ${BASE}`);
   const browser = await chromium.launch();
@@ -202,6 +246,7 @@ async function main() {
   await sources(page);
   await downloads(page);
   await terms(browser);
+  await oneAddress();
   await browser.close();
 
   console.log("");
