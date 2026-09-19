@@ -1840,8 +1840,13 @@ disagree with an older paragraph here, they are the later word.
    today (no monthly score history exists — use `lib/history.ts` through
    `computeMmai`); the period each figure describes under its bar; an
    "Updated … · 9 markets · rechecked daily" status line.
-2. **More Observatory countries.** Probed live on 16 September against the
-   existing sources, so no new licences are needed:
+2. **More Observatory countries.** **Poland, Czechia and Hungary were added
+   on 19 September (§38)**, marked `evaluating`: they are shown while the
+   scoring checks are run. Scoring them needs NATIONAL-CPI sources and a
+   licence check, because MMAI scores the measure each central bank
+   targets and the Observatory shows HICP. The rest of this list is still
+   open. Probed live on 16 September against the existing sources, so no
+   new licences are needed:
    - Full data today: **Poland, Czechia, Hungary** (own central banks);
      Germany, France, Italy, Spain, Netherlands, Belgium, Austria,
      Ireland, Portugal (euro members, ECB rate). Luxembourg works but its
@@ -2574,3 +2579,62 @@ done):
    `HEALTHCHECK_PING_URL`.
 4. GitHub → profile → Settings → Notifications → Actions: "Send
    notifications for failed workflows only", by email.
+
+## 38. Poland, Czechia and Hungary join the Observatory; its sources appear at last (2026-09-19)
+
+The owner chose to show them now, honestly labelled, and to score them
+later. The plan was reviewed by Opus before coding (Fable was out of
+credits), and all five required changes were taken.
+
+**Why "evaluating", not "unscoreable".** Unlike Denmark (GDP counts
+pharmaceutical production abroad) and Finland (euro member), nothing
+about these three rules them out. They float their currencies and target
+inflation. The ~3σ range check against the reference record (§25,
+`scripts/verify-korea-fetch.ts`) has not been run for them yet. They failed the §25
+screen only because OECD prices froze at 2025-12. `lib/observatory.ts`
+gains `evaluating?: true`. The page then says "Why X is not scored
+**yet**", and its h1, intro, page description and nav note were reworded
+("Tracked, and not scored"; "some are not comparable enough to rank;
+others are still being checked"). The old wording ("deliberately not
+scored") would have been false for three of the five countries.
+
+**Scoring them later needs more than a flag.** MMAI scores the measure
+each central bank targets. The NBP, CNB and MNB target national CPI; the
+Observatory shows HICP from the ECB. Their source rows say so.
+
+**Verified live on 19 September**, with the exact fetchers, all five
+countries at once in 2.5 s:
+- ECB HICP to 2026-08 (PL 3.5, CZ 1.5, HU 1.8)
+- Eurostat unemployment to 2026-07
+- Eurostat GDP to 2026-Q2
+- Eurostat 10-year yield to 2026-08
+- BIS policy rate this week (3.75 / 3.75 / 5.5)
+- BIS debt 2026-Q1 (60.2 / 42.2 / 74.4)
+
+These are the same three institutions and licences as Denmark and
+Finland, so there was nothing new to clear.
+
+**Refresh:** the Observatory step now runs every country in parallel
+(`Promise.all`). Run in series, five countries could exceed the route's
+60 s `maxDuration`, and a timeout loses the JSON reply that the workflow
+reads its freshness and alert checks from.
+
+**A gap found on the way: the Observatory's sources were never on
+/sources.** The page grouped only "All markets" and the scored markets,
+so Denmark's and Finland's rows had been invisible since 14 September.
+`lib/sourceGroups.ts` now holds the page's groups, and the page adds an
+"Observatory (non-scored)" table plus a jump-nav row. `verify-sources.ts`
+fails if any registry row belongs to no rendered group, or if any
+Observatory country lacks five source rows or a flag. Both checks were
+mutation-tested.
+
+**Also:**
+- PL/CZ/HU flags in `Flag.tsx`.
+- BIS policy-rate labels: reference rate, 2-week repo rate, base rate.
+- `BisPolicyRateArea` and `DEBT_AREAS` extended.
+- The watchdog picks the three up automatically.
+
+**Seen, not fixed:** the Observatory shows only the latest row. When one
+fetch fails, as Denmark's ECB inflation did in the 19 September 03:03
+run, the page shows N/A all day instead of the last known figure. This
+is listed in `MMAI_TODO.md`.

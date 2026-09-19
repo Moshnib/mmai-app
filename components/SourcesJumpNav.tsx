@@ -19,9 +19,11 @@ import { slugify } from "@/lib/download";
 export default function SourcesJumpNav({
   scored,
   gulf,
+  observatory = [],
 }: {
   scored: Array<{ name: string; code?: string }>;
   gulf: Array<{ name: string; code?: string }>;
+  observatory?: Array<{ name: string; code?: string }>;
 }) {
   function open(id: string) {
     const el = document.getElementById(id);
@@ -51,6 +53,7 @@ export default function SourcesJumpNav({
     <nav className="sources-jump" aria-label="On this page">
       {row("Scored markets", "src", scored)}
       {row("Gulf Watch", "gulf", gulf)}
+      {observatory.length > 0 && row("Observatory", "obs", observatory)}
       <div className="sources-jump-row">
         <span className="sources-jump-label">Also</span>
         <ul className="sources-jump-list">

@@ -1,5 +1,5 @@
 // ============================================================
-// THE OBSERVATORY'S FIGURES — Denmark and Finland
+// THE OBSERVATORY'S FIGURES — every country in lib/observatory.ts
 //
 // NO NEW INSTITUTION AND NO NEW LICENCE. Every series comes from a
 // source this project already reads and has already cleared:

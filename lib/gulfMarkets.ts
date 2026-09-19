@@ -98,4 +98,9 @@ export const GULF_POLICY_RATE_LABELS: Record<string, string> = {
   // Observatory. Denmark sets this to hold the krone to the euro rather
   // than to steer Danish prices -- it has no inflation target.
   DK: "Policy rate (certificates of deposit)",
+  // Observatory, 19 September. Each central bank's own name for the rate
+  // it steers by; BIS publishes all three as the central bank policy rate.
+  PL: "Policy rate (reference rate)",
+  CZ: "Policy rate (2-week repo rate)",
+  HU: "Policy rate (base rate)",
 };

@@ -52,7 +52,7 @@ const NAV: NavEntry[] = [
       // Gulf Watch and the Observatory side by side deliberately: both
       // show countries with real figures and no score.
       { href: "/gulf-watch", label: "Gulf Watch", note: "Six Gulf economies, figure by figure" },
-      { href: "/observatory", label: "Observatory", note: "Tracked, and deliberately not scored" },
+      { href: "/observatory", label: "Observatory", note: "Tracked, not scored" },
       { href: "/stablecoins", label: "Stablecoins", note: "How many dollars exist on a blockchain" },
     ],
   },

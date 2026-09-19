@@ -69,9 +69,10 @@ export default function SourcesTable({
   codeForName: Record<string, string>;
   /** Which table to read "last refreshed" timestamps from. Gulf Watch's
    *  panel countries live in gulf_indicators, not raw_indicators. */
-  freshnessTable?: "raw_indicators" | "gulf_indicators";
+  freshnessTable?: "raw_indicators" | "gulf_indicators" | "observatory_indicators";
   /** The column identifying which group a freshness row belongs to --
-   *  "market" for the 6 scored markets, "country_code" for Gulf Watch. */
+   *  "market" for the scored markets, "country_code" for Gulf Watch and
+   *  the Observatory. */
   freshnessKeyColumn?: "market" | "country_code";
   /** Prefix for each group's id ("src" -> #src-japan), which the jump
    *  links at the top of /sources point at. */
