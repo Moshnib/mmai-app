@@ -2659,3 +2659,8 @@ path only when a country needs it. The rules are pure functions in
 `needsObservatoryFetch`, `fillFromEarlier`), pinned by
 `scripts/test-observatory-retry.ts` in CI, with 7 mutations, all caught.
 The early-return JSON now carries `observatory` too.
+
+**Not covered:** the fill is within the SAME DAY only. A source that is
+down all day, or fails on the first run with nothing earlier that day,
+still shows N/A. There is no carry-over from yesterday yet; that is open
+in `MMAI_TODO.md`.

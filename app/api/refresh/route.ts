@@ -866,11 +866,14 @@ async function observatoryRowsToday(
   supabase: ReturnType<typeof getServiceSupabaseClient>,
   today: string,
 ): Promise<Map<string, ObservatoryRow>> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("observatory_indicators")
     .select("*")
     .gte("fetched_at", `${today}T00:00:00Z`)
     .order("fetched_at", { ascending: false });
+  // Not fatal: every country is then simply fetched again, with nothing
+  // earlier to fill a failure from. But say so, rather than doing it quietly.
+  if (error) console.error(`Observatory: could not read today's rows, fetching every country: ${error.message}`);
   const out = new Map<string, ObservatoryRow>();
   for (const r of (data ?? []) as ObservatoryRow[]) if (!out.has(r.country_code)) out.set(r.country_code, r);
   return out;

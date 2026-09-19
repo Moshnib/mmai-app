@@ -257,6 +257,9 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       of the handover for the list tested live.
 - [x] **Fixed 19 September:** if a reading failed, the Observatory
       showed N/A all day. Every refresh now retries it (handover §38.1).
+- [ ] **Still open:** a source that is down ALL day (or fails the first
+      run with nothing earlier that day) still shows N/A. Showing
+      yesterday's figure with its date instead is a small follow-up.
 
 > The current state of the whole project, in one page, is §28 of
 > MMAI_MASTER_HANDOVER.md. Start there in a new chat.
