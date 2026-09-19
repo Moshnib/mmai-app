@@ -1877,7 +1877,10 @@ disagree with an older paragraph here, they are the later word.
    with `cat <<EOF` arrived with `[\s\S]` flattened to `[sS]`, which
    matches nothing, so every feed read as empty and looked like a dead
    source. Write anything containing a backslash with the editor.
-5. **Owner-only tasks:** take a database backup — the last one standing.
+5. **Owner-only tasks:** a backup was made on 18 September (§36). The owner
+   still has to export `subscribers` by hand into it. Also reset
+   `CRON_SECRET` in Vercel and GitHub together, since the laptop's copy is
+   stale (§36).
    (Domain bought and wired, `NEXT_PUBLIC_SITE_URL` set, and the Resend
    sending domain verified, all on 17–18 September; see §33.1 and §33.2.)
 
@@ -2439,3 +2442,50 @@ real titles: the Bank of Canada's live feed and 87 RBA releases from
 February 2024 to September 2026. Both are pinned in the test with those
 titles. Expect either feed to be empty for weeks between decisions. The
 other five fill the section.
+
+## 36. The data stopped for three days, and two reasons why (2026-09-19)
+
+Found while trying to merge §35. From **16 September 06:31 UTC to 19
+September 03:03 UTC nothing was written to the database**. The site stayed
+up and showed the 16 September figures. Nothing reported it.
+
+**Cause 1: GitHub Actions had a $0 budget.** The repository is private, so
+Actions draws on 2,000 free minutes a month. The Playwright CI on every
+push used them up by the 16th. With the Actions budget at $0 and "stop
+usage" on, every run failed in 3–5 seconds, CI and the 3×-daily refresh
+alike. **Fixed by the owner:** a card on file and the Actions budget at
+**$5 a month, stop usage still on**. The other product budgets stay at $0.
+
+**Cause 2, hidden behind the first:** `refresh.yml` read `vars.SITE_URL`,
+which had never been set, and fell back to `https://mmai-app.vercel.app`.
+Since §34.1 (18 September) that address answers **308** to
+www.mmai.markets. The job's curl does not follow redirects, and must not:
+following one would drop the Authorization header. So every refresh got a
+308, not a 200, and failed, even once minutes were back. **Fixed:** the
+repository variable `SITE_URL = https://www.mmai.markets` is set (owner),
+and the fallback in `refresh.yml` is now the real domain. Verified: a
+manual "Run workflow" went green and wrote all 9 scored markets, 6 Gulf
+and 2 Observatory rows at 03:03 UTC on 19 September.
+
+**Lesson for §34.1-style changes:** anything that moves or redirects the
+site's address must be checked against EVERY caller of the site, not
+only browsers: the refresh workflow, the GitHub variable, and emails.
+
+**Also found the same day:**
+- **The laptop's `CRON_SECRET` is stale.** Both the `.env.local` value and
+  the documented `mmai-verify-2026` get a 401 from production, so the
+  site's secret was changed after 26 August. The GitHub secret is correct
+  (the workflow authenticates). A manual refresh from the laptop needs
+  the owner to set a new value in Vercel and GitHub together.
+- **`SUPABASE_SERVICE_ROLE_KEY` in `.env.local` is stale too.**
+  `scripts/backup-database.ts` could not read `subscribers` or
+  `feedback_submissions`.
+- **`scripts/backup-database.ts` never listed `observatory_indicators`.**
+  Added.
+- **A full backup was made** on the owner's Desktop, in
+  `MMAI-backup-2026-09-18`: git bundle (all history), code zip, every table
+  except `subscribers` as JSON, table layout, and a plain-language restore
+  guide. The owner exports `subscribers` by hand from the Supabase Table
+  Editor, because the assistant is not permitted to write subscriber
+  emails to a file.
+- `gh` is now signed in on the laptop (keyring, account Moshnib).

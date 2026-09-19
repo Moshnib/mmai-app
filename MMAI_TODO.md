@@ -24,6 +24,21 @@
 - [x] **Top-bar fixes** — "Home" is a working link again and the bar keeps
       its spacing.
 
+## ✅ 19 September — the data had stopped updating for three days; fixed
+Nothing was written from 16 to 19 September. GitHub had run out of free
+minutes (the Actions budget was $0), and once that was fixed, the refresh
+job was still calling the site's old address. **Fixed:** the Actions budget
+is $5 a month (it can't cost more), the `SITE_URL` setting points at
+www.mmai.markets, and today's refresh went green for every market.
+Details in the handover, §36.
+
+- [ ] **Export the subscriber list into the backup folder** (Supabase →
+      Table Editor → subscribers → Export to CSV → save into
+      `MMAI-backup-2026-09-18\2-database`).
+- [ ] **Not urgent:** the refresh password and database key saved on the
+      laptop are out of date. Only matters for running things by hand
+      from the laptop; the site and GitHub have the right ones.
+
 ## 🚧 Built, waiting for review and your GO — the news feed (branch `news-sources`)
 The homepage news section and the strip along the top now read seven
 institutions: the US Fed, the ECB, the Bank of Canada, the Reserve Bank
