@@ -17,8 +17,15 @@
 name: CI
 
 on:
+  # main only. It was every branch, and a branch with an open pull
+  # request then ran the whole suite TWICE per commit -- once for the
+  # push, once for the pull request -- including the 12-minute browser
+  # job. That spent the private repo's free Actions minutes by the 16th of
+  # September, GitHub then stopped running anything, and the data refresh
+  # stopped with it for three days (handover §36). Pull requests still
+  # get every check; main is still checked after each merge.
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -298,6 +305,12 @@ jobs:
       # were this morning -- which is what makes a site look abandoned.
       - name: The ticker only reports real, recent changes
         run: npx tsx scripts/test-ticker-events.ts
+
+      # The data stopped for three days in September and nobody was told.
+      # app/api/watchdog emails the owner now; this pins when it speaks --
+      # every late market by name, and never on a normal overnight gap.
+      - name: The watchdog reports an outage, and only an outage
+        run: npx tsx scripts/test-watchdog.ts
 
       # Seven institutions' own feeds reach the homepage -- central banks
       # and statistics offices -- and none is scored, which is

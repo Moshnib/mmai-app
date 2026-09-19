@@ -4,7 +4,7 @@ import { getPublicSupabaseClient } from "@/lib/supabase";
 import { type RawIndicators } from "@/lib/indicators";
 import { INDICATOR_FIELD, computeMmai } from "@/lib/composite";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { STALE_THRESHOLD_MS } from "@/lib/constants";
+import { REFRESH_OVERDUE_MS } from "@/lib/constants";
 
 // ============================================================
 // Week-over-week change data, built directly on raw_indicators.
@@ -128,7 +128,7 @@ export interface WeeklyMarketResult {
   marketCode: string;
   marketName: string;
   // True only when the market's most recent write of ANY kind (partial,
-  // pre-floor, whatever) is older than the 72h threshold -- a genuine
+  // pre-floor, whatever) is older than REFRESH_OVERDUE_MS (30h) -- a genuine
   // "stopped refreshing" signal. Deliberately computed before the
   // floor/population filters below: a market writing full rows on
   // schedule is refreshing correctly even in the days right after
@@ -154,9 +154,12 @@ export interface WeeklyMarketResult {
    *  reader only that the software has nothing, not that the economy has
    *  been still. Null when the newest reading is the only one in range. */
   steadySince: string | null;
+  /** When MMAI first stored the current figures, if they differ from an
+   *  earlier reading inside the lookback. See buildBuckets. */
+  changedAt: string | null;
 }
 
-interface RawIndicatorRow {
+export interface RawIndicatorRow {
   market: string;
   inflation: number | null;
   gdp_growth: number | null;
@@ -253,9 +256,30 @@ export function scoredDiffers(a: RawIndicatorRow, b: RawIndicatorRow): boolean {
 
 /** Newest reading, and the most recent one before it that read
  *  differently. Two buckets or one -- one means nothing has moved inside
- *  the lookback, which the feed states plainly rather than hiding. */
-function buildBuckets(rowsDesc: RawIndicatorRow[]): { buckets: WeeklyBucket[]; steadySince: string | null } {
-  if (rowsDesc.length === 0) return { buckets: [], steadySince: null };
+ *  the lookback, which the feed states plainly rather than hiding.
+ *
+ *  `changedAt` is WHEN MMAI FIRST SAW THE CURRENT FIGURES: the oldest row
+ *  that still reads like the newest, before the first row that does not.
+ *  It is what "updated on" and the ticker's age and order are about.
+ *
+ *  Both used to read the wrong row. The feed printed the date of the
+ *  OLDER reading -- the last day the previous figure stood -- so every
+ *  change was dated a day early, and three days early after the 16–19
+ *  September outage: the US rate rise first stored on the 19th read
+ *  "last moved September 16". The ticker dated every change by the
+ *  NEWEST reading, which is always this morning, so its 14-day gate
+ *  never fired.
+ *
+ *  First-seen, not the source's own observation date: monthly figures
+ *  carry a REFERENCE month (2026-08-01 for August inflation), not the day
+ *  they were published, so the page says "updated in MMAI", which is
+ *  what this is. */
+export function buildBuckets(rowsDesc: RawIndicatorRow[]): {
+  buckets: WeeklyBucket[];
+  steadySince: string | null;
+  changedAt: string | null;
+} {
+  if (rowsDesc.length === 0) return { buckets: [], steadySince: null, changedAt: null };
   const mk = (row: RawIndicatorRow): WeeklyBucket => ({
     fetchedAt: row.fetched_at,
     raw: toRawIndicators(row),
@@ -284,11 +308,16 @@ function buildBuckets(rowsDesc: RawIndicatorRow[]): { buckets: WeeklyBucket[]; s
     // Rows are newest-first, so the first difference found IS the most
     // recent change. Anything between it and now read identically.
     if (!scoreable(row)) continue;
-    if (scoredDiffers(newest, row)) return { buckets: [mk(newest), mk(row)], steadySince: null };
+    if (scoredDiffers(newest, row)) {
+      // The last row assigned to steadySince is the oldest one that still
+      // read like now -- the first time MMAI saw these figures. None at
+      // all means the newest row is itself the first.
+      return { buckets: [mk(newest), mk(row)], steadySince: null, changedAt: steadySince ?? newest.fetched_at };
+    }
     steadySince = row.fetched_at;
   }
 
-  return { buckets: [mk(newest)], steadySince };
+  return { buckets: [mk(newest)], steadySince, changedAt: null };
 }
 
 // "Couldn't reach the database" and "every market has stopped
@@ -373,7 +402,7 @@ export async function fetchAllWeeklyChanges(): Promise<WeeklyChangesResult> {
 
     const markets = FALLBACK_MARKETS.map((m) => {
       const newestAny = freshnessRows.find((r) => r.market === m.code); // already fetched_at-desc from the query
-      const isStale = !newestAny || Date.now() - new Date(newestAny.fetched_at).getTime() > STALE_THRESHOLD_MS;
+      const isStale = !newestAny || Date.now() - new Date(newestAny.fetched_at).getTime() > REFRESH_OVERDUE_MS;
 
       // isFullyPopulated is redundant with the query's .not(...) chain above
       // in the normal case -- kept as a client-side safety net (cheap, and
@@ -399,10 +428,10 @@ export async function fetchAllWeeklyChanges(): Promise<WeeklyChangesResult> {
 
       // Comparison: floor applied, because a delta spanning a source
       // swap would report a fetcher change as an economic move.
-      const { buckets, steadySince } = buildBuckets(
+      const { buckets, steadySince, changedAt } = buildBuckets(
         marketRows.filter((r) => new Date(r.fetched_at).getTime() >= marketFloor)
       );
-      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets, latest, steadySince };
+      return { marketCode: m.code, marketName: marketNames[m.code], isStale, buckets, latest, steadySince, changedAt };
     });
 
     return { ok: true, markets };

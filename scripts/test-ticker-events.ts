@@ -41,6 +41,9 @@ function market(over: Partial<WeeklyMarketResult> & { marketCode: string }): Wee
     buckets: over.buckets ?? [],
     latest: over.latest ?? null,
     steadySince: null,
+    // By default the change arrived with the newest reading. The cases
+    // below that matter set it apart from that on purpose.
+    changedAt: "changedAt" in over ? over.changedAt ?? null : over.buckets?.length === 2 ? over.buckets[0].fetchedAt : null,
   };
 }
 
@@ -167,6 +170,59 @@ const wrap = (markets: WeeklyMarketResult[]): WeeklyChangesResult => ({ ok: true
   if (r.length !== 4) fail(`the limit is not applied: ${r.length} events`);
   else if (Date.parse(r[0].at) < Date.parse(r[r.length - 1].at)) fail("events are not newest first");
   else ok("newest first, and no more than asked for");
+}
+
+// ---------- the age is the CHANGE's age, not the newest reading's ----------
+// The refresh writes every market every day, so the newest reading is
+// always this morning. The strip used to date events by it, and the age
+// gate above never fired on live data: a move from three weeks ago
+// scrolled as if it had happened today.
+{
+  const r = buildTickerEvents(wrap([market({
+    marketCode: "CA", marketName: "Canada",
+    buckets: [
+      { fetchedAt: ago(0.1), raw: RAW({ debtPctGdp: 97.1 }), composite: 39.9 },
+      { fetchedAt: ago(MAX_EVENT_AGE_DAYS + 7), raw: RAW({ debtPctGdp: 96.1 }), composite: 39.9 },
+    ],
+    changedAt: ago(MAX_EVENT_AGE_DAYS + 6),
+  })]), NOW);
+  if (r.length !== 0) fail(`a change first seen ${MAX_EVENT_AGE_DAYS + 6} days ago scrolls because the newest reading is today`);
+  else ok("an old change stays old, however recently the market was re-read");
+}
+
+// ---------- one refresh, many markets: the site's order, not the write order ----------
+// 19 September, as it happened: one run wrote every market a few seconds
+// apart, US first. Sorted by the second, the US always came last, and with
+// five places the strip dropped the US rate rise.
+{
+  const run = (s: number) => new Date(Date.parse("2026-09-16T03:03:00Z") + s * 1000).toISOString();
+  const codes = ["US", "EA", "CA", "UK", "JP", "AU", "SE", "NO", "KR"];
+  const markets = codes.map((c, i) => market({
+    marketCode: c,
+    buckets: [
+      { fetchedAt: run(12 + i * 3), raw: RAW({ unemployment: 4.5 }), composite: 50 },
+      { fetchedAt: ago(3), raw: RAW({ unemployment: 4.0 }), composite: 50 },
+    ],
+  }));
+  const r = buildTickerEvents(wrap(markets), NOW, 5).map((e) => e.marketCode);
+  if (r.join(",") !== "US,EA,CA,UK,JP") fail(`one run's changes came out in write order: ${r.join(", ")}`);
+  else ok("changes from one refresh lead in the site's own market order, US first");
+}
+
+// ---------- a newer day still beats that order ----------
+{
+  const r = buildTickerEvents(wrap([
+    market({ marketCode: "US", buckets: [
+      { fetchedAt: ago(2), raw: RAW({ inflation: 3 }), composite: 50 },
+      { fetchedAt: ago(9), raw: RAW({ inflation: 2 }), composite: 50 },
+    ] }),
+    market({ marketCode: "KR", buckets: [
+      { fetchedAt: ago(0.5), raw: RAW({ inflation: 3 }), composite: 50 },
+      { fetchedAt: ago(9), raw: RAW({ inflation: 2 }), composite: 50 },
+    ] }),
+  ]), NOW).map((e) => e.marketCode);
+  if (r.join(",") !== "KR,US") fail(`an older day was put first: ${r.join(", ")}`);
+  else ok("a change from a newer day comes first, whichever market it is");
 }
 
 console.log("");

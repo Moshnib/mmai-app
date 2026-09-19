@@ -29,6 +29,11 @@
 # would have been emailed twice. Two schedulers that cannot see each
 # other are not redundancy, they are a race. This job already runs three
 # times a day under a concurrency lock, so it is the only scheduler now.
+#
+# vercel.json CAME BACK on 2026-09-19, with ONE cron: /api/watchdog, which
+# only READS and emails the owner when this job has stopped landing data.
+# It cannot race this job because it writes nothing, and
+# scripts/verify-security.ts fails if any other path is ever added there.
 # ============================================================
 name: Refresh MMAI data
 
@@ -420,3 +425,31 @@ jobs:
             exit 1
           fi
           echo "Every figure that could be reached agrees with its live source."
+
+      # ---------------------------------------------------------------
+      # THE HEARTBEAT: A SECOND ALARM THAT DOES NOT LIVE HERE OR ON VERCEL.
+      #
+      # A heartbeat monitor (Healthchecks.io) expects a ping after every
+      # run. A successful run pings; a failed one pings /fail. If NO ping
+      # arrives for a day and a half -- because GitHub stopped running
+      # jobs, as it did from 16 to 19 September, or this file broke, or
+      # anything else -- the monitor emails the owner by itself. It is the
+      # one alarm that needs nothing on our side to be working.
+      #
+      # The address is the repository secret HEALTHCHECK_PING_URL. Until it
+      # is set this step says so and does nothing, rather than failing a
+      # run that did its job. It pings even after an earlier step failed
+      # (`if: always()`), so the monitor hears "failed" rather than silence.
+      - name: Heartbeat
+        if: always()
+        env:
+          PING: ${{ secrets.HEALTHCHECK_PING_URL }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          if [ -z "$PING" ]; then
+            echo "HEALTHCHECK_PING_URL is not set -- no heartbeat sent."
+            exit 0
+          fi
+          PING="${PING%/}"   # a pasted trailing slash would make //fail
+          if [ "$OUTCOME" = "success" ]; then URL="$PING"; else URL="$PING/fail"; fi
+          curl -fsS -m 10 --retry 3 -o /dev/null "$URL" && echo "heartbeat sent ($OUTCOME)" || echo "::warning::heartbeat could not be sent"

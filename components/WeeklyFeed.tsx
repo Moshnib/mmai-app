@@ -210,7 +210,7 @@ export default function WeeklyFeed() {
               <span className="signal-body">
                 {r.isStale ? (
                   <span className="signal-headline" style={{ color: "var(--slate)", fontWeight: 500 }}>
-                    Not currently refreshing — no recent data available.
+                    Update delayed — no new reading for over a day.
                   </span>
                 ) : !hasFigures ? (
                   <>
@@ -243,9 +243,18 @@ export default function WeeklyFeed() {
                               moved" carries the same meaning in three
                               words and finishes, and it reads as the
                               mirror of "unchanged since <date>" on the
-                              rows where nothing happened. */}
+                              rows where nothing happened.
+
+                              AND IT IS THE DAY THE NEW FIGURE ARRIVED.
+                              This printed `then.fetchedAt` -- the older
+                              reading, the last day the previous figure
+                              stood -- so every change was dated a day
+                              early, and the US rate rise first stored on
+                              19 September read "September 16". "Updated
+                              in MMAI" because it is the day MMAI received
+                              it, not the institution's release date. */}
                           <span style={{ color: "var(--slate)", marginLeft: 8, fontWeight: 500 }}>
-                            last moved {formatDate(new Date(then.fetchedAt).getTime())}
+                            updated in MMAI {formatDate(new Date(r.changedAt ?? now.fetchedAt).getTime())}
                           </span>
                         </>
                       ) : (

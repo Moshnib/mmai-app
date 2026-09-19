@@ -31,24 +31,24 @@ const MAX_LOOKBACK_DAYS = 45;
 // while Japan's card announced a move it could not show.
 //
 // A test that reimplements what it tests can only prove the copy right.
-import { scoredDiffers } from "@/lib/weeklyChanges";
+//
+// buildBuckets itself was mirrored here the same way until 19 September,
+// and the copy had quietly dropped its skip of unscoreable rows. It is
+// now imported too: this file tests the function the site runs.
+import { scoredDiffers, buildBuckets } from "@/lib/weeklyChanges";
 
-/** Mirrors buildBuckets in lib/weeklyChanges.ts. */
-function build(rowsDesc: Row[]): { buckets: Row[]; steadySince: string | null } {
-  if (rowsDesc.length === 0) return { buckets: [], steadySince: null };
-  const newest = rowsDesc[0];
-  const t = new Date(newest.fetched_at).getTime();
-  let steadySince: string | null = null;
-  for (const row of rowsDesc.slice(1)) {
-    const age = (t - new Date(row.fetched_at).getTime()) / 86_400_000;
-    if (age > MAX_LOOKBACK_DAYS) break;
-    if (scoredDiffers(newest, row)) return { buckets: [newest, row], steadySince: null };
-    steadySince = row.fetched_at;
-  }
-  return { buckets: [newest], steadySince };
+type Picked = { fetched_at: string; unemployment: number | null | undefined };
+
+function build(rowsDesc: Row[]): { buckets: Picked[]; steadySince: string | null; changedAt: string | null } {
+  const r = buildBuckets(rowsDesc);
+  return {
+    buckets: r.buckets.map((b) => ({ fetched_at: b.fetchedAt, unemployment: b.raw.unemployment })),
+    steadySince: r.steadySince,
+    changedAt: r.changedAt,
+  };
 }
 
-const pick = (rowsDesc: Row[]): Row[] => build(rowsDesc).buckets;
+const pick = (rowsDesc: Row[]): Picked[] => build(rowsDesc).buckets;
 
 const day = (n: number) => new Date(Date.UTC(2026, 8, 30 - n)).toISOString();
 const base = (over: Partial<Row> & { fetched_at: string }): Row => ({
@@ -158,10 +158,38 @@ console.log("\nAN UNSCOREABLE ROW CANNOT BECOME A COMPARISON\n");
     base({ fetched_at: day(1), debt_pct_gdp: null }), // predates government debt
     base({ fetched_at: day(2), unemployment: 6.9 }),  // a real earlier change
   ];
-  const usable = rows.filter((r) => r.debt_pct_gdp != null);
-  const got = build(usable);
+  // Handed over whole: the function's own skip is what is under test.
+  const got = build(rows);
   ok("skips the unscoreable row and finds the real change beneath it",
      got.buckets.length === 2 && got.buckets[1].fetched_at === day(2));
+}
+
+console.log("\nWHEN THE CHANGE ARRIVED\n");
+{
+  // The date a reader sees and the date the ticker sorts and ages by.
+  // It is the FIRST reading of the new figures -- not the reading before
+  // them (the feed printed that, a day early every time), and not the
+  // newest one (the ticker used that, so everything was "today").
+  const still = [
+    base({ fetched_at: day(0) }), base({ fetched_at: day(1) }), base({ fetched_at: day(2) }),
+    base({ fetched_at: day(3), unemployment: 6.6 }),
+  ];
+  ok("dates a change by its first reading, not the one before it", build(still).changedAt === day(2), `got ${build(still).changedAt}`);
+
+  const fresh = [base({ fetched_at: day(0) }), base({ fetched_at: day(1), unemployment: 6.6 })];
+  ok("a change in the newest reading is dated by it", build(fresh).changedAt === day(0));
+
+  // The 16–19 September outage: nothing stored for three days, then the
+  // new figure. It arrived on the 19th, whatever the gap before it.
+  const outage = [base({ fetched_at: day(0) }), base({ fetched_at: day(3), policy_rate: 2.0 }), base({ fetched_at: day(4), policy_rate: 2.0 })];
+  ok("after a gap in the refresh, still the day it arrived", build(outage).changedAt === day(0));
+
+  // Two runs on one day both carry the new figure: the earlier one is when it arrived.
+  const early = new Date(Date.parse(day(0)) - 4 * 3_600_000).toISOString();
+  const twice = [base({ fetched_at: day(0) }), base({ fetched_at: early }), base({ fetched_at: day(1), unemployment: 6.6 })];
+  ok("two readings on one day: the first of them", build(twice).changedAt === early);
+
+  ok("no change, no date", build([0, 1, 2].map((n) => base({ fetched_at: day(n) }))).changedAt === null);
 }
 
 console.log("\nHOW LONG IT HAS STOOD\n");

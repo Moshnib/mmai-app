@@ -1877,7 +1877,11 @@ disagree with an older paragraph here, they are the later word.
    with `cat <<EOF` arrived with `[\s\S]` flattened to `[sS]`, which
    matches nothing, so every feed read as empty and looked like a dead
    source. Write anything containing a backslash with the editor.
-5. **Owner-only tasks:** a backup was made on 18 September (§36). The owner
+5. **Arm the alarms (§37)** — set `OWNER_ALERT_EMAIL` in Vercel, run "Test
+   the watchdog email", create the Healthchecks.io check and its
+   `HEALTHCHECK_PING_URL` secret, turn on GitHub's failed-run emails.
+   Until then the watchdog returns 500 and the heartbeat is a no-op.
+6. **Owner-only tasks:** a backup was made on 18 September (§36). The owner
    still has to export `subscribers` by hand into it. Also reset
    `CRON_SECRET` in Vercel and GitHub together, since the laptop's copy is
    stale (§36).
@@ -2491,3 +2495,82 @@ only browsers: the refresh workflow, the GitHub variable, and emails.
   Editor, because the assistant is not permitted to write subscriber
   emails to a file.
 - `gh` is now signed in on the laptop (keyring, account Moshnib).
+
+## 37. Right dates, and an alarm that does not live where the fault is (2026-09-19)
+
+The owner asked for updates that are "very updated and very working
+without any bug or delay", permanently. §36 showed the real failure was
+never the refresh breaking: it was **nobody being told**. This change fixes
+the dates, and adds three independent alarms. Plan reviewed by Opus
+before coding (Fable out of credits); all six required changes taken.
+
+**1. Dates.** `buildBuckets` (`lib/weeklyChanges.ts`, now exported) returns
+`changedAt`: the FIRST reading of the current figures. Two bugs used
+other rows:
+- The homepage "Latest signals" printed the reading BEFORE the change, so
+  every change was dated a day early. The US rate rise first stored on
+  19 September read "September 16".
+- The ticker dated every event by the NEWEST reading, which is always this
+  morning, so its 14-day gate never fired. It also sorted by the exact
+  second, which is the order the refresh writes markets (US first, so US
+  last), and with five places it dropped the US rate rise.
+
+Now the cards say **"updated in MMAI {date}"** (honest: the day MMAI
+received it, not the institution's release date; monthly
+`*_observation_date` values are reference months). The ticker ages by
+`changedAt` and sorts by UTC day, then band changes, then the site's own
+market order. Verified live on 19 September: the ticker leads "United
+States policy rate 3.63% → 3.88%", then the Euro Area.
+`scripts/test-change-feed.ts` now imports the real `buildBuckets`. Its old
+copy had dropped the unscoreable-row skip.
+
+**2. The site stops saying LIVE when it is late.** A new
+`REFRESH_OVERDUE_MS` = 30 h (`lib/constants.ts`) drives WARNINGS only: the
+LIVE bar reads **UPDATE DELAYED**, the footer count, and the change feed's
+"Update delayed". The homepage bar ages the OLDEST market's latest reading,
+so one stalled market flips it. The Sources page bar ages the NEWEST feed,
+so it flips only when everything has stopped. `STALE_THRESHOLD_MS` (72 h) still decides what
+is HIDDEN to N/A, and must stay generous: it is measured against the last
+COMPLETE reading, which is a day old whenever one source fails for a day.
+
+**3. Three alarms, each independent of the others:**
+- **Watchdog, on Vercel** (`app/api/watchdog`, `lib/watchdog.ts`,
+  `vercel.json` cron `30 15 * * *`). Read-only. It checks the newest
+  reading PER market and country (9 scored, 6 Gulf, 2 Observatory), not
+  per table, because one dead source hides behind the live ones. It emails
+  the owner via `sendOwnerAlert` when anything is older than **20 h**
+  (`WATCHDOG_OVERDUE_MS`), naming each late one and linking to the Actions
+  page. It uses 20 h, not the site's 30, because it runs once a day at
+  15:30. At 30 h, a refresh that died after 12:00 on day D would read 27 h
+  at 15:30 on D+1 and be reported only on D+2. At 20 h it is reported the
+  same afternoon two runs are missed. `OWNER_ALERT_EMAIL` unset, or a
+  failed send, returns 500. `?test=1` sends an all-clear. Hobby cron
+  timing is best-effort within the hour and has skipped a day before
+  (§19.10), so now and then a report may come a day late. It is the
+  ONLY cron allowed: `verify-security.ts` fails on any other path, and
+  checks every scheduled route calls `checkCronAuth` first.
+- **Heartbeat, outside both** (`refresh.yml`, last step, `if: always()`).
+  It pings `secrets.HEALTHCHECK_PING_URL` (Healthchecks.io) on success and
+  `/fail` on failure. If no ping arrives, the service emails the owner by
+  itself. It is the only alarm that needs nothing of ours to be working.
+  The step is a no-op until the secret is set.
+- **GitHub's own emails for failed runs**: owner setting (below).
+
+**4. Minutes.** `ci.yml` ran on every branch push AND on pull_request, so
+each PR commit ran the 12-minute browser job twice. Push is now `main`
+only. PR #71 showed both runs.
+
+**Also:** `.github/workflows/watchdog-test.yml`, a by-hand "send the test
+email" button that uses GitHub's CRON_SECRET (the laptop copy is stale).
+
+**Owner steps after merge** (the alarms are not armed until these are
+done):
+1. Vercel → mmai-app → Settings → Environment Variables:
+   `OWNER_ALERT_EMAIL` = the owner's address (Production). Redeploy.
+2. GitHub → Actions → "Test the watchdog email" → Run workflow. Confirm
+   the email arrives (check spam).
+3. Healthchecks.io: a free account, one check with Period 1 day and Grace
+   12 hours. Copy its ping URL into the GitHub repository secret
+   `HEALTHCHECK_PING_URL`.
+4. GitHub → profile → Settings → Notifications → Actions: "Send
+   notifications for failed workflows only", by email.

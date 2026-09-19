@@ -24,6 +24,20 @@
 - [x] **Top-bar fixes** — "Home" is a working link again and the bar keeps
       its spacing.
 
+## 🔔 19 September — so it can't happen silently again
+The homepage now shows the right day each figure changed, and the strip
+along the top leads with the newest changes (the US rate rise had been
+missing from it). The LIVE badge says **UPDATE DELAYED** if a day of
+refreshes fails. Three separate alarms email you if the data ever stops,
+**once you switch them on**:
+- [ ] Vercel → Settings → Environment Variables → add `OWNER_ALERT_EMAIL`
+      = your email address.
+- [ ] GitHub → Actions → **Test the watchdog email** → Run workflow, then
+      check the email arrives.
+- [ ] Healthchecks.io: free account, one check, then put its ping link in
+      GitHub as the secret `HEALTHCHECK_PING_URL`.
+- [ ] GitHub → Settings → Notifications → email me when a workflow fails.
+
 ## ✅ 19 September — the data had stopped updating for three days; fixed
 Nothing was written from 16 to 19 September. GitHub had run out of free
 minutes (the Actions budget was $0), and once that was fixed, the refresh
