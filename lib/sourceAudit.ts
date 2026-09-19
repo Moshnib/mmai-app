@@ -225,10 +225,32 @@ export function releasesBehind(cadence: "daily" | "monthly" | "quarterly", store
   const a = new Date(storedDate), b = new Date(liveDate);
   if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
   if (cadence === "daily") {
-    return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+    // WORKING DAYS, not calendar days. A daily rate is published on
+    // trading days only, so Friday's figure against Monday's is ONE
+    // release behind. Counted in calendar days it was three -- "releases
+    // missed" -- and every Monday afternoon run went red for nothing
+    // (15 September: "source has 2026-09-14, site publishes 2026-09-11").
+    let n = 0;
+    for (let t = a.getTime() + 86_400_000; t <= b.getTime(); t += 86_400_000) {
+      const day = new Date(t).getUTCDay();
+      if (day !== 0 && day !== 6) n++;
+    }
+    return n;
   }
   const months = (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth());
   return cadence === "quarterly" ? Math.round(months / 3) : months;
+}
+
+/** How far behind is a MISSED release, not an ordinary gap. Two for
+ *  monthly and quarterly figures, as before. Three working days for a
+ *  daily one: the morning's figure against the source's evening one is
+ *  one, and a public holiday -- when the central bank publishes nothing
+ *  but the calendar still turns -- can make an innocent gap two. A week
+ *  stuck is five, and still fails. */
+const MISSED_AT: Record<"daily" | "monthly" | "quarterly", number> = { daily: 3, monthly: 2, quarterly: 2 };
+
+export function releasesMissed(cadence: "daily" | "monthly" | "quarterly", storedDate: string, liveDate: string): boolean {
+  return releasesBehind(cadence, storedDate, liveDate) >= MISSED_AT[cadence];
 }
 
 export type Verdict = "matches" | "one release behind" | "RELEASES MISSED" | "VALUE DIFFERS" | "FETCH FAILED" | "SOURCE WENT BACKWARDS" | "NOT PUBLISHED";
@@ -407,13 +429,12 @@ export async function runSourceAudit(
       let verdict: Verdict = "matches";
 
       if (liveDate !== "?" && storedDate !== "?" && liveDate > storedDate) {
-        const behind = releasesBehind(CADENCE_OF[probe.column], storedDate, liveDate);
         // One behind is the ordinary gap between a source publishing and
         // the next morning's refresh — a policy rate stamps a fresh date
         // every trading day at an unchanged level, and that is a new date
-        // rather than a new rate. Two or more means a release was missed
-        // and never recovered.
-        verdict = behind >= 2 ? "RELEASES MISSED" : "one release behind";
+        // rather than a new rate. Past MISSED_AT, a release was missed and
+        // never recovered.
+        verdict = releasesMissed(CADENCE_OF[probe.column], storedDate, liveDate) ? "RELEASES MISSED" : "one release behind";
       } else if (liveDate !== "?" && storedDate !== "?" && liveDate < storedDate) {
         // THE SOURCE IS OFFERING AN OLDER PERIOD THAN THE ONE WE STORED.
         //
