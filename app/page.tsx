@@ -136,8 +136,24 @@ export default function OverviewPage() {
   // reader's eyes, not yank the page around.
   const detailRef = useRef<HTMLDivElement>(null);
   const hasScrolledToDetail = useRef(false);
+  // Set by a reader's choice, spent by the effect below. Back and a
+  // shared link do not set it.
+  const choseMarket = useRef(false);
 
   function selectMarket(code: string) {
+    // The market already showing: the address does not change, so the
+    // effect below never runs -- and a flag set here would sit waiting to
+    // make the next Back scroll. Tapping the gold-bordered card is still a
+    // request to see it, so go there directly.
+    if (code === current) {
+      const el = detailRef.current;
+      if (el) {
+        const top = el.getBoundingClientRect().top;
+        if (!(top >= 56 && top < window.innerHeight * 0.66)) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+    choseMarket.current = true;
     setQuery({ market: code }, "push");
   }
 
@@ -146,12 +162,30 @@ export default function OverviewPage() {
   // swaps the numbers in place. setTimeout, not requestAnimationFrame: rAF
   // never fires in a tab that is not painting, and the flag is spent inside
   // the callback so StrictMode's double effect cannot use it up.
+  //
+  // AND ANY LATER CHOICE MADE OUT OF SIGHT OF IT. "Only the first time"
+  // assumed the reader was still looking at the detail when they switched.
+  // On a phone the country cards, the map and the ticker sit a long way
+  // from it: tap Canada on the cards and the detail swapped to Canada
+  // several screens up, while the reader saw nothing but a gold border
+  // (reported 19 September, with a screenshot). So a choice now scrolls
+  // whenever the detail's top is not on screen, and still swaps in place
+  // when it is.
   useEffect(() => {
-    if (!current || hasScrolledToDetail.current) return;
+    if (!current) return;
+    const chose = choseMarket.current;
+    if (hasScrolledToDetail.current && !chose) return;
     const id = setTimeout(() => {
-      if (hasScrolledToDetail.current) return;
+      choseMarket.current = false;
+      const el = detailRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      // "On screen" means its top is somewhere a reader is already looking:
+      // below the sticky bar and above the lower third of the screen.
+      const inView = top >= 56 && top < window.innerHeight * 0.66;
+      if (hasScrolledToDetail.current && inView) return;
       hasScrolledToDetail.current = true;
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 60);
     return () => clearTimeout(id);
   }, [current]);

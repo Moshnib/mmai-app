@@ -27,11 +27,18 @@ export default function BackToTop() {
       const past = window.scrollY > window.innerHeight * 2;
       setShown((prev) => (prev === past ? prev : past));
     };
-    // No call here on mount: a restored scroll position arrives as a
-    // scroll event, and setting state directly in an effect is a lint error.
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
+    // AND ONE LOOK AS SOON AS IT IS LISTENING. A scroll that happens before
+    // this effect runs -- the page is readable before it is interactive --
+    // fires no event this listener can hear, and the button stayed hidden
+    // until the reader scrolled again. The browser check did exactly that
+    // and timed out waiting for the button, twice in two days on CI. A
+    // timeout rather than a direct call: setting state synchronously in an
+    // effect body is a lint error, and rightly.
+    const first = setTimeout(onScroll, 0);
     return () => {
+      clearTimeout(first);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
