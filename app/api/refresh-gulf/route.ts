@@ -81,7 +81,8 @@ interface GulfRawIndicators {
   realEstateObservationDate: string | null;
   fxReservesObservationDate: string | null;
   currentAccountObservationDate: string | null;
-  // Only Saudi Arabia and Kuwait have a usable policy-rate source (BIS).
+  // Saudi Arabia and Kuwait (BIS) and, since 19 September, Qatar (IMF,
+  // relayed) have a usable policy-rate source.
   // The label travels with the value because these are different
   // instruments -- Saudi's repo rate vs Kuwait's discount rate -- same
   // reasoning as realEstateMetricLabel above.

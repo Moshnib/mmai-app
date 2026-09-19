@@ -41,7 +41,8 @@ export interface GulfCardData {
   realEstateObservationDate: string | null;
   fxReservesObservationDate: string | null;
   currentAccountObservationDate: string | null;
-  // Saudi Arabia and Kuwait only (BIS). The label travels with the
+  // Saudi Arabia and Kuwait (BIS) and, since 19 September, Qatar (IMF,
+  // relayed). The label travels with the
   // value because these are different instruments -- Saudi's repo rate
   // vs Kuwait's discount rate -- so a shared generic heading would
   // imply a comparability that isn't there.

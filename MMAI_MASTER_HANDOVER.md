@@ -2788,6 +2788,15 @@ it.
   `GULF_CPI_HISTORY`) still shows annual history for AE, KW and OM beside
   cards now showing monthly figures. It is history, but label it as such
   on the next Gulf Watch design pass.
-- **After deploy, run the refresh with force=1.** Until the first relayed
-  row lands, today's stored AE/KW/OM rows are World Bank annual, which the
-  new monthly label would print as "Jan 2025".
+- **After deploy, run the refresh with force=1. This is required.** Until
+  the first relayed row lands, today's stored AE/KW/OM rows are World
+  Bank annual (`YYYY-01-01`), which the new labels would print as "Jan
+  2025" (KW, OM) and "Q1 2025" (UAE). Check that the run's log shows `ok`
+  for all five relayed figures and that the response carries them. If the
+  UAE, Kuwait or Oman is missing, run it again: carry-forward looks back
+  field by field over 14 days, so a miss before the first IMF row would
+  bring back an old World Bank figure under the new label.
+- **Unverified from a runner at merge time.** Bahrain and the IMF were
+  only confirmed from the owner's laptop. The force=1 dispatch after
+  deploy is that check: its log must show `ok` for all five, or this is
+  to be fixed before it is relied on.

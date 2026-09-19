@@ -296,12 +296,6 @@ jobs:
             exit 1
           fi
 
-      # The force input reaches this endpoint too. It did not: the
-      # scored-markets step above built ?force=1 from inputs.force and
-      # this one sent a bare URL, so the documented remedy for a bad row
-      # -- ?force=1, which overrides the "already written today" guard --
-      # was unreachable from the Actions tab. Recovering from a wrongly
-      # stored Gulf value meant hand-rolling a curl with CRON_SECRET.
       # ---------- GULF WATCH: FETCHED HERE, HANDED ON (19 September) ----------
       #
       # Bahrain's CPI (data.gov.bh fails from Vercel on every run since 14
@@ -322,6 +316,12 @@ jobs:
         continue-on-error: true
         run: node scripts/relay-gulf.mjs
 
+      # The force input reaches this endpoint too. It did not: the
+      # scored-markets step above built ?force=1 from inputs.force and
+      # this one sent a bare URL, so the documented remedy for a bad row
+      # -- ?force=1, which overrides the "already written today" guard --
+      # was unreachable from the Actions tab. Recovering from a wrongly
+      # stored Gulf value meant hand-rolling a curl with CRON_SECRET.
       - name: Refresh Gulf Watch
         env:
           RELAY: >-
