@@ -255,8 +255,8 @@ and Gulf Watch content on the "Learn More" page. Along the way:
 - [ ] More Observatory countries: the euro members (Germany, France,
       Italy, Spain and others) are ready with the same sources; see §28
       of the handover for the list tested live.
-- [ ] **Small fix for later:** if one day's reading fails, the Observatory
-      shows N/A instead of the last known figure with its date.
+- [x] **Fixed 19 September:** if a reading failed, the Observatory
+      showed N/A all day. Every refresh now retries it (handover §38.1).
 
 > The current state of the whole project, in one page, is §28 of
 > MMAI_MASTER_HANDOVER.md. Start there in a new chat.
