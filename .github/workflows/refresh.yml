@@ -59,9 +59,16 @@ env:
   # whose data quietly stopped updating.
   #
   # Set the repository variable SITE_URL (Settings > Secrets and variables >
-  # Actions > Variables) when the domain moves. Until then this falls back to
-  # the vercel.app address, exactly as lib/siteUrl.ts does for the app.
-  SITE_URL: ${{ vars.SITE_URL || 'https://mmai-app.vercel.app' }}
+  # Actions > Variables) when the domain moves. The fallback matches
+  # lib/siteUrl.ts's FALLBACK.
+  #
+  # IT WAS STILL THE vercel.app ADDRESS on 19 September, and the variable
+  # had never been set. Once that address began answering 308 to the real
+  # domain (next.config.ts, 18 September), every refresh got a redirect
+  # instead of a 200 and failed -- curl here does not follow redirects, and
+  # must not: following one would drop the Authorization header anyway.
+  # The variable is now set; this fallback is the second line.
+  SITE_URL: ${{ vars.SITE_URL || 'https://www.mmai.markets' }}
 
 jobs:
   refresh:

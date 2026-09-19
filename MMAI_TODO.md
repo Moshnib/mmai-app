@@ -1,5 +1,81 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-16 (Editorial Dark restyle live; map and Learn-page fixes live)*
+*Last updated: 2026-09-18 (own domain live; email sends; security patch; news feed built)*
+
+> **If a chat breaks, nothing is lost.** The code is on GitHub, the site
+> runs from there, and these notes are committed beside the code. Open a
+> new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
+> and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ Since 2026-09-17 — the site got its own address, and can send email
+- [x] **mmai.markets is live**, bought at Cloudflare. `www` is the real
+      address; the bare domain and the old `mmai-app.vercel.app` both
+      forward to it, so there is one address to share and the visitor
+      count stops being split in two.
+- [x] **Email works for the first time.** The sending domain is verified,
+      and someone who subscribes now gets a welcome email. Two bugs were
+      in the way: it was sending from the wrong version of the domain
+      (`www.`, which isn't the verified one), and a **rejected** email was
+      being counted as a successful one — so the site would have reported
+      success while sending nothing.
+- [x] **Security patch.** A full review found the framework version in use
+      carried two critical vulnerabilities; patched the same day. The rest
+      of the review came back clean (database permissions, secrets, page
+      headers, the contact and subscribe forms).
+- [x] **Top-bar fixes** — "Home" is a working link again and the bar keeps
+      its spacing.
+
+## ✅ 19 September — the data had stopped updating for three days; fixed
+Nothing was written from 16 to 19 September. GitHub had run out of free
+minutes (the Actions budget was $0), and once that was fixed, the refresh
+job was still calling the site's old address. **Fixed:** the Actions budget
+is $5 a month (it can't cost more), the `SITE_URL` setting points at
+www.mmai.markets, and today's refresh went green for every market.
+Details in the handover, §36.
+
+- [ ] **Export the subscriber list into the backup folder** (Supabase →
+      Table Editor → subscribers → Export to CSV → save into
+      `MMAI-backup-2026-09-18\2-database`).
+- [ ] **Not urgent:** the refresh password saved on the laptop is out of
+      date. It only matters for running a refresh by hand from the laptop;
+      the site and GitHub have the right one.
+
+## 🚧 Built, waiting for review and your GO — the news feed (branch `news-sources`)
+The homepage news section and the strip along the top now read seven
+institutions: the US Fed, the ECB, the Bank of Canada, the Reserve Bank
+of Australia, the UK's ONS, Statistics Norway and the US labour-statistics
+release calendar. Tested against all seven live feeds on 18 September.
+
+- The homepage section now opens with "Latest: 2 h ago" and groups items
+  as Today / Yesterday / Last 30 days / Coming up, showing only groups
+  that have something.
+- Each of the five new institutions has its licence listed on the Sources
+  page, and the site's checks now refuse a news feed without one.
+- **You'll notice "Sources: N" on a market got smaller** (the US goes
+  from 8 to 4). That's a fix: it was counting the oil price and the news
+  feeds, which don't feed the score, and counting one institution
+  several times.
+- **Your choice, done:** the Bank of Canada and RBA feeds are filtered to
+  economy news (rate decisions, policy reports, financial stability).
+  Bank notes, staff appointments and payments notices are dropped.
+
+**Left:** the reviewer's pre-merge check, then your GO to merge.
+
+The licence checks are **done** — seven feeds cleared. Refused, on their
+own published terms: the Bank of England and Bank of Japan (commercial
+reuse needs written permission), the Riksbank and Norges Bank (terms don't
+confirm reuse — the same reason this site already takes their rates via
+BIS), and the IMF and OECD (they block automated readers outright). The
+reasoning is written into the code itself so it can't get lost.
+
+One thing worth knowing, because it's the sort of trap that bites later:
+an institution already on your Sources page is cleared there for its
+**numbers**, which is not the same permission as its **news headlines**.
+The RBA is the example — its cash rate is specifically excluded from the
+open licence that covers its media releases.
+
+The Bank of Canada and Australia feeds coming back empty was found and
+fixed in the same session — both publish a slightly different flavour of
+feed than the others, and the reader was looking for the common one.
 
 ## 🔒 Security fix (2026-08-26) — CRON_SECRET was silently not working
 While testing Gulf Watch's new refresh job, discovered the password
@@ -103,10 +179,11 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       the Overview page makes two separate database queries where one would
       do. Neither is wrong or visible to a visitor — worth revisiting only
       if you want strict like-for-like comparison across markets.
-- [ ] **Turn on email alerts.** The feature is built (people get an email
-      when a market's score crosses into a new category), but needs a
-      free Resend account + a verified sending domain before it can
-      actually send anything.
+- [x] **Turn on email alerts.** Done 18 September — the account and the
+      verified sending domain are both in place. One caveat: the
+      band-crossing alert has still never actually fired, because no
+      market's score has crossed into a new category since it started
+      working. The welcome email proves the send path works.
 - [ ] **Add BEA_API_KEY and EIA_API_KEY to your local `.env.local`** if you
       ever want local testing on this machine to fully match production
       (currently only in Vercel).
@@ -138,6 +215,11 @@ and Gulf Watch content on the "Learn More" page. Along the way:
 - Always get Fable's (or Opus, when Fable's out of credits) review before
   writing code, and again before merging.
 - Never commit or push without saying "GO" first.
+- **Push at the end of every working session.** Work that is only on the
+  laptop is the one thing a broken chat or a dead machine can actually
+  take. Once it's pushed, it's safe.
+- **Update this file and §28 of the handover in the same commit as the
+  code**, so a new chat is never more than one session behind.
 - The full technical handover doc (if a new chat ever needs it) is the
   file already sent to you: `MMAI_MASTER_HANDOVER.md`.
 

@@ -1798,10 +1798,12 @@ the debt note described the retired five-pillar 60% rule ("full marks",
 Watch's "no policy-rate feed / 70% pillar coverage" (Saudi and Kuwait are
 live via BIS; the real reason is labour-market comparability).
 
-## 28. WHERE THINGS STAND — 16 September 2026 (read this first)
+## 28. WHERE THINGS STAND — 18 September 2026 (read this first)
 
-Everything below was true at commit `b07c8a7`, with `main` clean and
-deployed. Sections 1–27 are history; this is the state.
+Everything below was true at commit `939d93b`, with `main` clean and
+deployed. Sections 1–34 are history; this is the state. Sections 29–34
+were written after this page was first dated 16 September, so where they
+disagree with an older paragraph here, they are the later word.
 
 ### What is live
 - **Nine scored markets:** US, Euro Area, Canada, UK, Japan, Australia,
@@ -1822,6 +1824,15 @@ deployed. Sections 1–27 are history; this is the state.
 - **Refresh:** GitHub Actions, three times daily, writing to Supabase.
   OECD is unreachable from Vercel, so Japan and Korea come via a relay
   step in the workflow (§25).
+- **Its own address:** **www.mmai.markets** is canonical (§33.1). The old
+  `mmai-app.vercel.app` 308s to it on an exact-host match, so preview
+  deployments still answer (§34.1).
+- **Email sends, for the first time** (§33.2). mmai.markets is verified in
+  Resend and a welcome email goes out on sign-up, from the BARE domain.
+  Band-change alerts use the same path but have still never fired in
+  anger — no band has crossed since it started working.
+- **Next 16.3.5**, pinned on 18 September to clear two critical advisories
+  (§34). Re-run `npm audit --omit=dev` after every dependency change.
 
 ### Open, and waiting on the owner
 1. **Homepage additions the owner already chose** (mocked up, not built):
@@ -1843,9 +1854,35 @@ deployed. Sections 1–27 are history; this is the state.
 3. **A tenth scored market.** Czechia is the strongest candidate. Israel
    was declined by the owner. Brazil has the best data found anywhere but
    its licence is share-alike (ODbL) and needs a decision.
-4. **Owner-only tasks:** buy the domain, then set `NEXT_PUBLIC_SITE_URL`
-   in Vercel and the `SITE_URL` repo variable; verify the Resend sending
-   domain so band-change alerts can actually send; take a database backup.
+4. **A news feed from the institutions themselves — BUILT, see §35.**
+   Branch `news-sources`. Seven feeds (the Fed, ECB, Bank of Canada, RBA,
+   ONS, Statistics Norway, the BLS release calendar) now reach the
+   homepage band and the ticker, each with its own licence row on the
+   Sources page. Status of the merge is in §35 and `MMAI_TODO.md`.
+
+   **The licence work is in the header of `lib/newsSources.ts`** — read it
+   before re-opening any of it. Refused on their own terms: Bank of
+   England (only its DATABASE is open licensed — the Bank Rate figure is
+   fine, the headlines are not), Bank of Japan, Riksbank and Norges Bank
+   (no confirmed reuse — why their policy rates come via BIS), IMF and
+   OECD (block automated readers, 403), and the commercial publishers.
+   **The trap:** an institution already in `lib/sources.ts` is cleared
+   there for its DATA, which is not the licence of its news. The RBA's
+   Cash Rate is excluded from the CC BY 4.0 that covers its media
+   releases. `scripts/verify-sources.ts` therefore ties each feed to its
+   own row by `newsSourceId`, never by name.
+
+   **A hazard, recorded because it cost a session three cycles:** Bash
+   heredocs in this environment silently eat backslashes. A regex written
+   with `cat <<EOF` arrived with `[\s\S]` flattened to `[sS]`, which
+   matches nothing, so every feed read as empty and looked like a dead
+   source. Write anything containing a backslash with the editor.
+5. **Owner-only tasks:** a backup was made on 18 September (§36). The owner
+   still has to export `subscribers` by hand into it. Also reset
+   `CRON_SECRET` in Vercel and GitHub together, since the laptop's copy is
+   stale (§36).
+   (Domain bought and wired, `NEXT_PUBLIC_SITE_URL` set, and the Resend
+   sending domain verified, all on 17–18 September; see §33.1 and §33.2.)
 
 ### How this project is run (do not skip)
 - The owner is **not a developer**. Explain in plain language, and never
@@ -1869,8 +1906,29 @@ deployed. Sections 1–27 are history; this is the state.
 - `MMAI_MASTER_HANDOVER.md` (this file) — the full history, section by
   section, and this state page.
 - `MMAI_TODO.md` — the plain-language to-do list.
-- `MMAI_CHANGE_LOG.md` — what changed and why, per change.
+- `MMAI_CHANGE_LOG.md` — what changed and why, per change. **Stopped being
+  maintained after 2026-09-05**; since then the per-change record is the
+  numbered section in this file plus the commit message. Read it as
+  history, not as the current log.
 - `AGENTS.md` / `CLAUDE.md` — instructions for the coding assistant.
+
+### If a chat is lost, corrupted or blocked (recovery)
+Nothing about this project lives in a chat. The code is in git and pushed
+to `github.com/Moshnib/mmai-app`; the site is served by Vercel from that
+repo; the context is these files, which are committed alongside the code.
+A lost chat costs the conversation and nothing else.
+
+To pick up in a new chat, open it in the project folder and say:
+
+> Read §28 of MMAI_MASTER_HANDOVER.md and MMAI_TODO.md, then tell me
+> where we are before changing anything.
+
+Two habits keep that promise true, and both are the assistant's job to
+propose, not the owner's to remember: **push at the end of every working
+session** (unpushed work is the only thing a dead laptop can take), and
+**update §28 and `MMAI_TODO.md` in the same commit as the code**, so the
+recovery page is never more than one session behind. If §28's date is
+older than the last commit to `main`, trust the commits and fix the page.
 
 ## 29. Warmer, on the owner’s judgement (2026-09-16)
 
@@ -1987,6 +2045,11 @@ written permission for commercial reuse — and the owner’s rule is no
 emails to institutions); BLS and RBA (both 403 automated requests);
 general and AI news (off-mission for a site whose claim is that every
 line traces to the institution that published it).
+
+**Superseded by §35 (18 September):** there are now seven feeds, not two,
+and the two-column band became a grouped list. BLS and the RBA are IN:
+BLS answers once the request carries a user-agent, and the RBA's media
+releases are CC BY 4.0. The Bank of England is still out.
 
 Tests: `test-ticker-events.ts` and `test-news-feeds.ts`, both on fixtures
 with a pinned clock, both in CI, both mutation-tested.
@@ -2300,3 +2363,131 @@ https://www.mmai.markets/dashboard, path kept), a preview host (200) and
 the real domain (200). It uses `node:http`, not `fetch`: fetch refuses to
 set a Host header, so the request arrives with the server's own host, the
 rule never matches, and the check reported a working redirect as broken.
+
+## 35. The news feed goes live: seven institutions (2026-09-18)
+
+Finishes the work parked on branch `news-sources` (§28 item 4). The plan
+was reviewed by Opus before coding (Fable was out of credits); all six
+required changes were taken.
+
+**The pipe.** `/api/announcements` now calls `fetchAllNews()` and answers
+`{ items, reachable, checkedAt }`. The old two-source path
+(`fetchAnnouncements`, `fetchEcbDecisions`, `fetchOnsUpcoming`, `getText`)
+is deleted, which removes the `getText` "<item>" guard bug by deletion.
+`lib/fetchers/newsFeeds.ts` is two halves: `fetchAllNews` (network; the
+3.5s budget runs on the real clock, never on the `now` argument) and
+`assembleNews` (pure: windows, per-feed caps, dedupe, order).
+
+**Format facts, checked against the live feeds:** the Bank of Canada and
+the RBA serve RSS 1.0/RDF, NOT Atom. The Fed, ECB, ONS and Statistics
+Norway serve RSS 2.0; BLS serves iCalendar. `parseAtom` and the `"<entry"`
+content sniff were deleted: nothing served Atom, and sniffing could send
+an RSS feed to the wrong parser. If an Atom source is ever added, choose
+the parser from the registry (`format`), never from the content.
+`parseRss` splits on `/<item(?:\s[^>]*)?>/`, which matches `<item>` and
+`<item rdf:about=…>` but not RDF's channel-level `<items>`. An iCalendar
+source other than BLS is REFUSED (`readFeed` throws): a calendar entry has
+no link, and only BLS has a map to its own pages.
+
+**The homepage band** (`components/NewsBand.tsx`, rules in
+`lib/newsGroups.ts`): a live "Latest: 2 h 10 m ago · ECB" line, then
+Today / Yesterday / Last 30 days / Coming up, only the groups that have
+items. One rule: anything not yet happened is Coming up, even if due this
+afternoon ("today, 13:30"); Today holds only what was published. Days are
+the READER's calendar days in the reader's zone. The list does not rotate
+or scroll. A credit line under it links to /sources. Each source label
+carries the full institution name as a tooltip.
+
+**The ticker** takes `pickTickerFeed`: the two newest announcements and
+the one soonest release, judged against the clock rather than the route's
+label. Before this, `slice(0, 3)` on a newest-date-first list would have
+announced the release furthest away. Upcoming items read "NEXT · BLS", so
+the institution is named there too. React keys are `url|at|title`,
+because BLS sends Employment Situation and Real Earnings to one page. On
+a cold cache the route can take ~3.5s and the strip's 4s deadline may
+win; the strip then starts without news, which is intended.
+
+**Licences** (`lib/sources.ts`, re-read on 18 September): five new "All
+markets" rows — Federal Reserve Board (public domain, cite the Board),
+Bank of Canada (Terms of Use: free use with attribution), RBA media
+releases (CC BY 4.0, "Source: Reserve Bank of Australia"), Statistics
+Norway (CC BY 4.0, credit and link to ssb.no), BLS (public domain, cite
+BLS). Each row names its feed in `newsSourceId`, and `verify-sources.ts`
+fails unless every feed has exactly one such row (mutation-tested by
+deleting one and by pointing two at the same feed).
+
+**"Sources: N" went DOWN, correctly.** The homepage market card and Trends
+counted `sourcesForMarket().length`: every "All markets" row, including
+Brent (retired from the score) and the announcement feeds (never in it),
+and one row per indicator. They now show `scoredInstitutionCount()`:
+distinct institutions behind the score. The US reads 4, where it read 8
+(and would have read 13 with the new feeds).
+
+**Tests.** `scripts/test-news-feeds.ts` was rewritten against the real
+registry: RSS 2.0, RDF, iCalendar (folding, escapes, 08:30 Eastern =
+12:30Z in September and 13:30Z in December), each feed's filters, the
+windows, caps, dedupe, grouping (including London vs Sydney, and "tomorrow"
+at 22:00), and the strip's pick. Twenty mutations, all caught (eighteen on the code, two on the bank filters).
+`scripts/tmp-parse-check.ts` is deleted.
+
+**Filtered by the owner's choice.** The Bank of Canada and RBA feeds carry
+everything each bank announces: on 18 September, a new vertical $20 note
+and a cash-transport licence next to rate decisions. The owner chose
+economy news only. Bank of Canada keeps "policy rate", "policy interest
+rate", "monetary policy", the financial system review and inflation. The
+RBA keeps "monetary policy", the Financial Stability Review and statements
+from the Governor, and drops any "appointment" (which catches
+"Appointment to the Monetary Policy Board"). Both filters were built from
+real titles: the Bank of Canada's live feed and 87 RBA releases from
+February 2024 to September 2026. Both are pinned in the test with those
+titles. Expect either feed to be empty for weeks between decisions. The
+other five fill the section.
+
+## 36. The data stopped for three days, and two reasons why (2026-09-19)
+
+Found while trying to merge §35. From **16 September 06:31 UTC to 19
+September 03:03 UTC nothing was written to the database**. The site stayed
+up and showed the 16 September figures. Nothing reported it.
+
+**Cause 1: GitHub Actions had a $0 budget.** The repository is private, so
+Actions draws on 2,000 free minutes a month. The Playwright CI on every
+push used them up by the 16th. With the Actions budget at $0 and "stop
+usage" on, every run failed in 3–5 seconds, CI and the 3×-daily refresh
+alike. **Fixed by the owner:** a card on file and the Actions budget at
+**$5 a month, stop usage still on**. The other product budgets stay at $0.
+
+**Cause 2, hidden behind the first:** `refresh.yml` read `vars.SITE_URL`,
+which had never been set, and fell back to `https://mmai-app.vercel.app`.
+Since §34.1 (18 September) that address answers **308** to
+www.mmai.markets. The job's curl does not follow redirects, and must not:
+following one would drop the Authorization header. So every refresh got a
+308, not a 200, and failed, even once minutes were back. **Fixed:** the
+repository variable `SITE_URL = https://www.mmai.markets` is set (owner),
+and the fallback in `refresh.yml` is now the real domain. Verified: a
+manual "Run workflow" went green and wrote all 9 scored markets, 6 Gulf
+and 2 Observatory rows at 03:03 UTC on 19 September.
+
+**Lesson for §34.1-style changes:** anything that moves or redirects the
+site's address must be checked against EVERY caller of the site, not
+only browsers: the refresh workflow, the GitHub variable, and emails.
+
+**Also found the same day:**
+- **The laptop's `CRON_SECRET` is stale.** Both the `.env.local` value and
+  the documented `mmai-verify-2026` get a 401 from production, so the
+  site's secret was changed after 26 August. The GitHub secret is correct
+  (the workflow authenticates). A manual refresh from the laptop needs
+  the owner to set a new value in Vercel and GitHub together.
+- `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` is a **deliberate
+  placeholder**. That key bypasses every protection in the database and
+  lives in Vercel only (see the comment in `scripts/backup-database.ts`).
+  So a laptop backup cannot read `subscribers` or `feedback_submissions`;
+  that is by design, not a fault.
+- **`scripts/backup-database.ts` never listed `observatory_indicators`.**
+  Added.
+- **A full backup was made** on the owner's Desktop, in
+  `MMAI-backup-2026-09-18`: git bundle (all history), code zip, every table
+  except `subscribers` as JSON, table layout, and a plain-language restore
+  guide. The owner exports `subscribers` by hand from the Supabase Table
+  Editor, because the assistant is not permitted to write subscriber
+  emails to a file.
+- `gh` is now signed in on the laptop (keyring, account Moshnib).

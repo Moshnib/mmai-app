@@ -42,6 +42,9 @@ const TABLES = [
   "mmai_scores",
   "bond_yields",
   "gulf_indicators",
+  // Added 19 September: the Observatory's table shipped on 14 September
+  // and was never listed here, so no backup had it.
+  "observatory_indicators",
 ] as const;
 
 /** These two are deny-all under row-level security. An anon-key read

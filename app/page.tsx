@@ -25,7 +25,7 @@ import { FALLBACK_MARKETS, scoreMarketV2, type MarketData, MARKET_COUNT_WORD_CAP
 import { latestCompleteObservation, fallbackNote, type ObservationPick } from "@/lib/latestComplete";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
-import { sourcesForMarket } from "@/lib/sources";
+import { scoredInstitutionCount } from "@/lib/sources";
 import { useGulfIndicators } from "@/lib/useGulfIndicators";
 import { STALE_THRESHOLD_MS } from "@/lib/constants";
 import { useQuery, setQuery } from "@/lib/urlState";
@@ -415,7 +415,7 @@ export default function OverviewPage() {
                     maintenance metadata (see lib/sources.ts) and reads as
                     staleness here. Data freshness is the line above the
                     headline and in the footer. */}
-                <span>Sources: <b>{sourcesForMarket(market.name).length}</b> · <Link href="/sources" style={{ color: "var(--accent-2)" }}>view all</Link></span>
+                <span>Sources: <b>{scoredInstitutionCount(market.name)}</b> · <Link href="/sources" style={{ color: "var(--accent-2)" }}>view all</Link></span>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
                 <Link className="tap btn-quiet"
@@ -561,18 +561,19 @@ export default function OverviewPage() {
 {/* THE CALENDAR, BEFORE THE FEED OF WHAT ALREADY MOVED.
           "The next UK inflation figure lands tomorrow" is the one thing
           on this page a reader can act on, and it belongs above the
-          record of what has already happened. Both columns come straight
-          from the institutions -- the ONS release calendar and the ECB's
-          own press feed -- and both refresh themselves. */}
+          record of what has already happened. Every line comes straight
+          from one of seven institutions' own feeds (lib/newsSources.ts),
+          and the band refreshes itself. */}
       <div className="section">
         <div className="wrap">
           <div className="section-head">
             <p className="eyebrow">ON THE CALENDAR</p>
             <h2>What lands next, and what was just decided</h2>
             <p>
-              Straight from the institutions that publish it: the UK release calendar from the Office for
-              National Statistics, and rate decisions from the European Central Bank. Nobody&apos;s headlines,
-              and nothing here is an opinion.
+              Straight from the institutions that publish it: rate decisions and statements from the Federal
+              Reserve, the European Central Bank, the Bank of Canada and the Reserve Bank of Australia, and
+              release dates and new figures from the UK, US and Norwegian statistics offices. Nobody&apos;s
+              headlines, and nothing here is an opinion.
             </p>
           </div>
           <NewsBand />
