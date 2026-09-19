@@ -141,6 +141,18 @@ export default function OverviewPage() {
   const choseMarket = useRef(false);
 
   function selectMarket(code: string) {
+    // The market already showing: the address does not change, so the
+    // effect below never runs -- and a flag set here would sit waiting to
+    // make the next Back scroll. Tapping the gold-bordered card is still a
+    // request to see it, so go there directly.
+    if (code === current) {
+      const el = detailRef.current;
+      if (el) {
+        const top = el.getBoundingClientRect().top;
+        if (!(top >= 56 && top < window.innerHeight * 0.66)) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
     choseMarket.current = true;
     setQuery({ market: code }, "push");
   }
