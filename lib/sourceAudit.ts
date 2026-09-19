@@ -273,8 +273,9 @@ export interface AuditResult {
   /** The source did not answer. NOT the same thing — see the note on
    *  the return of runSourceAudit. */
   unreachable: string[];
-  /** Exactly one release behind: the source has published and the next
-   *  refresh has not run yet. The ordinary state of affairs between a
+  /** Behind, but not by a missed release: the source has published and
+   *  the next refresh has not run yet (for a daily series, up to two
+   *  trading days, which allows a public holiday -- see releasesMissed). The ordinary state of affairs between a
    *  release and 06:10 the following morning, so it only warns. */
   behind: string[];
   checked: number;
@@ -466,7 +467,7 @@ export async function runSourceAudit(
   // unreadable next to yesterday's.
   for (const r of rows) {
     if (r.verdict === "NOT PUBLISHED") problems.push(`${r.name}: nothing complete published for this market within ${MAX_FALLBACK_DAYS} days (the page shows N/A)`);
-    else if (r.verdict === "RELEASES MISSED") problems.push(`${r.name}: source has ${r.liveDate}, site publishes ${r.storedDate} — more than one release behind`);
+    else if (r.verdict === "RELEASES MISSED") problems.push(`${r.name}: source has ${r.liveDate}, site publishes ${r.storedDate} — releases missed (see releasesMissed)`);
     else if (r.verdict === "VALUE DIFFERS") problems.push(`${r.name}: source says ${r.liveValue}, site publishes ${r.storedValue} for the same period (${r.storedDate})`);
     else if (r.verdict === "SOURCE WENT BACKWARDS") problems.push(`${r.name}: source now offers ${r.liveDate}, older than the ${r.storedDate} the site publishes — a withdrawn release, or a fetcher reading the wrong series`);
     else if (r.verdict === "FETCH FAILED") unreachable.push(`${r.name}: ${r.detail}`);

@@ -130,8 +130,8 @@ export async function GET(request: Request) {
     problems,
     sourcesDown: unreachable.length,
     unreachable,
-    // Exactly one release behind: the source has published and the next
-    // refresh has not run yet. Reported, never failed on.
+    // Behind, but not by a missed release (one release; up to two trading
+    // days for a daily series -- see releasesMissed). Reported, never failed on.
     oneReleaseBehind: behind.length,
     behind,
     rows,
