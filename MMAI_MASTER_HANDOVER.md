@@ -2638,3 +2638,29 @@ mutation-tested.
 fetch fails, as Denmark's ECB inflation did in the 19 September 03:03
 run, the page shows N/A all day instead of the last known figure. This
 is listed in `MMAI_TODO.md`.
+
+### 38.1 Every refresh now retries the Observatory (2026-09-19)
+
+Fixes the "seen, not fixed" above. The cause was bigger than it looked:
+`/api/refresh` returned early (`skipped: true`) once every SCORED market
+had a reading for the day, BEFORE the Observatory step. So the 12:00 and
+18:00 runs never touched the Observatory. It was written once a day, and
+the three new countries had to be filled with `force=true` after #75
+merged.
+
+Now the early return runs `refreshObservatoryIfNeeded` first, and so does
+the normal path. It reads today's newest row per country and fetches
+only the countries missing a row or any expected figure (all countries
+under `?force=1`). Anything that fails again is filled from today's
+earlier row, WITH ITS OWN DATE (`fillFromEarlier`). A figure that moved
+since the morning keeps its new value. BIS debt is fetched in the early
+path only when a country needs it. The rules are pure functions in
+`lib/observatory.ts` (`setsOwnRate`, `expectedFigures`,
+`needsObservatoryFetch`, `fillFromEarlier`), pinned by
+`scripts/test-observatory-retry.ts` in CI, with 7 mutations, all caught.
+The early-return JSON now carries `observatory` too.
+
+**Not covered:** the fill is within the SAME DAY only. A source that is
+down all day, or fails on the first run with nothing earlier that day,
+still shows N/A. There is no carry-over from yesterday yet; that is open
+in `MMAI_TODO.md`.

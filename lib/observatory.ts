@@ -140,3 +140,62 @@ export interface ObservatoryRow {
   fetched_at: string;
   source_note: string | null;
 }
+
+// ============================================================
+//  RETRYING A MISSED FIGURE, WITHOUT MAKING ANYTHING WORSE
+//
+//  The refresh runs three times a day, but the route used to stop early
+//  once every SCORED market had a reading for the day -- before the
+//  Observatory step. So the Observatory was written by the first run
+//  only, and one failed fetch stayed N/A until the next day: Denmark's
+//  inflation on 19 September, when the 03:03 run got no answer from the
+//  ECB. Every run now reaches this step, fetches only the countries whose
+//  row for today is missing or incomplete, and fills anything that fails
+//  again from today's earlier row -- so a retry can add figures and never
+//  take one away.
+// ============================================================
+
+/** Countries that use the euro have no rate to fetch. The registry's
+ *  note is the authority, as it always was in the refresh route. */
+export function setsOwnRate(c: ObservatoryCountry): boolean {
+  return !c.policyRateNote?.includes("no policy rate of its own");
+}
+
+/** The figures a complete row for this country carries. */
+export function expectedFigures(c: ObservatoryCountry): Array<keyof ObservatoryRow> {
+  const base: Array<keyof ObservatoryRow> = ["inflation", "unemployment", "gdp_growth", "yield_10y", "debt_pct_gdp"];
+  return setsOwnRate(c) ? [...base, "policy_rate"] : base;
+}
+
+/** Fetch this country now? Yes if there is no row for today, or today's
+ *  newest row is missing any figure it should have. */
+export function needsObservatoryFetch(todayRow: Partial<ObservatoryRow> | undefined, c: ObservatoryCountry): boolean {
+  if (!todayRow) return true;
+  return expectedFigures(c).some((f) => todayRow[f] == null);
+}
+
+/** Each figure travels with its own date column. */
+const DATE_OF: Record<string, keyof ObservatoryRow> = {
+  inflation: "inflation_observation_date",
+  unemployment: "unemployment_observation_date",
+  gdp_growth: "gdp_observation_date",
+  yield_10y: "yield_observation_date",
+  debt_pct_gdp: "debt_observation_period",
+  policy_rate: "policy_rate_observation_date",
+};
+
+/** A fresh row, with every figure that failed this time taken -- WITH ITS
+ *  DATE -- from today's earlier row. Never mixes one figure's value with
+ *  another reading's date. */
+export function fillFromEarlier<T extends Partial<ObservatoryRow>>(fresh: T, earlier: Partial<ObservatoryRow> | undefined): T {
+  if (!earlier) return fresh;
+  const out: Partial<ObservatoryRow> = { ...fresh };
+  for (const [figure, dateCol] of Object.entries(DATE_OF)) {
+    const f = figure as keyof ObservatoryRow;
+    if (out[f] == null && earlier[f] != null) {
+      (out as Record<string, unknown>)[f] = earlier[f];
+      (out as Record<string, unknown>)[dateCol] = earlier[dateCol] ?? null;
+    }
+  }
+  return out as T;
+}

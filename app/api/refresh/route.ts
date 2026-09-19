@@ -47,7 +47,7 @@ import {
   fetchObservatoryGdpGrowth,
   fetchObservatoryBondYield,
 } from "@/lib/fetchers/observatory";
-import { OBSERVATORY } from "@/lib/observatory";
+import { OBSERVATORY, setsOwnRate as observatorySetsOwnRate, needsObservatoryFetch, fillFromEarlier, type ObservatoryCountry, type ObservatoryRow } from "@/lib/observatory";
 import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
 import { fetchBrentYoY } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
@@ -798,6 +798,8 @@ function stalenessWarnings(
 async function refreshObservatory(
   supabase: ReturnType<typeof getServiceSupabaseClient>,
   debtByMarket: Map<string, { debtPctGdp: number; period: string }>,
+  countries: ObservatoryCountry[],
+  earlierToday: Map<string, ObservatoryRow>,
 ): Promise<{ country: string; status: string }[]> {
   const today = new Date().toISOString().slice(0, 10);
 
@@ -807,7 +809,7 @@ async function refreshObservatory(
   // (19 September: Poland, Czechia, Hungary) a slow day could run past
   // the limit and lose the JSON reply the refresh workflow reads its
   // freshness and alert checks from. Each country still fails on its own.
-  return Promise.all(OBSERVATORY.map(async (country) => {
+  return Promise.all(countries.map(async (country) => {
     const code = country.code;
     const [infl, unemp, gdp, yld] = await Promise.all([
       settle(`${code} inflation`, fetchObservatoryInflation(code)),
@@ -819,14 +821,18 @@ async function refreshObservatory(
     // A policy rate ONLY where the country sets one. Finland uses the
     // euro; BIS correctly has no series, and asking would log a failure
     // for something that is not broken. The registry is the authority.
-    const setsOwnRate = !country.policyRateNote?.includes("no policy rate of its own");
+    const setsOwnRate = observatorySetsOwnRate(country);
     const rate = setsOwnRate
       ? await settle(`${code} policy rate (BIS)`, fetchBisPolicyRate(code as BisPolicyRateArea))
       : null;
 
     const debt = debtByMarket.get(code) ?? null;
 
-    const { error } = await supabase.from("observatory_indicators").insert({
+    // Anything that failed this time keeps today's earlier value and
+    // its date (lib/observatory.ts, fillFromEarlier): a retry can add a
+    // figure and never take one away.
+    const earlier = earlierToday.get(code);
+    const row = fillFromEarlier({
       country_code: code,
       inflation: infl?.inflation ?? null,
       gdp_growth: gdp?.gdpGrowth ?? null,
@@ -842,16 +848,54 @@ async function refreshObservatory(
       yield_observation_date: yld?.observationDate ?? null,
       observation_date: today,
       source_note: "ECB (HICP) · Eurostat (unemployment, GDP, 10y yield) · BIS (policy rate, debt)",
-    });
+    }, earlier);
+    const { error } = await supabase.from("observatory_indicators").insert(row);
 
-    const got = [infl, unemp, gdp, yld, debt].filter(Boolean).length + (rate ? 1 : 0);
+    const got = [row.inflation, row.unemployment, row.gdp_growth, row.yield_10y, row.debt_pct_gdp].filter((v) => v != null).length + (row.policy_rate != null ? 1 : 0);
     const wanted = setsOwnRate ? 6 : 5;
     if (error) console.error(`Observatory write failed for ${code}: ${error.message}`);
     return {
       country: code,
-      status: error ? `error: ${error.message}` : `ok (${got}/${wanted} figures)`,
+      status: error ? `error: ${error.message}` : `ok (${got}/${wanted} figures${earlier ? ", retried" : ""})`,
     };
   }));
+}
+
+/** Today's newest Observatory row per country. */
+async function observatoryRowsToday(
+  supabase: ReturnType<typeof getServiceSupabaseClient>,
+  today: string,
+): Promise<Map<string, ObservatoryRow>> {
+  const { data, error } = await supabase
+    .from("observatory_indicators")
+    .select("*")
+    .gte("fetched_at", `${today}T00:00:00Z`)
+    .order("fetched_at", { ascending: false });
+  // Not fatal: every country is then simply fetched again, with nothing
+  // earlier to fill a failure from. But say so, rather than doing it quietly.
+  if (error) console.error(`Observatory: could not read today's rows, fetching every country: ${error.message}`);
+  const out = new Map<string, ObservatoryRow>();
+  for (const r of (data ?? []) as ObservatoryRow[]) if (!out.has(r.country_code)) out.set(r.country_code, r);
+  return out;
+}
+
+/** The Observatory step, run by EVERY refresh -- including the ones that
+ *  find every scored market already done and stop there. Fetches only
+ *  countries whose row for today is missing or incomplete (all of them
+ *  under ?force=1). BIS debt is fetched here only when the caller has not
+ *  already fetched it and a country actually needs it. */
+async function refreshObservatoryIfNeeded(
+  supabase: ReturnType<typeof getServiceSupabaseClient>,
+  today: string,
+  force: boolean,
+  debtByMarket?: Map<string, { debtPctGdp: number; period: string }>,
+): Promise<{ country: string; status: string }[]> {
+  const earlier = force ? new Map<string, ObservatoryRow>() : await observatoryRowsToday(supabase, today);
+  const todo = OBSERVATORY.filter((c) => force || needsObservatoryFetch(earlier.get(c.code), c));
+  const skipped = OBSERVATORY.filter((c) => !todo.includes(c)).map((c) => ({ country: c.code, status: "complete for today" }));
+  if (todo.length === 0) return skipped;
+  const debt = debtByMarket ?? new Map(((await settle("Government debt (BIS)", fetchGovernmentDebt())) ?? []).map((d) => [d.market, d]));
+  return [...(await refreshObservatory(supabase, debt, todo, earlier)), ...skipped];
 }
 
 export async function GET(request: Request) {
@@ -894,11 +938,21 @@ export async function GET(request: Request) {
 
   const pending = MARKETS.filter((m) => !alreadyToday.has(m));
   if (pending.length === 0) {
+    // The scored markets are done for today -- but the Observatory is
+    // retried on every run. This early return used to skip it, so a
+    // figure missed by the morning run stayed N/A until the next day.
+    let observatory: { country: string; status: string }[] = [];
+    try {
+      observatory = await refreshObservatoryIfNeeded(supabase, today, false);
+    } catch (err) {
+      observatory = [{ country: "all", status: `error: ${err instanceof Error ? err.message : String(err)}` }];
+    }
     return NextResponse.json({
       refreshedAt: new Date().toISOString(),
       skipped: true,
       reason: `All ${MARKETS.length} markets already have a reading for ${today}. Pass ?force=1 to refresh anyway.`,
       results: [],
+      observatory,
     });
   }
 
@@ -1393,7 +1447,7 @@ export async function GET(request: Request) {
   // asking again -- one request covers every country BIS carries.
   let observatory: { country: string; status: string }[] = [];
   try {
-    observatory = await refreshObservatory(supabase, debtByMarket);
+    observatory = await refreshObservatoryIfNeeded(supabase, today, force, debtByMarket);
     for (const r of observatory) console.log(`  Observatory ${r.country}: ${r.status}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
