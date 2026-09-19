@@ -545,6 +545,9 @@ h1.headline {
   background: var(--card-bg); border: 1px solid var(--hair);
   border-radius: 8px;
   padding: 4px 22px 22px; margin-bottom: 8px;
+  /* Choosing a market scrolls here; the top bar is sticky, and without
+     this the market's name lands underneath it. */
+  scroll-margin-top: 80px;
 }
 .snapshot-strip {
   display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
