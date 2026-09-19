@@ -2588,8 +2588,9 @@ credits), and all five required changes were taken.
 
 **Why "evaluating", not "unscoreable".** Unlike Denmark (GDP counts
 pharmaceutical production abroad) and Finland (euro member), nothing
-about these three rules them out. They float their currencies, target
-inflation, and stay within the reference record. They failed the §25
+about these three rules them out. They float their currencies and target
+inflation. The ~3σ range check against the reference record (§25,
+`scripts/verify-korea-fetch.ts`) has not been run for them yet. They failed the §25
 screen only because OECD prices froze at 2025-12. `lib/observatory.ts`
 gains `evaluating?: true`. The page then says "Why X is not scored
 **yet**", and its h1, intro, page description and nav note were reworded
