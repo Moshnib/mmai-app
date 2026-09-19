@@ -210,6 +210,14 @@ jobs:
       - name: A blinking Gulf source keeps its number, a dead one shows the gap
         run: npx tsx scripts/test-gulf-carry-forward.ts
 
+      # Since 19 September Bahrain's CPI and four IMF series are fetched by
+      # the refresh workflow and handed to the site. The IMF has shipped a
+      # literal 0 as a real-looking month, and a quarter printed as a month
+      # reads "Dec 2025". This pins the placeholder, staleness, the route's
+      # refusal of bad input, the date labels and the IMF attribution.
+      - name: Gulf Watch's relayed figures are right, dated, and credited
+        run: npx tsx scripts/test-relay-gulf.ts
+
       # The same lesson as the step above, one layer lower down. Node has no
       # default fetch timeout at all, so a source that accepts the connection
       # and then goes quiet is not a slow request -- it is one that never

@@ -2703,3 +2703,91 @@ and no holiday allowance.
 - The 19 September 06:10 scheduled refresh was never started by GitHub.
   Scheduled workflows are best-effort; that is why there are three a day
   and a watchdog.
+
+## 40. Gulf Watch goes monthly where it legally can (2026-09-19)
+
+The owner asked for Gulf Watch to be more current, legally. The plan was
+reviewed by Opus before coding (Fable was out of credits), and all nine
+required changes were taken.
+
+**The IMF licence, read at last.** §14 records that imf.org's terms could
+not be read by machine. On 19 September they were read in the in-app
+browser, at imf.org/en/About/copyright-and-terms, under "The Use of IMF
+Data". Statistical Data carries special terms: it may be downloaded,
+copied, published and distributed with attribution ("Source:
+International Monetary Fund, <Database>, <link>"). "For any potential
+commercial reuse of IMF Data, please email copyright@imf.org." So it is
+usable today while MMAI is free, and it is on the pre-monetization list
+(`MMAI_TODO.md`). The general terms forbid "bulk download ... by
+automated technology". Six explicitly keyed requests for single series,
+three times a day, with at most a year of observations, is not that.
+
+**What was checked live, and what it gave:**
+
+| | before | now |
+|---|---|---|
+| Oman CPI | World Bank annual 2025 | IMF monthly, **Jul 2026** |
+| Kuwait CPI | World Bank annual 2025 | IMF monthly, **May 2026**. June is a literal `0` placeholder and is skipped |
+| UAE CPI | World Bank annual 2025 | IMF **quarterly**, Q4 2025 (the IMF posts the UAE ~9 months late) |
+| Qatar policy rate | none | IMF `MFS166` "monetary policy-related", **Aug 2026** |
+| Bahrain CPI | data.gov.bh, **failing from Vercel every run since 14 Sep** | the same source, relayed; Jul 2026 |
+| Qatar CPI | data.gov.qa, Dec 2025 | unchanged. The portal dataset stopped; the IMF's copy ends Aug 2025 |
+
+Oman's policy rate is still absent: its IMF series stopped in 2022 (§14).
+
+**How: relayed from GitHub, like Japan and Korea (§25).**
+`scripts/relay-gulf.mjs` is plain Node with no dependencies, so
+`refresh.yml` needs only a sparse checkout. It fetches the five figures
+one after another and writes them to `$GITHUB_OUTPUT`.
+`/api/refresh-gulf` reads them with `parseGulfRelay` (`lib/gulfRelay.ts`),
+which refuses:
+- non-numbers
+- values out of range
+- dates that are not the first of a month
+- an exact-zero CPI
+
+The relay's own guards:
+- It parses CSV by RFC 4180. The IMF's `FULL_DESCRIPTION` holds commas,
+  doubled quotes and line breaks.
+- It skips an exact 0.
+- It measures age from the END of the period: 150 days for monthly CPI,
+  400 for a quarter (the UAE lag), 100 for Qatar's monthly rate.
+- It checks plausible ranges.
+
+**No World Bank fallback for AE, KW or OM, deliberately.** The card dates
+figures by a fixed per-country granularity (`lib/gulfMarkets.ts`). An
+annual fallback under a monthly label would print "Jan 2025", and a
+non-null fallback would stop carry-forward holding the last IMF figure.
+A missed relay stores null, and carry-forward shows the last good value,
+marked, for 14 days. Bahrain keeps the route's own fetch as a fallback:
+same source, same granularity.
+
+**Dates as the reader sees them:**
+- A new `quarterly` granularity prints "Q4 2025", not "Dec 2025".
+- `GULF_POLICY_RATE_GRANULARITY` is now per country: SA and KW daily,
+  QA monthly.
+- Qatar was added to `GULF_POLICY_RATE_LABELS`, which shows the row and
+  counts a missed relay as PARTIAL.
+
+**Attribution travels with the data.** Each row's `source_note` is built
+by `gulfSourceNote` from the path actually used, and names the IMF
+dataset and link when IMF data was stored. The Gulf CSV export carries
+that column. `lib/gulfSources.ts` has IMF rows for AE, KW and OM CPI and
+a new Qatar policy-rate row. The /sources Gulf paragraph was rewritten.
+
+**Tests:** `scripts/test-relay-gulf.ts` in CI, 22 cases, 11 mutations,
+all caught. `scripts/verify-gulf-refresh-fetchers.ts` (live, not in CI)
+now checks the relay's sources. The "already written today" guard means a
+relay missed at 06:10 is not retried the same day; carry-forward covers
+it.
+
+**Seen, not done:**
+- Qatar's National Planning Council publishes monthly CPI on its own
+  site; its terms are unread.
+- The Gulf Watch trends table (`GulfTrends`, the fixed
+  `GULF_CPI_HISTORY`) still shows annual history for AE, KW and OM beside
+  cards now showing monthly figures. It is history, but label it as such
+  on the next Gulf Watch design pass.
+- **After deploy, run the refresh with force=1.** Until the first relayed
+  row lands, today's stored AE/KW/OM rows are World Bank annual, which the
+  new monthly label would print as "Jan 2025".

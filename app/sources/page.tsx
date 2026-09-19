@@ -71,11 +71,12 @@ export default function SourcesPage() {
               UAE, Bahrain, Qatar, Saudi Arabia, Kuwait, and Oman appear on the{" "}
               <Link href="/gulf-watch" style={{ color: "var(--accent-2)" }}>Gulf Watch</Link> page with real, live
               data — but none of them get an MMAI score. Gulf Watch deliberately shows each country&apos;s raw
-              indicators instead of a composite. Policy rates are now live for Saudi Arabia and Kuwait, via BIS
-              republishing their own central banks; no usable, legal, automatable source has been found for the UAE
-              or Bahrain. Qatar&apos;s is available and current from the IMF but needs written permission for
-              commercial reuse, which has not been sought yet; Oman&apos;s is not a wiring question at all — the
-              IMF&apos;s Omani rate series stopped in 2022. Entries marked{" "}
+              indicators instead of a composite. Policy rates are live for Saudi Arabia and Kuwait, via BIS
+              republishing their own central banks, and for Qatar from the IMF. No usable, legal, automatable
+              source has been found for the UAE or Bahrain, and Oman&apos;s is not a wiring question at all — the
+              IMF&apos;s Omani rate series stopped in 2022. Inflation for Oman and Kuwait is monthly and the
+              UAE&apos;s quarterly, from the IMF, which permits publishing its statistics with attribution; that
+              permission does not extend to commercial use. Entries marked{" "}
               <b>UNAVAILABLE</b> below mean exactly that: no source exists at all, not that one is simply unused.
             </p>
           </div>

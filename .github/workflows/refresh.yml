@@ -302,12 +302,37 @@ jobs:
       # -- ?force=1, which overrides the "already written today" guard --
       # was unreachable from the Actions tab. Recovering from a wrongly
       # stored Gulf value meant hand-rolling a curl with CRON_SECRET.
+      # ---------- GULF WATCH: FETCHED HERE, HANDED ON (19 September) ----------
+      #
+      # Bahrain's CPI (data.gov.bh fails from Vercel on every run since 14
+      # September) and four IMF series: monthly CPI for Oman and Kuwait,
+      # quarterly for the UAE, and Qatar's monetary-policy-related rate.
+      # scripts/relay-gulf.mjs is plain Node with no dependencies, so this
+      # needs a checkout but not npm ci. Each figure is optional: whatever
+      # fails or fails a guard is simply not passed, and the route stores
+      # null, which carry-forward covers for fourteen days.
+      - name: Check out the relay script
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/relay-gulf.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Fetch Gulf figures (Bahrain; IMF for Oman, Kuwait, UAE, Qatar)
+        id: gulf
+        continue-on-error: true
+        run: node scripts/relay-gulf.mjs
+
       - name: Refresh Gulf Watch
+        env:
+          RELAY: >-
+            bh_cpi=${{ steps.gulf.outputs.bh_cpi }}&bh_cpi_date=${{ steps.gulf.outputs.bh_cpi_date }}&om_cpi=${{ steps.gulf.outputs.om_cpi }}&om_cpi_date=${{ steps.gulf.outputs.om_cpi_date }}&kw_cpi=${{ steps.gulf.outputs.kw_cpi }}&kw_cpi_date=${{ steps.gulf.outputs.kw_cpi_date }}&ae_cpi=${{ steps.gulf.outputs.ae_cpi }}&ae_cpi_date=${{ steps.gulf.outputs.ae_cpi_date }}&qa_rate=${{ steps.gulf.outputs.qa_rate }}&qa_rate_date=${{ steps.gulf.outputs.qa_rate_date }}
         run: |
           echo "Calling /api/refresh-gulf …"
+          # Empty pairs (a figure the relay could not get) arrive as
+          # "key=&key_date=", which the route reads as absent.
           code=$(curl -sS -o /tmp/gulf.json -w "%{http_code}" --max-time 120 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${SITE_URL}/api/refresh-gulf?force=${{ inputs.force && 1 || 0 }}")
+            "${SITE_URL}/api/refresh-gulf?force=${{ inputs.force && 1 || 0 }}&${RELAY}")
           echo "HTTP $code"
           head -c 800 /tmp/gulf.json; echo
           [ "$code" = "200" ] || exit 1

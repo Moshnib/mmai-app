@@ -181,6 +181,13 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       clearly confirm whether commercial use of the Key Policy Rate data
       is allowed. Send it whenever convenient, no rush while the site
       stays non-commercial.
+- [ ] **IMF gate — before this site is ever monetized** (added 19
+      September): Gulf Watch now uses IMF data (Oman, Kuwait and UAE
+      inflation; Qatar's policy rate). Free publishing with credit is
+      allowed; commercial use needs permission from copyright@imf.org.
+- [ ] **Qatar's monthly inflation:** its open-data portal stopped at the
+      end of 2025. Qatar's National Planning Council still publishes it
+      on its own site; its terms need reading before we can use it.
 - [ ] **Bank of Japan gate — before this site is ever monetized:** their
       data (Japan's policy rate) explicitly requires contacting their
       Public Relations Department for permission before commercial use.
