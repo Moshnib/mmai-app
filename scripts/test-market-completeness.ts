@@ -60,6 +60,7 @@ const CHECKS: Check[] = [
   { name: "inflation target", has: (m) => INFLATION_TARGET[m.code] != null, why: "Conditions silently scores it against the 2.0 default" },
   { name: "flag", has: (m) => keyedIn(flag, m.code), why: "it renders nothing beside its name, and nothing in the positioning map's dot" },
   { name: "world map shape", has: (m) => keyedIn(worldMap, m.code), why: "the map shows no country for it" },
+  { name: "map score tag", has: (m) => new RegExp(`\\b${m.code}:\\s*\\{\\s*at:`).test(worldMap), why: "its score is not written on the map (TAGS in components/WorldMap.tsx)" },
   { name: "country glyph", has: (m) => keyedIn(glyph, m.code), why: "its glyph is blank" },
   { name: "annual history", has: (m) => Array.isArray((HISTORY as Record<string, unknown>)[m.code]), why: 'its Trends charts read "Not enough history yet"' },
   { name: "monthly history", has: (m) => Array.isArray((MONTHLY_HISTORY as Record<string, unknown>)[m.code]), why: "its monthly view is empty and the dashboard sparkline is a dash" },
