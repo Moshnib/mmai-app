@@ -312,6 +312,13 @@ jobs:
       - name: The watchdog reports an outage, and only an outage
         run: npx tsx scripts/test-watchdog.ts
 
+      # A figure the morning run missed used to stay N/A on the Observatory
+      # all day: later runs stopped before reaching it. Every run now
+      # retries incomplete countries; this pins that a retry fills gaps and
+      # never loses, or mis-dates, a figure already shown.
+      - name: The Observatory retries a missed figure and loses nothing
+        run: npx tsx scripts/test-observatory-retry.ts
+
       # Seven institutions' own feeds reach the homepage -- central banks
       # and statistics offices -- and none is scored, which is
       # exactly why they need pinning: nothing downstream would notice a
