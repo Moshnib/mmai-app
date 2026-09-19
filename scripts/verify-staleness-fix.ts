@@ -2,7 +2,7 @@
 // and components/SiteFooter.tsx. Mirrors the exact transformation those
 // files apply, against safe mock data -- does not touch the real database.
 
-const STALE_THRESHOLD_MS = 72 * 60 * 60 * 1000;
+import { STALE_THRESHOLD_MS } from "../lib/constants";
 
 function isStale(row: { fetched_at: string } | undefined, now: number): boolean {
   return !row || now - new Date(row.fetched_at).getTime() > STALE_THRESHOLD_MS;

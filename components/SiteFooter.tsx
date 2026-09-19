@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
-import { STALE_THRESHOLD_MS } from "@/lib/constants";
+import { REFRESH_OVERDUE_MS } from "@/lib/constants";
 
 // The one footer for the whole site (rendered from app/layout.tsx), carrying a
 // live "last updated" stamp.
@@ -72,7 +72,7 @@ export default function SiteFooter() {
         // total absence silently make the site look fresher than it is.
         const now = Date.now();
         const staleFromMissing = shown.size - seen.size;
-        const staleFromOldRows = latestPerMarket.filter((ts) => now - new Date(ts).getTime() > STALE_THRESHOLD_MS).length;
+        const staleFromOldRows = latestPerMarket.filter((ts) => now - new Date(ts).getTime() > REFRESH_OVERDUE_MS).length;
         setStaleCount(staleFromMissing + staleFromOldRows);
 
         // Oldest of the per-market latest fetches -- if one market stalled, say

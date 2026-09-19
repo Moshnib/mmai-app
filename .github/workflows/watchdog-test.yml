@@ -1,0 +1,36 @@
+# ============================================================
+# "Does the alarm actually reach me?" -- one click, by hand only.
+#
+# app/api/watchdog emails the owner when the data stops updating. An
+# alarm nobody has ever heard ring is a guess, so this asks it to send
+# its all-clear TEST message (?test=1) right now: schedule aside, it
+# proves the secret, the database read, the email sending and the
+# owner's inbox in one go.
+#
+# Runs from GitHub, not the laptop, because GitHub holds the right
+# CRON_SECRET (the laptop's copy was found stale on 19 September).
+# Never scheduled: it costs a few seconds, only when someone presses it.
+# ============================================================
+name: Test the watchdog email
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE_URL: ${{ vars.SITE_URL || 'https://www.mmai.markets' }}
+    steps:
+      - name: Ask the watchdog to send its test message
+        run: |
+          code=$(curl -sS -o /tmp/w.json -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${SITE_URL}/api/watchdog?test=1")
+          echo "HTTP $code"; cat /tmp/w.json; echo
+          if [ "$code" != "200" ]; then
+            echo "::error::The watchdog could not send. The reply above says why (for example OWNER_ALERT_EMAIL not set in Vercel)."
+            exit 1
+          fi
+          echo "Sent. Check the owner's inbox (and spam) for 'MMAI watchdog'."

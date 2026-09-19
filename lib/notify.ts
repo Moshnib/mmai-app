@@ -158,3 +158,11 @@ export async function sendWelcomeEmail(
     },
   });
 }
+
+/** A plain message to the SITE OWNER, not to a subscriber: the watchdog's
+ *  "the data has stopped updating" and its test message. Plain text on
+ *  purpose -- it has to be readable on a phone in a hurry, and it is not
+ *  marketing. Throws on a rejected send, like everything here. */
+export async function sendOwnerAlert(to: string, subject: string, text: string) {
+  return send({ from: ALERT_FROM, to, subject, text });
+}

@@ -40,7 +40,9 @@ export interface TickerEvent {
   /** "band" first: it is the only line here anyone acts on. */
   kind: "band" | "indicator";
   text: string;
-  /** When the newer of the two readings was fetched. */
+  /** When MMAI first stored the new figure (WeeklyMarketResult.changedAt).
+   *  NOT the newest reading: that is always this morning, which kept the
+   *  age gate below from ever firing. */
   at: string;
 }
 
@@ -53,7 +55,8 @@ function format(key: IndicatorKey, v: number): string {
 
 function eventsForMarket(m: WeeklyMarketResult): TickerEvent[] {
   const [now, then] = m.buckets;
-  if (!now || !then) return [];
+  if (!now || !then || !m.changedAt) return [];
+  const at = m.changedAt;
   const out: TickerEvent[] = [];
 
   // ---- the band, first ----
@@ -66,7 +69,7 @@ function eventsForMarket(m: WeeklyMarketResult): TickerEvent[] {
       marketName: m.marketName,
       kind: "band",
       text: `${m.marketName} moved ${up ? "up" : "down"} into ${bandNow}`,
-      at: now.fetchedAt,
+      at,
     });
   }
 
@@ -82,7 +85,7 @@ function eventsForMarket(m: WeeklyMarketResult): TickerEvent[] {
       marketName: m.marketName,
       kind: "indicator",
       text: `${m.marketName} ${INDICATOR_FIELD[key].label.toLowerCase()} ${format(key, a)} → ${format(key, b)}`,
-      at: now.fetchedAt,
+      at,
     });
   }
 
@@ -117,6 +120,15 @@ export function buildTickerEvents(
     if (!perMarket.has(e.marketCode)) perMarket.set(e.marketCode, e);
   }
 
+  // BY DAY, NOT BY THE SECOND. One refresh writes every market a few
+  // seconds apart, always in the same order, so sorting by the exact
+  // time ranked markets by the order the job happened to save them: the
+  // US is written first and so always came last, and on 19 September the
+  // strip carried five markets and dropped the US rate rise. Within a
+  // day: band changes first, then the markets in the site's own order.
+  const order = new Map(result.markets.map((m, i) => [m.marketCode, i]));
+  const day = (iso: string) => iso.slice(0, 10);
+
   return [...perMarket.values()]
     .filter((e) => {
       const t = Date.parse(e.at);
@@ -124,10 +136,10 @@ export function buildTickerEvents(
       return Number.isFinite(t) && t >= cutoff && t <= now + 60_000;
     })
     .sort((a, b) => {
-      const byTime = Date.parse(b.at) - Date.parse(a.at);
-      if (byTime !== 0) return byTime;
+      const byDay = day(new Date(b.at).toISOString()).localeCompare(day(new Date(a.at).toISOString()));
+      if (byDay !== 0) return byDay;
       if (a.kind !== b.kind) return a.kind === "band" ? -1 : 1;
-      return a.marketName.localeCompare(b.marketName);
+      return (order.get(a.marketCode) ?? 99) - (order.get(b.marketCode) ?? 99);
     })
     .slice(0, limit);
 }

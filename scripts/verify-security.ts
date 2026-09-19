@@ -27,6 +27,8 @@
 //   npx tsx scripts/verify-security.ts
 // ============================================================
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { checkCronAuth } from "../lib/cronAuth";
 import { rateLimit } from "../lib/rateLimit";
 
@@ -85,6 +87,37 @@ withEnv("development", undefined, () => {
 withEnv("development", "s3cret", () => {
   check("development + secret + wrong header -> REFUSED", checkCronAuth(req("Bearer nope")).ok, false);
 });
+
+console.log("\nEvery scheduled endpoint checks the secret\n");
+
+// The watchdog joined the refresh routes on 19 September. Anything called
+// by a scheduler must go through checkCronAuth before it does anything;
+// reading the source is the only way to know a NEW route did.
+for (const route of ["refresh", "refresh-gulf", "source-audit", "watchdog"]) {
+  const src = readFileSync(join(process.cwd(), "app", "api", route, "route.ts"), "utf8");
+  const firstAuth = src.indexOf("checkCronAuth(request)");
+  const firstDb = src.search(/getPublicSupabaseClient\(\)|getServiceSupabaseClient\(\)/);
+  check(`/api/${route} calls checkCronAuth`, firstAuth >= 0, true);
+  // The auth check must come before the handler touches the database.
+  // (A helper defined above GET is fine; this compares inside GET.)
+  const get = src.indexOf("export async function GET");
+  check(`/api/${route} checks the secret before anything else in GET`,
+    get >= 0 && firstAuth > get && (firstDb < get || firstDb > firstAuth), true);
+}
+
+console.log("\nvercel.json schedules the watchdog and nothing else\n");
+
+// THE CRON THAT IS ALLOWED, AND THE ONES THAT ARE NOT. vercel.json came
+// back on 19 September to schedule the watchdog. Its old crons called the
+// refresh routes and raced the GitHub job (handover §19.10): two
+// schedulers that cannot see each other write duplicate rows and, on a
+// band change, would email every subscriber twice. The watchdog only
+// reads. A refresh path appearing here again is that race returning.
+{
+  const vercel = JSON.parse(readFileSync(join(process.cwd(), "vercel.json"), "utf8")) as { crons?: Array<{ path: string }> };
+  const paths = (vercel.crons ?? []).map((c) => c.path.split("?")[0]);
+  check("vercel.json crons are exactly [/api/watchdog]", paths, ["/api/watchdog"]);
+}
 
 console.log("\nPublic write rate limit\n");
 
