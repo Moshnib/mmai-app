@@ -45,6 +45,30 @@ const COUNTRIES = worldPaths.countries
   // so the React key falls back to the index or all three would collide.
   .map((c, i) => ({ id: String(c.id), key: c.id ? String(c.id) : `shape-${i}`, d: repairSeam(c.d, worldPaths.width) }));
 
+/** world-paths.json is a plain 960x480 longitude/latitude grid. */
+const px = (lon: number, lat: number) => ({ x: ((lon + 180) / 360) * 960, y: ((90 - lat) / 180) * 480 });
+
+/** WHERE EACH SCORE IS WRITTEN. `at` is the country; `tag` is where its
+ *  score sits. The same point for a country big enough to carry its own
+ *  number; otherwise a spot of open sea, with a thin line back. Northern
+ *  Europe is why: Norway, Sweden, the UK and the euro area sit a few
+ *  hundred kilometres apart, and numbers printed on the countries landed
+ *  on top of each other. Placed by hand and checked against the drawn map;
+ *  a new market needs a line here or its score will not be written. */
+const TAGS: Record<string, { at: [number, number]; tag: [number, number] }> = {
+  US: { at: [-99, 39], tag: [-99, 39] },
+  CA: { at: [-108, 58], tag: [-108, 58] },
+  AU: { at: [134, -25], tag: [134, -25] },
+  EA: { at: [9, 48], tag: [9, 48] },
+  UK: { at: [-2, 53.5], tag: [-28, 53] },
+  NO: { at: [9, 61.5], tag: [0, 70] },
+  SE: { at: [16, 62.5], tag: [38, 70] },
+  JP: { at: [138.5, 36.5], tag: [158, 40] },
+  KR: { at: [127.8, 36.3], tag: [124, 27] },
+};
+const TAG_W = 46;
+const TAG_H = 20;
+
 interface HoverState {
   code: string;
   x: number;
@@ -52,16 +76,22 @@ interface HoverState {
 }
 
 /**
- * NO NUMBERS ON THE MAP ITSELF.
+ * EVERY SCORE ON THE MAP, AND NONE ON TOP OF ANOTHER.
  *
- * The map used to print each score on its country. Four markets sit
+ * The map first printed each score on its country. Four markets sit
  * within a few hundred kilometres of each other in northern Europe, so
  * Norway's and Sweden's numbers were drawn on top of each other, the UK's
  * crowded the Euro Area's, and South Korea -- too small to hold a label --
- * had none at all. Nudging anchors apart was tried and only moves the
- * collision. The ranked key beneath the map carries every score, readably,
- * and the tooltip gives the one under the pointer; the map's job is to say
- * where, and roughly how well, at a glance.
+ * had none at all. Nudging the numbers around ON the countries only moved
+ * the collision, so the numbers were taken off, leaving colour alone.
+ *
+ * The owner then reported the map as having no scores (19 September),
+ * which, read from a screen, it did not. Now each score is a small tag
+ * (TAGS, above): on the country where it is big enough, and otherwise out
+ * in open sea with a thin line back to it -- the callout a printed atlas
+ * uses for exactly this. The ranked key beneath still carries every score
+ * for keyboards and screen readers; the map is hidden below 900px, where
+ * the text would be too small, so this is drawn only where it is legible.
  *
  * Colour is the score ramp, softened so nine shapes do not shout, with
  * the chosen market in full strength and outlined in the accent.
@@ -135,6 +165,57 @@ export default function WorldMap({ markets, current, onSelect }: { markets: Mark
                 onMouseMove={(e) => handleHoverMove(marketCode, e)}
                 onMouseLeave={handleHoverEnd}
               />
+            </g>
+          );
+        })}
+
+        {/* The scores, drawn after every shape so no country covers one.
+            A line first, then the tag over its end. */}
+        {markets.map((m) => {
+          const place = TAGS[m.code];
+          if (!place) return null;
+          const { composite, band } = scoreOf(m);
+          const a = px(...place.at);
+          const t = px(...place.tag);
+          const isSelected = m.code === current;
+          const callout = a.x !== t.x || a.y !== t.y;
+          return (
+            <g
+              key={`tag-${m.code}`}
+              className="map-tag"
+              style={{ cursor: "pointer" }}
+              onClick={() => onSelect(m.code)}
+              onMouseMove={(e) => handleHoverMove(m.code, e)}
+              onMouseLeave={handleHoverEnd}
+            >
+              {callout && (
+                <>
+                  <line x1={a.x} y1={a.y} x2={t.x} y2={t.y} stroke="var(--ink-soft)" strokeOpacity={0.7} strokeWidth={0.8} />
+                  <circle cx={a.x} cy={a.y} r={1.8} fill="var(--ink-soft)" />
+                </>
+              )}
+              <rect
+                x={t.x - TAG_W / 2}
+                y={t.y - TAG_H / 2}
+                width={TAG_W}
+                height={TAG_H}
+                rx={5}
+                fill="var(--card-bg)"
+                stroke={isSelected ? "var(--accent)" : band.color}
+                strokeWidth={isSelected ? 1.6 : 1}
+              />
+              <text
+                x={t.x}
+                y={t.y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontFamily="var(--font-num)"
+                fontSize={14}
+                fontWeight={600}
+                fill={band.color}
+              >
+                {composite === null ? "N/A" : composite.toFixed(1)}
+              </text>
             </g>
           );
         })}
