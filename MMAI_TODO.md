@@ -35,9 +35,9 @@ Details in the handover, §36.
 - [ ] **Export the subscriber list into the backup folder** (Supabase →
       Table Editor → subscribers → Export to CSV → save into
       `MMAI-backup-2026-09-18\2-database`).
-- [ ] **Not urgent:** the refresh password and database key saved on the
-      laptop are out of date. Only matters for running things by hand
-      from the laptop; the site and GitHub have the right ones.
+- [ ] **Not urgent:** the refresh password saved on the laptop is out of
+      date. It only matters for running a refresh by hand from the laptop;
+      the site and GitHub have the right one.
 
 ## 🚧 Built, waiting for review and your GO — the news feed (branch `news-sources`)
 The homepage news section and the strip along the top now read seven

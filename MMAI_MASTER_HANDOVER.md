@@ -2477,9 +2477,11 @@ only browsers: the refresh workflow, the GitHub variable, and emails.
   site's secret was changed after 26 August. The GitHub secret is correct
   (the workflow authenticates). A manual refresh from the laptop needs
   the owner to set a new value in Vercel and GitHub together.
-- **`SUPABASE_SERVICE_ROLE_KEY` in `.env.local` is stale too.**
-  `scripts/backup-database.ts` could not read `subscribers` or
-  `feedback_submissions`.
+- `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` is a **deliberate
+  placeholder**. That key bypasses every protection in the database and
+  lives in Vercel only (see the comment in `scripts/backup-database.ts`).
+  So a laptop backup cannot read `subscribers` or `feedback_submissions`;
+  that is by design, not a fault.
 - **`scripts/backup-database.ts` never listed `observatory_indicators`.**
   Added.
 - **A full backup was made** on the owner's Desktop, in
