@@ -11,10 +11,18 @@ const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep
 // "daily" was added for central bank policy rates (BIS), which are a
 // current level rather than a period average -- the exact day a rate
 // took effect is real information, not spurious precision.
-export function formatPeriod(period: string, granularity: "annual" | "monthly" | "daily"): string {
+//
+// "quarterly" was added on 19 September for the UAE's IMF inflation,
+// stamped at the LAST month of its quarter (2025-12 = Q4 2025). Printed
+// as a month it would read "Dec 2025", inventing a December reading for
+// a figure that covers three months.
+export type Granularity = "annual" | "quarterly" | "monthly" | "daily";
+
+export function formatPeriod(period: string, granularity: Granularity): string {
   if (granularity === "annual") return period;
   const [y, m, d] = period.split("-").map(Number);
   if (granularity === "daily") return `${d} ${MONTH_ABBR[m - 1]} ${y}`;
+  if (granularity === "quarterly") return `Q${Math.ceil(m / 3)} ${y}`;
   return `${MONTH_ABBR[m - 1]} ${y}`;
 }
 

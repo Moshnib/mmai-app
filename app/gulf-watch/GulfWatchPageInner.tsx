@@ -50,7 +50,7 @@ export default function GulfWatchPageInner() {
                   <span>
                     {glance.withPolicyRate === 0
                       ? "No policy rate is currently available."
-                      : `${glance.withPolicyRate} publish a central bank policy rate (Saudi Arabia and Kuwait, via BIS).`}
+                      : `${glance.withPolicyRate} publish a central bank policy rate (Saudi Arabia and Kuwait via BIS, Qatar via the IMF).`}
                   </span>
                 </li>
                 <li>

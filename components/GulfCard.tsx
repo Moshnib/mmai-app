@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Flag from "@/components/Flag";
-import { formatPeriod } from "@/lib/gulfHistoryHelpers";
+import { formatPeriod, type Granularity } from "@/lib/gulfHistoryHelpers";
 import {
   GULF_CPI_GRANULARITY,
   GULF_FX_RESERVES_GRANULARITY,
@@ -41,7 +41,8 @@ export interface GulfCardData {
   realEstateObservationDate: string | null;
   fxReservesObservationDate: string | null;
   currentAccountObservationDate: string | null;
-  // Saudi Arabia and Kuwait only (BIS). The label travels with the
+  // Saudi Arabia and Kuwait (BIS) and, since 19 September, Qatar (IMF,
+  // relayed). The label travels with the
   // value because these are different instruments -- Saudi's repo rate
   // vs Kuwait's discount rate -- so a shared generic heading would
   // imply a comparability that isn't there.
@@ -71,7 +72,7 @@ export interface GulfCardData {
 // malformed value returns null (no date shown) instead of the string
 // "Invalid Date". Delegates the actual wording to formatPeriod() so
 // these cards and GulfTrends' comparison table can never disagree.
-function formatObsDate(iso: string, granularity: "annual" | "monthly" | "daily"): string | null {
+function formatObsDate(iso: string, granularity: Granularity): string | null {
   const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(iso);
   if (!m) return null;
   const [, year, month, day] = m;
@@ -79,6 +80,7 @@ function formatObsDate(iso: string, granularity: "annual" | "monthly" | "daily")
 
   const monthIndex = Number(month) - 1;
   if (monthIndex < 0 || monthIndex > 11) return null;
+  if (granularity === "quarterly") return formatPeriod(`${year}-${month}`, "quarterly");
   if (granularity === "daily") {
     // A daily granularity with no day component means the stored value
     // doesn't match what the source is supposed to provide -- show no
@@ -98,7 +100,7 @@ function Stat({
   label: string;
   value: string | null;
   asOf?: string | null;
-  granularity?: "annual" | "monthly" | "daily";
+  granularity?: Granularity;
 }) {
   // Only ever shown alongside a real value. A null value means the
   // figure is missing or stale, and its reporting period alone would
@@ -228,7 +230,7 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
             label={country.policyRateLabel ?? policyRateHeading}
             value={isStale || country.policyRate == null ? null : `${country.policyRate.toFixed(2)}%`}
             asOf={country.policyRateObservationDate}
-            granularity={GULF_POLICY_RATE_GRANULARITY}
+            granularity={GULF_POLICY_RATE_GRANULARITY[country.code]}
           />
         )}
       </div>

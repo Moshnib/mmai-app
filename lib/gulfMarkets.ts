@@ -1,3 +1,5 @@
+import type { Granularity } from "@/lib/gulfHistoryHelpers";
+
 // ============================================================
 // GULF WATCH — country list.
 // Deliberately separate from lib/markets.ts's FALLBACK_MARKETS: these
@@ -33,17 +35,20 @@ export const GULF_COUNTRIES: GulfCountry[] = [
 // never claimed. See formatPeriod() in lib/gulfHistoryHelpers.ts.
 //
 // KEEP IN SYNC with fetchCpi() in app/api/refresh-gulf/route.ts -- if a
-// country's CPI source is ever swapped (e.g. Oman moving off World Bank
-// to NCSI's monthly series), this map has to move with it.
+// country's CPI source is ever swapped, this map has to move with it.
 // ============================================================
 
-/** AE/KW/OM read CPI from the World Bank (annual, and typically 1-2
- *  years behind). BH/QA/SA each have their own national monthly source. */
-export const GULF_CPI_GRANULARITY: Record<string, "annual" | "monthly"> = {
-  AE: "annual", // World Bank
-  KW: "annual", // World Bank
-  OM: "annual", // World Bank
-  BH: "monthly", // data.gov.bh
+/** Since 19 September, KW and OM read MONTHLY CPI from the IMF and AE
+ *  QUARTERLY CPI from the IMF, relayed by the refresh workflow; they were
+ *  World Bank annual. There is deliberately no World Bank fallback for
+ *  them: an annual figure under a monthly label would print "Jan 2025",
+ *  and a non-null fallback would stop carry-forward keeping the last IMF
+ *  figure. BH/QA/SA each have their own national monthly source. */
+export const GULF_CPI_GRANULARITY: Record<string, Granularity> = {
+  AE: "quarterly", // IMF CPI, relayed
+  KW: "monthly", // IMF CPI, relayed
+  OM: "monthly", // IMF CPI, relayed
+  BH: "monthly", // data.gov.bh, relayed (the route's own fetch as fallback)
   QA: "monthly", // data.gov.qa
   SA: "monthly", // Data Saudi
 };
@@ -57,14 +62,18 @@ export const GULF_CURRENT_ACCOUNT_GRANULARITY = "annual" as const;
  *  from data.gov.qa). */
 export const GULF_REAL_ESTATE_GRANULARITY = "monthly" as const;
 
-/** Policy rates exist only for Saudi Arabia and Kuwait today, from BIS's
- *  daily central-bank-policy-rate series. Daily rather than monthly
- *  because a policy rate is a current level, not a period average --
- *  the date is the day that rate was in effect. UAE and Bahrain have no
- *  usable source at all (absent from both BIS and IMF; their own
- *  central banks are bot-protected); Qatar and Oman are available from
- *  IMF but not yet wired in. */
-export const GULF_POLICY_RATE_GRANULARITY = "daily" as const;
+/** Per country, because the sources differ. Saudi Arabia and Kuwait read
+ *  BIS's DAILY series: the date is the day that rate was in effect.
+ *  Qatar (since 19 September) reads the IMF's MONTHLY "monetary
+ *  policy-related" rate, stamped the first of its month -- printed as a
+ *  day it would read "1 Aug 2026". UAE and Bahrain have no usable source
+ *  (absent from BIS and IMF; their central banks are bot-protected), and
+ *  Oman's IMF rate series stopped in 2022. */
+export const GULF_POLICY_RATE_GRANULARITY: Record<string, Granularity> = {
+  SA: "daily",
+  KW: "daily",
+  QA: "monthly",
+};
 
 /** Which countries have a usable policy-rate source, and the heading to
  *  show for each. Saudi's repo rate and Kuwait's discount rate are
@@ -88,6 +97,11 @@ export const GULF_POLICY_RATE_GRANULARITY = "daily" as const;
 export const GULF_POLICY_RATE_LABELS: Record<string, string> = {
   SA: "Policy rate (repo)",
   KW: "Policy rate (discount)",
+  // Qatar, 19 September: the IMF's "monetary policy-related" rate for
+  // Qatar Central Bank, relayed by the refresh workflow. Listing it here
+  // is deliberate: it makes the card show the row, and makes a missing
+  // relay count toward PARTIAL rather than passing unnoticed.
+  QA: "Policy rate (monetary policy-related)",
   SE: "Policy rate",
   // Norway reactivated 2026-09-12. Read through BIS rather than Norges
   // Bank directly: the rate is identical and BIS state the reuse terms

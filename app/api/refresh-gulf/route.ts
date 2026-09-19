@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
-import { fetchInflation, fetchFxReservesMonths, fetchCurrentAccountPctGdp } from "@/lib/fetchers/worldbank";
+import { fetchFxReservesMonths, fetchCurrentAccountPctGdp } from "@/lib/fetchers/worldbank";
 import { fetchBahrainInflation } from "@/lib/fetchers/bahrainCpi";
 import { withRetry, MAX_ATTEMPT_MS } from "@/lib/retryFetch";
 import { fetchQatarInflation } from "@/lib/fetchers/qatarCpi";
@@ -9,6 +9,9 @@ import { fetchQatarRealEstate } from "@/lib/fetchers/qatarRealEstate";
 import { fetchSaudiInflation } from "@/lib/fetchers/datasaudi";
 import { fetchBisPolicyRate } from "@/lib/fetchers/bis";
 import { GULF_POLICY_RATE_LABELS } from "@/lib/gulfMarkets";
+import { parseGulfRelay, gulfSourceNote, type RelayKey, type RelayedFigure } from "@/lib/gulfRelay";
+
+type Relay = Partial<Record<RelayKey, RelayedFigure>>;
 
 /**
  * Gulf Watch's own refresh job — writes to gulf_indicators, never to
@@ -42,14 +45,8 @@ const ISO3: Record<GulfCountryCode, string> = {
   AE: "ARE", BH: "BHR", QA: "QAT", SA: "SAU", KW: "KWT", OM: "OMN",
 };
 
-const SOURCE_NOTES: Record<GulfCountryCode, string> = {
-  AE: "World Bank (live)",
-  BH: "data.gov.bh + World Bank (live)",
-  QA: "data.gov.qa + World Bank (live)",
-  SA: "Data Saudi + World Bank + BIS (live)",
-  KW: "World Bank + BIS (live)",
-  OM: "World Bank (live)",
-};
+// The per-row source note is built by gulfSourceNote (lib/gulfRelay.ts),
+// because it now depends on which path produced each figure.
 
 // Takes a THUNK now, not a promise, because a retry has to be able to
 // start the request again -- a promise can only be awaited once. Every
@@ -84,7 +81,8 @@ interface GulfRawIndicators {
   realEstateObservationDate: string | null;
   fxReservesObservationDate: string | null;
   currentAccountObservationDate: string | null;
-  // Only Saudi Arabia and Kuwait have a usable policy-rate source (BIS).
+  // Saudi Arabia and Kuwait (BIS) and, since 19 September, Qatar (IMF,
+  // relayed) have a usable policy-rate source.
   // The label travels with the value because these are different
   // instruments -- Saudi's repo rate vs Kuwait's discount rate -- same
   // reasoning as realEstateMetricLabel above.
@@ -93,13 +91,29 @@ interface GulfRawIndicators {
   policyRateObservationDate: string | null;
 }
 
-async function fetchCpi(country: GulfCountryCode, deadline: number): Promise<{ inflation: number; observationDate: string } | null> {
-  if (country === "AE") return settle("UAE CPI", () => fetchInflation("ARE"), deadline);
-  if (country === "BH") return settle("Bahrain CPI", () => fetchBahrainInflation(), deadline);
+// RELAYED FIRST (19 September). The refresh workflow fetches these on the
+// GitHub runner (scripts/relay-gulf.mjs) and hands them in:
+//
+//   AE/KW/OM  IMF CPI, quarterly (UAE) or monthly. RELAY ONLY, no World
+//             Bank fallback. The card dates these by the granularity in
+//             lib/gulfMarkets.ts; a fallback annual figure under a monthly
+//             label would print "Jan 2025", and a non-null fallback would
+//             stop carry-forward holding the last IMF figure. A missed
+//             relay stores null, which carry-forward covers for 14 days.
+//   BH        data.gov.bh, which fails from Vercel. The route's own fetch
+//             stays as a fallback: same source, same granularity.
+//
+// The "already written today" guard means a relay missed at 06:10 is not
+// retried at 12:00 or 18:00 -- acceptable, because carry-forward covers it.
+const toCpi = (r: RelayedFigure | undefined) => (r ? { inflation: r.value, observationDate: r.observationDate } : null);
+
+async function fetchCpi(country: GulfCountryCode, deadline: number, relay: Relay): Promise<{ inflation: number; observationDate: string } | null> {
+  if (country === "AE") return toCpi(relay.ae_cpi);
+  if (country === "KW") return toCpi(relay.kw_cpi);
+  if (country === "OM") return toCpi(relay.om_cpi);
+  if (country === "BH") return toCpi(relay.bh_cpi) ?? settle("Bahrain CPI", () => fetchBahrainInflation(), deadline);
   if (country === "QA") return settle("Qatar CPI", () => fetchQatarInflation(), deadline);
-  if (country === "SA") return settle("Saudi CPI", () => fetchSaudiInflation(), deadline);
-  if (country === "KW") return settle("Kuwait CPI", () => fetchInflation("KWT"), deadline);
-  return settle("Oman CPI", () => fetchInflation("OMN"), deadline); // OM
+  return settle("Saudi CPI", () => fetchSaudiInflation(), deadline); // SA
 }
 
 // BIS carries central bank policy rates for Saudi Arabia and Kuwait
@@ -115,25 +129,32 @@ async function fetchCpi(country: GulfCountryCode, deadline: number): Promise<{ i
 //
 // So Oman is not a wiring job, it is absent data, and publishing a
 // four-year-old policy rate beside Saudi's from last week would be
-// worse than the gap. Qatar is genuinely available and current, and is
-// held back only by IMF's terms, which require written permission for
-// commercial reuse -- see MMAI_MASTER_HANDOVER.md.
-async function fetchPolicyRate(country: GulfCountryCode, deadline: number) {
+// worse than the gap.
+//
+// QATAR IS WIRED since 19 September: the IMF's terms for statistical
+// data (read that day in a browser -- see MMAI_MASTER_HANDOVER.md §40)
+// permit publishing with attribution; only COMMERCIAL reuse needs their
+// permission, and that is on the pre-monetization list. It arrives
+// relayed (MFS166, monthly), not fetched here.
+async function fetchPolicyRate(country: GulfCountryCode, deadline: number, relay: Relay) {
   if (country === "SA") return settle("Saudi policy rate", () => fetchBisPolicyRate("SA"), deadline);
   if (country === "KW") return settle("Kuwait policy rate", () => fetchBisPolicyRate("KW"), deadline);
+  if (country === "QA" && relay.qa_rate) {
+    return { policyRate: relay.qa_rate.value, rateLabel: GULF_POLICY_RATE_LABELS.QA, observationDate: relay.qa_rate.observationDate };
+  }
   return null;
 }
 
-async function fetchGulfIndicators(country: GulfCountryCode, deadline: number): Promise<GulfRawIndicators> {
+async function fetchGulfIndicators(country: GulfCountryCode, deadline: number, relay: Relay): Promise<GulfRawIndicators> {
   const today = new Date().toISOString().slice(0, 10);
   const iso3 = ISO3[country];
 
   const [cpi, fx, ca, realEstate, policy] = await Promise.all([
-    fetchCpi(country, deadline),
+    fetchCpi(country, deadline, relay),
     settle(`${country} FX reserves`, () => fetchFxReservesMonths(iso3), deadline),
     settle(`${country} current account`, () => fetchCurrentAccountPctGdp(iso3), deadline),
     country === "QA" ? settle("Qatar real estate", () => fetchQatarRealEstate(), deadline) : Promise.resolve(null),
-    fetchPolicyRate(country, deadline),
+    fetchPolicyRate(country, deadline, relay),
   ]);
 
   return {
@@ -173,6 +194,9 @@ export async function GET(request: Request) {
   // today is what keeps the extra attempts harmless no-ops instead of
   // duplicate rows. ?force=1 overrides.
   const force = new URL(request.url).searchParams.get("force") === "1";
+  // Figures fetched by the refresh workflow and handed in (lib/gulfRelay.ts).
+  const relay: Relay = parseGulfRelay(new URL(request.url));
+  console.log(`Gulf relay: ${Object.keys(relay).join(", ") || "nothing handed in"}`);
   const today = new Date().toISOString().slice(0, 10);
   let alreadyToday = new Set<string>();
   if (!force) {
@@ -231,7 +255,7 @@ export async function GET(request: Request) {
       // READ time in lib/useGulfIndicators.ts. Derived data is never
       // written, so it can never be read back as if it were fetched, and
       // the bound measures the real age of the real observation.
-      const raw = await fetchGulfIndicators(country, deadline);
+      const raw = await fetchGulfIndicators(country, deadline, relay);
       // Policy rate counts toward PARTIAL only for the countries that
 // actually have a source. Ignoring it entirely would let SOURCE_NOTES
       // keep claiming "+ BIS (live)" on a day the BIS fetch failed;
@@ -243,7 +267,10 @@ export async function GET(request: Request) {
         raw.fxReservesMonths == null ||
         raw.currentAccountPctGdp == null ||
         (expectsPolicyRate && raw.policyRate == null);
-      const baseNote = SOURCE_NOTES[country];
+      const baseNote = gulfSourceNote(country, {
+        imfCpi: (country === "AE" || country === "KW" || country === "OM") && raw.cpiYoy != null,
+        imfRate: country === "QA" && raw.policyRate != null,
+      });
       // Records what THIS RUN fetched. Whether a gap is later filled
       // from an earlier row is a question for the page, not for the
       // stored row -- see the note above.
