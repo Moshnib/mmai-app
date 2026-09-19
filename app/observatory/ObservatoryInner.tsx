@@ -85,10 +85,11 @@ export default function ObservatoryInner() {
       <div className="wrap">
         <div className="section-head">
           <p className="eyebrow">OBSERVATORY</p>
-          <h1>Tracked, and deliberately not scored</h1>
+          <h1>Tracked, and not scored</h1>
           <p>
-            Every country here publishes figures good enough to show and not comparable enough to
-            rank. The reason is printed beside each one, because an unscored country with no
+            Every country here publishes figures good enough to show. Some are not comparable
+            enough to rank; others are still being checked before they can join the index. The
+            reason is printed beside each one, because an unscored country with no
             explanation reads as missing data &mdash; and for every country on this page that is
             false. Figures are the same measures, from the same institutions, as the {" "}
             <Link href="/" style={{ color: "var(--accent-2)" }}>scored markets</Link> use.
@@ -174,7 +175,7 @@ export default function ObservatoryInner() {
                     lineHeight: 1.7,
                   }}
                 >
-                  <b style={{ color: "var(--ink-soft)" }}>Why {c.name} is not scored.</b> {c.whyUnscored}
+                  <b style={{ color: "var(--ink-soft)" }}>Why {c.name} is not scored{c.evaluating ? " yet" : ""}.</b> {c.whyUnscored}
                   {c.evidence && <> {c.evidence}</>}
                   {c.policyRateNote && (
                     <>

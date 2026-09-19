@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SOURCES } from "@/lib/sources";
+import { SCORED_SOURCE_GROUPS, OBSERVATORY_SOURCE_GROUPS, OBSERVATORY_NAME_TO_CODE } from "@/lib/sourceGroups";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { GULF_SOURCES, GULF_NAME_TO_CODE } from "@/lib/gulfSources";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
@@ -16,7 +17,7 @@ export const metadata: Metadata = pageMetadata({
   path: "/sources",
 });
 
-const marketOrder = ["All markets", ...FALLBACK_MARKETS.map((m) => m.name)];
+const marketOrder = SCORED_SOURCE_GROUPS;
 const codeForName = Object.fromEntries(FALLBACK_MARKETS.map((m) => [m.name, m.code]));
 
 const gulfOrder = GULF_COUNTRIES.map((c) => c.name);
@@ -26,6 +27,9 @@ const gulfGrouped = gulfOrder
 
 export default function SourcesPage() {
   const grouped = marketOrder
+    .map((name) => ({ name, entries: SOURCES.filter((s) => s.market === name) }))
+    .filter((g) => g.entries.length > 0);
+  const observatoryGrouped = OBSERVATORY_SOURCE_GROUPS
     .map((name) => ({ name, entries: SOURCES.filter((s) => s.market === name) }))
     .filter((g) => g.entries.length > 0);
 
@@ -39,6 +43,7 @@ export default function SourcesPage() {
           <SourcesJumpNav
             scored={grouped.map((g) => ({ name: g.name, code: codeForName[g.name] }))}
             gulf={gulfGrouped.map((g) => ({ name: g.name, code: GULF_NAME_TO_CODE[g.name] }))}
+            observatory={observatoryGrouped.map((g) => ({ name: g.name, code: OBSERVATORY_NAME_TO_CODE[g.name] }))}
           />
         </div>
       </div>
@@ -75,6 +80,26 @@ export default function SourcesPage() {
             </p>
           </div>
           <SourcesTable groups={gulfGrouped} codeForName={GULF_NAME_TO_CODE} freshnessTable="gulf_indicators" freshnessKeyColumn="country_code" idPrefix="gulf" />
+        </div>
+      </div>
+
+      {/* THE OBSERVATORY. Its rows were in the registry from 14 September
+          and never shown: the page grouped only the scored markets.
+          lib/sourceGroups.ts now holds the groups, and verify-sources.ts
+          fails if any row belongs to none of them. */}
+      <div className="section">
+        <div className="wrap">
+          <div className="section-head" style={{ marginBottom: 8 }}>
+            <p className="eyebrow">OBSERVATORY (NON-SCORED)</p>
+            <h2>Countries tracked with real figures and no score</h2>
+            <p style={{ maxWidth: "68ch" }}>
+              The countries on the{" "}
+              <Link href="/observatory" style={{ color: "var(--accent-2)" }}>Observatory</Link> page, from the same
+              institutions and under the same licences as the scored markets: the ECB, Eurostat and the BIS. Each
+              country&apos;s reason for not being scored is printed on that page.
+            </p>
+          </div>
+          <SourcesTable groups={observatoryGrouped} codeForName={OBSERVATORY_NAME_TO_CODE} freshnessTable="observatory_indicators" freshnessKeyColumn="country_code" idPrefix="obs" />
         </div>
       </div>
 

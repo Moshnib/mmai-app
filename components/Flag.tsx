@@ -176,6 +176,29 @@ export const FLAG_SHAPES: Record<string, React.ReactNode> = {
       <rect x="0" y="7.75" width="28" height="4.5" fill="#003580" />
     </>
   ),
+  // Central Europe, added 19 September. The outline every flag carries
+  // keeps Poland's white half visible on the dark ground.
+  PL: (
+    <>
+      <rect width="28" height="10" fill="#fff" />
+      <rect y="10" width="28" height="10" fill="#DC143C" />
+    </>
+  ),
+  CZ: (
+    <>
+      <rect width="28" height="10" fill="#fff" />
+      <rect y="10" width="28" height="10" fill="#D7141A" />
+      {/* The blue wedge reaches from the hoist to the centre. */}
+      <path d="M0 0 L14 10 L0 20 Z" fill="#11457E" />
+    </>
+  ),
+  HU: (
+    <>
+      <rect width="28" height="6.67" fill="#CD2A3E" />
+      <rect y="6.67" width="28" height="6.67" fill="#fff" />
+      <rect y="13.33" width="28" height="6.67" fill="#436F4D" />
+    </>
+  ),
   // ---------- Gulf Watch flags ----------
   AE: (
     <>

@@ -30,6 +30,10 @@
 import { SOURCES, sourcesForMarket, sourceForPillar, sourceNoteFor } from "../lib/sources";
 import { FALLBACK_MARKETS } from "../lib/markets";
 import { NEWS_SOURCES } from "../lib/newsSources";
+import { RENDERED_SOURCE_MARKETS } from "../lib/sourceGroups";
+import { OBSERVATORY } from "../lib/observatory";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { PILLAR_CODES, type PillarKey } from "../lib/indicators";
 
 // PILLAR_CODES is already the list. It replaced PILLAR_WEIGHTS, which was
@@ -101,6 +105,27 @@ check("No published market credits the World Bank", creditsWorldBank, []);
 // a reader who wants to verify a figure has to go find the agency.
 const noUrl = SOURCES.filter((s) => s.status === "live" && !s.url).map((s) => `${s.market}/${s.indicator}`);
 check("Every live source links to the institution's own page", noUrl, []);
+
+// ---------- every row is actually shown ----------
+// The Sources page renders fixed groups (lib/sourceGroups.ts). A row
+// whose market is in none of them is in the registry and on no page:
+// Denmark's and Finland's six rows were, from 14 to 19 September, on a
+// page that promises every source.
+const unshown = [...new Set(SOURCES.filter((s) => !RENDERED_SOURCE_MARKETS.has(s.market)).map((s) => s.market))];
+check("Every source row belongs to a group the Sources page shows", unshown, []);
+
+// ...and the other direction: an Observatory country with no rows would
+// show figures on /observatory whose origin no page states, and one with
+// no flag renders a blank beside its name.
+{
+  const flagSrc = readFileSync(join(process.cwd(), "components", "Flag.tsx"), "utf8");
+  const gaps: string[] = [];
+  for (const c of OBSERVATORY) {
+    if (SOURCES.filter((s) => s.market === c.name).length < 5) gaps.push(`${c.name}: fewer than 5 source rows`);
+    if (!new RegExp(`\\b${c.code}: \\(`).test(flagSrc)) gaps.push(`${c.name}: no flag in components/Flag.tsx`);
+  }
+  check("Every Observatory country has its sources and its flag", gaps, []);
+}
 
 // ---------- every news feed is licensed, by its own row ----------
 // A feed in lib/newsSources.ts reaches the homepage the moment it is

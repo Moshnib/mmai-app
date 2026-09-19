@@ -249,9 +249,14 @@ and Gulf Watch content on the "Learn More" page. Along the way:
 ## ▶️ Next up (owner has already chosen these)
 - [ ] Homepage additions: strongest/weakest part, yearly trend line since
       2019, how recent each figure is, and an "updated" status line.
-- [ ] More Observatory countries — Poland, Czechia and Hungary are the
-      strongest candidates (see §28 of the handover for the full list that
-      was tested live).
+- [x] **Poland, Czechia and Hungary added to the Observatory** (19
+      September), labelled "not scored yet" because nothing rules them
+      out. Next step for them: the checks to score them properly.
+- [ ] More Observatory countries: the euro members (Germany, France,
+      Italy, Spain and others) are ready with the same sources; see §28
+      of the handover for the list tested live.
+- [ ] **Small fix for later:** if one day's reading fails, the Observatory
+      shows N/A instead of the last known figure with its date.
 
 > The current state of the whole project, in one page, is §28 of
 > MMAI_MASTER_HANDOVER.md. Start there in a new chat.

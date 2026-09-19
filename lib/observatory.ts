@@ -1,5 +1,5 @@
 // ============================================================
-//  THE OBSERVATORY — countries tracked, deliberately not scored
+//  THE OBSERVATORY — countries tracked, not scored
 //
 //  Two days of screening candidate countries produced a clear boundary:
 //  MMAI is calibrated for mature, floating-rate, inflation-targeting
@@ -22,6 +22,17 @@
 //  rendered on the page. An unscored country with no stated reason
 //  invites the reader to assume the data was missing, which for every
 //  one of these is false.
+//
+//  TWO KINDS OF COUNTRY, SINCE 19 SEPTEMBER. Denmark and Finland are
+//  here because the composite cannot read them. Poland, Czechia and
+//  Hungary are not: they set their own rates and target inflation, like
+//  the scored markets, and their only obstacle in screening was a source
+//  (OECD prices, frozen at 2025-12), not the country. They are shown here
+//  while the checks every scored market passed are run for them, marked
+//  `evaluating`, and the page says "not scored yet" for them rather than
+//  implying they cannot be. Scoring them will need national-CPI sources
+//  and a licence check: MMAI scores the measure each central bank
+//  targets, and HICP, shown here, is not the one these three target.
 // ============================================================
 
 export interface ObservatoryCountry {
@@ -37,6 +48,10 @@ export interface ObservatoryCountry {
   /** Markets without their own monetary policy have no policy rate to
    *  show, and a dash with no explanation reads as a missing fetch. */
   policyRateNote?: string;
+  /** Scoreable in principle and being checked for the index, as opposed
+   *  to tracked because the composite cannot read it. The page words the
+   *  two differently. */
+  evaluating?: true;
 }
 
 export const OBSERVATORY: ObservatoryCountry[] = [
@@ -59,6 +74,30 @@ export const OBSERVATORY: ObservatoryCountry[] = [
       "Finland uses the euro, so it has no policy rate of its own and is already inside the Euro Area score. Showing it separately is a view of one member, not a tenth market.",
     policyRateNote:
       "Finland has no policy rate of its own. The European Central Bank sets one rate for all 21 euro members, and it is shown under the Euro Area.",
+  },
+  {
+    code: "PL",
+    name: "Poland",
+    region: "Central Europe",
+    evaluating: true,
+    whyUnscored:
+      "Nothing about Poland rules it out: the National Bank of Poland sets its own rate and targets inflation, as every scored market's central bank does. A new scored market first has to pass the checks the other nine passed — its figures must sit inside the historical range the score is built on, and it must be scored on the inflation measure its own central bank targets — and that review is still to be done. Until then its figures are shown here without a score.",
+  },
+  {
+    code: "CZ",
+    name: "Czechia",
+    region: "Central Europe",
+    evaluating: true,
+    whyUnscored:
+      "Nothing about Czechia rules it out: the Czech National Bank sets its own rate and targets inflation, as every scored market's central bank does. A new scored market first has to pass the checks the other nine passed — its figures must sit inside the historical range the score is built on, and it must be scored on the inflation measure its own central bank targets — and that review is still to be done. Until then its figures are shown here without a score.",
+  },
+  {
+    code: "HU",
+    name: "Hungary",
+    region: "Central Europe",
+    evaluating: true,
+    whyUnscored:
+      "Nothing about Hungary rules it out: the Magyar Nemzeti Bank sets its own rate and targets inflation, as every scored market's central bank does. A new scored market first has to pass the checks the other nine passed — its figures must sit inside the historical range the score is built on, and it must be scored on the inflation measure its own central bank targets — and that review is still to be done. Until then its figures are shown here without a score.",
   },
 ];
 

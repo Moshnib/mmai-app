@@ -799,10 +799,15 @@ async function refreshObservatory(
   supabase: ReturnType<typeof getServiceSupabaseClient>,
   debtByMarket: Map<string, { debtPctGdp: number; period: string }>,
 ): Promise<{ country: string; status: string }[]> {
-  const results: { country: string; status: string }[] = [];
   const today = new Date().toISOString().slice(0, 10);
 
-  for (const country of OBSERVATORY) {
+  // ALL COUNTRIES AT ONCE. This step runs last, under the route's 60s
+  // maxDuration, and each country can cost up to ~8s (Eurostat) plus ~15s
+  // (BIS) in the worst case. One after another was fine for two; at five
+  // (19 September: Poland, Czechia, Hungary) a slow day could run past
+  // the limit and lose the JSON reply the refresh workflow reads its
+  // freshness and alert checks from. Each country still fails on its own.
+  return Promise.all(OBSERVATORY.map(async (country) => {
     const code = country.code;
     const [infl, unemp, gdp, yld] = await Promise.all([
       settle(`${code} inflation`, fetchObservatoryInflation(code)),
@@ -841,14 +846,12 @@ async function refreshObservatory(
 
     const got = [infl, unemp, gdp, yld, debt].filter(Boolean).length + (rate ? 1 : 0);
     const wanted = setsOwnRate ? 6 : 5;
-    results.push({
+    if (error) console.error(`Observatory write failed for ${code}: ${error.message}`);
+    return {
       country: code,
       status: error ? `error: ${error.message}` : `ok (${got}/${wanted} figures)`,
-    });
-    if (error) console.error(`Observatory write failed for ${code}: ${error.message}`);
-  }
-
-  return results;
+    };
+  }));
 }
 
 export async function GET(request: Request) {

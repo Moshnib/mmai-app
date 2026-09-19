@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/pageMetadata";
 export const metadata: Metadata = pageMetadata({
   title: "Observatory",
   description:
-    "Countries tracked with real figures and deliberately not scored — with the reason printed beside each one, because an unscored country with no explanation reads as missing data.",
+    "Countries tracked with real figures and no score — some because the index cannot read them, some while they are checked for it — with the reason printed beside each one.",
   path: "/observatory",
 });
 
