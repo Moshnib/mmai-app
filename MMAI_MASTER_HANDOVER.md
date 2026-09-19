@@ -2664,3 +2664,42 @@ The early-return JSON now carries `observatory` too.
 down all day, or fails on the first run with nothing earlier that day,
 still shows N/A. There is no carry-over from yesterday yet; that is open
 in `MMAI_TODO.md`.
+## 39. The source audit stops crying wolf on Mondays (2026-09-19)
+
+Found in a live health check the owner asked for ("no bugs, no blocks
+for feeds, the ticker and updated numbers"). The 12:00 and 18:00
+refresh runs on 15 September failed, two days BEFORE the minutes
+outage, on:
+
+    policy rate: source has 2026-09-14, site publishes 2026-09-11 —
+    more than one release behind
+
+`releasesBehind` counted a DAILY series in calendar days. The site
+stores the morning's figure; by the afternoon the source carries the next
+trading day's date, usually for an unchanged rate. Friday → Monday is
+three calendar days and one trading day, so every Monday afternoon run
+went red for nothing. With §37's heartbeat, each of those would now send
+the owner a "failed" email. That is the kind of alarm people learn to
+ignore, which then hides the real one.
+
+Now:
+- Daily series count working days (Mon–Fri).
+- A missed release is `releasesMissed()`: three working days for daily
+  series (the morning/evening gap is one, and a public holiday can make an
+  innocent gap two), two for monthly and quarterly as before.
+- A week stuck is five working days and still fails.
+
+`scripts/test-releases-behind.ts` gained the Friday/Monday, holiday and
+three-days-lost cases. Two mutations were tested: back to calendar days,
+and no holiday allowance.
+
+**Also checked live, not bugs:**
+- /api/announcements answers in 0.15 s from cache, with items from five
+  institutions.
+- The RBA carries none because its last decision (11 August) is outside
+  the 30-day window.
+- Statistics Norway's short feed currently holds salmon, tax and shipping
+  releases, which the filter correctly drops.
+- The 19 September 06:10 scheduled refresh was never started by GitHub.
+  Scheduled workflows are best-effort; that is why there are three a day
+  and a watchdog.

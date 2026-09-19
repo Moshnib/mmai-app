@@ -23,7 +23,7 @@
 //    npx tsx scripts/test-releases-behind.ts
 // ============================================================
 
-import { releasesBehind } from "@/lib/sourceAudit";
+import { releasesBehind, releasesMissed } from "@/lib/sourceAudit";
 
 type Case = {
   what: string;
@@ -47,7 +47,14 @@ const CASES: Case[] = [
   // ---- genuinely missed, and no timing argument makes it innocent ----
   { what: "inflation stuck two months", cadence: "monthly", stored: "2026-06-01", live: "2026-08-01", want: 2, fails: true },
   { what: "GDP stuck two quarters", cadence: "quarterly", stored: "2025-12-01", live: "2026-06-01", want: 2, fails: true },
-  { what: "policy rate stuck a week", cadence: "daily", stored: "2026-09-02", live: "2026-09-09", want: 7, fails: true },
+  { what: "policy rate stuck a week (5 working days)", cadence: "daily", stored: "2026-09-02", live: "2026-09-09", want: 5, fails: true },
+
+  // ---- weekends and holidays: a daily rate is published on trading days ----
+  // 15 September 2026, as it happened: the afternoon run compared Friday
+  // with Monday, counted three calendar days, and went red for nothing.
+  { what: "policy rate, Friday against Monday", cadence: "daily", stored: "2026-09-11", live: "2026-09-14", want: 1, fails: false },
+  { what: "Friday against Tuesday after a Monday holiday", cadence: "daily", stored: "2026-09-04", live: "2026-09-08", want: 2, fails: false },
+  { what: "Thursday against the next Tuesday: three trading days lost", cadence: "daily", stored: "2026-09-03", live: "2026-09-08", want: 3, fails: true },
   { what: "the Eurostat case: nine months", cadence: "monthly", stored: "2025-12-01", live: "2026-09-01", want: 9, fails: true },
 
   // ---- year boundaries, where a naive month subtraction goes negative ----
@@ -60,11 +67,11 @@ let failures = 0;
 console.log("\n  releases  verdict           case");
 for (const c of CASES) {
   const got = releasesBehind(c.cadence, c.stored, c.live);
-  const wouldFail = got >= 2;
+  const wouldFail = releasesMissed(c.cadence, c.stored, c.live);
   const ok = got === c.want && wouldFail === c.fails;
   if (!ok) failures++;
   console.log(
-    `  ${ok ? "ok  " : "FAIL"}  ${String(got).padStart(2)}      ${(wouldFail ? "RELEASES MISSED" : got === 1 ? "one behind" : "level").padEnd(16)}  ${c.what}` +
+    `  ${ok ? "ok  " : "FAIL"}  ${String(got).padStart(2)}      ${(wouldFail ? "RELEASES MISSED" : got === 0 ? "level" : "behind, fine").padEnd(16)}  ${c.what}` +
     (ok ? "" : `   -- wanted ${c.want} / ${c.fails ? "fail" : "pass"}`),
   );
 }
@@ -72,13 +79,11 @@ for (const c of CASES) {
 // THE REGRESSION ITSELF. If someone reintroduces an age-of-period rule,
 // these two are what it gets wrong, so assert the shape directly rather
 // than trusting the table above to be read.
-const releaseDay = releasesBehind("monthly", "2026-07-01", "2026-08-01");
-if (releaseDay >= 2) {
+if (releasesMissed("monthly", "2026-07-01", "2026-08-01")) {
   console.error("\n  A figure published today must never read as a missed release.");
   failures++;
 }
-const ninetyDaysOfSilence = releasesBehind("monthly", "2025-12-01", "2026-09-01");
-if (ninetyDaysOfSilence < 2) {
+if (!releasesMissed("monthly", "2025-12-01", "2026-09-01")) {
   console.error("\n  Nine months behind must always read as a missed release.");
   failures++;
 }

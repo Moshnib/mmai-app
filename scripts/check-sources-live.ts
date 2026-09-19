@@ -73,7 +73,7 @@ async function main() {
     console.log(`${behind.length} figure(s) are one release behind the source:\n`);
     for (const b of behind) console.log(`  ${b}`);
     console.log("\nThat is the ordinary gap between a source publishing and the next");
-    console.log("morning's refresh picking it up. Two or more releases behind fails instead.\n");
+    console.log("morning's refresh picking it up. A missed release fails instead: two for monthly and quarterly figures, three trading days for daily ones.\n");
   }
 
   if (problems.length > 0) {
