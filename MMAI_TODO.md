@@ -1,10 +1,19 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-21 (full audit: security, live site, data, loose ends)*
+*Last updated: 2026-09-21 (second audit: speed, sharing, privacy, code, data)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 21 September — second audit (handover §42)
+- [x] **Shared links now show the MMAI picture on every page**, not only
+      the homepage. Before, a Trends or Gulf Watch link posted on WhatsApp
+      showed only text.
+- [x] Checked and fine: speed (main content in about 1.4 s on a phone),
+      search tags, the 404 page, code safety, and the stored data.
+- [ ] **Before charging money:** add a proper privacy page. The short note
+      on About is enough while the site is free.
 
 ## ✅ Since 2026-09-17 — the site got its own address, and can send email
 - [x] **mmai.markets is live**, bought at Cloudflare. `www` is the real

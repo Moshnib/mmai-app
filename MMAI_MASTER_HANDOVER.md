@@ -1798,10 +1798,11 @@ the debt note described the retired five-pillar 60% rule ("full marks",
 Watch's "no policy-rate feed / 70% pillar coverage" (Saudi and Kuwait are
 live via BIS; the real reason is labour-market comparability).
 
-## 28. WHERE THINGS STAND — 18 September 2026 (read this first)
+## 28. WHERE THINGS STAND — 21 September 2026 (read this first)
 
 Everything below was true at commit `939d93b`, with `main` clean and
-deployed. Sections 1–34 are history; this is the state. Sections 29–34
+deployed; "What is live" was brought up to date on 21 September
+(after §42). Sections 1–34 are history; this is the state. Sections 29–42
 were written after this page was first dated 16 September, so where they
 disagree with an older paragraph here, they are the later word.
 
@@ -1813,15 +1814,21 @@ disagree with an older paragraph here, they are the later word.
   a frozen reference set that stays six however many markets are scored.
 - **Gulf Watch:** six Gulf countries, raw indicators, deliberately no
   score (labour-market figures are not comparable). Saudi and Kuwait carry
-  a BIS policy rate.
-- **The Observatory:** Denmark and Finland, tracked with real figures and
-  no score, each with a published reason. Sources: ECB HICP, Eurostat
-  (unemployment, GDP, 10-year yields), BIS (policy rate, debt).
+  a BIS policy rate. Since 19 September the workflow relays IMF inflation for
+  Oman and Kuwait (monthly) and the UAE (quarterly), Qatar's policy rate
+  from the IMF, and Bahrain's own figures (§40).
+- **The Observatory:** Denmark, Finland, and (since 19 September, marked
+  evaluating) Poland, Czechia and Hungary, tracked with real figures and
+  no score, each with a published reason (§38). Sources: ECB HICP, Eurostat
+  (unemployment, GDP, 10-year yields), BIS (policy rate, debt); Poland,
+  Czechia and Hungary also draw on their own central banks.
 - **Look and feel:** "Editorial Dark" (§26, §27) — navy ground, one gold
   accent for what is current or chosen, Source Serif headings, IBM Plex
   Sans body, Plex Mono figures. No gradients, glow, glass or Space
   Grotesk; `scripts/check-palette.ts` fails the build if they return.
-- **Refresh:** GitHub Actions, three times daily, writing to Supabase.
+- **Refresh:** GitHub Actions, four times daily (10:43–18:43 UTC, §41),
+  writing to Supabase; a Vercel watchdog will email the owner if data
+  stops, once armed (item 5 below, still open; §37).
   OECD is unreachable from Vercel, so Japan and Korea come via a relay
   step in the workflow (§25).
 - **Its own address:** **www.mmai.markets** is canonical (§33.1). The old
@@ -2916,3 +2923,52 @@ day** (the cross-day case §38.1 left open).
 - Japan's MONTHLY inflation is still absent from the Trends monthly view
   (`lib/monthlyHistory.ts`). e-Stat, which already serves Japan's scored
   inflation, could fill it: a candidate follow-up.
+
+## 42. Second audit: speed, sharing, privacy, code, data (2026-09-21)
+
+The owner asked for one more audit after §41.
+
+**Found and fixed: shared links to any page but the homepage had no
+picture.**
+- Next attaches the file-based `app/opengraph-image.tsx` to the root's
+  `openGraph`. Every page sets its own `openGraph` through
+  `lib/pageMetadata.ts`, and that replaces the root's object whole,
+  picture included.
+- So `/trends`, `/gulf-watch`, `/observatory` and the rest emitted a
+  title and a description but no `og:image` or `twitter:image`. A link
+  shared on WhatsApp or X arrived as bare text.
+- `lib/ogImage.ts` now holds the card's path, size and alt text once.
+  `pageMetadata` names it for both card kinds, and `opengraph-image.tsx`
+  reads its alt and size from the same file.
+- `scripts/test-page-metadata.ts` (in CI) pins the images, and checks that
+  every page under `app/` builds its metadata through `pageMetadata`.
+  Three mutations were caught.
+
+**Checked and sound:**
+- **Speed.** Measured as a repeat visit on an emulated Pixel 5:
+  - The homepage's largest paint is its intro paragraph, at about 1.4 s.
+  - First byte arrives at 124 ms, and the page is interactive at 0.5 s.
+  - The 3.4 s measured earlier was a cold first visit.
+  - Pages ship 1.0–1.5 MB of JavaScript (recharts about 104 KB gzipped,
+    Supabase about 60 KB). Worth trimming one day, not urgent.
+- **Search tags.** Every page has its own title, description and
+  canonical. `robots.txt` and `sitemap.xml` answer. The 404 page answers
+  404 with its own title.
+- **Code.** The one `dangerouslySetInnerHTML` is the structured data,
+  built from constants, with `<` escaped. No `eval`, no redirect driven by
+  a query parameter.
+  - The query parameters read (`force`, `test`, `token` and the Gulf
+    relay) are either behind CRON_SECRET or validated.
+  - The CSV export holds only the site's own figures, so there is no
+    formula-injection path.
+- **Privacy.** The About page says plainly what is counted: Vercel
+  Analytics, with no cookies, and email only if you subscribe, with an
+  unsubscribe link in every email. That is adequate for a free site that
+  collects only an email. **A proper privacy page belongs on the
+  pre-monetisation list**, beside the IMF commercial-use question.
+- **Data.**
+  - No stored score falls outside 0–100.
+  - No raw figure has an impossible value or a future date. The same holds
+    for Gulf CPI.
+  - The 20 September scores are v2.0, and AU = 85.135135 (the acceptance
+    target).

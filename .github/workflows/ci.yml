@@ -320,6 +320,11 @@ jobs:
       - name: The watchdog reports an outage, and only an outage
         run: npx tsx scripts/test-watchdog.ts
 
+      # Only the homepage link preview had a picture: every other page set its
+      # own openGraph and so dropped the site card. This keeps it on all.
+      - name: Every page shares with its picture
+        run: npx tsx scripts/test-page-metadata.ts
+
       # A figure the morning run missed used to stay N/A on the Observatory
       # all day: later runs stopped before reaching it. Every run now
       # retries incomplete countries; this pins that a retry fills gaps and
