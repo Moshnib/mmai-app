@@ -332,6 +332,12 @@ jobs:
       - name: Live press conferences are on the right channel at the right time
         run: npx tsx scripts/test-press-conferences.ts
 
+      # The recent press-conference videos come from the banks' own YouTube
+      # feeds, filtered by title. Tested against the real feeds as captured,
+      # so a filter that stops matching fails here, not silently on the site.
+      - name: Recent press-conference videos are the right ones
+        run: npx tsx scripts/test-press-videos.ts
+
       # A figure the morning run missed used to stay N/A on the Observatory
       # all day: later runs stopped before reaching it. Every run now
       # retries incomplete countries; this pins that a retry fills gaps and

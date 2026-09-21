@@ -74,7 +74,7 @@ export function parseRss(xml: string): Raw[] {
 /** The five entities RSS actually carries, plus CDATA. Nothing here is
  *  rendered as HTML -- it goes into a text node -- so this is about the
  *  title reading correctly, not about safety. */
-function decode(s: string): string {
+export function decode(s: string): string {
   return s
     .replace(/^<!\[CDATA\[([\s\S]*?)\]\]>$/, "$1")
     .replace(/&lt;/g, "<")

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNow } from "@/lib/liveTime";
 import {
-  liveState, daysUntil, conferences, youtubeChannelUrl, youtubeLiveEmbedUrl,
-  type Conference,
+  CHANNELS, liveState, daysUntil, conferences, youtubeChannelUrl, youtubeLiveEmbedUrl,
+  VIDEO_ID, youtubeThumbUrl, youtubeVideoEmbedUrl, youtubeVideoUrl,
+  type Conference, type PressVideo,
 } from "@/lib/pressConferences";
 
 const keyOf = (c: Conference) => `${c.bank}-${c.date}`;
@@ -79,9 +80,11 @@ export default function LivePressCard() {
         </p>
       )}
 
+      <RecentVideos />
+
       <p className="press-note">
         Scheduled press conferences from the Federal Reserve, the ECB, the Bank of England and the Bank of
-        Canada, streamed by each bank. The player loads only when you press play.
+        Canada, streamed by each bank. Videos play only when you press play.
       </p>
       </>}
     </div>
@@ -142,6 +145,96 @@ function LiveNow({ c, playing, onPlay, over }: { c: Conference; playing: boolean
       )}
     </div>
   );
+}
+
+/**
+ * THE LATEST RECORDED PRESS CONFERENCES, so there is always something to
+ * watch between meetings. Read from the banks' own channels by
+ * /api/press-videos after the page has loaded, so the homepage's HTML is
+ * unchanged and a failed feed only hides this row. Each tile is a small
+ * YouTube thumbnail (lazy, ~11 KB); the player itself loads on tap.
+ */
+function RecentVideos() {
+  const [videos, setVideos] = useState<PressVideo[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/press-videos")
+      .then((r) => (r.ok ? r.json() : { videos: [] }))
+      .then((j) => { if (!cancelled) setVideos(Array.isArray(j.videos) ? j.videos.filter((v: PressVideo) => VIDEO_ID.test(v.videoId)) : []); })
+      .catch(() => { if (!cancelled) setVideos([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Opening moves the keyboard to the player's Close button; closing
+  // hands it back to the tile that opened it.
+  useEffect(() => { if (open) closeRef.current?.focus(); }, [open]);
+  const close = () => {
+    const id = open;
+    setOpen(null);
+    if (id) requestAnimationFrame(() => document.getElementById(`press-tile-${id}`)?.focus());
+  };
+
+  if (!videos || videos.length === 0) return null;
+  const current = videos.find((v) => v.videoId === open);
+
+  return (
+    <div className="press-recent">
+      <p className="press-tag">RECENT PRESS CONFERENCES</p>
+      {current && (
+        <div className="press-live">
+          <div className="press-player">
+            <iframe
+              src={youtubeVideoEmbedUrl(current.videoId)}
+              title={`${CHANNELS[current.bank].name}: ${current.title}`}
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          </div>
+          <p className="press-line">
+            <a className="press-link" href={youtubeVideoUrl(current.videoId)} target="_blank" rel="noopener noreferrer">
+              Watch on YouTube ↗
+            </a>
+            <button ref={closeRef} type="button" className="press-close" onClick={close}>Close player</button>
+          </p>
+        </div>
+      )}
+      <ul className="press-tiles">
+        {videos.map((v) => {
+          const bank = CHANNELS[v.bank];
+          const day = formatDay(v.published);
+          return (
+            <li key={v.videoId}>
+              <button
+                id={`press-tile-${v.videoId}`}
+                type="button"
+                className={`press-tile${v.videoId === open ? " is-open" : ""}`}
+                onClick={() => setOpen(v.videoId)}
+                aria-label={`Play ${bank.name} press conference, ${day} (loads YouTube)`}
+              >
+                <span className="press-thumb">
+                  {/* eslint-disable-next-line @next/next/no-img-element --
+                      YouTube's own image server, per its terms; next/image
+                      would copy it through this site's optimiser. */}
+                  <img src={youtubeThumbUrl(v.videoId)} alt="" width={320} height={180} loading="lazy" decoding="async" />
+                  <span className="press-thumb-play" aria-hidden="true">▶</span>
+                </span>
+                <span className="press-tile-bank">{bank.short} · {day}</span>
+                <span className="press-tile-title">{v.title}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function formatDay(iso: string): string {
+  return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
 }
 
 function formatStart(t: number): string {
