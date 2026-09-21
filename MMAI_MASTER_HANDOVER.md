@@ -3173,3 +3173,51 @@ a single cached read of the nine feeds.
   new fixtures). Five mutations were caught: core-bank priority, speeches
   on the homepage, Hangul detection, the per-channel cap, and untagged
   uploads.
+
+## 46. Two more news sources: the BEA and Statistics Canada (2026-09-22)
+
+The owner asked for more news, and for Gulf news.
+
+**Added** (`lib/newsSources.ts`, licence rows in `lib/sources.ts`):
+- **U.S. Bureau of Economic Analysis** (`bea-releases`, RSS).
+  - Licence: public domain. bea.gov FAQ 145/147 says "information posted
+    on the BEA website is in the public domain and may be used or
+    reproduced without specific permission".
+  - Kept: the national GDP estimates ("GDP (...") and Personal Income and
+    Outlays (the PCE price index).
+  - Left out: regional GDP ("by State", "by County", "for Guam") and trade.
+- **Statistics Canada, The Daily** (`statcan-daily`, Atom).
+  - Licence: the Open Licence, which covers text and publications,
+    commercial use included. The attribution wording and the no-endorsement
+    line are on the Sources row.
+  - Kept: the Consumer Price Index, the Labour Force Survey and GDP.
+  - Left out: the dozens of other releases each week.
+- **Checked and not added**, each recorded in `newsSources.ts` "WHAT IS NOT
+  HERE":
+  - Statistics Sweden: CC BY is fine, but its only feed is in Swedish.
+  - Eurostat: its news feed has been frozen since 2021.
+  - ABS: no public feed found.
+  - **Gulf: no source.** Only the UAE Central Bank has a feed. Every item in
+    it is dated "1 January 2000", and its terms page answers 403 to
+    automated readers, so the licence could not be read.
+
+**New in the reader** (`lib/fetchers/newsFeeds.ts`):
+- `parseAtom` takes:
+  - the `rel="alternate"` link (or one with no rel), never self or
+    related;
+  - `<published>` before `<updated>`, because a correction moves
+    `<updated>`. Statistics Canada carries only `<updated>`;
+  - titles decoded first and then stripped of tags.
+- `safeLink` drops an item unless its link is https and, for sources that
+  name `linkHosts`, on the agency's own host. A feed's link becomes an
+  href on this site.
+
+**Tests** (`scripts/test-news-feeds.ts`, fixtures in
+`scripts/fixtures/news/`) use both real feeds as captured. Four mutations
+were caught: updated-before-published, the first link taken, the host
+check removed, and strip-before-decode.
+
+**Seen locally on 22 September:** Statistics Canada CPI (14 Sep) and
+Labour Force Survey (4 Sep), and BEA GDP and Personal Income and Outlays
+(26 Aug). "Seven institutions" is now "nine" on the homepage and in the
+comments.

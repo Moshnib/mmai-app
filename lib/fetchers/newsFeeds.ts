@@ -38,7 +38,7 @@ export interface FeedItem {
 type Raw = { title: string; url: string; at: string };
 
 /** RSS is regular enough to read without a parser, and a dependency that
- *  runs on every cache refresh to read seven feeds is not a trade worth
+ *  runs on every cache refresh to read nine feeds is not a trade worth
  *  making. Deliberately strict: an item missing a title, a link or a date
  *  is skipped rather than guessed at.
  *
@@ -153,6 +153,48 @@ export function parseIcs(text: string, linkFor: (title: string) => string): Raw[
   return out;
 }
 
+/** Atom, which Statistics Canada publishes The Daily as. Strict like
+ *  parseRss: an entry without a title, a usable link or a date is skipped.
+ *
+ *  THE LINK is the entry's rel="alternate" one, or one with no rel --
+ *  never "self" or "related", which point at the feed, not the release.
+ *  THE DATE is <published> when there is one, because <updated> moves
+ *  whenever an item is corrected and an old release would jump back to
+ *  the top as news. Statistics Canada's entries carry only <updated>
+ *  (checked 22 September 2026), so for it that is what there is.
+ *  THE TITLE may be xhtml (markup inside it) or html (markup written as
+ *  entities): decoded first, then the tags stripped, so neither leaves a
+ *  visible "<span>" behind. */
+export function parseAtom(xml: string): Raw[] {
+  const out: Raw[] = [];
+  for (const block of xml.split(/<entry(?:\s[^>]*)?>/).slice(1)) {
+    const entry = block.split("</entry>")[0];
+    const titleMatch = entry.match(/<title[^>]*>([\s\S]*?)<\/title>/);
+    const title = titleMatch ? decode(decode(titleMatch[1]).replace(/<[^>]*>/g, " ")) : "";
+    const links = [...entry.matchAll(/<link\b([^>]*)>/g)].map((m) => m[1]);
+    const link = links.find((attrs) => /\brel="alternate"/.test(attrs)) ?? links.find((attrs) => !/\brel=/.test(attrs));
+    const url = link?.match(/\bhref="([^"]+)"/)?.[1];
+    const date = entry.match(/<published>([^<]+)<\/published>/)?.[1] ?? entry.match(/<updated>([^<]+)<\/updated>/)?.[1];
+    if (!title || !url || !date) continue;
+    const t = Date.parse(date.trim());
+    if (!Number.isFinite(t)) continue;
+    out.push({ title, url: decode(url), at: new Date(t).toISOString() });
+  }
+  return out;
+}
+
+/** A feed's link becomes an href on this site, so it must be https -- and,
+ *  for a source that names its hosts, on one of them. A link that is not
+ *  is dropped with its item, not rewritten. */
+export function safeLink(url: string, hosts?: string[]): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && (!hosts || hosts.includes(u.hostname));
+  } catch {
+    return false;
+  }
+}
+
 /** One source's items, parsed and filtered to what this site is about.
  *  The format comes from the registry, never from sniffing the content:
  *  a feed whose text happens to contain "<entry" is still RSS. */
@@ -161,10 +203,13 @@ export function readFeed(text: string, source: NewsSource): FeedItem[] {
   if (source.format === "ics") {
     if (source.id !== "bls-calendar") throw new Error(`${source.id}: no link map for this calendar`);
     raw = parseIcs(text, blsPageFor);
+  } else if (source.format === "atom") {
+    raw = parseAtom(text);
   } else {
     raw = parseRss(text);
   }
   return raw
+    .filter((r) => safeLink(r.url, source.linkHosts))
     .filter((r) => !source.keywords || source.keywords.test(r.title) || source.keywords.test(r.url))
     .filter((r) => !source.exclude || !source.exclude.test(r.title))
     .map((r) => ({
@@ -229,7 +274,7 @@ export function assembleNews(results: Array<{ source: NewsSource; items: FeedIte
 //
 //  The whole set also has a BUDGET. The strip gives the route four
 //  seconds before it starts without announcements, so a cold cache
-//  window must not spend seven timeouts in series.
+//  window must not spend nine timeouts in series.
 // ============================================================
 
 const PER_FEED_MS = 3000;
@@ -244,7 +289,7 @@ async function fetchOne(source: NewsSource, deadline: number): Promise<FeedItem[
       // BLS answers 403 without one, and a request that says who it is
       // and how to reach the site is the polite form anyway.
       "user-agent": "Mozilla/5.0 (compatible; MMAI/1.0; +https://www.mmai.markets)",
-      accept: source.format === "ics" ? "text/calendar" : "application/rss+xml, application/xml, text/xml",
+      accept: source.format === "ics" ? "text/calendar" : "application/rss+xml, application/atom+xml, application/xml, text/xml",
     },
     next: { revalidate: 0 },
   });

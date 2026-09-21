@@ -9,7 +9,7 @@ import { useNow, formatAgo } from "@/lib/liveTime";
 /**
  * WHAT THE INSTITUTIONS HAVE SAID, AND WHAT THEY WILL PUBLISH NEXT.
  *
- * Seven central banks and statistics offices, each read from its own
+ * Nine central banks and statistics offices, each read from its own
  * feed (lib/newsSources.ts). No headlines from news outlets -- this
  * site's whole claim is that every line traces to the institution that
  * published it, and an aggregated headline cannot.
