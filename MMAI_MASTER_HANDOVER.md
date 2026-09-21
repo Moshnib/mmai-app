@@ -2853,9 +2853,16 @@ found and what was changed.
 - From 16 to 20 September: the 06:10 slot started 10:54–11:18, 12:00
   started 15:45–15:53, 18:00 started 20:26–20:38. On the 19th the morning
   run never started.
-- The schedule is now four runs at :43 (05:43, 11:43, 17:43, 22:43 UTC),
-  per GitHub's advice to avoid the congested minutes. A fourth run
-  catches a dropped one within about six hours.
+- The schedule is now four runs at :43: 10:43, 13:43, 16:43 and 18:43
+  UTC, per GitHub's advice to avoid the congested minutes. Why these hours
+  (caught in review): the FIRST run that lands each UTC day writes that
+  day's row, and the rest are no-ops. A first write before ~10:00 UTC
+  would publish the 09:00–10:00 European releases a day late (the old
+  06:10 got them same-day only because GitHub started it at ~11:00). A
+  slot after 18:43, if it ran 5 h late, would cross UTC midnight and write
+  tomorrow's row before tomorrow's releases, and the watchdog would then
+  see a healthy day as ~20 h stale. Keep the last slot early enough that a
+  late run cannot cross midnight.
 - The homepage now says "rechecked four times a day".
 - **The watchdog moved from 15:30 to 23:30 UTC.** Only the first run that
   lands each day writes rows, so at 15:30 a day with a dropped morning run
@@ -2866,6 +2873,9 @@ found and what was changed.
 
 **Found and fixed: the Observatory showed N/A when a source was down all
 day** (the cross-day case §38.1 left open).
+- The page now reads the whole carry window BY DATE (the last 15 days,
+  ceiling 2000 rows), not the newest 200 rows. Up to four rows a day per
+  incomplete country could otherwise stop the carry short of 14 days.
 - `carryForwardObservatory` (`lib/observatoryRead.ts`, read time, never
   written back) fills a missing figure from the most recent row within
   14 days that has BOTH value and date.
@@ -2882,6 +2892,18 @@ day** (the cross-day case §38.1 left open).
 - The "8th market" item: rewritten, as there are nine markets now.
 - The news-feed section: marked live.
 - The cross-day Observatory gap: fixed.
+
+**Known and accepted, recorded so nobody re-investigates:**
+- `Access-Control-Allow-Origin: *` on prerendered pages is Vercel's CDN
+  default, not set in this code. It exposes only pages that are already
+  public; there are no cookies or auth. The API routes do not carry it.
+- The public-form rate limiter keeps its count per server instance
+  (`lib/rateLimit.ts`), so it slows a flood rather than stopping one.
+  Known since §34.
+- CSP `script-src 'unsafe-inline'` is measured as necessary (the
+  next.config.ts header comment).
+- The deployed old-address redirect was checked with curl on 21 September:
+  `mmai-app.vercel.app/about` answers 308 to `https://www.mmai.markets/about`.
 
 **Left, for the owner:**
 - Remote branches: 59 belong to merged PRs and can be deleted. Two are

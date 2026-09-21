@@ -32,10 +32,15 @@
  *  the first run that lands each day writes rows (the freshness guard
  *  makes the rest no-ops). At 15:30 a day whose morning run was dropped
  *  would read as ~28 hours stale and send a false alarm; at 23:30 the day's
- *  four runs have all had their chance. On a healthy day the newest reading
- *  is ~12–18 hours old at 23:30. Past 20 hours, nothing landed since about
- *  03:30 UTC: a whole day's runs have failed, and it is reported the same
- *  night rather than the next day. */
+ *  four runs (10:43–18:43 UTC, refresh.yml) have all had their chance, even
+ *  five hours late. On a healthy day the newest reading is under ~13 hours
+ *  old at 23:30. Past 20 hours, nothing has landed since about 03:30 UTC: a
+ *  whole day's runs have failed, and it is reported the same night.
+ *
+ *  Vercel Hobby crons are accurate only to the hour, so "30 23" fires
+ *  somewhere between 23:00 and 23:59 -- harmless with that schedule. The
+ *  schedule's last slot must stay early enough that a late run cannot
+ *  cross UTC midnight; see the comment on the crons in refresh.yml. */
 export const WATCHDOG_OVERDUE_MS = 20 * 60 * 60 * 1000;
 
 export const ACTIONS_URL = "https://github.com/Moshnib/mmai-app/actions/workflows/refresh.yml";

@@ -85,6 +85,12 @@ export function carryForwardObservatory(rows: readonly ObservatoryRow[], now: nu
 
 export async function fetchObservatoryRows(): Promise<Map<string, ObservatoryShown>> {
   const supabase = getPublicSupabaseClient();
+  const now = Date.now();
+  // THE WHOLE CARRY WINDOW, BY DATE -- not "the newest N rows". Every run
+  // writes a row for each incomplete country, up to four a day, so a fixed
+  // row count could stop short of fourteen days and the carry-forward
+  // above would quietly give up early. One day of margin on the bound.
+  const since = new Date(now - (MAX_OBSERVATORY_CARRY_DAYS + 1) * 86_400_000).toISOString();
   const { data, error } = await supabase
     .from("observatory_indicators")
     .select(
@@ -93,11 +99,12 @@ export async function fetchObservatoryRows(): Promise<Map<string, ObservatorySho
         "policy_rate_observation_date, debt_observation_period, yield_observation_date, " +
         "observation_date, fetched_at, source_note",
     )
+    .gte("fetched_at", since)
     .order("observation_date", { ascending: false })
     .order("fetched_at", { ascending: false })
-    // Generous: a handful of countries at one row per refresh, three
-    // refreshes a day. 200 is weeks of reach even after a force-run.
-    .limit(200);
+    // A ceiling, not the window: five countries, a few rows a day, fifteen
+    // days is well under this even after force-runs.
+    .limit(2000);
 
   if (error) throw new Error(error.message);
   // Through unknown, because the generated Supabase types are built from
@@ -110,20 +117,18 @@ export async function fetchObservatoryRows(): Promise<Map<string, ObservatorySho
   // A country in the registry with no row yet is absent from the map,
   // and the page renders it as awaiting its first reading rather than
   // pretending it has one.
-  const byCountry = newestByCountry(rows.filter((r) => OBSERVATORY_CODES.includes(r.country_code)));
-  // Each country's full history in the same order newestByCountry uses,
-  // so the row shown first is the same row it would have picked.
-  const now = Date.now();
+  // Grouped per country in newestByCountry's order (sorted once), so the
+  // row shown first is exactly the row newestByCountry would pick.
+  const sorted = [...rows.filter((r) => OBSERVATORY_CODES.includes(r.country_code))].sort((a, b) =>
+    a.observation_date !== b.observation_date
+      ? (a.observation_date < b.observation_date ? 1 : -1)
+      : (a.fetched_at < b.fetched_at ? 1 : -1),
+  );
+  const history = new Map<string, ObservatoryRow[]>();
+  for (const r of sorted) (history.get(r.country_code) ?? history.set(r.country_code, []).get(r.country_code)!).push(r);
   const out = new Map<string, ObservatoryShown>();
-  for (const code of byCountry.keys()) {
-    const history = rows
-      .filter((r) => r.country_code === code)
-      .sort((a, b) =>
-        a.observation_date !== b.observation_date
-          ? (a.observation_date < b.observation_date ? 1 : -1)
-          : (a.fetched_at < b.fetched_at ? 1 : -1),
-      );
-    const shown = carryForwardObservatory(history, now);
+  for (const [code, rowsForCountry] of history) {
+    const shown = carryForwardObservatory(rowsForCountry, now);
     if (shown) out.set(code, shown);
   }
   return out;
