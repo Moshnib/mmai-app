@@ -3146,6 +3146,11 @@ a single cached read of the nine feeds.
 - "Known channel" is `Object.hasOwn`, not `in`: with `in`,
   `/videos?bank=constructor` passed as a bank (the reviewer's catch; now
   tested).
+- **CI caught an aborted request on `/videos`.** The route reads nine feeds
+  (with retries) before answering, so the runtime check could close the
+  tab mid-load. `scripts/check-runtime-errors.ts` now excuses ONLY an
+  abort of `/api/press-videos` (`ABORTS_ONLY`); a 404 or 503 there is
+  still reported.
 
 **`/videos`** (`app/videos/`):
 - The page shell is static; the list loads after it opens.
