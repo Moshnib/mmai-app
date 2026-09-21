@@ -129,6 +129,9 @@ console.log("\nvercel.json schedules the watchdog and nothing else\n");
   const frameSrc = cfg.match(/"frame-src ([^"]*)"/)?.[1];
   check("CSP frame-src is exactly youtube-nocookie", frameSrc, "https://www.youtube-nocookie.com");
   check("CSP still forbids framing this site", /"frame-ancestors 'none'"/.test(cfg), true);
+  // The recent press-conference thumbnails: YouTube's image server, and no
+  // other outside image host.
+  check("CSP img-src is exactly self, data:, blob: and i.ytimg.com", cfg.match(/"img-src ([^"]*)"/)?.[1], "'self' data: blob: https://i.ytimg.com");
 }
 
 console.log("\nPublic write rate limit\n");

@@ -2199,3 +2199,35 @@ a.dim-axis-row:hover { background: var(--hover); }
   color: var(--slate); font-family: var(--font-mono); font-size: var(--t-micro); padding: 4px 10px; cursor: pointer;
 }
 .press-close:hover, .press-close:focus-visible { color: var(--ink); border-color: var(--slate); }
+/* Recent press conferences: tiles under the live card. Four on a phone
+   (the fifth and sixth are hidden, and hidden lazy images never load),
+   up to six on a wide screen. */
+.press-recent { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--hair); }
+.press-recent > .press-tag { margin: 0; }
+.press-tiles {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 759px) { .press-tiles > li:nth-child(n + 5) { display: none; } }
+@media (min-width: 760px) { .press-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.press-tile {
+  display: grid; gap: 6px; width: 100%; padding: 0; text-align: left; cursor: pointer;
+  background: transparent; border: 0; color: var(--ink);
+}
+.press-thumb {
+  position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
+  border: 1px solid var(--hair); border-radius: var(--card-radius); background: var(--card-bg);
+}
+.press-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.press-thumb-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--on-ink); border: 1px solid var(--accent); color: var(--accent); font-size: var(--t-small);
+}
+.press-tile:hover .press-thumb, .press-tile:focus-visible .press-thumb, .press-tile.is-open .press-thumb { border-color: var(--accent); }
+.press-tile:hover .press-thumb-play, .press-tile:focus-visible .press-thumb-play { background: var(--accent); color: var(--on-ink); }
+.press-tile-bank { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--slate); }
+.press-tile-title {
+  font-size: var(--t-small); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}

@@ -226,8 +226,10 @@ export default function AboutPage() {
             <strong style={{ color: "var(--ink-soft)" }}>Live press conferences.</strong> The homepage shows the
             next scheduled press conference from the Federal Reserve, the ECB, the Bank of England and the Bank of
             Canada, from each bank&apos;s published calendar; unscheduled meetings do not appear. The video is the
-            bank&apos;s own stream, played by YouTube in its privacy-enhanced mode, and nothing from YouTube loads
-            until you press play. The Federal Reserve streams only on its own website, so its link opens there.
+            bank&apos;s own stream, played by YouTube in its privacy-enhanced mode, and no video loads until you
+            press play. The Federal Reserve streams only on its own website, so its link opens there. Below it
+            are the most recent press conferences each bank&apos;s YouTube channel still lists; their small preview
+            pictures come from YouTube&apos;s image server, which sets no cookies.
           </p>
         </div>
       </div>

@@ -3038,3 +3038,64 @@ About page says so.
 - `useNow` (`lib/liveTime.ts`) also re-reads the clock when a tab becomes
   visible again, because background tabs slow timers down.
 - The About page explains the card.
+
+## 44. Recent press-conference videos under the live card (2026-09-21)
+
+The owner looked at §43 and saw no video: between meetings the card was
+only a line of text, for five weeks at a time. They asked for recent
+videos, not only live ones.
+
+**What it is.** Under "NEXT LIVE", a "RECENT PRESS CONFERENCES" row of
+tiles. Each tile is a YouTube thumbnail with the bank, the date and the
+title. Tapping a tile plays that video in one shared player above the
+row, with "Watch on YouTube" and "Close player" under it.
+- A phone shows 4 tiles; a wide screen shows up to 6. Hidden tiles' lazy
+  images never load.
+- Opening a video moves keyboard focus to Close; closing hands it back to
+  the tile.
+
+**Where the videos come from.** `lib/fetchers/pressVideos.ts` reads each
+bank's public YouTube feed (`/feeds/videos.xml?channel_id=`, no key), using
+the same four official channels as §43.
+- Title filters keep only press conferences and drop Shorts. The ECB
+  filter names Governing Council / monetary policy conferences, so its
+  Banking Supervision press conferences are left out. A leading "Live - "
+  is stripped, because these are recordings by the time they show.
+- A 200 answer that is not a feed (YouTube's consent page) counts as a
+  failure, so it is retried and never stored as an empty channel.
+- The newest of each bank is picked first, then the rest by date, so a
+  quarterly Bank of England conference is not pushed out by busier
+  channels.
+- Each feed lists only ~15 uploads, so a bank's latest can drop out. Then
+  that bank is absent; nothing is stored. The About page promises only
+  what the channels still list.
+
+**Served by `app/api/press-videos`.**
+- The route is dynamic, with the CDN caching a good answer for an hour
+  (stale for a day).
+- Each feed gets one retry. If every feed fails, the route answers 503,
+  never cached, and the row hides.
+- It is not `revalidate`, on purpose: a pre-rendered route would store an
+  empty list for the whole hour.
+
+**Checked on 21 September:**
+- The route returns five videos: BoC 21 Sep, Fed 16 Sep and 29 Jul, ECB
+  10 Sep, BoE 30 Jul.
+- In a browser, the phone showed 4 tiles and desktop 5, all thumbnails
+  loaded, and there were no CSP errors.
+- A tap gives exactly one player, and the video actually played (0:01 of
+  31:51).
+
+**Tests.** `scripts/test-press-videos.ts` (in CI) runs against the four
+REAL feeds as captured (`scripts/fixtures/press-videos/`). It covers the
+filters, the Shorts, rejected ids, decoded titles, the per-bank pick and
+the cap, the ECB filter, the "Live - " strip and a consent-page
+fixture. Seven mutations were caught.
+
+**Also changed:**
+- CSP `img-src` adds `https://i.ytimg.com` only, pinned exactly in
+  `verify-security.ts`.
+- The thumbnail URL is built from the validated 11-character id, never
+  taken from the feed.
+- The shared video type and URL helpers live in `lib/pressConferences.ts`,
+  so the browser never downloads the feed reader.

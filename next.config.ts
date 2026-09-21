@@ -27,6 +27,11 @@ const SUPABASE_ORIGIN = (() => {
  *   fonts.gstatic.com        the font files it pulls in
  *   <project>.supabase.co    the live indicator data, fetched client-side
  *
+ * Added 21 September 2026 for the homepage's press-conference card
+ * (components/LivePressCard.tsx), and nothing else: i.ytimg.com for the
+ * recent-video thumbnails (lazy, cookieless) and youtube-nocookie.com as
+ * the only frame, loaded when a reader presses play.
+ *
  * No ad network and no third-party script of any kind. Visitor statistics
  * are Vercel Web Analytics, which is served from this site's own origin
  * (/_vercel/insights/*) and sets no cookies, so 'self' already covers it
@@ -97,7 +102,9 @@ const CSP = [
   "font-src 'self' https://fonts.gstatic.com",
   // blob: for the CSV export buttons, which build the file in the browser
   // and hand it over as an object URL. data: for the generated favicon.
-  "img-src 'self' data: blob:",
+  // i.ytimg.com: the recent press-conference thumbnails (LivePressCard),
+  // lazy and cookieless. Pinned by verify-security.ts.
+  "img-src 'self' data: blob: https://i.ytimg.com",
   `connect-src 'self'${SUPABASE_ORIGIN ? ` ${SUPABASE_ORIGIN}` : ""}`,
   "object-src 'none'",
   "base-uri 'self'",

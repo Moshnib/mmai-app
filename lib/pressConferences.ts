@@ -199,3 +199,27 @@ export const youtubeChannelUrl = (c: Channel) => `https://www.youtube.com/channe
  *  presses play (components/LivePressCard.tsx). */
 export const youtubeLiveEmbedUrl = (c: Channel) =>
   `https://www.youtube-nocookie.com/embed/live_stream?channel=${c.youtubeChannelId}&autoplay=1`;
+
+// ------------------------------------------------------------
+//  RECORDED CONFERENCES. The shape lib/fetchers/pressVideos.ts produces
+//  on the server and the card plays in the browser. Here, not there, so
+//  the browser never downloads the feed reader.
+// ------------------------------------------------------------
+
+export interface PressVideo {
+  bank: BankId;
+  videoId: string;
+  title: string;
+  /** ISO, when YouTube published it. */
+  published: string;
+}
+
+/** YouTube video ids are exactly eleven of these. Anything else is not
+ *  put into a URL -- checked on the server and again in the browser. */
+export const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+
+export const youtubeVideoUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
+export const youtubeVideoEmbedUrl = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+/** YouTube's own 320x180 thumbnail, built from the checked id rather than
+ *  taken from the feed, so only i.ytimg.com is ever asked. */
+export const youtubeThumbUrl = (id: string) => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
