@@ -209,6 +209,11 @@ export function readFeed(text: string, source: NewsSource): FeedItem[] {
     raw = parseRss(text);
   }
   return raw
+    // The BEA writes the odd link with no scheme ("www.bea.gov/news/..."):
+    // on one of the source's own hosts, it is upgraded to https rather
+    // than the check loosened. Anything else scheme-less is still dropped.
+    .map((r) => (!/^[a-z][a-z0-9+.-]*:/i.test(r.url) && source.linkHosts?.some((h) => r.url.startsWith(`${h}/`))
+      ? { ...r, url: `https://${r.url}` } : r))
     .filter((r) => safeLink(r.url, source.linkHosts))
     .filter((r) => !source.keywords || source.keywords.test(r.title) || source.keywords.test(r.url))
     .filter((r) => !source.exclude || !source.exclude.test(r.title))

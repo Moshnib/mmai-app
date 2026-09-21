@@ -3210,7 +3210,9 @@ The owner asked for more news, and for Gulf news.
   - titles decoded first and then stripped of tags.
 - `safeLink` drops an item unless its link is https and, for sources that
   name `linkHosts`, on the agency's own host. A feed's link becomes an
-  href on this site.
+  href on this site. A scheme-less link on the source's own host (the BEA writes one:
+  `www.bea.gov/news/...`) is upgraded to https, not let through as is.
+  Checked against all nine live feeds: nothing else is dropped.
 
 **Tests** (`scripts/test-news-feeds.ts`, fixtures in
 `scripts/fixtures/news/`) use both real feeds as captured. Four mutations

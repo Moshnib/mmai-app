@@ -361,10 +361,13 @@ const fi = (source: string, title: string, at: number, url = `https://x/${encode
   const offsite = readFeed(rss(
     item("GDP (Advance Estimate), 3rd Quarter 2026", "https://evil.example/gdp", "Thu, 29 Oct 2026 08:30:00 EDT") +
     item("GDP (Third Estimate), 2nd Quarter 2026", "http://www.bea.gov/gdp", "Thu, 24 Sep 2026 08:30:00 EDT") +
-    item("Personal Income and Outlays, August 2026", "https://www.bea.gov/pio", "Fri, 25 Sep 2026 08:30:00 EDT")
+    item("Personal Income and Outlays, August 2026", "https://www.bea.gov/pio", "Fri, 25 Sep 2026 08:30:00 EDT") +
+    // As the BEA's own feed writes one of its links: no scheme at all.
+    item("GDP (Advance Estimate), 4th Quarter and Year 2025", "www.bea.gov/news/2026/gdp-advance", "Thu, 26 Feb 2026 08:30:00 EST") +
+    item("GDP (Second Estimate), 4th Quarter 2025", "evil.example/www.bea.gov/x", "Thu, 26 Mar 2026 08:30:00 EDT")
   ), src("bea-releases"));
-  check(offsite.map((i) => i.url).join() === "https://www.bea.gov/pio",
-    "the reader drops an item whose link is off the agency's site or not https", `kept ${offsite.map((i) => i.url).join()}`);
+  check(offsite.map((i) => i.url).join() === "https://www.bea.gov/pio,https://www.bea.gov/news/2026/gdp-advance",
+    "off-site and http links are dropped; a scheme-less link on the agency's own host is upgraded to https", `kept ${offsite.map((i) => i.url).join()}`);
 }
 
 console.log("");
