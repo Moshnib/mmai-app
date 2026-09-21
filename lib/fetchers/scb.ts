@@ -27,7 +27,7 @@
 // unemployment 8.6% (2026M07), GDP growth 3.3% (2026K2).
 //
 // RATE LIMIT: ten call-ups per ten seconds per IP, and 100,000 values per
-// table. This module makes three calls per refresh, three times a day --
+// table. This module makes three calls per refresh, four times a day --
 // nine a day -- and each asks for a single observation. Recorded because
 // it is what would break if a PAGE were ever pointed at this directly
 // instead of the scheduled job.

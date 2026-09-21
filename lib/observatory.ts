@@ -144,7 +144,7 @@ export interface ObservatoryRow {
 // ============================================================
 //  RETRYING A MISSED FIGURE, WITHOUT MAKING ANYTHING WORSE
 //
-//  The refresh runs three times a day, but the route used to stop early
+//  The refresh runs four times a day, but the route used to stop early
 //  once every SCORED market had a reading for the day -- before the
 //  Observatory step. So the Observatory was written by the first run
 //  only, and one failed fetch stayed N/A until the next day: Denmark's

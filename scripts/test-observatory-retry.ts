@@ -15,6 +15,7 @@
 // ============================================================
 
 import { OBSERVATORY, needsObservatoryFetch, fillFromEarlier, type ObservatoryRow } from "@/lib/observatory";
+import { carryForwardObservatory } from "@/lib/observatoryRead";
 
 let failed = false;
 const fail = (m: string) => { failed = true; console.error("  FAIL  " + m); };
@@ -73,6 +74,43 @@ else ok("a euro member is complete without a policy rate");
   const out = fillFromEarlier(fresh, undefined);
   if (out.debt_pct_gdp !== null) fail("a first run of the day invented a figure");
   else ok("with nothing earlier today, a gap stays a gap");
+}
+
+// ---------- across days: a source down all day (read time) ----------
+{
+  const NOW = Date.parse("2026-09-21T12:00:00Z");
+  const day = (d: number) => new Date(NOW - d * 86_400_000).toISOString();
+  const row = (fetched: string, over: Partial<ObservatoryRow>): ObservatoryRow => ({
+    ...(full as ObservatoryRow), fetched_at: fetched, observation_date: fetched.slice(0, 10), source_note: null, ...over,
+  });
+
+  const shown = carryForwardObservatory([
+    row(day(0), { inflation: null, inflation_observation_date: null }),
+    row(day(1), { inflation: null, inflation_observation_date: null }),
+    row(day(2), { inflation: 2.1, inflation_observation_date: "2026-07-01" }),
+  ], NOW);
+  if (shown?.inflation !== 2.1 || shown.inflation_observation_date !== "2026-07-01") fail(`two missed days lost the figure or its date: ${shown?.inflation} ${shown?.inflation_observation_date}`);
+  else if (shown.carried.join() !== "inflation") fail(`the carried figure is not declared: ${shown.carried}`);
+  else ok("a figure missed two days running shows its last reading, under its own date, declared as carried");
+
+  const expired = carryForwardObservatory([
+    row(day(0), { inflation: null, inflation_observation_date: null }),
+    row(day(15), { inflation: 2.1, inflation_observation_date: "2026-07-01" }),
+  ], NOW);
+  if (expired?.inflation !== null) fail("a figure from a source dead for fifteen days is still shown");
+  else ok("after fourteen days a dead source is a gap, not an old number");
+
+  const undated = carryForwardObservatory([
+    row(day(0), { gdp_growth: null, gdp_observation_date: null }),
+    row(day(1), { gdp_growth: 1.4, gdp_observation_date: null }),
+    row(day(3), { gdp_growth: 1.2, gdp_observation_date: "2026-06-01" }),
+  ], NOW);
+  if (undated?.gdp_growth !== 1.2 || undated.gdp_observation_date !== "2026-06-01") fail(`a value without its date was carried: ${undated?.gdp_growth} ${undated?.gdp_observation_date}`);
+  else ok("a stored value without its date is skipped for an older one that has both");
+
+  const clean = carryForwardObservatory([row(day(0), {}), row(day(1), { inflation: 9 })], NOW);
+  if (!clean || clean.inflation !== full.inflation || clean.carried.length !== 0) fail("a complete row was altered by an older one");
+  else ok("a complete row is shown exactly as fetched");
 }
 
 console.log("");

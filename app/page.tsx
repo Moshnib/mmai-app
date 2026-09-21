@@ -328,7 +328,7 @@ export default function OverviewPage() {
               claim rather than a sign of life. */}
           <LiveBar
             live={dataSource === "live"}
-            facts={[`${MARKET_COUNT_WORD_CAP.toLowerCase()} markets · rechecked three times a day`]}
+            facts={[`${MARKET_COUNT_WORD_CAP.toLowerCase()} markets · rechecked four times a day`]}
             stamp={lastUpdated}
             staleLabel="LAST KNOWN FIGURES — LIVE DATA UNREACHABLE"
           />

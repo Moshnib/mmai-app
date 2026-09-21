@@ -1,5 +1,5 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-18 (own domain live; email sends; security patch; news feed built)*
+*Last updated: 2026-09-21 (full audit: security, live site, data, loose ends)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
@@ -53,7 +53,7 @@ Details in the handover, §36.
       date. It only matters for running a refresh by hand from the laptop;
       the site and GitHub have the right one.
 
-## 🚧 Built, waiting for review and your GO — the news feed (branch `news-sources`)
+## ✅ 19 September — the news feed from seven institutions is live (PR #71)
 The homepage news section and the strip along the top now read seven
 institutions: the US Fed, the ECB, the Bank of Canada, the Reserve Bank
 of Australia, the UK's ONS, Statistics Norway and the US labour-statistics
@@ -72,7 +72,7 @@ release calendar. Tested against all seven live feeds on 18 September.
   economy news (rate decisions, policy reports, financial stability).
   Bank notes, staff appointments and payments notices are dropped.
 
-**Left:** the reviewer's pre-merge check, then your GO to merge.
+Merged and live since 19 September.
 
 The licence checks are **done** — seven feeds cleared. Refused, on their
 own published terms: the Bank of England and Bank of Japan (commercial
@@ -100,7 +100,7 @@ Root cause unconfirmed (Vercel's "Secret" type variables can never be
 viewed again once saved, so there was no way to inspect what was
 actually stored) — most likely corrupted when it was last changed on
 2026-08-22. **Fixed**: deleted and recreated `CRON_SECRET` in Vercel
-with a known value (`mmai-verify-2026`, same as documented), redeployed,
+with a new value (not written here: passwords stay out of these notes), redeployed,
 and re-verified — both endpoints now correctly reject requests with a
 missing or wrong secret, and accept only the right one. This predates
 Gulf Watch entirely; it was just discovered while testing it.
@@ -138,7 +138,7 @@ and Gulf Watch content on the "Learn More" page. Along the way:
 - [ ] Saudi Arabia's real estate (KAPSARC) — still needs your decision: send
       a permission email (their terms conflict with their own "public
       domain" label), or skip it.
-- [ ] Bahrain's real estate — already agreed to skip, source is too fragile.
+- [x] Bahrain's real estate — closed: agreed to skip, the source is too fragile.
 
 ## ✅ Just finished — full site audit (2026-08-24)
 - [x] **Confirmed the daily auto-refresh runs on its own.** On 2026-08-23 all
@@ -176,11 +176,9 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       Rate, Bank of Canada, several plain-language rewrites)
 
 ## 🔜 Next up
-- [ ] **Send the Norges Bank email.** Draft already sent to you as
-      `mmai-app-norges-bank-email-draft.txt` — their own website doesn't
-      clearly confirm whether commercial use of the Key Policy Rate data
-      is allowed. Send it whenever convenient, no rush while the site
-      stays non-commercial.
+- [x] ~~Send the Norges Bank email.~~ **Not needed** (closed in the 21
+      September audit): Norway's policy rate has come through the BIS
+      since 12 September, and the BIS's terms state reuse plainly.
 - [ ] **IMF gate — before this site is ever monetized** (added 19
       September): Gulf Watch now uses IMF data (Oman, Kuwait and UAE
       inflation; Qatar's policy rate). Free publishing with credit is
@@ -208,14 +206,10 @@ and Gulf Watch content on the "Learn More" page. Along the way:
 - [ ] **Add BEA_API_KEY and EIA_API_KEY to your local `.env.local`** if you
       ever want local testing on this machine to fully match production
       (currently only in Vercel).
-- [ ] **Minor chart-labeling bug found during review (not urgent):** every
-      indicator gets stamped with today's date when saved, even if the
-      real data is from a year ago (true for any annual-frequency source —
-      World Bank figures, etc.). Right now this makes an annual number look
-      like it just changed "this year" on the trend charts when it didn't.
-      Doesn't affect the actual scores, just the chart's x-axis label — a
-      real fix would mean using each source's own reported date instead of
-      today's date when saving to the database.
+- [x] ~~Minor chart-labeling bug~~ **Already fixed** (confirmed in the 21
+      September audit): every figure has stored its own reporting date
+      since August, so an annual number no longer looks like it changed
+      this year.
 
 ## 🤔 Decide when ready (no rush)
 - [x] **Domain name** — bought 17 September 2026: **mmai.markets**, at
@@ -224,10 +218,10 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       domain like `marketpuls.com`? (Discussed: reasonable name, but the
       missing "e" reads as a typo and it's a bit generic — worth weighing
       against something built around "Moshnib" or "MMAI" instead.)
-- [ ] **8th market?** Brazil was researched and looks workable (just needs
-      one more license double-check before building). New Zealand and
-      South Korea were also looked at but have unresolved technical/legal
-      snags.
+- [ ] **A 10th scored market?** (There are nine now; South Korea joined on
+      13 September.) Czechia is the strongest candidate and is already on
+      the Observatory being evaluated. Brazil has excellent data but a
+      share-alike licence (ODbL) that needs your decision.
 
 ## 📌 Standing reminders
 - Gulf Watch's full step-by-step build plan lives in `MMAI_MASTER_HANDOVER.md`
@@ -264,9 +258,9 @@ and Gulf Watch content on the "Learn More" page. Along the way:
       of the handover for the list tested live.
 - [x] **Fixed 19 September:** if a reading failed, the Observatory
       showed N/A all day. Every refresh now retries it (handover §38.1).
-- [ ] **Still open:** a source that is down ALL day (or fails the first
-      run with nothing earlier that day) still shows N/A. Showing
-      yesterday's figure with its date instead is a small follow-up.
+- [x] **Fixed 21 September:** a source down ALL day now shows its last
+      published figure, under that figure's own date, marked "did not
+      refresh today", for up to 14 days (handover §41).
 
 > The current state of the whole project, in one page, is §28 of
 > MMAI_MASTER_HANDOVER.md. Start there in a new chat.

@@ -21,16 +21,18 @@ let failed = false;
 const fail = (m: string) => { failed = true; console.error("  FAIL  " + m); };
 const ok = (m: string) => console.log("  ok    " + m);
 
-const NOW = Date.parse("2026-09-19T15:30:00Z");
+const NOW = Date.parse("2026-09-19T23:30:00Z");
 const hoursAgo = (h: number) => new Date(NOW - h * 3_600_000).toISOString();
 const w = (name: string, h: number | null, group = "scored") => ({ name, group, newest: h == null ? null : hoursAgo(h) });
 const LIMIT_H = WATCHDOG_OVERDUE_MS / 3_600_000;
 
 // ---------- a normal day ----------
 {
-  // At the 15:30 check, the 12:00 run landed 3.5 h ago; if it was slow,
-  // the 06:10 one 9 h ago. Either is a normal day.
-  const v = assess([w("United States", 3.5), w("Japan", 9), w("Oman", 9, "Gulf Watch")], NOW);
+  // At the 23:30 check, the day's row landed when the first run did:
+  // around 11:00 on an ordinary day of GitHub delays (12.5 h), 06:00 on a
+  // prompt one (17.5 h), or late in the evening when the morning runs were
+  // dropped (3 h). All three are a normal day.
+  const v = assess([w("United States", 12.5), w("Japan", 17.5), w("Oman", 3, "Gulf Watch")], NOW);
   if (v.overdue.length !== 0) fail(`a normal day raised an alarm: ${v.overdue.map((o) => o.name).join(", ")}`);
   else ok("readings from this morning are not an outage");
 }
