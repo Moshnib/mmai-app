@@ -22,11 +22,22 @@
 //    News publishers   The Economist, Reuters, Bloomberg, the FT: their
 //                      terms forbid republishing, headlines included.
 //
+//  Checked on 22 September 2026, and not added:
+//
+//    Statistics Sweden  CC BY 4.0, but its only feed is in Swedish.
+//    Eurostat           its news-release feed has not changed since 2021.
+//    ABS (Australia)    no public feed found.
+//    Gulf central banks and statistics offices: only the UAE Central Bank
+//                      publishes a feed, every item in it is dated
+//                      "1 January 2000", and its terms page refuses
+//                      automated readers, so its licence could not be
+//                      read. No Gulf source until one can be.
+//
 //  A feed is only added here once its terms are read. "It responds" is
 //  not a licence.
 // ============================================================
 
-export type FeedFormat = "rss" | "ics";
+export type FeedFormat = "rss" | "ics" | "atom";
 
 export interface NewsSource {
   /** Stable id, used in tests and to tie back to the licence row. */
@@ -52,6 +63,9 @@ export interface NewsSource {
   /** At most this many from one feed, so a chatty source cannot crowd
    *  out the rest. The Fed's all-press feed alone carries twenty. */
   cap: number;
+  /** Where its links may point. A feed's link becomes an href on this
+   *  site, so for the newer sources only the agency's own hosts count. */
+  linkHosts?: string[];
 }
 
 export const NEWS_SOURCES: NewsSource[] = [
@@ -148,6 +162,39 @@ export const NEWS_SOURCES: NewsSource[] = [
     feedKind: "calendar",
     keywords: /consumer price|employment situation|producer price|real earnings|job openings/i,
     cap: 3,
+  },
+  {
+    // Public domain (bea.gov FAQ 145/147), checked 22 September 2026.
+    id: "bea-releases",
+    institution: "U.S. Bureau of Economic Analysis",
+    shortName: "BEA",
+    url: "https://apps.bea.gov/rss/rss.xml",
+    format: "rss",
+    feedKind: "announcement",
+    // The national releases only. Titled "GDP (Advance Estimate), ..." and
+    // "Personal Income and Outlays, <month>" (the PCE price index). The
+    // regional ones -- "Gross Domestic Product by State", "... by County",
+    // "... for Guam" -- are left out; anchored, so no link can match.
+    keywords: /^GDP \(|^Personal Income and Outlays,/,
+    cap: 2,
+    linkHosts: ["www.bea.gov", "apps.bea.gov"],
+  },
+  {
+    // Statistics Canada Open Licence, checked 22 September 2026: its
+    // releases may be reproduced, commercially too, credited and without
+    // suggesting endorsement. The Daily, as Atom.
+    id: "statcan-daily",
+    institution: "Statistics Canada",
+    shortName: "Statistics Canada",
+    url: "https://www150.statcan.gc.ca/n1/rss/dai-quo/0-eng.atom",
+    format: "atom",
+    feedKind: "announcement",
+    // The Daily publishes a few dozen releases a week, from fertilizer
+    // shipments to tuition fees. Kept: the figures the site scores for
+    // Canada -- prices, jobs and output.
+    keywords: /^Consumer Price Index,|^Labour Force Survey,|^Gross domestic product(,| by industry)/i,
+    cap: 2,
+    linkHosts: ["www.statcan.gc.ca", "www150.statcan.gc.ca"],
   },
 ];
 

@@ -1,7 +1,7 @@
 // ============================================================
 //  THE ANNOUNCEMENTS FEED, SERVED FROM THIS SITE
 //
-//  Seven institutions' own feeds (lib/newsSources.ts), read here rather
+//  Nine institutions' own feeds (lib/newsSources.ts), read here rather
 //  than by the browser: none of them sends the CORS header a browser
 //  needs, so a direct fetch from the page would simply fail. Reading them
 //  here also means each feed is read once every REVALIDATE_SECONDS for

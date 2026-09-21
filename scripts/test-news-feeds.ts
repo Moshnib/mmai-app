@@ -1,7 +1,7 @@
 // ============================================================
 //  THE NEWS BAND SAYS ONLY WHAT THE INSTITUTIONS SAID
 //
-//  Seven outside feeds reach the homepage and the strip along the top
+//  Nine outside feeds reach the homepage and the strip along the top
 //  (lib/newsSources.ts). None of them is scored, which is exactly why
 //  they need pinning -- nothing downstream would notice if they went
 //  wrong. What can go wrong, and none of it throws:
@@ -26,7 +26,9 @@
 //    npx tsx scripts/test-news-feeds.ts
 // ============================================================
 
-import { parseRss, parseIcs, readFeed, assembleNews, blsPageFor, type FeedItem } from "@/lib/fetchers/newsFeeds";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { parseRss, parseIcs, parseAtom, safeLink, readFeed, assembleNews, blsPageFor, type FeedItem } from "@/lib/fetchers/newsFeeds";
 import { groupNews, pickTickerFeed, feedKey } from "@/lib/newsGroups";
 import { NEWS_SOURCES, MAX_AGE_DAYS, MAX_AHEAD_DAYS, MAX_ITEMS, type NewsSource } from "@/lib/newsSources";
 
@@ -319,6 +321,53 @@ const fi = (source: string, title: string, at: number, url = `https://x/${encode
   const a = fi("BLS", "The Employment Situation", NOW + DAY, "https://www.bls.gov/ces/");
   const b = fi("BLS", "Real Earnings", NOW + DAY, "https://www.bls.gov/ces/");
   check(feedKey(a) !== feedKey(b), "two releases sharing one page still get separate keys", "two items share a React key");
+}
+
+// ---------- the BEA and Statistics Canada, from their real feeds ----------
+// Captured 22 September 2026 (scripts/fixtures/news). The BEA's is RSS
+// with <item name="..."> and "EDT" dates; Statistics Canada's is Atom with
+// xhtml titles and only <updated>.
+{
+  const fx = (f: string) => readFileSync(join(__dirname, "fixtures", "news", f), "utf8");
+  const bea = readFeed(fx("bea-2026-09-22.xml"), src("bea-releases"));
+  const beaTitles = bea.map((i) => i.title);
+  check(beaTitles.length > 0 && beaTitles.every((t) => /^GDP \(|^Personal Income and Outlays,/.test(t)),
+    `BEA: only national GDP and Personal Income and Outlays (${beaTitles.length} kept)`, `BEA kept ${JSON.stringify(beaTitles.slice(0, 5))}`);
+  check(beaTitles.includes("GDP (Second Estimate) and Corporate Profits, 2nd Quarter 2026"), "BEA: the latest GDP estimate is kept", "BEA dropped the GDP release");
+  check(!beaTitles.some((t) => /by (State|County|Metropolitan)|for (Guam|Puerto Rico)|Trade/i.test(t)),
+    "BEA: regional GDP and trade releases are left out", "BEA kept a regional or trade release");
+  check(bea.find((i) => i.title.startsWith("Personal Income and Outlays, July 2026"))?.at === "2026-08-26T12:30:00.000Z",
+    "BEA: 08:30 EDT is read as 12:30 UTC", "BEA date misread");
+
+  const sc = readFeed(fx("statcan-2026-09-22.atom"), src("statcan-daily"));
+  const scTitles = sc.map((i) => i.title);
+  check(scTitles.includes("Consumer Price Index, August 2026"), "Statistics Canada: the CPI release is kept, its xhtml title flattened to text", `Statistics Canada kept ${JSON.stringify(scTitles)}`);
+  check(scTitles.every((t) => /^(Consumer Price Index|Labour Force Survey|Gross domestic product)/i.test(t)),
+    "Statistics Canada: only prices, jobs and output", `Statistics Canada kept ${JSON.stringify(scTitles)}`);
+  check(sc.every((i) => /^https:\/\/www\.statcan\.gc\.ca\/daily-quotidien\//.test(i.url)),
+    "Statistics Canada: each link is the release itself, not the feed's self or related link", `links ${JSON.stringify(sc.map((i) => i.url))}`);
+  check(sc.every((i) => i.source === "Statistics Canada") && bea.every((i) => i.source === "BEA"), "both are credited by name", "an item lost its institution");
+}
+{
+  const atom = (inner: string) => `<feed><entry>${inner}</entry></feed>`;
+  const one = parseAtom(atom(`<title type="html">GDP &lt;b&gt;rises&lt;/b&gt;</title><link rel="self" href="https://www150.statcan.gc.ca/feed.atom"/><link rel="alternate" href="https://www.statcan.gc.ca/r1"/><published>2026-09-01T08:30:00-04:00</published><updated>2026-09-20T08:30:00-04:00</updated>`));
+  check(one[0]?.title === "GDP rises", "an html-typed title is decoded, then stripped -- no visible <b>", `title ${JSON.stringify(one[0]?.title)}`);
+  check(one[0]?.url === "https://www.statcan.gc.ca/r1", "rel=alternate is taken over rel=self", `link ${one[0]?.url}`);
+  check(one[0]?.at === "2026-09-01T12:30:00.000Z", "<published> wins over <updated>, so a corrected release does not jump back to the top", `date ${one[0]?.at}`);
+  check(parseAtom(atom(`<title>t</title><link rel="self" href="https://x"/><updated>2026-09-01T00:00:00Z</updated>`)).length === 0,
+    "an entry whose only link is the feed itself is dropped", "kept an entry with only a self link");
+  check(!safeLink("javascript:alert(1)") && !safeLink("http://www.bea.gov/x") && safeLink("https://www.bea.gov/x", ["www.bea.gov"]) && !safeLink("https://evil.example/x", ["www.bea.gov"]),
+    "a link must be https, and on the agency's own host where one is named", "safeLink let a bad link through");
+  const offsite = readFeed(rss(
+    item("GDP (Advance Estimate), 3rd Quarter 2026", "https://evil.example/gdp", "Thu, 29 Oct 2026 08:30:00 EDT") +
+    item("GDP (Third Estimate), 2nd Quarter 2026", "http://www.bea.gov/gdp", "Thu, 24 Sep 2026 08:30:00 EDT") +
+    item("Personal Income and Outlays, August 2026", "https://www.bea.gov/pio", "Fri, 25 Sep 2026 08:30:00 EDT") +
+    // As the BEA's own feed writes one of its links: no scheme at all.
+    item("GDP (Advance Estimate), 4th Quarter and Year 2025", "www.bea.gov/news/2026/gdp-advance", "Thu, 26 Feb 2026 08:30:00 EST") +
+    item("GDP (Second Estimate), 4th Quarter 2025", "evil.example/www.bea.gov/x", "Thu, 26 Mar 2026 08:30:00 EDT")
+  ), src("bea-releases"));
+  check(offsite.map((i) => i.url).join() === "https://www.bea.gov/pio,https://www.bea.gov/news/2026/gdp-advance",
+    "off-site and http links are dropped; a scheme-less link on the agency's own host is upgraded to https", `kept ${offsite.map((i) => i.url).join()}`);
 }
 
 console.log("");

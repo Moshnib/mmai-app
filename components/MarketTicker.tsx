@@ -93,7 +93,7 @@ export default function MarketTicker({
   // once, and nothing moves until the strip is what it will be.
   //
   // The second feed is served by this site's own route because none of
-  // the seven institutions sends the CORS header a browser would need.
+  // the nine institutions sends the CORS header a browser would need.
   // When that route's cache is cold it can take ~3.5s to read them all,
   // so now and then the deadline below wins and the strip starts without
   // announcements. That is the intended trade: scores never wait on news.

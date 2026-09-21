@@ -1,5 +1,5 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-22 (more central bank videos, and a Videos page)*
+*Last updated: 2026-09-22 (two more news sources; no Gulf source yet)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
@@ -12,7 +12,10 @@
       central banks and the BIS, newest first, with a filter per bank.
       Swedish, Norwegian, Japanese and Korean videos get an English label.
 - [x] The homepage row stays press conferences, with a link to the page.
-- [ ] Next from the owner's list: **more news sources**, then **Gulf news**.
+- [x] **More news:** the US Bureau of Economic Analysis (GDP, income and
+      spending) and Statistics Canada (inflation, jobs, GDP) — handover §46.
+- [ ] **Gulf news:** no Gulf institution offers a usable feed with a
+      readable licence yet (§46). Recheck from time to time.
 
 ## ✅ 21 September — recent press-conference videos (handover §44)
 - [x] **Recent press conferences you can watch any time**, under the live

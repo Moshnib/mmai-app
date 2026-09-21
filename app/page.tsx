@@ -597,7 +597,7 @@ export default function OverviewPage() {
           "The next UK inflation figure lands tomorrow" is the one thing
           on this page a reader can act on, and it belongs above the
           record of what has already happened. Every line comes straight
-          from one of seven institutions' own feeds (lib/newsSources.ts),
+          from one of nine institutions' own feeds (lib/newsSources.ts),
           and the band refreshes itself. */}
       <div className="section">
         <div className="wrap">
@@ -607,8 +607,8 @@ export default function OverviewPage() {
             <p>
               Straight from the institutions that publish it: rate decisions and statements from the Federal
               Reserve, the European Central Bank, the Bank of Canada and the Reserve Bank of Australia, and
-              release dates and new figures from the UK, US and Norwegian statistics offices. Nobody&apos;s
-              headlines, and nothing here is an opinion.
+              release dates and new figures from the statistics offices of the UK, the US, Canada and Norway.
+              Nobody&apos;s headlines, and nothing here is an opinion.
             </p>
           </div>
           <LivePressCard />
