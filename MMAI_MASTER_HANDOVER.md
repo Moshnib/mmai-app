@@ -3099,3 +3099,72 @@ fixture. Seven mutations were caught.
   taken from the feed.
 - The shared video type and URL helpers live in `lib/pressConferences.ts`,
   so the browser never downloads the feed reader.
+
+## 45. More central bank videos, and a Videos page (2026-09-22)
+
+The owner asked for more videos (and, next, more news and Gulf news).
+
+**Nine channels now.** The four from §43, plus:
+- Sveriges Riksbank `UC3qYZncwsKcrbZIhOwYSxFQ`
+- Norges Bank `UCLpPYqWZAsa1epXpKccf37g`
+- BIS `UCM_UXHYYPreAnuT5cmCN5TA`
+- Bank of Japan `UC32Yu7NyStgmKYsXvYofPvQ`
+- Bank of Korea `UCyK8niZNIfBTgRNkuURdoXA`
+
+How they were checked:
+- Each id came from the YouTube link on the institution's own website on
+  22 September.
+- One video from each channel was played in the youtube-nocookie player
+  (Chromium, and WebKit as iPhone) before it was added. All five embed.
+- **The IMF is not included.** Its website refuses automated readers, so
+  its channel could not be confirmed from the IMF itself.
+
+**Kinds of video.** `RULES` in `lib/fetchers/pressVideos.ts` maps each
+channel's real titles to a kind: press conference, rate decision,
+decision summary, speech, testimony, hearing, interview, briefing,
+report. The first matching rule wins. **An upload that matches no rule is
+dropped, never shown untagged**, so a channel's banknote videos, podcasts
+and Shorts stay off the site.
+
+**Other languages.** Swedish, Norwegian, Japanese and Korean titles are
+shown as our own English label ("Riksbank press conference"). YouTube's
+title sits beneath it in the right `lang`, and the tile says "in Swedish".
+A Hangul title is Korean even on the Bank of Korea's channel, which also
+posts in English.
+
+**Two lists, one read.** `/api/press-videos` returns `{ home, all }` from
+a single cached read of the nine feeds.
+- **home** (under the live card) is only press conferences and rate
+  decisions, with the Fed, ECB, BoE and BoC picked first. A Norges Bank
+  video from June cannot push out the Fed.
+- **all** (the Videos page) is newest first, at most eight per channel.
+  Norges Bank's feed runs back to 2024 and would otherwise fill the page.
+  Every tile shows its date.
+- The browser keeps reading the old `{ videos }` shape, because a CDN copy
+  can outlive the deploy by a day. `lib/videoList.ts` accepts only valid
+  ids and known channels.
+- "Known channel" is `Object.hasOwn`, not `in`: with `in`,
+  `/videos?bank=constructor` passed as a bank (the reviewer's catch; now
+  tested).
+
+**`/videos`** (`app/videos/`):
+- The page shell is static; the list loads after it opens.
+- Filter chips are `<button aria-pressed>`, kept in the address as
+  `?bank=`.
+- It has loading, empty and no-JavaScript states.
+- It is in `lib/routes.ts` (so the sitemap and browser checks cover it),
+  in the menu under "Beyond the score", and uses `pageMetadata`.
+- The player scrolls into view when a tile far down the list is pressed.
+- `components/VideoTiles.tsx` holds the tiles and player, shared by the
+  homepage and this page.
+
+**Checked on 22 September:**
+- The homepage row: BoC, BoJ, Fed, ECB, Riksbank, BoE.
+- `/videos` shows 33 tiles and 9 chips. The Riksbank chip gives 8 tiles
+  with `?bank=riksbank`.
+- The Swedish original is marked `lang="sv"`, and a tap plays the video.
+- No CSP errors, on a phone and on a desktop.
+- `scripts/test-press-videos.ts` runs against all nine real feeds (five
+  new fixtures). Five mutations were caught: core-bank priority, speeches
+  on the homepage, Hangul detection, the per-channel cap, and untagged
+  uploads.

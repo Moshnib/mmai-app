@@ -1,10 +1,18 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-21 (recent press-conference videos on the homepage)*
+*Last updated: 2026-09-22 (more central bank videos, and a Videos page)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 22 September — more videos, and a Videos page (handover §45)
+- [x] **A new Videos page** (menu: Beyond the score → Central bank videos):
+      press conferences, rate decisions, speeches and briefings from eight
+      central banks and the BIS, newest first, with a filter per bank.
+      Swedish, Norwegian, Japanese and Korean videos get an English label.
+- [x] The homepage row stays press conferences, with a link to the page.
+- [ ] Next from the owner's list: **more news sources**, then **Gulf news**.
 
 ## ✅ 21 September — recent press-conference videos (handover §44)
 - [x] **Recent press conferences you can watch any time**, under the live

@@ -227,9 +227,10 @@ export default function AboutPage() {
             next scheduled press conference from the Federal Reserve, the ECB, the Bank of England and the Bank of
             Canada, from each bank&apos;s published calendar; unscheduled meetings do not appear. The video is the
             bank&apos;s own stream, played by YouTube in its privacy-enhanced mode, and no video loads until you
-            press play. The Federal Reserve streams only on its own website, so its link opens there. Below it
-            are the most recent press conferences each bank&apos;s YouTube channel still lists; their small preview
-            pictures come from YouTube&apos;s image server, which sets no cookies.
+            press play. The Federal Reserve streams only on its own website, so its link opens there. Below it,
+            and on the Videos page, are recent press conferences, rate decisions, speeches and briefings from eight
+            central banks and the BIS, as each institution&apos;s YouTube channel still lists them; their small
+            preview pictures come from YouTube&apos;s image server, which sets no cookies.
           </p>
         </div>
       </div>

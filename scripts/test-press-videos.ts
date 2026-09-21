@@ -1,18 +1,20 @@
 // ============================================================
-//  RECENT PRESS-CONFERENCE VIDEOS ARE PICKED CORRECTLY
+//  CENTRAL BANK VIDEOS ARE PICKED CORRECTLY
 //
-//  lib/fetchers/pressVideos.ts reads each bank's YouTube feed and keeps
-//  its press conferences. These are the four REAL feeds as they stood on
-//  21 September 2026 (scripts/fixtures/press-videos), so the title
-//  filters are tested against what the banks actually publish.
+//  lib/fetchers/pressVideos.ts reads nine institutions' YouTube feeds,
+//  keeps press conferences, rate decisions, speeches and briefings, and
+//  tags each with its kind and language. These are the REAL feeds as they
+//  stood on 21-22 September 2026 (scripts/fixtures/press-videos), so every
+//  rule is tested against what the institutions actually publish.
 //
 //  Run: npx tsx scripts/test-press-videos.ts
 // ============================================================
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseYoutubeFeed, pressConferencesIn, pickRecent, isFeed, displayTitle } from "../lib/fetchers/pressVideos";
-import type { BankId, PressVideo } from "../lib/pressConferences";
+import { parseYoutubeFeed, videosIn, pickHome, pickAll, isFeed, displayTitle } from "../lib/fetchers/pressVideos";
+import { VIDEO_CHANNELS, type PressVideo, type VideoChannelId } from "../lib/pressConferences";
+import { checked } from "../lib/videoList";
 
 let failures = 0;
 function check(label: string, actual: unknown, expected: unknown) {
@@ -21,27 +23,47 @@ function check(label: string, actual: unknown, expected: unknown) {
   if (!ok) failures++;
 }
 
-const feed = (bank: BankId) => readFileSync(join(__dirname, "fixtures", "press-videos", `${bank}-2026-09-21.xml`), "utf8");
-const found = (bank: BankId) => pressConferencesIn(bank, parseYoutubeFeed(feed(bank)));
-const brief = (v: PressVideo) => `${v.bank} ${v.published.slice(0, 10)} ${v.videoId}`;
+const DATE: Record<VideoChannelId, string> = {
+  fed: "2026-09-21", ecb: "2026-09-21", boe: "2026-09-21", boc: "2026-09-21",
+  riksbank: "2026-09-22", norges: "2026-09-22", bis: "2026-09-22", boj: "2026-09-22", bok: "2026-09-22",
+};
+const fixture = (name: string) => readFileSync(join(__dirname, "fixtures", "press-videos", name), "utf8");
+const feed = (c: VideoChannelId) => fixture(`${c}-${DATE[c]}.xml`);
+const found = (c: VideoChannelId) => videosIn(c, parseYoutubeFeed(feed(c)));
+const kinds = (c: VideoChannelId) => found(c).map((v) => `${v.kind}: ${v.title}`);
+const ALL = Object.keys(VIDEO_CHANNELS) as VideoChannelId[];
 
-console.log("Each bank's real feed yields its press conferences, and only those\n");
-check("every feed parses to its ~15 entries", (["fed", "ecb", "boe", "boc"] as BankId[]).map((b) => parseYoutubeFeed(feed(b)).length >= 10), [true, true, true, true]);
-check("Fed: the two FOMC press conferences, not the Shorts cut from them",
-  found("fed").map((v) => v.title), ["FOMC Press Conference, September 16, 2026", "FOMC Press Conference, July 29, 2026"]);
-check("ECB: the Governing Council press conference, not the research conference",
-  found("ecb").map((v) => v.title), ["ECB Governing Council Press Conference - 10 September 2026"]);
-const ecbTitles = (title: string) => pressConferencesIn("ecb", [{ videoId: "abcdefghijk", title, published: "2026-09-01T00:00:00.000Z", isShort: false }]).length;
-check("ECB: a Banking Supervision press conference is not a rates conference", ecbTitles("Supervisory Board press conference - 2026"), 0);
-check("ECB: a monetary policy press conference is", ecbTitles("Monetary policy press conference - 29 October 2026"), 1);
-check("\"Live - \" is dropped from a recording's title", displayTitle("Live - ECB Governing Council Press Conference"), "ECB Governing Council Press Conference");
-check("...but a title merely containing \"live\" is left alone", displayTitle("Delivering the Monetary Policy Report"), "Delivering the Monetary Policy Report");
-check("Bank of England: the Monetary Policy Report press conference",
-  found("boe").map((v) => v.title), ["Monetary Policy Report Press Conference, 30 July 2026"]);
-check("Bank of Canada: the bilingual press conference title matches",
-  found("boc").map((v) => v.videoId), ["26PgMJPCcpE"]);
+console.log("Each channel's real feed yields the right videos, of the right kind\n");
+check("every feed parses", ALL.map((c) => parseYoutubeFeed(feed(c)).length >= 10), ALL.map(() => true));
+check("Fed: both FOMC press conferences and two speeches -- no Shorts, no panels", kinds("fed"), [
+  "Press conference: FOMC Press Conference, September 16, 2026",
+  "Press conference: FOMC Press Conference, July 29, 2026",
+  "Speech: Speech by Governor Barr on artificial intelligence, July 14, 2026",
+  // The feed itself cuts this title short.
+  "Speech: Speech by Vice Chair for Supervision Bowman on responsible innovation and financial inclusion",
+]);
+check("ECB: the interview, Lagarde's summary and the press conference -- not the research conference or Shorts", found("ecb").map((v) => v.kind), ["Interview", "Decision summary", "Press conference"]);
+check("ECB: \"Live - \" is gone from a recording's title", found("ecb")[2].title, "ECB Governing Council Press Conference - 10 September 2026");
+check("Bank of England: the press conference, not its podcast", kinds("boe"), ["Press conference: Monetary Policy Report Press Conference, 30 July 2026"]);
+check("Bank of Canada: the press conference, not the bank-note videos", found("boc").map((v) => v.videoId), ["26PgMJPCcpE"]);
+check("Riksbank: five press conferences and four rate-decision videos", found("riksbank").map((v) => v.kind).join(",").split(",").reduce((m: Record<string, number>, k) => ({ ...m, [k]: (m[k] ?? 0) + 1 }), {}), { "Press conference": 5, "Rate decision": 4 });
+check("Riksbank: English label, Swedish original kept and marked", (({ title, lang, original }) => [title, lang, original?.slice(0, 29)])(found("riksbank")[0]), ["Riksbank press conference", "sv", "Pressträff om det penningpoli"]);
+check("Norges Bank: its rate decisions, including the old \"Rentemøte\" title", found("norges").slice(-1).map((v) => [v.kind, v.original]), [["Rate decision", "Rentemøte november 2024"]]);
+check("BIS: its three media briefings", found("bis").map((v) => v.videoId), ["w4PPDSY9cc8", "hZ5ElIsczyU", "fFuR-sPV72Y"]);
+check("Bank of Japan: the Governor's two press conferences, labelled in English", found("boj").map((v) => [v.title, v.lang]), [["BoJ press conference", "ja"], ["BoJ press conference", "ja"]]);
+check("Bank of Korea: the Korean briefing is marked Korean, the English reports English", found("bok").map((v) => `${v.kind}/${v.lang}/${v.title}`), [
+  "Briefing/ko/BoK briefing",
+  "Report/en/Monetary Policy Report (September 2026)",
+  "Report/en/Korea Economic Outlook (August 2026)",
+]);
 
-console.log("\nThe parser is strict about what goes into a URL\n");
+console.log("\nThe rules are strict\n");
+const one = (c: VideoChannelId, title: string) => videosIn(c, [{ videoId: "abcdefghijk", title, published: "2026-09-01T00:00:00.000Z", isShort: false }]);
+check("an upload matching no rule is dropped, not shown untagged", one("fed", "Welcome remarks by Governor Cook").length, 0);
+check("ECB: a Banking Supervision press conference is not a rates conference", one("ecb", "Supervisory Board press conference - 2026").length, 0);
+check("Bank of Canada: a bank-note video is excluded even if it says press conference", one("boc", "Bank note press conference").length, 0);
+check("a leading emoji is dropped from a title", displayTitle("📖Monetary Policy Report"), "Monetary Policy Report");
+check("...and a title merely containing \"live\" is left alone", displayTitle("Delivering the Monetary Policy Report"), "Delivering the Monetary Policy Report");
 const entry = (id: string, title: string, extra = "") =>
   `<feed><entry><yt:videoId>${id}</yt:videoId><title>${title}</title><published>2026-09-01T10:00:00+00:00</published>${extra}</entry></feed>`;
 check("a malformed video id is dropped", parseYoutubeFeed(entry("abc\"><script", "x")).length, 0);
@@ -51,28 +73,39 @@ check("a Short is marked by its link", parseYoutubeFeed(entry("abcdefghijk", "Pr
 check("an entry without a date is dropped", parseYoutubeFeed("<entry><yt:videoId>abcdefghijk</yt:videoId><title>t</title></entry>").length, 0);
 
 console.log("\nA page that is not a feed is a failure, not an empty channel\n");
-check("the real feeds are feeds", (["fed", "ecb", "boe", "boc"] as BankId[]).every((b) => isFeed(feed(b))), true);
-check("a consent page answered with 200 is not", isFeed(readFileSync(join(__dirname, "fixtures", "press-videos", "consent-page.html"), "utf8")), false);
+check("the real feeds are feeds", ALL.every((c) => isFeed(feed(c))), true);
+check("a consent page answered with 200 is not", isFeed(fixture("consent-page.html")), false);
 
-console.log("\nEvery bank gets a place before any bank gets a second\n");
-const all = pickRecent([found("fed"), found("ecb"), found("boe"), found("boc")]);
-check("today's five, newest first", all.map(brief), [
-  "boc 2026-09-21 26PgMJPCcpE",
-  "fed 2026-09-16 ELU3u2Ny7r0",
-  "ecb 2026-09-10 rCBHa4xjqvI",
-  "boe 2026-07-30 G5m9FOeBD1Q",
-  "fed 2026-07-29 DLFXUkOc_7I",
+console.log("\nThe homepage row is press conferences, the four live-card banks first\n");
+const per = ALL.map(found);
+const home = pickHome(per);
+check("today's homepage row", home.map((v) => `${v.bank} ${v.published.slice(0, 10)}`), [
+  "boc 2026-09-21", "boj 2026-09-18", "fed 2026-09-16", "ecb 2026-09-10", "riksbank 2026-08-20", "boe 2026-07-30",
 ]);
-const v = (bank: BankId, day: string): PressVideo => ({ bank, videoId: `${bank}${day}`.padEnd(11, "x").slice(0, 11), title: "t", published: `2026-${day}T12:00:00.000Z` });
-const busy = pickRecent([
-  [v("fed", "09-16"), v("fed", "09-10"), v("fed", "09-05"), v("fed", "09-01")],
-  [v("ecb", "09-15"), v("ecb", "09-09"), v("ecb", "09-04")],
-  [v("boe", "07-30")],
-  [],
-], 4);
-check("a quarterly Bank of England conference is not pushed out by busier channels", busy.map((x) => x.bank), ["fed", "ecb", "fed", "boe"]);
-check("the cap is respected", busy.length, 4);
-check("a bank with nothing listed is simply absent", pickRecent([[], [], [], []]).length, 0);
+check("only press conferences and rate decisions on the homepage", home.every((v) => v.kind === "Press conference" || v.kind === "Rate decision"), true);
+const v = (bank: VideoChannelId, day: string, kind: PressVideo["kind"] = "Press conference"): PressVideo =>
+  ({ bank, videoId: `${bank}${day}`.replace(/[^A-Za-z0-9]/g, "").padEnd(11, "x").slice(0, 11), title: "t", kind, lang: "en", published: `2026-${day}T12:00:00.000Z` });
+const busy = pickHome([
+  [v("riksbank", "09-20"), v("riksbank", "09-19")], [v("boj", "09-18")], [v("boe", "07-30")],
+  [v("fed", "09-10", "Speech"), v("fed", "07-29")],
+], 3);
+check("a quarterly BoE and an older Fed conference beat newer videos from other channels", busy.map((x) => x.bank), ["riksbank", "boe", "fed"]);
+check("...and the Fed's newer speech is not on the homepage", busy.some((x) => x.kind === "Speech"), false);
+
+console.log("\nThe Videos page is everything, newest first, eight per channel at most\n");
+const all = pickAll(per);
+check("newest first", all.every((x, i) => i === 0 || all[i - 1].published >= x.published), true);
+check("Norges Bank's two years of decisions are capped at eight", all.filter((x) => x.bank === "norges").length, 8);
+check("every channel with a video is on the page", [...new Set(all.map((x) => x.bank))].sort(), [...ALL].sort());
+
+console.log("\nThe browser only accepts what it can safely play\n");
+check("unknown channels and bad ids are dropped", checked([
+  { bank: "fed", videoId: "abcdefghijk", title: "t", published: "2026-09-01" },
+  { bank: "imf", videoId: "abcdefghijk", title: "t", published: "2026-09-01" },
+  { bank: "fed", videoId: "javascript:", title: "t", published: "2026-09-01" },
+]).map((x) => [x.bank, x.kind, x.lang]), [["fed", "Press conference", "en"]]);
+check("a built-in object name is not a channel", checked([{ bank: "constructor", videoId: "abcdefghijk", title: "t", published: "2026-09-01" }]).length, 0);
+check("anything that is not a list is an empty list", checked({ videos: 1 }), []);
 
 console.log(failures === 0 ? "\nAll press-video checks passed." : `\n${failures} check(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

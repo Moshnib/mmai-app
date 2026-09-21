@@ -206,10 +206,54 @@ export const youtubeLiveEmbedUrl = (c: Channel) =>
 //  the browser never downloads the feed reader.
 // ------------------------------------------------------------
 
+/** Every channel videos are read from: the four with a live schedule
+ *  above, and five that only publish recordings. Each channel id was taken
+ *  from the YouTube link on the institution's own website on 22 September
+ *  2026, and one video from each was played in the embedded player before
+ *  it was added. The IMF is absent: its site refuses automated readers, so
+ *  its channel could not be confirmed from the IMF itself. */
+export type VideoChannelId = BankId | "riksbank" | "norges" | "bis" | "boj" | "bok";
+
+export interface VideoChannel {
+  id: VideoChannelId;
+  name: string;
+  short: string;
+  youtubeChannelId: string;
+  /** The language the channel speaks; titles in any other are labelled. */
+  lang: "en" | "sv" | "nb" | "ja" | "ko";
+}
+
+export const VIDEO_CHANNELS: Record<VideoChannelId, VideoChannel> = {
+  fed: { id: "fed", name: CHANNELS.fed.name, short: CHANNELS.fed.short, youtubeChannelId: CHANNELS.fed.youtubeChannelId, lang: "en" },
+  ecb: { id: "ecb", name: CHANNELS.ecb.name, short: CHANNELS.ecb.short, youtubeChannelId: CHANNELS.ecb.youtubeChannelId, lang: "en" },
+  boe: { id: "boe", name: CHANNELS.boe.name, short: CHANNELS.boe.short, youtubeChannelId: CHANNELS.boe.youtubeChannelId, lang: "en" },
+  boc: { id: "boc", name: CHANNELS.boc.name, short: CHANNELS.boc.short, youtubeChannelId: CHANNELS.boc.youtubeChannelId, lang: "en" },
+  riksbank: { id: "riksbank", name: "Sveriges Riksbank", short: "Riksbank", youtubeChannelId: "UC3qYZncwsKcrbZIhOwYSxFQ", lang: "sv" },
+  norges: { id: "norges", name: "Norges Bank", short: "Norges Bank", youtubeChannelId: "UCLpPYqWZAsa1epXpKccf37g", lang: "nb" },
+  bis: { id: "bis", name: "Bank for International Settlements", short: "BIS", youtubeChannelId: "UCM_UXHYYPreAnuT5cmCN5TA", lang: "en" },
+  boj: { id: "boj", name: "Bank of Japan", short: "BoJ", youtubeChannelId: "UC32Yu7NyStgmKYsXvYofPvQ", lang: "ja" },
+  bok: { id: "bok", name: "Bank of Korea", short: "BoK", youtubeChannelId: "UCyK8niZNIfBTgRNkuURdoXA", lang: "ko" },
+};
+
+export type VideoKind =
+  | "Press conference" | "Rate decision" | "Decision summary" | "Speech"
+  | "Testimony" | "Hearing" | "Interview" | "Briefing" | "Report";
+
+export const LANGUAGE_NAME: Record<VideoChannel["lang"], string> = {
+  en: "English", sv: "Swedish", nb: "Norwegian", ja: "Japanese", ko: "Korean",
+};
+
 export interface PressVideo {
-  bank: BankId;
+  bank: VideoChannelId;
   videoId: string;
+  /** What the tile says: YouTube's title when it is in English, otherwise
+   *  our own English label ("Riksbank press conference"). */
   title: string;
+  kind: VideoKind;
+  /** Language of the video; "en" unless the title is in another. */
+  lang: VideoChannel["lang"];
+  /** YouTube's own title, kept when it is not in English. */
+  original?: string;
   /** ISO, when YouTube published it. */
   published: string;
 }
