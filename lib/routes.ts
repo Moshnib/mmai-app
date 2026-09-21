@@ -36,6 +36,7 @@ export const SITE_ROUTES: readonly SiteRoute[] = [
   // Was missing from the sitemap entirely until 6 September 2026, while
   // being linked from every page's navigation.
   { path: "/stablecoins", priority: 0.6, changeFrequency: "daily" },
+  { path: "/videos", priority: 0.6, changeFrequency: "daily" },
   { path: "/learn", priority: 0.6, changeFrequency: "monthly" },
   { path: "/sources", priority: 0.6, changeFrequency: "weekly" },
   { path: "/about", priority: 0.5, changeFrequency: "monthly" },

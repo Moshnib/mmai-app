@@ -72,6 +72,19 @@ const EXPECTED_FAILURES: { match: RegExp; why: string }[] = [
   { match: /\/_vercel\/insights\/script\.js(?=$|['"\s])/, why: "analytics script exists only on Vercel, not under a local next start" },
 ];
 
+/** Requests excused ONLY when the browser aborts them -- never a status.
+ *  Narrower than EXPECTED_FAILURES, which also hides a failing status for
+ *  its URLs.
+ *
+ *  /api/press-videos reads nine YouTube feeds, with a retry each, before
+ *  it answers, so on the homepage and the Videos page it can still be in
+ *  flight when this script closes the tab (it was, on /videos, the first
+ *  time it ran in CI). A 404 from a renamed route, or a 503 when every
+ *  feed failed, arrives as a status and is still reported below. */
+const ABORTS_ONLY: Array<{ match: RegExp; why: string }> = [
+  { match: /\/api\/press-videos$/, why: "aborted video-list fetch -- the tab closed before nine YouTube feeds answered" },
+];
+
 interface Problem { page: string; kind: string; detail: string }
 
 async function inspect(page: Page, path: string, base: string): Promise<Problem[]> {
@@ -102,6 +115,7 @@ async function inspect(page: Page, path: string, base: string): Promise<Problem[
   page.on("requestfailed", (r) => {
     const url = r.url();
     if (EXPECTED_FAILURES.some((e) => e.match.test(url))) return;
+    if (/ERR_ABORTED|cancelled/i.test(r.failure()?.errorText ?? "") && ABORTS_ONLY.some((e) => e.match.test(url))) return;
     add("request", `${r.method()} ${url.slice(0, 130)} — ${r.failure()?.errorText ?? "failed"}`);
   });
   page.on("response", (r) => {

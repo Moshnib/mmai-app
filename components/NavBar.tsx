@@ -54,6 +54,7 @@ const NAV: NavEntry[] = [
       { href: "/gulf-watch", label: "Gulf Watch", note: "Six Gulf economies, figure by figure" },
       { href: "/observatory", label: "Observatory", note: "Tracked, not scored" },
       { href: "/stablecoins", label: "Stablecoins", note: "How many dollars exist on a blockchain" },
+      { href: "/videos", label: "Central bank videos", note: "Press conferences and speeches, from the banks themselves" },
     ],
   },
   {
