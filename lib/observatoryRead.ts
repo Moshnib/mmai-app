@@ -11,20 +11,13 @@
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { OBSERVATORY_CODES, type ObservatoryRow } from "@/lib/observatory";
 
-/** The newest row per country.
- *
- *  Ordered by observation_date then fetched_at, matching the pages that
- *  read raw_indicators. Both matter: the first decides which day wins,
- *  the second which run within that day — a re-run after fixing a source
- *  must beat the broken reading it replaced, not lose to it. */
-export function newestByCountry(rows: ObservatoryRow[]): Map<string, ObservatoryRow> {
-  const out = new Map<string, ObservatoryRow>();
-  const sorted = [...rows].sort((a, b) => {
-    if (a.observation_date !== b.observation_date) return a.observation_date < b.observation_date ? 1 : -1;
-    return a.fetched_at < b.fetched_at ? 1 : -1;
-  });
-  for (const r of sorted) if (!out.has(r.country_code)) out.set(r.country_code, r);
-  return out;
+/** Newest first: observation_date, then fetched_at. Both matter -- the
+ *  first decides which day wins, the second which run within that day, so
+ *  a re-run after fixing a source beats the broken reading it replaced.
+ *  THE one ordering for "which row is current"; there used to be two. */
+export function byNewestFirst(a: ObservatoryRow, b: ObservatoryRow): number {
+  if (a.observation_date !== b.observation_date) return a.observation_date < b.observation_date ? 1 : -1;
+  return a.fetched_at < b.fetched_at ? 1 : -1;
 }
 
 // ============================================================
@@ -102,8 +95,8 @@ export async function fetchObservatoryRows(): Promise<Map<string, ObservatorySho
     .gte("fetched_at", since)
     .order("observation_date", { ascending: false })
     .order("fetched_at", { ascending: false })
-    // A ceiling, not the window: five countries, a few rows a day, fifteen
-    // days is well under this even after force-runs.
+    // A ceiling, not the window: a handful of countries, a few rows a day
+    // for fifteen days is well under this even after force-runs.
     .limit(2000);
 
   if (error) throw new Error(error.message);
@@ -117,13 +110,9 @@ export async function fetchObservatoryRows(): Promise<Map<string, ObservatorySho
   // A country in the registry with no row yet is absent from the map,
   // and the page renders it as awaiting its first reading rather than
   // pretending it has one.
-  // Grouped per country in newestByCountry's order (sorted once), so the
-  // row shown first is exactly the row newestByCountry would pick.
-  const sorted = [...rows.filter((r) => OBSERVATORY_CODES.includes(r.country_code))].sort((a, b) =>
-    a.observation_date !== b.observation_date
-      ? (a.observation_date < b.observation_date ? 1 : -1)
-      : (a.fetched_at < b.fetched_at ? 1 : -1),
-  );
+  // Sorted once, then grouped per country: each group's first row is the
+  // current one, by the single ordering above.
+  const sorted = rows.filter((r) => OBSERVATORY_CODES.includes(r.country_code)).sort(byNewestFirst);
   const history = new Map<string, ObservatoryRow[]>();
   for (const r of sorted) (history.get(r.country_code) ?? history.set(r.country_code, []).get(r.country_code)!).push(r);
   const out = new Map<string, ObservatoryShown>();
