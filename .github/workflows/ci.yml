@@ -325,6 +325,13 @@ jobs:
       - name: Every page shares with its picture
         run: npx tsx scripts/test-page-metadata.ts
 
+      # The homepage shows the next central bank press conference and plays
+      # it live. An hour wrong across a clock change says LIVE to an empty
+      # stream; a wrong channel plays someone else. Also fails when the
+      # schedule is about to run out -- the reminder to add next year's.
+      - name: Live press conferences are on the right channel at the right time
+        run: npx tsx scripts/test-press-conferences.ts
+
       # A figure the morning run missed used to stay N/A on the Observatory
       # all day: later runs stopped before reaching it. Every run now
       # retries incomplete countries; this pins that a retry fills gaps and

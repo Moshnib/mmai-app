@@ -19,7 +19,10 @@ export function useNow(): number | null {
   return useSyncExternalStore(
     (onChange) => {
       const id = setInterval(onChange, TICK_MS);
-      return () => clearInterval(id);
+      // Browsers slow timers in background tabs to a crawl; a tab brought
+      // back after an hour should not show an hour-old "live" state.
+      document.addEventListener("visibilitychange", onChange);
+      return () => { clearInterval(id); document.removeEventListener("visibilitychange", onChange); };
     },
     () => Math.floor(Date.now() / TICK_MS) * TICK_MS,
     () => null as number | null,

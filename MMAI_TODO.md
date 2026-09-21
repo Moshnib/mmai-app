@@ -1,10 +1,21 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-21 (second audit: speed, sharing, privacy, code, data)*
+*Last updated: 2026-09-21 (live central bank press conferences on the homepage)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 21 September — live press conferences on the homepage (handover §43)
+- [x] **The homepage shows the next central bank press conference**, and
+      a LIVE NOW player while one is on: the ECB, the Bank of England and
+      the Bank of Canada play on the site; the Fed only streams on its own
+      website, so its button opens there. Nothing from YouTube loads until
+      a reader presses play, so the page is no heavier.
+- [ ] **Add the Bank of Canada 2027 dates** when it publishes them
+      (bankofcanada.ca/press/upcoming-events), in `lib/pressConferences.ts`.
+- [ ] **Each autumn, add next year's dates** for all four banks. CI fails
+      on its own when fewer than three conferences are left, as a reminder.
 
 ## ✅ 21 September — second audit (handover §42)
 - [x] **Shared links now show the MMAI picture on every page**, not only

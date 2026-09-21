@@ -2972,3 +2972,69 @@ picture.**
     for Gulf CPI.
   - The 20 September scores are v2.0, and AU = 85.135135 (the acceptance
     target).
+
+## 43. Live central bank press conferences on the homepage (2026-09-21)
+
+The owner asked for live video on the homepage without making it heavier.
+
+**What it is.** A card in the homepage's "On the calendar" section, above
+the news (`components/LivePressCard.tsx`). What it shows depends on the
+time:
+- **Most of the time:** a line of text, "NEXT LIVE · Bank of Canada press
+  conference · Wed 28 Oct, 18:30 (reader's own time) · in 37 days".
+- **From 30 minutes before a conference to 100 minutes after:** LIVE NOW,
+  with a play button.
+- **For three hours after that:** JUST ENDED, with a link to the
+  recording.
+- **When two banks are live at once, both are shown.** This happens on
+  4 Feb and 29 Apr 2027 (the ECB and the Bank of England).
+- **A player the reader started is never removed by the clock.** If a
+  conference overruns 100 minutes, the player stays (tagged "SCHEDULED
+  TIME OVER") until the reader presses "Close player". This was the
+  reviewer's catch; a clock-driven browser test proved it.
+
+**No weight until play.** No YouTube script, frame, image or cookie loads
+until the reader presses play. The player is `youtube-nocookie.com`'s live
+embed of the bank's channel. A "Watch on YouTube" link is always shown
+beside it, because that embed follows whatever the channel is streaming.
+A browser check confirmed:
+- zero YouTube requests on load;
+- exactly one nocookie frame after a click;
+- no CSP errors.
+
+**Where the video comes from: each bank's own channel, taken from the
+YouTube link on its own website.** The `@bankofengland` handle is NOT
+the Bank of England. Each channel's most recent press conference was
+checked on 21 September:
+- ECB, Bank of England and Bank of Canada stream live on YouTube.
+- **The Fed does not.** It streams live only on federalreserve.gov
+  (`/live-broadcast.htm`) and uploads to YouTube about an hour later. So
+  the Fed's card links out to its own page while it is live.
+- The RBA has no YouTube channel and is not included.
+- The Bank of England's 30 July 2026 stream began at 13:00 London, so its
+  conferences are set at 13:00. That rests on one stream; the window opens
+  30 minutes early, so a 12:30 start would still be covered. They happen
+  only when a Monetary Policy Report is published; the other meetings
+  have no press conference.
+
+**The schedule** (`lib/pressConferences.ts`) comes from each bank's
+published calendar and runs to the end of 2027. The Bank of Canada's 2027
+dates are not yet published. Unscheduled meetings do not appear; the
+About page says so.
+- `scripts/test-press-conferences.ts` (in CI) pins:
+  - local time to UTC across the October/November clock changes;
+  - the channel IDs;
+  - the live, ended and next windows, including both overlapping days;
+  - "in N days".
+- It **fails once fewer than three conferences remain more than 60 days
+  out.** That failure is the reminder to add the next year's dates from
+  each `calendarUrl`.
+- Four mutations were caught.
+
+**Also changed:**
+- CSP `frame-src` goes from `'none'` to `https://www.youtube-nocookie.com`
+  only. `verify-security.ts` pins it exactly. `frame-ancestors 'none'`
+  stays, so nobody may frame this site.
+- `useNow` (`lib/liveTime.ts`) also re-reads the clock when a tab becomes
+  visible again, because background tabs slow timers down.
+- The About page explains the card.
