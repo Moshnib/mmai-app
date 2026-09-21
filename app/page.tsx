@@ -16,6 +16,7 @@ import StructuredData from "@/components/StructuredData";
 import LiveBar from "@/components/LiveBar";
 import MarketTicker from "@/components/MarketTicker";
 import NewsBand from "@/components/NewsBand";
+import LivePressCard from "@/components/LivePressCard";
 import CountryGlyph from "@/components/CountryGlyph";
 import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
@@ -610,6 +611,7 @@ export default function OverviewPage() {
               headlines, and nothing here is an opinion.
             </p>
           </div>
+          <LivePressCard />
           <NewsBand />
         </div>
       </div>

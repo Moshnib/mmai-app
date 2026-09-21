@@ -221,6 +221,14 @@ export default function AboutPage() {
             cookies and records nothing that identifies you. Email addresses are held only if you subscribe, and
             every email has an unsubscribe link.
           </p>
+          {/* Keep true if the live card (components/LivePressCard.tsx) changes. */}
+          <p style={{ fontSize: 13, color: "var(--slate)", lineHeight: 1.7, margin: "12px 0 0" }}>
+            <strong style={{ color: "var(--ink-soft)" }}>Live press conferences.</strong> The homepage shows the
+            next scheduled press conference from the Federal Reserve, the ECB, the Bank of England and the Bank of
+            Canada, from each bank&apos;s published calendar; unscheduled meetings do not appear. The video is the
+            bank&apos;s own stream, played by YouTube in its privacy-enhanced mode, and nothing from YouTube loads
+            until you press play. The Federal Reserve streams only on its own website, so its link opens there.
+          </p>
         </div>
       </div>
     </>

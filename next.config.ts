@@ -103,7 +103,9 @@ const CSP = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "frame-src 'none'",
+  // The live press-conference player (components/LivePressCard.tsx), and
+  // only after the reader presses play. Pinned by verify-security.ts.
+  "frame-src https://www.youtube-nocookie.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "upgrade-insecure-requests",

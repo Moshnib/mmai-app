@@ -119,6 +119,18 @@ console.log("\nvercel.json schedules the watchdog and nothing else\n");
   check("vercel.json crons are exactly [/api/watchdog]", paths, ["/api/watchdog"]);
 }
 
+// THE ONE FRAME THE SITE MAY LOAD. Until 21 September frame-src was
+// 'none'. The live press-conference player (components/LivePressCard.tsx)
+// needs YouTube's privacy-enhanced domain and nothing else; a wider
+// frame-src would let any injected frame load. Framing OF this site stays
+// forbidden.
+{
+  const cfg = readFileSync(join(process.cwd(), "next.config.ts"), "utf8");
+  const frameSrc = cfg.match(/"frame-src ([^"]*)"/)?.[1];
+  check("CSP frame-src is exactly youtube-nocookie", frameSrc, "https://www.youtube-nocookie.com");
+  check("CSP still forbids framing this site", /"frame-ancestors 'none'"/.test(cfg), true);
+}
+
 console.log("\nPublic write rate limit\n");
 
 // A fresh key per case so cases cannot contaminate each other.

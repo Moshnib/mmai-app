@@ -2137,6 +2137,54 @@ a.dim-axis-row:hover { background: var(--hover); }
 }
 .news-empty { margin: 0; font-size: var(--t-small); color: var(--slate); }
 
+/* LIVE PRESS CONFERENCES (components/LivePressCard.tsx). A line of text
+   until something is live; the player box appears only then, and the
+   YouTube frame inside it only after the reader presses play. */
+.press-card {
+  display: grid; gap: 10px; margin-bottom: 16px;
+  background: var(--card-bg); border: 1px solid var(--hair);
+  border-radius: var(--card-radius); padding: 14px 18px;
+}
+/* Same height as the usual "NEXT LIVE" card, so nothing jumps on load. */
+.press-card--placeholder { min-height: 92px; }
+.press-line {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 0;
+  font-size: var(--t-small); color: var(--ink);
+}
+.press-line strong { font-weight: 600; }
+.press-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .12em; color: var(--accent);
+}
+.press-tag--live { color: var(--status-live); }
+.press-until { color: var(--slate); font-variant-numeric: tabular-nums; }
+.press-note { margin: 0; font-size: var(--t-micro); color: var(--slate); }
+.press-link {
+  font-size: var(--t-small); color: var(--ink); text-decoration: underline;
+  text-decoration-color: var(--hair-strong); text-underline-offset: 3px; justify-self: start;
+}
+.press-link:hover { color: var(--accent); text-decoration-color: var(--accent); }
+.press-live { display: grid; gap: 10px; }
+.press-watch { justify-self: start; }
+.press-player {
+  position: relative; width: 100%; max-width: 720px; aspect-ratio: 16 / 9;
+  border: 1px solid var(--hair); border-radius: var(--card-radius); overflow: hidden; background: #000;
+}
+.press-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.press-play {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; width: 100%; background: var(--card-bg); border: 0; color: var(--ink); cursor: pointer;
+  font-family: var(--font-mono); font-size: var(--t-small); font-weight: 600;
+}
+.press-play:hover .press-play-icon, .press-play:focus-visible .press-play-icon { background: var(--accent); color: var(--on-ink); }
+.press-play-icon {
+  display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
+  border: 1px solid var(--accent); color: var(--accent); font-size: var(--t-body);
+}
+.press-play-sub { font-size: var(--t-micro); font-weight: 400; color: var(--slate); }
+@media (prefers-reduced-motion: reduce) { .press-play-icon { transition: none; } }
+
 /* The same announcements, one line each, in the strip. */
 .ticker-event.is-feed { color: var(--ink-soft); gap: 6px; }
 .ticker-event.is-feed::before { content: "●"; color: var(--status-live); font-size: var(--t-micro); }
@@ -2146,3 +2194,8 @@ a.dim-axis-row:hover { background: var(--hover); }
    is an alert, not the article. */
 .ticker-feed-title { color: var(--slate); max-width: 42ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 640px) { .ticker-feed-title { max-width: 24ch; } }
+.press-close {
+  background: transparent; border: 1px solid var(--hair-strong); border-radius: var(--card-radius);
+  color: var(--slate); font-family: var(--font-mono); font-size: var(--t-micro); padding: 4px 10px; cursor: pointer;
+}
+.press-close:hover, .press-close:focus-visible { color: var(--ink); border-color: var(--slate); }
