@@ -27,7 +27,63 @@ export function newestByCountry(rows: ObservatoryRow[]): Map<string, Observatory
   return out;
 }
 
-export async function fetchObservatoryRows(): Promise<Map<string, ObservatoryRow>> {
+// ============================================================
+//  WHEN A SOURCE IS DOWN ALL DAY, SHOW ITS LAST FIGURE, MARKED
+//
+//  Every refresh retries a missed Observatory figure within the day
+//  (lib/observatory.ts, fillFromEarlier). A source down ALL day -- or on
+//  the first run, with nothing earlier that day -- still left an N/A.
+//  Gulf Watch already solves exactly this at read time
+//  (lib/gulfCarryForward.ts), and the same three rules apply here:
+//
+//    the figure keeps ITS OWN date, never today's
+//    it is listed as carried, and the page says so
+//    it expires after MAX_OBSERVATORY_CARRY_DAYS: a dead source is a gap
+//
+//  Read time, never written back: a carried copy stored as a new row
+//  would be read the next day as if fetched, and the bound would measure
+//  the age of the copy and never expire.
+// ============================================================
+
+export const MAX_OBSERVATORY_CARRY_DAYS = 14;
+
+const CARRIED: Array<{ value: keyof ObservatoryRow; date: keyof ObservatoryRow; name: string }> = [
+  { value: "inflation", date: "inflation_observation_date", name: "inflation" },
+  { value: "unemployment", date: "unemployment_observation_date", name: "unemployment" },
+  { value: "gdp_growth", date: "gdp_observation_date", name: "GDP growth" },
+  { value: "policy_rate", date: "policy_rate_observation_date", name: "policy rate" },
+  { value: "yield_10y", date: "yield_observation_date", name: "ten-year yield" },
+  { value: "debt_pct_gdp", date: "debt_observation_period", name: "government debt" },
+];
+
+export type ObservatoryShown = ObservatoryRow & { carried: string[] };
+
+/** The newest row for one country with each missing figure taken, with
+ *  its date, from the most recent row inside the bound that had it.
+ *  `rows` is that country's rows, newest first. */
+export function carryForwardObservatory(rows: readonly ObservatoryRow[], now: number): ObservatoryShown | null {
+  const [newest, ...older] = rows;
+  if (!newest) return null;
+  const out: Record<string, unknown> = { ...newest };
+  const carried: string[] = [];
+  for (const f of CARRIED) {
+    if (out[f.value] != null) continue;
+    for (const row of older) {
+      // Measured against the row actually used, so a country written
+      // every day cannot keep a long-dead figure alive.
+      const age = (now - Date.parse(row.fetched_at)) / 86_400_000;
+      if (!Number.isFinite(age) || age > MAX_OBSERVATORY_CARRY_DAYS) break;
+      if (row[f.value] == null || row[f.date] == null) continue; // a value without its date is not usable
+      out[f.value] = row[f.value];
+      out[f.date] = row[f.date];
+      carried.push(f.name);
+      break;
+    }
+  }
+  return { ...(out as unknown as ObservatoryRow), carried };
+}
+
+export async function fetchObservatoryRows(): Promise<Map<string, ObservatoryShown>> {
   const supabase = getPublicSupabaseClient();
   const { data, error } = await supabase
     .from("observatory_indicators")
@@ -55,5 +111,20 @@ export async function fetchObservatoryRows(): Promise<Map<string, ObservatoryRow
   // and the page renders it as awaiting its first reading rather than
   // pretending it has one.
   const byCountry = newestByCountry(rows.filter((r) => OBSERVATORY_CODES.includes(r.country_code)));
-  return byCountry;
+  // Each country's full history in the same order newestByCountry uses,
+  // so the row shown first is the same row it would have picked.
+  const now = Date.now();
+  const out = new Map<string, ObservatoryShown>();
+  for (const code of byCountry.keys()) {
+    const history = rows
+      .filter((r) => r.country_code === code)
+      .sort((a, b) =>
+        a.observation_date !== b.observation_date
+          ? (a.observation_date < b.observation_date ? 1 : -1)
+          : (a.fetched_at < b.fetched_at ? 1 : -1),
+      );
+    const shown = carryForwardObservatory(history, now);
+    if (shown) out.set(code, shown);
+  }
+  return out;
 }

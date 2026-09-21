@@ -7,7 +7,7 @@
 //  have raised the alarm was the one that had stopped. Every run was red,
 //  and red in a tab nobody was looking at is silence.
 //
-//  So this runs somewhere else (a Vercel cron, app/api/watchdog) and asks
+//  So this runs somewhere else (a Vercel cron at 23:30 UTC, app/api/watchdog) and asks
 //  the only question that catches every cause at once: how old is the
 //  newest reading for each thing the site publishes? It does not care WHY
 //  -- a billing block, a moved address, a dead source, an expired key --
@@ -24,13 +24,18 @@
 // ============================================================
 
 /** Tighter than the site's own 30-hour warning (REFRESH_OVERDUE_MS), on
- *  purpose. This runs ONCE a day, at 15:30 UTC. The refresh runs at 06:10,
- *  12:00 and 18:00, so on a healthy day the newest reading is at most ~9
- *  hours old at 15:30 (the 06:10 run, if the 12:00 one was slow). At 30
- *  hours, a refresh that died after 12:00 on day D would still look fine at
- *  15:30 on D+1 (27 h) and be reported only on D+2, ~51 h after the last
- *  good run. At 20 hours, the first check after two missed runs reports it:
- *  the same afternoon. */
+ *  purpose. This runs ONCE a day, at 23:30 UTC (vercel.json).
+ *
+ *  23:30, NOT 15:30 (moved 21 September). GitHub starts the scheduled
+ *  refresh hours late -- the "06:10" run began at 10:54–11:18 from 16 to 20
+ *  September, and on the 19th the morning run never started -- and only
+ *  the first run that lands each day writes rows (the freshness guard
+ *  makes the rest no-ops). At 15:30 a day whose morning run was dropped
+ *  would read as ~28 hours stale and send a false alarm; at 23:30 the day's
+ *  four runs have all had their chance. On a healthy day the newest reading
+ *  is ~12–18 hours old at 23:30. Past 20 hours, nothing landed since about
+ *  03:30 UTC: a whole day's runs have failed, and it is reported the same
+ *  night rather than the next day. */
 export const WATCHDOG_OVERDUE_MS = 20 * 60 * 60 * 1000;
 
 export const ACTIONS_URL = "https://github.com/Moshnib/mmai-app/actions/workflows/refresh.yml";
@@ -81,7 +86,7 @@ export function message(verdict: Verdict, now: number): { subject: string; text:
     text:
       `The MMAI watchdog checked at ${when}.\n\n` +
       `These have had no new reading for more than ${WATCHDOG_OVERDUE_MS / 3_600_000} hours. ` +
-      `The refresh runs three times a day, so at least two runs in a row have not landed:\n\n` +
+      `The refresh runs four times a day, so none of today's runs has landed:\n\n` +
       `${lines.join("\n")}\n\n` +
       `The site is still up and showing the last figures it has.\n\n` +
       `Where to look first: the refresh runs on GitHub, here:\n${ACTIONS_URL}\n` +

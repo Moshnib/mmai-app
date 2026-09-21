@@ -90,7 +90,7 @@ Everything below was checked directly at the time, not assumed:
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only, bypasses RLS | ✅ Set | ⚠️ Placeholder |
 | `BEA_API_KEY` | US GDP growth | ✅ Set | ❌ Not set |
 | `EIA_API_KEY` | Brent Crude (shared) | ✅ Set | ❌ Not set |
-| `CRON_SECRET` | Protects `/api/refresh` | ✅ Set (`mmai-verify-2026`) | — |
+| `CRON_SECRET` | Protects `/api/refresh` | ✅ Set (value kept out of these notes) | — |
 | `RESEND_API_KEY` | Email alerts | ❌ **Not set** | ❌ Not set |
 | `BLS_API_KEY` | Optional, raises BLS rate limit 25→500/day | Not set (not required) | — |
 
@@ -466,7 +466,7 @@ Per the standing Fable-review rule, the first draft of this plan was reviewed by
 
 ### 11.6 Security finding (2026-08-26) — unrelated to Gulf Watch, found while testing it
 
-While manually triggering `/api/refresh-gulf` to verify its database writes, discovered that **`CRON_SECRET` was not actually being enforced on either refresh endpoint** — every request succeeded regardless of what secret was sent, including none at all and a deliberately wrong one. This predates Gulf Watch entirely and affected the pre-existing `/api/refresh` route too (confirmed by testing it the same way). Root cause unconfirmed — Vercel's "Secret" type environment variables can never be viewed again once saved, so there was no way to inspect what was actually stored; most likely corrupted when it was last changed on 2026-08-22. **Fixed**: the site owner deleted and recreated `CRON_SECRET` in the Vercel dashboard with a known value (`mmai-verify-2026`) and redeployed. Re-verified after: both endpoints now correctly return 401 for missing/wrong secrets and 200 only for the right one.
+While manually triggering `/api/refresh-gulf` to verify its database writes, discovered that **`CRON_SECRET` was not actually being enforced on either refresh endpoint** — every request succeeded regardless of what secret was sent, including none at all and a deliberately wrong one. This predates Gulf Watch entirely and affected the pre-existing `/api/refresh` route too (confirmed by testing it the same way). Root cause unconfirmed — Vercel's "Secret" type environment variables can never be viewed again once saved, so there was no way to inspect what was actually stored; most likely corrupted when it was last changed on 2026-08-22. **Fixed**: the site owner deleted and recreated `CRON_SECRET` in the Vercel dashboard with a known value (an old value (removed from these notes 21 September; it no longer works)) and redeployed. Re-verified after: both endpoints now correctly return 401 for missing/wrong secrets and 200 only for the right one.
 4. **Phase 3: UI.** `components/GulfCard.tsx` (flat card, modeled on `CompareGrid.tsx` not `PillarGrid.tsx`, since there's no score to put in a ring), `app/gulf-watch/page.tsx` + `GulfWatchPageInner.tsx` (thin-wrapper + Suspense pattern, same as `app/compare/`), nav links added to all 7 files that currently duplicate nav markup (there's no shared nav component — confirmed and accepted as out of scope for this feature), a second `SourcesTable` block on `/sources` for Gulf entries, and `ExportDataButtons.tsx` updated so its "nothing held back" claim stays true once Gulf Watch ships.
 5. **Phase 4: polish** — full unattended cron cycle confirmed for both refresh routes before calling it done, same standard already applied to the main 6-market cron.
 
@@ -2482,7 +2482,7 @@ only browsers: the refresh workflow, the GitHub variable, and emails.
 
 **Also found the same day:**
 - **The laptop's `CRON_SECRET` is stale.** Both the `.env.local` value and
-  the documented `mmai-verify-2026` get a 401 from production, so the
+  the documented an old value (removed from these notes 21 September; it no longer works) get a 401 from production, so the
   site's secret was changed after 26 August. The GitHub secret is correct
   (the workflow authenticates). A manual refresh from the laptop needs
   the owner to set a new value in Vercel and GitHub together.
@@ -2664,6 +2664,7 @@ The early-return JSON now carries `observatory` too.
 down all day, or fails on the first run with nothing earlier that day,
 still shows N/A. There is no carry-over from yesterday yet; that is open
 in `MMAI_TODO.md`.
+
 ## 39. The source audit stops crying wolf on Mondays (2026-09-19)
 
 Found in a live health check the owner asked for ("no bugs, no blocks
@@ -2800,3 +2801,96 @@ it.
   only confirmed from the owner's laptop. The force=1 dispatch after
   deploy is that check: its log must show `ok` for all five, or this is
   to be fixed before it is relied on.
+
+## 41. Full audit: security, the live site, the data, loose ends (2026-09-21)
+
+The owner asked for a full audit and fixes. What was checked, what was
+found and what was changed.
+
+**Security, checked and sound:**
+- `npm audit --omit=dev`: 0 vulnerabilities.
+- One HIGH in a dev-only dependency (js-yaml via eslint), never shipped
+  to the site. Fixed with `npm audit fix`, which changes only the
+  lockfile.
+- No secret-shaped strings are tracked, and `.env.local` is ignored.
+- Live headers: CSP, HSTS (2 years, preload), X-Frame-Options DENY,
+  nosniff, Referrer-Policy, Permissions-Policy.
+- All four scheduled routes answer 401 without the secret and 401 with a
+  wrong one.
+- The public forms reject bad input (400). The unsubscribe route rejects
+  a junk token (400). The old vercel.app address 308s with its path.
+- Row-level security, tested from outside with the PUBLIC key only:
+  - `subscribers` and `feedback_submissions` read as `[]`.
+  - An INSERT into every table is refused (42501).
+  - The public tables are readable, as intended.
+- The Supabase MCP could not run advisors (its access token has lapsed).
+  The external test above is the stronger check anyway.
+- **Found:** an old CRON_SECRET value written in plain text in four places
+  in these notes. It is already invalid (production rejects it, §36), and
+  the repo is private. It was removed anyway. It remains in git history,
+  which is harmless while invalid. Passwords do not go in these notes.
+
+**The live site** (browser suites run against www.mmai.markets with
+`LAYOUT_TEST_URL`):
+- runtime-errors, layout, accessibility, nav, ticker and text-legibility
+  all pass.
+- site-functions' three host-redirect checks "failed" only because plain
+  http to the deployed site is upgraded to https before any host rule
+  runs. They now skip unless pointed at a local server; the deployed
+  redirect is checked with curl.
+- All 46 source URLs resolve.
+
+**The data:**
+- Every scored market, Gulf country and Observatory country has a
+  complete latest row.
+- The last scheduled refresh reported: freshness OK, published statistics
+  match, all five Gulf relays ok, every reachable figure agrees with its
+  source.
+- The local source audit: 31 of 35 figures match exactly; EA's rate is one
+  day behind (ordinary); Korea's three need the relay (by design).
+
+**Found and fixed: GitHub starts the scheduled refresh hours late.**
+- From 16 to 20 September: the 06:10 slot started 10:54–11:18, 12:00
+  started 15:45–15:53, 18:00 started 20:26–20:38. On the 19th the morning
+  run never started.
+- The schedule is now four runs at :43 (05:43, 11:43, 17:43, 22:43 UTC),
+  per GitHub's advice to avoid the congested minutes. A fourth run
+  catches a dropped one within about six hours.
+- The homepage now says "rechecked four times a day".
+- **The watchdog moved from 15:30 to 23:30 UTC.** Only the first run that
+  lands each day writes rows, so at 15:30 a day with a dropped morning run
+  would read ~28 h stale and raise a false alarm. At 23:30 the whole
+  day's runs have had their chance. The 20 h threshold stays: past it,
+  nothing has landed since ~03:30 UTC. `test-watchdog.ts` was re-pinned to
+  23:30.
+
+**Found and fixed: the Observatory showed N/A when a source was down all
+day** (the cross-day case §38.1 left open).
+- `carryForwardObservatory` (`lib/observatoryRead.ts`, read time, never
+  written back) fills a missing figure from the most recent row within
+  14 days that has BOTH value and date.
+- The figure keeps its own date, and the page says "Did not refresh
+  today".
+- The same rules as `lib/gulfCarryForward.ts`. Four cases were added to
+  `test-observatory-retry.ts`, and three mutations were caught.
+
+**Loose ends closed in `MMAI_TODO.md`:**
+- The Norges Bank email: not needed, since Norway comes via BIS.
+- The chart-date bug: already fixed, since per-indicator dates were
+  stored from August.
+- Bahrain real estate: closed.
+- The "8th market" item: rewritten, as there are nine markets now.
+- The news-feed section: marked live.
+- The cross-day Observatory gap: fixed.
+
+**Left, for the owner:**
+- Remote branches: 59 belong to merged PRs and can be deleted. Two are
+  unmerged history (`learn-index-and-formulas`, closed;
+  `research/v2-scoring`, no PR) and are kept. Deletion is waiting for the
+  owner's yes.
+- The Supabase MCP token needs renewing for advisors.
+- Arm the alarms (§37): `OWNER_ALERT_EMAIL`, the test email,
+  Healthchecks.io, and GitHub's failed-run emails.
+- Japan's MONTHLY inflation is still absent from the Trends monthly view
+  (`lib/monthlyHistory.ts`). e-Stat, which already serves Japan's scored
+  inflation, could fill it: a candidate follow-up.

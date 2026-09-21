@@ -200,6 +200,15 @@ async function terms(browser: Browser) {
  *  is the only way to exercise a host rule without deploying. */
 async function oneAddress() {
   console.log("\nOne address for the site");
+  // A LOCAL SERVER ONLY. Against the deployed site, plain http on port 80
+  // is upgraded to https by Vercel before any host rule runs, so every
+  // host answers 308 and all three checks "fail" while the redirect works
+  // (found when this suite was pointed at www.mmai.markets on 21
+  // September). The deployed redirect is checked with curl instead.
+  if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(BASE)) {
+    console.log("  skip  host checks need a local server (http://localhost:…); run against the deployed site, they only see Vercel's https upgrade");
+    return;
+  }
   // node:http, not fetch: fetch refuses to set a Host header (it is on the
   // forbidden list), so the request arrives with the server's own host and
   // the rule never matches -- which read as "the redirect is broken" when

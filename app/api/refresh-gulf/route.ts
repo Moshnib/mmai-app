@@ -189,7 +189,7 @@ export async function GET(request: Request) {
   const results: Array<{ country: string; status: string }> = [];
 
   // Freshness guard -- same reasoning as app/api/refresh/route.ts. The
-  // scheduled trigger runs three times a day so a missed or failed
+  // scheduled trigger runs four times a day so a missed or failed
   // attempt recovers on its own; skipping countries already written
   // today is what keeps the extra attempts harmless no-ops instead of
   // duplicate rows. ?force=1 overrides.

@@ -14,7 +14,7 @@
 # and are re-runnable by hand from the Actions tab when something does
 # go wrong.
 #
-# THREE RUNS A DAY, NOT ONE. The later two are safety nets: if the 06:10
+# FOUR RUNS A DAY, NOT ONE. The later ones are safety nets: if the first
 # run fails or GitHub delays it, the next attempt fills the gap on its
 # own. This is only safe because the routes skip markets that already
 # have a reading for today -- see the freshness guard in
@@ -39,10 +39,18 @@ name: Refresh MMAI data
 
 on:
   schedule:
-    # UTC. 06:10 is the intended daily refresh; the rest are recovery.
-    - cron: "10 6 * * *"
-    - cron: "0 12 * * *"
-    - cron: "0 18 * * *"
+    # UTC. FOUR RUNS, AT :43, since 21 September. GitHub starts scheduled
+    # jobs late under load, worst near the top and quarters of the hour:
+    # from 16 to 20 September the 06:10 run started at 10:54–11:18, the
+    # 12:00 at 15:45–15:53, the 18:00 at 20:26–20:38, and on the 19th the
+    # morning run never started at all. :43 is GitHub's own advice (avoid
+    # the congested minutes); a fourth run means a dropped or late one is
+    # made up within about six hours. The first run that lands each day
+    # writes the day's row, and the rest are no-ops (the freshness guard).
+    - cron: "43 5 * * *"
+    - cron: "43 11 * * *"
+    - cron: "43 17 * * *"
+    - cron: "43 22 * * *"
   # Adds a "Run workflow" button in the Actions tab, so a missed day can
   # be fixed in one click without waiting or touching a terminal.
   workflow_dispatch:
@@ -189,7 +197,7 @@ jobs:
         run: |
           echo "Calling /api/refresh (force=${{ inputs.force }}) …"
           # The freshness guard skips any market already stamped today, which
-          # is what makes three runs a day safe. That same guard blocks a
+          # is what makes four runs a day safe. That same guard blocks a
           # deliberate re-run after a SOURCE CHANGE -- the readings exist, they
           # were just produced by the old source. force=1 overrides it, and is
           # only ever set by hand from the Actions tab, never on a schedule.

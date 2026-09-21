@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Flag from "@/components/Flag";
-import { OBSERVATORY, observatoryByRegion, type ObservatoryRow } from "@/lib/observatory";
-import { fetchObservatoryRows } from "@/lib/observatoryRead";
+import { OBSERVATORY, observatoryByRegion } from "@/lib/observatory";
+import { fetchObservatoryRows, type ObservatoryShown } from "@/lib/observatoryRead";
 
 // ============================================================
 //  COUNTRIES WORTH WATCHING AND NOT WORTH SCORING
@@ -64,7 +64,7 @@ function Figure({ value, date, dp = 1, suffix = "%" }: { value: number | null; d
 }
 
 export default function ObservatoryInner() {
-  const [rows, setRows] = useState<Map<string, ObservatoryRow>>(new Map());
+  const [rows, setRows] = useState<Map<string, ObservatoryShown>>(new Map());
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
@@ -181,6 +181,16 @@ export default function ObservatoryInner() {
                     <>
                       {" "}
                       <span style={{ color: "var(--ink-soft)" }}>On its policy rate:</span> {c.policyRateNote}
+                    </>
+                  )}
+                  {/* Said out loud, as Gulf Watch does: a figure its source did
+                      not answer for today shows its last published reading,
+                      under that reading's own date (lib/observatoryRead.ts). */}
+                  {(rows.get(c.code)?.carried.length ?? 0) > 0 && (
+                    <>
+                      {" "}
+                      <span style={{ color: "var(--ink-soft)" }}>Did not refresh today:</span>{" "}
+                      {rows.get(c.code)!.carried.join(", ")} — shown at its last published reading, under that reading&apos;s own date.
                     </>
                   )}
                 </div>
