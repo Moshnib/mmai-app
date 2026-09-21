@@ -27,6 +27,7 @@
 
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/siteUrl";
+import { OG_ALT, OG_IMAGE_PATH, OG_SIZE } from "@/lib/ogImage";
 
 export interface PageMeta {
   /** Page name only. The root layout's template appends " — MMAI". */
@@ -50,6 +51,11 @@ export function pageMetadata({ title, description, path }: PageMeta): Metadata {
   // in the navigation, which is why <title> can stay short.
   const socialTitle = `${title} — MMAI`;
 
+  // Written out, not inherited: this page's openGraph replaces the root's
+  // whole, and the picture goes with it (lib/ogImage.ts). Relative, so
+  // metadataBase makes it absolute on whatever domain the site is on.
+  const image = { url: OG_IMAGE_PATH, ...OG_SIZE, alt: OG_ALT, type: "image/png" };
+
   return {
     title,
     description,
@@ -61,11 +67,13 @@ export function pageMetadata({ title, description, path }: PageMeta): Metadata {
       description,
       url,
       locale: "en",
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title: socialTitle,
       description,
+      images: [image],
     },
   };
 }

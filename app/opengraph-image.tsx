@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { OG_ALT, OG_SIZE } from "@/lib/ogImage";
 
 // The preview card shown whenever an MMAI link is shared on LinkedIn, X,
 // WhatsApp, Slack, iMessage, etc. Without this file those platforms render a
@@ -9,8 +10,10 @@ import { ImageResponse } from "next/og";
 // LITERAL HEX, NOT var(): this is rendered to a PNG by Satori, which has no
 // stylesheet to resolve a variable against. Keep in step with :root.
 
-export const alt = "MMAI — Moshnib Macro Analysis Index";
-export const size = { width: 1200, height: 630 };
+// From lib/ogImage.ts, which every page's metadata also points at, so the
+// card each page names and the card this draws cannot disagree.
+export const alt = OG_ALT;
+export const size = OG_SIZE;
 export const contentType = "image/png";
 
 export default function OpengraphImage() {
