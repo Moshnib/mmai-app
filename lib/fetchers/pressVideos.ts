@@ -212,6 +212,8 @@ export interface PressVideoSet {
   home: PressVideo[];
   /** The Videos page: everything kept, newest first. */
   all: PressVideo[];
+  /** How many of the channels answered this time. */
+  answered: number;
 }
 
 /** One read of every feed serves both, from one cached response. */
@@ -222,5 +224,21 @@ export async function fetchPressVideos(): Promise<PressVideoSet> {
   const perChannel = results.map((r, i) =>
     r.status === "fulfilled" ? videosIn(channels[i].id, parseYoutubeFeed(r.value)) : []
   );
-  return { home: pickHome(perChannel), all: pickAll(perChannel) };
+  const answered = results.filter((r) => r.status === "fulfilled").length;
+  return { home: pickHome(perChannel), all: pickAll(perChannel), answered };
+}
+
+/** Below this many channels answering, an answer is a bad moment at
+ *  YouTube, not the state of the channels. */
+export const FULL_ANSWER_CHANNELS = 5;
+
+/** How long the CDN may keep an answer. On 22 September 2026 YouTube's feed
+ *  endpoint answered 404 or 500 for eight of nine channels; the one that
+ *  answered was cached for an hour -- with a day's stale allowance on top --
+ *  and the homepage showed one video instead of six. A thin answer is now
+ *  kept for a minute, so the next request tries again. */
+export function cacheControlFor(answered: number): string {
+  return answered >= FULL_ANSWER_CHANNELS
+    ? "public, s-maxage=3600, stale-while-revalidate=600"
+    : "public, s-maxage=60";
 }

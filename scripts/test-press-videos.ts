@@ -12,7 +12,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseYoutubeFeed, videosIn, pickHome, pickAll, isFeed, displayTitle } from "../lib/fetchers/pressVideos";
+import { parseYoutubeFeed, videosIn, pickHome, pickAll, isFeed, displayTitle, cacheControlFor } from "../lib/fetchers/pressVideos";
 import { VIDEO_CHANNELS, type PressVideo, type VideoChannelId } from "../lib/pressConferences";
 import { checked } from "../lib/videoList";
 
@@ -97,6 +97,14 @@ const all = pickAll(per);
 check("newest first", all.every((x, i) => i === 0 || all[i - 1].published >= x.published), true);
 check("Norges Bank's two years of decisions are capped at eight", all.filter((x) => x.bank === "norges").length, 8);
 check("every channel with a video is on the page", [...new Set(all.map((x) => x.bank))].sort(), [...ALL].sort());
+
+console.log("\nA thin answer from YouTube is not kept for an hour\n");
+// 22 September 2026: eight of nine feeds failed, the ninth was cached for
+// an hour, and the homepage showed one video.
+check("one channel answering is kept for a minute", cacheControlFor(1), "public, s-maxage=60");
+check("four channels answering is still thin", cacheControlFor(4).includes("s-maxage=60"), true);
+check("five or more is kept an hour", cacheControlFor(5).includes("s-maxage=3600"), true);
+check("...and never with a day's stale allowance", cacheControlFor(9).includes("86400"), false);
 
 console.log("\nThe browser only accepts what it can safely play\n");
 check("unknown channels and bad ids are dropped", checked([
