@@ -3247,7 +3247,59 @@ with a day's stale allowance on top.
   GitHub runner too, the page logged a 503, and the runtime check failed.
   A YouTube outage now just hides the row quietly.
 
-**Fix 2 (next, needs the owner to run one SQL block).** A `press_videos`
-table keeps every video the site has seen, so a bad moment at YouTube can
-never shrink the list, and the list grows past the feeds' 15-upload
-window. The homepage also gets "Show more", which was the owner's choice.
+**Fix 2: stored videos.**
+- **The table.** `press_videos`
+  (`supabase/migrations/2026-09-22-press-videos.sql`). The owner ran it in
+  the SQL editor on 22 September; the Supabase MCP was down. Columns:
+  `video_id` (checked to be 11 characters), `channel`, the RAW YouTube
+  `title`, `published`, `first_seen` and `hidden`.
+  - RLS is on. The public may SELECT, and nothing else, granted
+    explicitly; only the service role writes. Hidden rows are readable on
+    purpose: `combine` removes a hidden id from the LIVE feed entries too,
+    or "live wins" would put it straight back while the feed still listed
+    it (the reviewer's catch). The first policy said `using (hidden =
+    false)` and was re-run as `using (true)`.
+  - Verified from outside with the public key: reading works, INSERT is
+    refused (42501).
+  - The route's read of the table times out after 3 seconds, and then the
+    live feeds are used alone.
+  - **To take a video off the site:**
+    `update press_videos set hidden = true where video_id = '...';`
+- **Tags are worked out when the list is read.** Kind and language come
+  from `RULES` at read time, never stored, so a rule changed later
+  applies to old videos too.
+- **Saving.** `/api/refresh-videos` checks CRON_SECRET first
+  (`verify-security.ts` pins it) and upserts every non-Short upload the
+  feeds list. It never deletes. It answers 502 when no feed answered.
+  - Called by a new step in `refresh.yml`, "Save central bank videos",
+    which runs even after a failed step and never fails the run.
+- **Reading.** `/api/press-videos` stays public and read-only. It reads
+  the newest 400 stored rows, merges them with the live feeds (the live
+  title wins), and caches by channels COVERED rather than channels
+  answered. With the table filled, a total YouTube outage still serves
+  the full lists for the hour.
+- **Seeded by hand.** YouTube's feeds answered 404 for every channel for
+  over an hour that morning, so nothing could be saved.
+  `scripts/seed-press-videos.ts` prints SQL from the feeds captured for
+  the tests (`on conflict do nothing`), and the owner pasted it: 101
+  videos across all nine channels.
+  - The laptop's service-role key had lapsed, like its CRON_SECRET, which
+    is why the script prints SQL instead of writing.
+- **The homepage row.**
+  - `pickHome` gives up to 18. The six on show are the four live-card
+    banks' newest plus the newest of the rest; the others sit behind
+    "Show N more".
+  - One tile per institution per day, because the Riksbank posts two
+    videos for one decision.
+  - `VideoTiles` counts 4 on a phone and 6 wide in code
+    (`useSyncExternalStore` on matchMedia), so the button's number is
+    exact.
+  - Hidden tiles are not rendered, so their thumbnails are never
+    requested. Focus goes to the first revealed tile.
+  - The Videos page shows up to 60, ten per channel.
+- **Tested.** Six mutations were caught: stored rows ignored, stored beats
+  live, Shorts saved, no per-day dedupe, no lead priority, and the thin
+  threshold.
+  - Locally, with YouTube down: phone 4 tiles and "Show 14 more", desktop
+    6 and "Show 12 more", 18 after the click, and the thumbnails load
+    only then.

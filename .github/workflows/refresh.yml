@@ -357,6 +357,24 @@ jobs:
           head -c 800 /tmp/gulf.json; echo
           [ "$code" = "200" ] || exit 1
 
+      # SAVE THE CENTRAL BANK VIDEOS. On 22 September 2026 YouTube's feed
+      # endpoint failed for eight of nine channels and the homepage showed
+      # one video. /api/refresh-videos saves every upload the feeds list
+      # into press_videos, so a video seen once stays on the site whatever
+      # YouTube does later. Runs even if a step above failed, and never
+      # fails the run itself: a bad minute at YouTube is not a data outage,
+      # and the next run four hours later reads the feeds again.
+      - name: Save central bank videos
+        if: always()
+        continue-on-error: true
+        run: |
+          code=$(curl -sS -o /tmp/videos.json -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${SITE_URL}/api/refresh-videos")
+          echo "HTTP $code"
+          head -c 400 /tmp/videos.json; echo
+          [ "$code" = "200" ] || echo "::warning::videos not saved this run (HTTP $code)"
+
       # ---------------------------------------------------------------
       # DOES WHAT WE PUBLISH STILL AGREE WITH ITS SOURCE?
       #

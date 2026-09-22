@@ -12,7 +12,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseYoutubeFeed, videosIn, pickHome, pickAll, isFeed, displayTitle, cacheControlFor } from "../lib/fetchers/pressVideos";
+import { parseYoutubeFeed, videosIn, pickHome, pickAll, isFeed, displayTitle, cacheControlFor, rowsToSave, storedEntries, mergeEntries, buildSet, combine, type FeedEntry } from "../lib/fetchers/pressVideos";
 import { VIDEO_CHANNELS, type PressVideo, type VideoChannelId } from "../lib/pressConferences";
 import { checked } from "../lib/videoList";
 
@@ -79,23 +79,25 @@ check("a consent page answered with 200 is not", isFeed(fixture("consent-page.ht
 console.log("\nThe homepage row is press conferences, the four live-card banks first\n");
 const per = ALL.map(found);
 const home = pickHome(per);
-check("today's homepage row", home.map((v) => `${v.bank} ${v.published.slice(0, 10)}`), [
+check("today's homepage row, the six on show", home.slice(0, 6).map((v) => `${v.bank} ${v.published.slice(0, 10)}`), [
   "boc 2026-09-21", "boj 2026-09-18", "fed 2026-09-16", "ecb 2026-09-10", "riksbank 2026-08-20", "boe 2026-07-30",
 ]);
+check("one tile per institution per day (no Riksbank twice for one decision)", new Set(home.map((v) => `${v.bank} ${v.published.slice(0, 10)}`)).size, home.length);
+check("behind Show more, the rest by date", home.slice(6).every((x, i, a) => i === 0 || a[i - 1].published >= x.published), true);
 check("only press conferences and rate decisions on the homepage", home.every((v) => v.kind === "Press conference" || v.kind === "Rate decision"), true);
 const v = (bank: VideoChannelId, day: string, kind: PressVideo["kind"] = "Press conference"): PressVideo =>
   ({ bank, videoId: `${bank}${day}`.replace(/[^A-Za-z0-9]/g, "").padEnd(11, "x").slice(0, 11), title: "t", kind, lang: "en", published: `2026-${day}T12:00:00.000Z` });
 const busy = pickHome([
   [v("riksbank", "09-20"), v("riksbank", "09-19")], [v("boj", "09-18")], [v("boe", "07-30")],
   [v("fed", "09-10", "Speech"), v("fed", "07-29")],
-], 3);
+], 3, 3);
 check("a quarterly BoE and an older Fed conference beat newer videos from other channels", busy.map((x) => x.bank), ["riksbank", "boe", "fed"]);
 check("...and the Fed's newer speech is not on the homepage", busy.some((x) => x.kind === "Speech"), false);
 
-console.log("\nThe Videos page is everything, newest first, eight per channel at most\n");
+console.log("\nThe Videos page is everything, newest first, ten per channel at most\n");
 const all = pickAll(per);
 check("newest first", all.every((x, i) => i === 0 || all[i - 1].published >= x.published), true);
-check("Norges Bank's two years of decisions are capped at eight", all.filter((x) => x.bank === "norges").length, 8);
+check("Norges Bank's two years of decisions are capped at ten", all.filter((x) => x.bank === "norges").length, 10);
 check("every channel with a video is on the page", [...new Set(all.map((x) => x.bank))].sort(), [...ALL].sort());
 
 console.log("\nA thin answer from YouTube is not kept for an hour\n");
@@ -105,6 +107,37 @@ check("one channel answering is kept for a minute", cacheControlFor(1), "public,
 check("four channels answering is still thin", cacheControlFor(4).includes("s-maxage=60"), true);
 check("five or more is kept an hour", cacheControlFor(5).includes("s-maxage=3600"), true);
 check("...and never with a day's stale allowance", cacheControlFor(9).includes("86400"), false);
+
+console.log("\nStored videos: a failing feed can no longer shrink the list\n");
+{
+  const live = new Map<VideoChannelId, FeedEntry[]>(ALL.map((c) => [c, parseYoutubeFeed(feed(c))]));
+  const rows = rowsToSave(live);
+  check("Shorts are not saved", rows.some((r) => r.title.includes("#shorts")), false);
+  check("everything else the feeds list is saved, raw title and all", rows.find((r) => r.video_id === "rCBHa4xjqvI")?.title, "Live - ECB Governing Council Press Conference - 10 September 2026");
+  // The 22 September scenario: only the Bank of England's feed answers, but
+  // everything seen before is stored.
+  const onlyBoe = new Map<VideoChannelId, FeedEntry[]>([["boe", live.get("boe")!]]);
+  const outage = combine(rows, onlyBoe);
+  check("with one feed answering, the stored rows still fill the homepage", outage.home.length >= 6, true);
+  check("...and the Videos page", outage.all.length, buildSet(live).all.length);
+  check("...and the answer is not thin, so it is cached normally", outage.covered >= 5, true);
+  check("rules run on stored rows as on live ones (banknote videos stay out)", outage.all.some((v) => /bank note|billet/i.test(v.title)), false);
+  const renamed = new Map<VideoChannelId, FeedEntry[]>([["boe", [{ videoId: "G5m9FOeBD1Q", title: "Monetary Policy Report Press Conference, 30 July 2026 (with captions)", published: "2026-07-30T13:22:20.000Z", isShort: false }]]]);
+  const merged = mergeEntries(storedEntries(rows), renamed).get("boe")!;
+  check("one entry per video, and the live title wins", merged.filter((e) => e.videoId === "G5m9FOeBD1Q").map((e) => e.title), ["Monetary Policy Report Press Conference, 30 July 2026 (with captions)"]);
+  const junk = storedEntries([
+    { video_id: "abcdefghijk", channel: "constructor", title: "t", published: "2026-09-01T00:00:00Z" },
+    { video_id: "bad", channel: "fed", title: "t", published: "2026-09-01T00:00:00Z" },
+    { video_id: "abcdefghijk", channel: "fed", title: "t", published: "not a date" },
+  ]);
+  check("a stored row with an unknown channel, a bad id or a bad date is ignored", junk.size, 0);
+  // Hidden by hand while the Bank of England's feed still lists it.
+  const withHidden = rows.map((r) => (r.video_id === "G5m9FOeBD1Q" ? { ...r, hidden: true } : r));
+  const hid = combine(withHidden, onlyBoe);
+  check("a hidden video stays off the site even while its feed still lists it", [...hid.home, ...hid.all].some((x) => x.videoId === "G5m9FOeBD1Q"), false);
+  check("...and hiding one video hides nothing else", hid.all.length, outage.all.length - 1);
+  check("the homepage list holds up to 18 (6 shown, 12 behind Show more)", pickHome([Array.from({ length: 30 }, (_, i) => v("fed", `09-${String(i % 28 + 1).padStart(2, "0")}`))]).length, 18);
+}
 
 console.log("\nThe browser only accepts what it can safely play\n");
 check("unknown channels and bad ids are dropped", checked([

@@ -28,7 +28,7 @@ import {
 
 export type { PressVideo };
 
-interface FeedEntry { videoId: string; title: string; published: string; isShort: boolean }
+export interface FeedEntry { videoId: string; title: string; published: string; isShort: boolean }
 
 /** A feed is ~40 KB; anything far larger is not a YouTube feed. */
 const MAX_FEED_CHARS = 400_000;
@@ -155,22 +155,35 @@ export function videosIn(channel: VideoChannelId, entries: FeedEntry[]): PressVi
 const newestFirst = (a: PressVideo, b: PressVideo) => b.published.localeCompare(a.published);
 
 /** The homepage row sits under the live card, so it is about the same
- *  thing: press conferences and rate decisions. The four banks the live
+ *  thing: press conferences and rate decisions. Up to 18: six show, and
+ *  "Show more" reveals the rest in place (components/VideoTiles.tsx). The four banks the live
  *  card follows get a place first -- a Norges Bank video from June must
  *  not push out the Fed -- then other channels' conferences by date. */
-export function pickHome(perChannel: PressVideo[][], cap = 6): PressVideo[] {
-  const conferences = perChannel.map((l) => l.filter((v) => v.kind === "Press conference" || v.kind === "Rate decision"));
+export function pickHome(perChannel: PressVideo[][], cap = 18, lead = 6): PressVideo[] {
+  // One per institution per day: the Riksbank posts its press conference
+  // and the governor's short on the decision the same afternoon, and two
+  // tiles from one event read as a duplicate.
+  const seen = new Set<string>();
+  const conferences = perChannel.map((l) => l
+    .filter((v) => v.kind === "Press conference" || v.kind === "Rate decision")
+    .sort(newestFirst)
+    .filter((v) => { const k = `${v.bank} ${v.published.slice(0, 10)}`; if (seen.has(k)) return false; seen.add(k); return true; }));
   const core = new Set<VideoChannelId>(["fed", "ecb", "boe", "boc"]);
   const firsts = conferences.filter((l) => l.length > 0 && core.has(l[0].bank)).map((l) => l[0]);
-  const taken = new Set(firsts.map((v) => v.videoId));
-  const rest = conferences.flat().filter((v) => !taken.has(v.videoId)).sort(newestFirst);
-  return [...firsts, ...rest].slice(0, cap).sort(newestFirst);
+  const firstIds = new Set(firsts.map((v) => v.videoId));
+  const byDate = conferences.flat().filter((v) => !firstIds.has(v.videoId)).sort(newestFirst);
+  // The tiles on show before "Show more" are the first `lead`: the four
+  // live-card banks' newest, then the newest of the rest, in date order.
+  // Behind the button, everything else by date.
+  const shown = [...firsts, ...byDate].slice(0, lead).sort(newestFirst);
+  const shownIds = new Set(shown.map((v) => v.videoId));
+  return [...shown, ...byDate.filter((v) => !shownIds.has(v.videoId))].slice(0, cap);
 }
 
 /** The Videos page: everything, newest first, so a stale channel's June
- *  video can never look current -- at most eight per channel, or Norges
+ *  video can never look current -- at most ten per channel, or Norges
  *  Bank's two years of rate decisions would fill the page. */
-export function pickAll(perChannel: PressVideo[][], cap = 40, perChannelCap = 8): PressVideo[] {
+export function pickAll(perChannel: PressVideo[][], cap = 60, perChannelCap = 10): PressVideo[] {
   return perChannel.flatMap((l) => l.slice(0, perChannelCap)).sort(newestFirst).slice(0, cap);
 }
 
@@ -205,31 +218,101 @@ async function fetchFeed(channelId: string): Promise<string> {
   throw last;
 }
 
-/** Throws when EVERY feed failed, so the route's cache keeps its last good
- *  answer instead of storing an empty one for an hour. */
+/** Every channel's feed, read now. A channel that fails even after its
+ *  retry is simply absent from the map; nothing here throws. */
+export async function fetchFeeds(): Promise<{ entries: Map<VideoChannelId, FeedEntry[]>; answered: number }> {
+  const channels = Object.values(VIDEO_CHANNELS);
+  const results = await Promise.allSettled(channels.map((c) => fetchFeed(c.youtubeChannelId)));
+  const entries = new Map<VideoChannelId, FeedEntry[]>();
+  results.forEach((r, i) => { if (r.status === "fulfilled") entries.set(channels[i].id, parseYoutubeFeed(r.value)); });
+  return { entries, answered: entries.size };
+}
+
+// ------------------------------------------------------------
+//  STORED VIDEOS (the press_videos table,
+//  supabase/migrations/2026-09-22-press-videos.sql). Every video the site
+//  has seen, saved by /api/refresh-videos, so a bad moment at YouTube can
+//  no longer shrink the list. The raw title is stored, not our tags: the
+//  RULES above run on stored rows as on live ones, so a rule changed later
+//  applies to old videos too.
+// ------------------------------------------------------------
+
+export interface StoredVideo { video_id: string; channel: string; title: string; published: string; hidden?: boolean }
+
+/** What /api/refresh-videos saves: every upload the feeds listed except
+ *  Shorts (whether a video is a Short is known only from the feed's link,
+ *  which is not stored). Uploads no rule keeps are saved too and dropped
+ *  when read, so a rule added later can pick them up. */
+export function rowsToSave(entries: Map<VideoChannelId, FeedEntry[]>): StoredVideo[] {
+  const out: StoredVideo[] = [];
+  for (const [channel, list] of entries) {
+    for (const e of list) if (!e.isShort) out.push({ video_id: e.videoId, channel, title: e.title, published: e.published });
+  }
+  return out;
+}
+
+/** Stored rows back into feed entries, per channel -- only known channels
+ *  and valid ids, whatever the table holds. */
+export function storedEntries(rows: StoredVideo[]): Map<VideoChannelId, FeedEntry[]> {
+  const out = new Map<VideoChannelId, FeedEntry[]>();
+  for (const r of rows) {
+    if (!Object.hasOwn(VIDEO_CHANNELS, r.channel) || !VIDEO_ID.test(r.video_id)) continue;
+    const t = Date.parse(r.published);
+    if (!Number.isFinite(t) || typeof r.title !== "string") continue;
+    const channel = r.channel as VideoChannelId;
+    out.set(channel, [...(out.get(channel) ?? []), { videoId: r.video_id, title: r.title, published: new Date(t).toISOString(), isShort: false }]);
+  }
+  return out;
+}
+
+/** Stored and live together, one entry per video; the live one wins, being
+ *  the newer word on its title. */
+export function mergeEntries(stored: Map<VideoChannelId, FeedEntry[]>, live: Map<VideoChannelId, FeedEntry[]>): Map<VideoChannelId, FeedEntry[]> {
+  const out = new Map<VideoChannelId, FeedEntry[]>();
+  for (const channel of new Set([...stored.keys(), ...live.keys()])) {
+    const byId = new Map<string, FeedEntry>();
+    for (const e of stored.get(channel) ?? []) byId.set(e.videoId, e);
+    for (const e of live.get(channel) ?? []) byId.set(e.videoId, e);
+    out.set(channel, [...byId.values()]);
+  }
+  return out;
+}
+
 export interface PressVideoSet {
   /** The homepage row: press conferences and rate decisions. */
   home: PressVideo[];
   /** The Videos page: everything kept, newest first. */
   all: PressVideo[];
-  /** How many of the channels answered this time. */
-  answered: number;
+  /** How many channels have at least one video in the answer. */
+  covered: number;
 }
 
-/** One read of every feed serves both, from one cached response. */
-export async function fetchPressVideos(): Promise<PressVideoSet> {
-  const channels = Object.values(VIDEO_CHANNELS);
-  const results = await Promise.allSettled(channels.map((c) => fetchFeed(c.youtubeChannelId)));
-  if (results.every((r) => r.status === "rejected")) throw new Error("no press-video feed answered");
-  const perChannel = results.map((r, i) =>
-    r.status === "fulfilled" ? videosIn(channels[i].id, parseYoutubeFeed(r.value)) : []
-  );
-  const answered = results.filter((r) => r.status === "fulfilled").length;
-  return { home: pickHome(perChannel), all: pickAll(perChannel), answered };
+/** The lists the site shows, from stored and live entries together. */
+export function buildSet(entries: Map<VideoChannelId, FeedEntry[]>): PressVideoSet {
+  const perChannel = (Object.keys(VIDEO_CHANNELS) as VideoChannelId[]).map((id) => videosIn(id, entries.get(id) ?? []));
+  return { home: pickHome(perChannel), all: pickAll(perChannel), covered: perChannel.filter((l) => l.length > 0).length };
 }
 
-/** Below this many channels answering, an answer is a bad moment at
- *  YouTube, not the state of the channels. */
+/** What is stored and what the feeds list now, as the lists the site
+ *  shows. Pure, so the outage case is tested without a network. */
+export function combine(stored: StoredVideo[], live: Map<VideoChannelId, FeedEntry[]>): PressVideoSet {
+  // A video hidden by hand stays hidden even while the feed still lists
+  // it: it is taken out of the live entries as well as the stored ones,
+  // or "live wins" would put it straight back.
+  const hidden = new Set(stored.filter((r) => r.hidden === true).map((r) => r.video_id));
+  const liveShown = new Map([...live].map(([c, list]) => [c, list.filter((e) => !hidden.has(e.videoId))] as const));
+  return buildSet(mergeEntries(storedEntries(stored.filter((r) => r.hidden !== true)), liveShown));
+}
+
+/** One read of every feed, merged with what is stored, serves both lists
+ *  from one cached response. */
+export async function fetchPressVideos(stored: StoredVideo[] = []): Promise<PressVideoSet> {
+  const { entries } = await fetchFeeds();
+  return combine(stored, entries);
+}
+
+/** Below this many channels with a video, an answer is a bad moment at
+ *  YouTube with nothing stored to cover it, not the state of the channels. */
 export const FULL_ANSWER_CHANNELS = 5;
 
 /** How long the CDN may keep an answer. On 22 September 2026 YouTube's feed
@@ -237,8 +320,8 @@ export const FULL_ANSWER_CHANNELS = 5;
  *  answered was cached for an hour -- with a day's stale allowance on top --
  *  and the homepage showed one video instead of six. A thin answer is now
  *  kept for a minute, so the next request tries again. */
-export function cacheControlFor(answered: number): string {
-  return answered >= FULL_ANSWER_CHANNELS
+export function cacheControlFor(covered: number): string {
+  return covered >= FULL_ANSWER_CHANNELS
     ? "public, s-maxage=3600, stale-while-revalidate=600"
     : "public, s-maxage=60";
 }
