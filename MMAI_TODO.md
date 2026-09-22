@@ -9,9 +9,16 @@
 ## ✅ 22 September — UAE monthly inflation, linked (handover §48)
 - [x] The UAE card links to the official monthly figures (FCSC and Dubai);
       the IMF quarterly figure stays as the number shown.
+- [x] Qatar (card stuck at Dec 2025) and Kuwait (May) link to their own
+      statistics offices' newer monthly figures.
 - [ ] **Check later:** when data.dubai's open CPI dataset gains 2026 months,
       read the Dubai Open Data Licence in full (commercial use?) and
       consider showing Dubai's monthly figure beside the UAE's.
+- [ ] **Follow-up (reviewer):** the Learn-page statistics check now skips
+      any run that scored fewer than all markets. If one market's source
+      stays down for days it would never run. Chosen fix: have the watchdog
+      flag it when the check has been skipped for more than 2 runs in a row
+      (lib/publishedDrift.ts, handover §48).
 - [ ] Optional, owner's call: ask FCSC for access/reuse terms — the only
       route to automatic monthly UAE inflation.
 

@@ -3344,3 +3344,40 @@ day's single write slot, because of the freshness guard. On 22 September a
 04:12 UTC test run did exactly that. The fix is a `force=true` run after
 10:45 UTC. Test a workflow step later in the day, or call its route
 directly.
+
+**Qatar and Kuwait too (same day).** Checked how current each Gulf card
+was on 22 September:
+- SA August 2026, OM July, BH July: current.
+- **KW May**. The IMF's June was a 0.00 placeholder, while Kuwait's
+  Central Statistical Bureau had published June at 2.19%.
+- **QA December 2025**. data.gov.qa's monthly CPI dataset stops at
+  December 2025, though it was modified in August. The IMF's Qatar
+  monthly stops at August 2025. The National Planning Council had
+  published to June 2026.
+
+So `GULF_MONTHLY_ELSEWHERE` also links:
+- QA to npc.qa (Key indicators);
+- KW to csb.gov.kw (consumer prices).
+
+The UAE line reads "Newer monthly figures: …". Qatar and Kuwait read
+"Monthly figures also: …", because "newer" holds for them only while
+their source lags. The test pins each
+country's own official statistics host (lookalike domains fail, one
+mutation caught) and that every link states its scope. The "only where
+the card is not monthly" rule was dropped: Qatar and Kuwait are monthly
+but lag.
+
+**The forced refresh, and a false alarm it exposed (same day).** The
+`force=true` run at 11:07 UTC re-fetched every market, but Japan's sources
+answered nothing that run ("coverage 0.00"). Japan correctly kept its
+04:12 reading. The Learn-page drift check then compared the spread of the
+eight markets scored with the published spread of nine: Capacity read
+12.4 against 21.8, because Japan is the outlier. The check failed the step
+and the Gulf refresh behind it was skipped. A second forced run at 11:13
+was clean: Japan scored, no drift, all six Gulf countries ok, and all nine
+YouTube feeds answered, saving 101 videos.
+
+**Fix.** The check moved to `lib/publishedDrift.ts`
+(`checkPublishedDrift`). It now compares only when every market was scored
+this run, and otherwise logs why it skipped. Tested in
+`scripts/test-published-drift.ts` (in CI); two mutations were caught.

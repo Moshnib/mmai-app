@@ -120,17 +120,24 @@ check(GULF_POLICY_RATE_GRANULARITY.QA === "monthly" && GULF_POLICY_RATE_GRANULAR
   "Qatar's monthly rate is dated by month, Saudi's by day, and Qatar shows the row",
   JSON.stringify(GULF_POLICY_RATE_GRANULARITY));
 
-// Links to where a newer UAE month is published (GulfCard): official
-// hosts only, over https -- a link on this site is a recommendation.
+// Links to where a newer month is published (GulfCard): each country's own
+// official statistics host only, over https -- a link on this site is a
+// recommendation, and a lookalike domain would be the worst place to send
+// a reader.
 {
-  const links = Object.values(GULF_MONTHLY_ELSEWHERE).flat();
-  const official = (u: string) => { try { const h = new URL(u); return h.protocol === "https:" && (/\.gov\.ae$/.test(h.hostname) || h.hostname === "data.dubai"); } catch { return false; } };
-  check(links.length > 0 && links.every((l) => official(l.url)),
-    "links to newer monthly figures are https and on official UAE government hosts",
-    `an unofficial or insecure link: ${JSON.stringify(links.filter((l) => !official(l.url)))}`);
-  check(Object.keys(GULF_MONTHLY_ELSEWHERE).every((c) => GULF_CPI_GRANULARITY[c] !== "monthly"),
-    "such links are only offered where the card's own figure is not already monthly",
-    "a monthly-sourced country also carries a 'monthly elsewhere' link");
+  const OFFICIAL: Record<string, RegExp> = {
+    AE: /(^|\.)fcsc\.gov\.ae$|^data\.dubai$/,
+    QA: /(^|\.)npc\.qa$/,
+    KW: /(^|\.)csb\.gov\.kw$/,
+  };
+  const bad = Object.entries(GULF_MONTHLY_ELSEWHERE).flatMap(([c, links]) => links.filter((l) => {
+    try { const u = new URL(l.url); return u.protocol !== "https:" || !OFFICIAL[c]?.test(u.hostname); } catch { return true; }
+  }).map((l) => `${c}: ${l.url}`));
+  check(Object.keys(GULF_MONTHLY_ELSEWHERE).length > 0 && bad.length === 0,
+    "links to newer monthly figures are https and on each country's own official statistics host",
+    `an unofficial or insecure link: ${JSON.stringify(bad)}`);
+  check(Object.values(GULF_MONTHLY_ELSEWHERE).flat().every((l) => l.scope.trim() !== "" && l.label.trim() !== ""),
+    "every link says what it covers", "a link without its scope or label");
 }
 
 console.log("");
