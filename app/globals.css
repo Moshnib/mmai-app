@@ -2243,3 +2243,7 @@ a.dim-axis-row:hover { background: var(--hover); }
 .video-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-ink); }
 /* Clears the sticky top bar when the player is scrolled into view. */
 .press-live { scroll-margin-top: 80px; }
+/* Gulf Watch: where a newer month is published, linked (GulfCard). */
+.gulf-elsewhere { margin: 2px 0 8px; font-size: var(--t-micro); color: var(--slate); line-height: 1.5; }
+.gulf-elsewhere a { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+.gulf-elsewhere a:hover { color: var(--accent); }

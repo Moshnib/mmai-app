@@ -20,7 +20,7 @@
 import { parseCsv, periodToDate, pickLatest, pickBahrain, SERIES } from "./relay-gulf.mjs";
 import { parseGulfRelay, gulfSourceNote, IMF_CPI_ATTRIBUTION, IMF_RATE_ATTRIBUTION } from "@/lib/gulfRelay";
 import { formatPeriod } from "@/lib/gulfHistoryHelpers";
-import { GULF_CPI_GRANULARITY, GULF_POLICY_RATE_GRANULARITY, GULF_POLICY_RATE_LABELS } from "@/lib/gulfMarkets";
+import { GULF_CPI_GRANULARITY, GULF_POLICY_RATE_GRANULARITY, GULF_POLICY_RATE_LABELS, GULF_MONTHLY_ELSEWHERE } from "@/lib/gulfMarkets";
 
 let failed = false;
 const fail = (m: string) => { failed = true; console.error("  FAIL  " + m); };
@@ -119,6 +119,19 @@ check(GULF_CPI_GRANULARITY.AE === "quarterly" && GULF_CPI_GRANULARITY.KW === "mo
 check(GULF_POLICY_RATE_GRANULARITY.QA === "monthly" && GULF_POLICY_RATE_GRANULARITY.SA === "daily" && !!GULF_POLICY_RATE_LABELS.QA,
   "Qatar's monthly rate is dated by month, Saudi's by day, and Qatar shows the row",
   JSON.stringify(GULF_POLICY_RATE_GRANULARITY));
+
+// Links to where a newer UAE month is published (GulfCard): official
+// hosts only, over https -- a link on this site is a recommendation.
+{
+  const links = Object.values(GULF_MONTHLY_ELSEWHERE).flat();
+  const official = (u: string) => { try { const h = new URL(u); return h.protocol === "https:" && (/\.gov\.ae$/.test(h.hostname) || h.hostname === "data.dubai"); } catch { return false; } };
+  check(links.length > 0 && links.every((l) => official(l.url)),
+    "links to newer monthly figures are https and on official UAE government hosts",
+    `an unofficial or insecure link: ${JSON.stringify(links.filter((l) => !official(l.url)))}`);
+  check(Object.keys(GULF_MONTHLY_ELSEWHERE).every((c) => GULF_CPI_GRANULARITY[c] !== "monthly"),
+    "such links are only offered where the card's own figure is not already monthly",
+    "a monthly-sourced country also carries a 'monthly elsewhere' link");
+}
 
 console.log("");
 if (failed) {
