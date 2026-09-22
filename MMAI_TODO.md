@@ -1,10 +1,15 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-22 (phone homepage: market cards three per row)*
+*Last updated: 2026-09-22 (site map page)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 22 September — a site map page (handover §50)
+- [x] **Site map** (footer link): every page as a tree, each with a one-line
+      description. It builds itself from the site's single list of pages,
+      which the menu now reads too, so it can never go out of date.
 
 ## ✅ 22 September — phone homepage tightened (handover §49)
 - [x] On phones the nine market cards sit three per row, and the repeated
