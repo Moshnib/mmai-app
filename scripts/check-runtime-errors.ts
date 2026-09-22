@@ -79,8 +79,9 @@ const EXPECTED_FAILURES: { match: RegExp; why: string }[] = [
  *  /api/press-videos reads nine YouTube feeds, with a retry each, before
  *  it answers, so on the homepage and the Videos page it can still be in
  *  flight when this script closes the tab (it was, on /videos, the first
- *  time it ran in CI). A 404 from a renamed route, or a 503 when every
- *  feed failed, arrives as a status and is still reported below. */
+ *  time it ran in CI). A 404 from a renamed route, or any other error
+ *  status, is still reported below. (When every YouTube feed fails the
+ *  route answers 200 with an empty list, not an error.) */
 const ABORTS_ONLY: Array<{ match: RegExp; why: string }> = [
   { match: /\/api\/press-videos$/, why: "aborted video-list fetch -- the tab closed before nine YouTube feeds answered" },
 ];

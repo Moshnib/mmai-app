@@ -3242,6 +3242,10 @@ with a day's stale allowance on top.
 - An answer from 5 or more is kept for an hour.
 - The one-day stale allowance is gone.
 - Tested, and one mutation was caught.
+- When EVERY feed fails, the route answers 200 with an empty list, kept a
+  minute, not 503. CI hit this on the first run: YouTube failed for the
+  GitHub runner too, the page logged a 503, and the runtime check failed.
+  A YouTube outage now just hides the row quietly.
 
 **Fix 2 (next, needs the owner to run one SQL block).** A `press_videos`
 table keeps every video the site has seen, so a bad moment at YouTube can
