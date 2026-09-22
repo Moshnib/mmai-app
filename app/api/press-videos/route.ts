@@ -10,22 +10,21 @@
 //  CACHED AT THE CDN, NOT BY NEXT. With `revalidate` this route would be
 //  pre-rendered, and a moment when every feed failed would be stored as
 //  an empty list for the whole hour. Dynamic instead, with the cache in
-//  the response header: a good answer is kept an hour (and served stale
-//  for a day while it refreshes); a total failure answers 503, which is
-//  not cached at all, and the page just leaves the videos out.
+//  the response header: an answer from most channels is kept an hour; one
+//  from only a few (YouTube's feed endpoint fails in bursts) is kept a
+//  minute, so it cannot stand in for the full list; a total failure
+//  answers 503, not cached at all. See cacheControlFor.
 // ============================================================
 
 import { NextResponse } from "next/server";
-import { fetchPressVideos } from "@/lib/fetchers/pressVideos";
+import { fetchPressVideos, cacheControlFor } from "@/lib/fetchers/pressVideos";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { home, all } = await fetchPressVideos();
-    return NextResponse.json({ home, all }, {
-      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
-    });
+    const { home, all, answered } = await fetchPressVideos();
+    return NextResponse.json({ home, all }, { headers: { "Cache-Control": cacheControlFor(answered) } });
   } catch {
     return NextResponse.json({ home: [], all: [] }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }

@@ -3223,3 +3223,27 @@ check removed, and strip-before-decode.
 Labour Force Survey (4 Sep), and BEA GDP and Personal Income and Outlays
 (26 Aug). "Seven institutions" is now "nine" on the homepage and in the
 comments.
+
+## 47. The video list collapsed to one video, and why it cannot again (2026-09-22)
+
+**What the owner saw.** The homepage showed one video instead of six, and
+the owner asked why the videos had been removed.
+
+**Cause.** YouTube's channel-feed endpoint fails in bursts. At 02:40 UTC on
+22 September it answered 404 or 500 for eight of the nine channels; only
+the Bank of England's answered. `fetchPressVideos` throws only when EVERY
+feed fails, so a one-channel list was returned and cached for an hour,
+with a day's stale allowance on top.
+
+**Fix 1 (this change).** `cacheControlFor(answered)` in
+`lib/fetchers/pressVideos.ts`:
+- An answer from fewer than 5 channels is kept for 60 seconds, so the next
+  request tries again.
+- An answer from 5 or more is kept for an hour.
+- The one-day stale allowance is gone.
+- Tested, and one mutation was caught.
+
+**Fix 2 (next, needs the owner to run one SQL block).** A `press_videos`
+table keeps every video the site has seen, so a bad moment at YouTube can
+never shrink the list, and the list grows past the feeds' 15-upload
+window. The homepage also gets "Show more", which was the owner's choice.

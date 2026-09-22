@@ -1,10 +1,15 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-22 (two more news sources; no Gulf source yet)*
+*Last updated: 2026-09-22 (video list fix, part 1)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## 🔧 22 September — the homepage showed one video (handover §47)
+- [x] **Part 1:** a thin answer from YouTube is kept 60 seconds, not an hour.
+- [ ] **Part 2:** save every video in the database (owner pastes one SQL
+      block in Supabase), and add "Show more" on the homepage.
 
 ## ✅ 22 September — more videos, and a Videos page (handover §45)
 - [x] **A new Videos page** (menu: Beyond the score → Central bank videos):
