@@ -1,10 +1,19 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-22 (videos are stored; Show more on the homepage)*
+*Last updated: 2026-09-22 (UAE monthly inflation linked from Gulf Watch)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 22 September — UAE monthly inflation, linked (handover §48)
+- [x] The UAE card links to the official monthly figures (FCSC and Dubai);
+      the IMF quarterly figure stays as the number shown.
+- [ ] **Check later:** when data.dubai's open CPI dataset gains 2026 months,
+      read the Dubai Open Data Licence in full (commercial use?) and
+      consider showing Dubai's monthly figure beside the UAE's.
+- [ ] Optional, owner's call: ask FCSC for access/reuse terms — the only
+      route to automatic monthly UAE inflation.
 
 ## ✅ 22 September — the homepage showed one video; fixed (handover §47)
 - [x] **Part 1:** a thin answer from YouTube is kept 60 seconds, not an hour.

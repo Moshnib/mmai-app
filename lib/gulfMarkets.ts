@@ -53,6 +53,26 @@ export const GULF_CPI_GRANULARITY: Record<string, Granularity> = {
   SA: "monthly", // Data Saudi
 };
 
+/** WHERE A NEWER MONTH IS PUBLISHED, LINKED RATHER THAN COPIED.
+ *
+ *  The UAE figure is the IMF's quarterly one. The UAE's federal statistics
+ *  centre (FCSC) and Dubai's statistics office publish MONTHLY inflation,
+ *  but neither can be read automatically within its terms (22 September
+ *  2026): FCSC's data system and open-data portal sit behind Cloudflare
+ *  bot protection, and data.dubai's open dataset stopped at December 2025
+ *  while its newer figures fall under terms allowing personal,
+ *  non-commercial use only. A link needs no permission and copies nothing,
+ *  so the card points readers to both. Handover §48. */
+/*  Each link says what it covers: FCSC's figure is UAE-wide, Dubai's is
+ *  the emirate's own index -- side by side they must not read as two
+ *  sources for one national number. */
+export const GULF_MONTHLY_ELSEWHERE: Record<string, Array<{ scope: string; label: string; url: string }>> = {
+  AE: [
+    { scope: "UAE-wide from the", label: "federal statistics centre (FCSC)", url: "https://uaestat.fcsc.gov.ae/" },
+    { scope: "Dubai only from", label: "Dubai Statistics", url: "https://data.dubai/en/e/statistics/35681/724471" },
+  ],
+};
+
 /** FX reserves and current account are World Bank for all six countries,
  *  with no per-country variation -- both are inherently annual series. */
 export const GULF_FX_RESERVES_GRANULARITY = "annual" as const;

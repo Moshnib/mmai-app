@@ -3303,3 +3303,44 @@ with a day's stale allowance on top.
   - Locally, with YouTube down: phone 4 tiles and "Show 14 more", desktop
     6 and "Show 12 more", 18 after the click, and the thumbnails load
     only then.
+
+## 48. UAE inflation: where the newer months are, linked (2026-09-22)
+
+The owner wanted the most current UAE inflation, legally and simply.
+
+**What was checked (22 September):**
+- **FCSC**, the UAE federal statistics centre, publishes monthly national
+  CPI (uaestat.fcsc.gov.ae, the DF_CPI dataflow, and
+  opendata.fcsc.gov.ae). Both sit behind Cloudflare bot protection
+  ("Attention Required", 403) for any automated reader, so they cannot be
+  read within their terms. A browser visitor passes.
+- **Dubai.** data.dubai (formerly Dubai Pulse / DSC) has a monthly CPI
+  dataset marked "Open", under the Dubai Open Data Licence. It **stops at
+  December 2025**, no newer than the IMF's Q4 2025 figure already shown.
+  Newer Dubai months (July 2026: 5.33%, as reported) sit outside the
+  open dataset. The platform's general terms allow personal,
+  non-commercial use only.
+- **Abu Dhabi (SCAD)** publishes monthly releases, but no reuse terms were
+  found.
+- **US agencies** do not produce their own Gulf inflation figures, and the
+  Treasury currency report does not cover the Gulf.
+
+**Done.** The UAE card on Gulf Watch keeps the IMF's quarterly figure and
+adds "Monthly figures: UAE-wide from the federal statistics centre (FCSC) ↗;
+Dubai only from Dubai Statistics ↗". Each link says what it covers, so the
+Dubai index is not read as a second source for the national figure (the
+reviewer's catch). The links are `GULF_MONTHLY_ELSEWHERE` in
+`lib/gulfMarkets.ts`. A link needs no permission and copies nothing.
+`scripts/test-relay-gulf.ts` pins two things, with two mutations caught:
+- the links are https on official UAE hosts;
+- they appear only where the card's own figure is not already monthly.
+
+**Not done, by the owner's choice:** asking FCSC or DDSE for API access or
+written reuse terms. That is the only route to automatic monthly UAE
+inflation.
+
+**Also learned today:** a hand-run refresh before ~10:30 UTC takes the
+day's single write slot, because of the freshness guard. On 22 September a
+04:12 UTC test run did exactly that. The fix is a `force=true` run after
+10:45 UTC. Test a workflow step later in the day, or call its route
+directly.

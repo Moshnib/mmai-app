@@ -10,6 +10,7 @@ import {
   GULF_REAL_ESTATE_GRANULARITY,
   GULF_POLICY_RATE_GRANULARITY,
   GULF_POLICY_RATE_LABELS,
+  GULF_MONTHLY_ELSEWHERE,
 } from "@/lib/gulfMarkets";
 
 export interface GulfCardData {
@@ -192,6 +193,19 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
           asOf={country.cpiObservationDate}
           granularity={GULF_CPI_GRANULARITY[country.code]}
         />
+        {/* A newer month published elsewhere: linked, never copied
+            (GULF_MONTHLY_ELSEWHERE in lib/gulfMarkets.ts says why). */}
+        {GULF_MONTHLY_ELSEWHERE[country.code] && (
+          <p className="gulf-elsewhere">
+            Monthly figures:{" "}
+            {GULF_MONTHLY_ELSEWHERE[country.code].map((l, i, all) => (
+              <span key={l.url}>
+                {l.scope} <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label} ↗</a>
+                {i < all.length - 1 ? "; " : "."}
+              </span>
+            ))}
+          </p>
+        )}
         {/* Only Qatar has a real estate fetcher wired up (see
             app/api/refresh-gulf/route.ts) -- every other country's
             real_estate_metric_label is permanently null, by design, not
