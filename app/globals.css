@@ -2248,3 +2248,41 @@ a.dim-axis-row:hover { background: var(--hover); }
 .gulf-elsewhere { margin: 2px 0 8px; font-size: var(--t-micro); color: var(--slate); line-height: 1.5; }
 .gulf-elsewhere a { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
 .gulf-elsewhere a:hover { color: var(--accent); }
+/* SITE MAP (app/site-map). A tree: the home page on top, three groups
+   below it, each page a card. The connecting lines are decoration only;
+   the structure itself is nested lists. Phones stack the groups, with a
+   line down the left of each. */
+.sm-tree { display: grid; gap: 28px; }
+.sm-root { display: grid; gap: 10px; justify-items: center; text-align: center; position: relative; padding-bottom: 28px; }
+.sm-root::after { content: ""; position: absolute; left: 50%; bottom: 0; height: 28px; border-left: 1px solid var(--hair-strong); }
+.sm-card {
+  display: grid; gap: 4px; padding: 14px 16px; text-decoration: none; color: var(--ink);
+  background: var(--card-bg); border: 1px solid var(--hair); border-radius: var(--card-radius);
+}
+.sm-card:hover, .sm-card:focus-visible { border-color: var(--accent); }
+.sm-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.sm-card--root { min-width: min(100%, 360px); border-color: var(--hair-strong); }
+.sm-label { font-weight: 700; font-size: var(--t-body); }
+.sm-card:hover .sm-label { color: var(--accent); }
+.sm-desc { font-size: var(--t-small); color: var(--slate); line-height: 1.45; }
+.sm-onpage-head { margin: 6px 0 0; font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--slate); }
+.sm-onpage { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 8px; }
+.sm-onpage li { font-size: var(--t-caption); color: var(--ink-soft); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 10px; }
+.sm-groups { list-style: none; margin: 0; padding: 28px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; position: relative; }
+/* The branch line runs from the first column's centre to the last's --
+   three equal columns with 20px gaps put those centres (100% - 40px) / 6
+   in from each edge. */
+.sm-groups::before { content: ""; position: absolute; top: 0; left: calc((100% - 40px) / 6); right: calc((100% - 40px) / 6); border-top: 1px solid var(--hair-strong); }
+.sm-group { position: relative; }
+.sm-group::before { content: ""; position: absolute; left: 50%; top: -28px; height: 28px; border-left: 1px solid var(--hair-strong); }
+.sm-group-head { margin: 0 0 12px; text-align: center; font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.sm-pages { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+@media (max-width: 759px) {
+  .sm-groups { grid-template-columns: minmax(0, 1fr); padding-top: 0; gap: 26px; }
+  .sm-groups::before { display: none; }
+  .sm-group::before { display: none; }
+  .sm-group-head { text-align: left; }
+  .sm-pages { border-left: 1px solid var(--hair-strong); padding-left: 14px; }
+  .sm-root::after { display: none; }
+  .sm-root { padding-bottom: 0; }
+}

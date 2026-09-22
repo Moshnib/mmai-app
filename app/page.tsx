@@ -522,6 +522,9 @@ export default function OverviewPage() {
       </div>
       )}
 
+      {/* THE SECTIONS OF THIS PAGE, IN ORDER, are summed up in six short
+          lines on the site map (ON_THE_HOME_PAGE in app/site-map/page.tsx).
+          A section added, removed or reordered here: one line there. */}
       <div className="section">
         <div className="wrap">
           <div className="section-head">

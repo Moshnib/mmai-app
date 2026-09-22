@@ -345,6 +345,12 @@ jobs:
       - name: The Learn-page statistics check raises real alarms only
         run: npx tsx scripts/test-published-drift.ts
 
+      # The navigation and the site map build themselves from lib/routes.ts;
+      # a page added there without a name, description or group would be an
+      # empty box on the map and a blank line in a menu.
+      - name: Every page is named, described and grouped
+        run: npx tsx scripts/test-site-map.ts
+
       # A figure the morning run missed used to stay N/A on the Observatory
       # all day: later runs stopped before reaching it. Every run now
       # retries incomplete countries; this pins that a retry fills gaps and

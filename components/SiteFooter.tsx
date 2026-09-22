@@ -106,6 +106,7 @@ export default function SiteFooter() {
           <li><Link href="/learn">How the score works</Link></li>
           <li><Link href="/sources">Data sources</Link></li>
           <li><Link href="/contact">Contact</Link></li>
+          <li><Link href="/site-map">Site map</Link></li>
         </ul>
       </nav>
       <div className="wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { GROUP_NAMES, routesIn } from "@/lib/routes";
 
 // Single source of truth for the site nav -- previously duplicated
 // identically across 8 page files, which is how the mobile menu never
@@ -41,30 +42,22 @@ const NAV: NavEntry[] = [
   // KNOW; on a phone the menu had no route home at all, so someone deep
   // in the Sources page had to close the menu and hunt for the logo. It
   // is named Home, because that is what the word is.
-  { href: "/", label: "Home" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/compare", label: "Compare" },
-  { href: "/trends", label: "Trends" },
+  //
+  // BUILT FROM lib/routes.ts since 22 September 2026, so the navigation,
+  // the site map and the sitemap cannot list different pages or describe
+  // one differently: the three scored tools as links in the row, the other
+  // two groups as dropdowns, each page's description as its note.
+  ...routesIn("home").map((r) => ({ href: r.path, label: r.label })),
+  ...routesIn("scores", true).map((r) => ({ href: r.path, label: r.label })),
   {
     id: "beyond",
-    label: "Beyond the score",
-    items: [
-      // Gulf Watch and the Observatory side by side deliberately: both
-      // show countries with real figures and no score.
-      { href: "/gulf-watch", label: "Gulf Watch", note: "Six Gulf economies, figure by figure" },
-      { href: "/observatory", label: "Observatory", note: "Tracked, not scored" },
-      { href: "/stablecoins", label: "Stablecoins", note: "How many dollars exist on a blockchain" },
-      { href: "/videos", label: "Central bank videos", note: "Press conferences and speeches, from the banks themselves" },
-    ],
+    label: GROUP_NAMES.beyond,
+    items: routesIn("beyond", true).map((r) => ({ href: r.path, label: r.label, note: r.description })),
   },
   {
     id: "about",
-    label: "About the index",
-    items: [
-      { href: "/learn", label: "How the score works", note: "Every indicator and formula, in plain words" },
-      { href: "/sources", label: "Data sources", note: "Where each number comes from, and its licence" },
-      { href: "/about", label: "About MMAI", note: "Who makes it, and why" },
-    ],
+    label: GROUP_NAMES.about,
+    items: routesIn("about", true).map((r) => ({ href: r.path, label: r.label, note: r.description })),
   },
 ];
 

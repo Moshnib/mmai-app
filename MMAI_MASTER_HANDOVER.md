@@ -3405,3 +3405,38 @@ markets. On an iPhone 14 the videos started about 2,580px down the page.
   overflow.
 - check-layout, runtime-errors, accessibility, site-functions and
   text-legibility all pass locally. Tapping a card still selects it.
+
+## 50. A site map page, and one list of pages for everything (2026-09-22)
+
+The owner asked for a visual map of the site: what is under what, and
+what is inside each page.
+
+**`/site-map`** (`app/site-map/page.tsx`, linked from the footer, not the
+menu):
+- A tree: Home on top (with six short "on the home page" items), then three
+  groups (The scores, Beyond the score, About the index), each page a card
+  with its name and a one-line description.
+- Nested ul/li throughout, with h2 group headings. The connector lines are
+  CSS decoration, and the branch line spans exactly the column centres.
+  Phones stack the groups with a line down the left.
+- The "on the home page" list must be kept in step with the homepage's
+  sections. A comment in `app/page.tsx` points to it.
+
+**One list of pages.** `lib/routes.ts` `SITE_ROUTES` now carries each page's
+`label`, `description`, `group`, and `nav: false` for pages kept out of the
+top menu (Contact, Site map). `components/NavBar.tsx` builds its row and
+dropdowns from it via `routesIn()` and `GROUP_NAMES`, so the menu, the site
+map, the sitemap and the browser checks cannot list or describe pages
+differently. That was the reviewer's catch: the map would otherwise have
+been a fourth list.
+- The menu is unchanged: Home, Dashboard, Compare, Trends, Beyond the score
+  ▾, About the index ▾ (Learn, Sources, About).
+- The route order is now the menu's order.
+
+**Tests.** `scripts/test-site-map.ts` (in CI) checks that every page has a
+name, a description under 80 characters and a known group, with no
+duplicates. The home group is `/` alone, only Contact and Site map are kept
+off the menu, and the scored tools run Dashboard → Compare → Trends. Two
+mutations were caught. `check-routes.ts` still pins page files ↔ routes.
+Locally, check-layout, runtime-errors, accessibility and nav all pass,
+including the new page.
