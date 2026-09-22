@@ -338,6 +338,13 @@ jobs:
       - name: Recent press-conference videos are the right ones
         run: npx tsx scripts/test-press-videos.ts
 
+      # The refresh fails its run when the Learn page's published spread
+      # drifts from live. It must not do so when a market was simply not
+      # scored this run -- that false alarm skipped the Gulf refresh on 22
+      # September.
+      - name: The Learn-page statistics check raises real alarms only
+        run: npx tsx scripts/test-published-drift.ts
+
       # A figure the morning run missed used to stay N/A on the Observatory
       # all day: later runs stopped before reaching it. Every run now
       # retries incomplete countries; this pins that a retry fills gaps and

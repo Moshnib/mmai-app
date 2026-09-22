@@ -197,7 +197,10 @@ export default function GulfCard({ country, compact = false }: { country: GulfCa
             (GULF_MONTHLY_ELSEWHERE in lib/gulfMarkets.ts says why). */}
         {GULF_MONTHLY_ELSEWHERE[country.code] && (
           <p className="gulf-elsewhere">
-            Monthly figures:{" "}
+            {/* "Newer" is always true of the UAE, whose figure is quarterly;
+                of Qatar and Kuwait only while their source lags, so those
+                say "also". */}
+            {GULF_CPI_GRANULARITY[country.code] === "monthly" ? "Monthly figures also:" : "Newer monthly figures:"}{" "}
             {GULF_MONTHLY_ELSEWHERE[country.code].map((l, i, all) => (
               <span key={l.url}>
                 {l.scope} <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label} ↗</a>

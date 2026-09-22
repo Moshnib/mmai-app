@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { type RawIndicators } from "@/lib/indicators";
-import { computeMmai, percentileBandLabel, dimensionPercentiles, DIMENSION_CROSS_MARKET_SD, type DimensionKey } from "@/lib/composite";
+import { computeMmai, percentileBandLabel, dimensionPercentiles, type DimensionKey } from "@/lib/composite";
+import { checkPublishedDrift } from "@/lib/publishedDrift";
 
 /** Which engine produces the `band` column that subscriber alerts compare.
  *  The cutover happened on 5 September 2026: v2.0 is the only engine, the
@@ -1483,20 +1484,11 @@ export async function GET(request: Request) {
   // the pillar figures the Learn page used to publish. The Learn page now
   // publishes DIMENSION_CROSS_MARKET_SD, so the old check was guarding a
   // statistic no reader can see -- dead code that looked alive.
-  if (liveDimPercentiles.length >= 4) {
-    for (const key of Object.keys(DIMENSION_CROSS_MARKET_SD) as DimensionKey[]) {
-      const vals = liveDimPercentiles.map((p) => p[key]).filter((v): v is number => v != null);
-      if (vals.length < 4) continue;
-      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-      const liveSd = Math.sqrt(vals.reduce((acc, v) => acc + (v - mean) ** 2, 0) / vals.length);
-      const gap = Math.abs(liveSd - DIMENSION_CROSS_MARKET_SD[key]);
-      if (gap > 1.0) {
-        publishedDrift.push(
-          `${key}: Learn page publishes ${DIMENSION_CROSS_MARKET_SD[key].toFixed(1)}, live is ${liveSd.toFixed(1)}`
-        );
-      }
-    }
-  }
+  // Only when every market was scored this run -- lib/publishedDrift.ts
+  // says why (a false alarm on 22 September skipped the Gulf refresh).
+  const driftCheck = checkPublishedDrift(liveDimPercentiles, MARKETS.length);
+  if (driftCheck.skipped) console.log(`Published-statistics check skipped: ${driftCheck.skipped}.`);
+  publishedDrift.push(...driftCheck.drift);
   if (publishedDrift.length > 0) {
     console.warn(`PUBLISHED STATISTICS HAVE DRIFTED: ${publishedDrift.join("; ")}`);
   }

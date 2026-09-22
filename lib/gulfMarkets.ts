@@ -53,7 +53,9 @@ export const GULF_CPI_GRANULARITY: Record<string, Granularity> = {
   SA: "monthly", // Data Saudi
 };
 
-/** WHERE A NEWER MONTH IS PUBLISHED, LINKED RATHER THAN COPIED.
+/** WHERE A NEWER MONTH IS PUBLISHED, LINKED RATHER THAN COPIED -- for
+ *  each country whose card's source lags the country's own statistics
+ *  office. The UAE case first:
  *
  *  The UAE figure is the IMF's quarterly one. The UAE's federal statistics
  *  centre (FCSC) and Dubai's statistics office publish MONTHLY inflation,
@@ -70,6 +72,18 @@ export const GULF_MONTHLY_ELSEWHERE: Record<string, Array<{ scope: string; label
   AE: [
     { scope: "UAE-wide from the", label: "federal statistics centre (FCSC)", url: "https://uaestat.fcsc.gov.ae/" },
     { scope: "Dubai only from", label: "Dubai Statistics", url: "https://data.dubai/en/e/statistics/35681/724471" },
+  ],
+  // Qatar's card reads data.gov.qa, whose monthly CPI dataset stops at
+  // December 2025 (checked 22 September 2026, last modified August); the
+  // National Planning Council itself had published to June 2026.
+  QA: [
+    { scope: "from Qatar's", label: "National Planning Council", url: "https://www.npc.qa/en/statistics/Pages/allindicators.aspx" },
+  ],
+  // Kuwait's card reads the IMF, which lags: on 22 September its June
+  // value was a 0.00 placeholder while the Central Statistical Bureau had
+  // published June at 2.19%.
+  KW: [
+    { scope: "from Kuwait's", label: "Central Statistical Bureau", url: "https://www.csb.gov.kw/Pages/Statistics_en?ID=34&ParentCatID=3" },
   ],
 };
 
