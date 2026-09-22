@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   VIDEO_CHANNELS, LANGUAGE_NAME, youtubeThumbUrl, youtubeVideoEmbedUrl, youtubeVideoUrl,
   type PressVideo,
@@ -19,8 +19,38 @@ import {
  * Titles not in English carry our own English label, with YouTube's title
  * beneath it marked in its language so a screen reader pronounces it.
  */
-export default function VideoTiles({ videos, className = "" }: { videos: PressVideo[]; className?: string }) {
+/** Phones show fewer tiles before "Show more". Worked out here rather than
+ *  hidden with CSS, so the button can say exactly how many more there are
+ *  and the hidden tiles' thumbnails are never requested. */
+const NARROW = "(max-width: 759px)";
+function useNarrow(): boolean {
+  return useSyncExternalStore(
+    (onChange) => { const m = window.matchMedia(NARROW); m.addEventListener("change", onChange); return () => m.removeEventListener("change", onChange); },
+    () => window.matchMedia(NARROW).matches,
+    () => false,
+  );
+}
+
+export default function VideoTiles({ videos, className = "", initial }: {
+  videos: PressVideo[];
+  className?: string;
+  /** Tiles shown before "Show more": { narrow, wide }. Omitted, all show. */
+  initial?: { narrow: number; wide: number };
+}) {
   const [open, setOpen] = useState<string | null>(null);
+  const narrow = useNarrow();
+  const [expanded, setExpanded] = useState(false);
+  const firstRevealed = useRef<number | null>(null);
+  const shownCount = !initial || expanded ? videos.length : Math.min(videos.length, narrow ? initial.narrow : initial.wide);
+  const hiddenCount = videos.length - shownCount;
+
+  // After "Show more", the keyboard goes to the first tile it revealed.
+  useEffect(() => {
+    if (!expanded || firstRevealed.current == null) return;
+    const v = videos[firstRevealed.current];
+    firstRevealed.current = null;
+    if (v) document.getElementById(`press-tile-${v.videoId}`)?.focus();
+  }, [expanded, videos]);
   const closeRef = useRef<HTMLButtonElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +95,7 @@ export default function VideoTiles({ videos, className = "" }: { videos: PressVi
         </div>
       )}
       <ul className={`press-tiles ${className}`}>
-        {videos.map((v) => {
+        {videos.slice(0, shownCount).map((v) => {
           const channel = VIDEO_CHANNELS[v.bank];
           const day = formatDay(v.published);
           const language = v.lang === "en" ? "" : `, in ${LANGUAGE_NAME[v.lang]}`;
@@ -96,6 +126,12 @@ export default function VideoTiles({ videos, className = "" }: { videos: PressVi
           );
         })}
       </ul>
+      {hiddenCount > 0 && (
+        <button type="button" className="press-close press-more"
+          onClick={() => { firstRevealed.current = shownCount; setExpanded(true); }}>
+          Show {hiddenCount} more
+        </button>
+      )}
     </>
   );
 }

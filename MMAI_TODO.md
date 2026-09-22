@@ -1,15 +1,19 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-22 (video list fix, part 1)*
+*Last updated: 2026-09-22 (videos are stored; Show more on the homepage)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
 
-## 🔧 22 September — the homepage showed one video (handover §47)
+## ✅ 22 September — the homepage showed one video; fixed (handover §47)
 - [x] **Part 1:** a thin answer from YouTube is kept 60 seconds, not an hour.
-- [ ] **Part 2:** save every video in the database (owner pastes one SQL
-      block in Supabase), and add "Show more" on the homepage.
+- [x] **Part 2:** every video is saved in the database (101 to start),
+      so YouTube outages can't empty the list; the homepage shows 6 (4 on
+      a phone) with "Show more".
+- [ ] **Renew the laptop copies of CRON_SECRET and the Supabase service
+      key** in `.env.local` (both lapsed) — only needed for hand-run
+      scripts; the site itself uses Vercel's copies.
 
 ## ✅ 22 September — more videos, and a Videos page (handover §45)
 - [x] **A new Videos page** (menu: Beyond the score → Central bank videos):

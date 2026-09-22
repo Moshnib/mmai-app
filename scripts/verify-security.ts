@@ -93,7 +93,7 @@ console.log("\nEvery scheduled endpoint checks the secret\n");
 // The watchdog joined the refresh routes on 19 September. Anything called
 // by a scheduler must go through checkCronAuth before it does anything;
 // reading the source is the only way to know a NEW route did.
-for (const route of ["refresh", "refresh-gulf", "source-audit", "watchdog"]) {
+for (const route of ["refresh", "refresh-gulf", "refresh-videos", "source-audit", "watchdog"]) {
   const src = readFileSync(join(process.cwd(), "app", "api", route, "route.ts"), "utf8");
   const firstAuth = src.indexOf("checkCronAuth(request)");
   const firstDb = src.search(/getPublicSupabaseClient\(\)|getServiceSupabaseClient\(\)/);

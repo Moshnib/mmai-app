@@ -175,7 +175,7 @@ function RecentVideos() {
   return (
     <div className="press-recent">
       <p className="press-tag">RECENT PRESS CONFERENCES</p>
-      <VideoTiles videos={videos} className="press-tiles--home" />
+      <VideoTiles videos={videos} className="press-tiles--home" initial={{ narrow: 4, wide: 6 }} />
       <Link className="press-link" href="/videos">All central bank videos →</Link>
     </div>
   );
