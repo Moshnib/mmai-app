@@ -571,25 +571,13 @@ export default function OverviewPage() {
                 overview is for. */}
             <WorldMap markets={markets} current={current ?? ""} onSelect={selectMarket} />
           </div>
-          {/* Text fallback for the map's mobile-hidden state (illegible
-              at phone width) -- Heatmap used to be the mobile-friendly
-              alternative for "see the other markets"; now that it's
-              gone, hiding the map with nothing in its place would leave
-              phones with no way to explore markets other than the
-              currently-selected one at all. Hidden above 900px via
-              .map-mobile-links so it doesn't duplicate the map on desktop. */}
-          <div className="map-mobile-links">
-            {markets.filter((m) => m.code !== current).map((m) => (
-              <button
-                key={m.code}
-                type="button"
-                onClick={() => selectMarket(m.code)}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--ink-soft)", background: "none", border: "none", padding: 0, font: "inherit", fontSize: 13, cursor: "pointer" }}
-              >
-                <Flag code={m.code} size={16} /> {m.name}
-              </button>
-            ))}
-          </div>
+          {/* THE FLAG ROW THAT USED TO BE HERE WAS REMOVED on 22 September
+              2026. It was the phone's only way to reach another market
+              when the map is hidden (below 900px) and the cards above were
+              not yet buttons. Every card now selects its market in place,
+              so on a phone the row repeated the cards in smaller type and
+              pushed the rest of the page -- the live videos included --
+              further down. The owner asked for it gone. */}
         </div>
       </div>
 

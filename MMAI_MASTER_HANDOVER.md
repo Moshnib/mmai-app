@@ -3381,3 +3381,27 @@ YouTube feeds answered, saving 101 videos.
 (`checkPublishedDrift`). It now compares only when every market was scored
 this run, and otherwise logs why it skipped. Tested in
 `scripts/test-published-drift.ts` (in CI); two mutations were caught.
+
+## 49. Phone homepage: the market cards three per row, the flag row gone (2026-09-22)
+
+The owner, on a phone: the market list "is taking too long" and the flag
+icons under it are repetitive, so bring the videos up.
+
+**Before.** Below 760px, "Compare markets" was nine full-width cards (about
+2.5 phone screens), followed by a flag-and-name row for the same nine
+markets. On an iPhone 14 the videos started about 2,580px down the page.
+
+**Now:**
+- **Three compact cards per row on phones** (`.compare-strip` below 760px).
+  Each card stacks shape (34px), name (caption size), score (h3) and band,
+  top-aligned so a row lines up when one band wraps. Three still divides
+  nine evenly; the old note against two columns stands, because it
+  orphans the ninth. Desktop is unchanged.
+- **The `.map-mobile-links` flag row is removed**, with its CSS and
+  tap-target rules. It dates from before the cards were buttons; every card
+  now selects its market in place, so the row only repeated them.
+- iPhone 14: the card block is 399px, and the videos start at about
+  1,940px, roughly a screen higher. iPhone SE: the cards fit with no
+  overflow.
+- check-layout, runtime-errors, accessibility, site-functions and
+  text-legibility all pass locally. Tapping a card still selects it.
