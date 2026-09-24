@@ -70,6 +70,17 @@ const EXPECTED_FAILURES: { match: RegExp; why: string }[] = [
   // Exactly this one file -- any other /_vercel path, or the beacon
   // itself, still fails the check.
   { match: /\/_vercel\/insights\/script\.js(?=$|['"\s])/, why: "analytics script exists only on Vercel, not under a local next start" },
+
+  // A video an institution has withdrawn. YouTube 404s its thumbnail, and
+  // that is not a fault here: the tile removes itself the moment the image
+  // fails (components/VideoTiles.tsx), and /api/refresh-videos marks the
+  // row hidden within hours (findGone). The Bank of Japan withdrew a press
+  // conference days after publishing it, and this check failed on the
+  // thumbnail while the page itself behaved correctly.
+  //
+  // Scoped to a thumbnail URL on YouTube's image host and nothing else --
+  // a 404 from this site, or from the player, still fails.
+  { match: /^https:\/\/i\.ytimg\.com\/vi\/[A-Za-z0-9_-]{11}\/[a-z]+default\.jpg$/, why: "withdrawn video's thumbnail: the tile hides itself and the row is marked hidden on the next save" },
 ];
 
 /** Requests excused ONLY when the browser aborts them -- never a status.

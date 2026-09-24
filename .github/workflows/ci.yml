@@ -24,9 +24,18 @@ on:
   # September, GitHub then stopped running anything, and the data refresh
   # stopped with it for three days (handover §36). Pull requests still
   # get every check; main is still checked after each merge.
+  # NOTES-ONLY CHANGES RUN NOTHING. The handover and the to-do list are
+  # edited in most commits and no check reads a .md file, so a run for one
+  # is pure cost -- and this repository ran out of Actions minutes on 22
+  # September 2026, which stopped the data refresh for two days. Safe
+  # because nothing here is a required check: branch protection is not
+  # available on this plan, so no pull request waits on a run that never
+  # starts.
   push:
     branches: [main]
+    paths-ignore: ["**.md", ".claude/**"]
   pull_request:
+    paths-ignore: ["**.md", ".claude/**"]
   workflow_dispatch:
 
 concurrency:
@@ -35,8 +44,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  typecheck:
-    name: Types
+  # ONE RUNNER FOR THE THREE CHEAP CHECKS. They were three jobs, and each
+  # paid its own runner start and its own `npm ci` -- about four minutes a
+  # run for perhaps thirty seconds of work. The month's Actions minutes ran
+  # out on 22 September 2026 and GitHub refused every job for two days, the
+  # data refresh included, so the waste had a real cost. Each check is
+  # still its own named step, so a failure still says which one.
+  static:
+    name: Static checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -46,37 +61,26 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npx tsc --noEmit
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: npm ci
-      # Zero, as of 2026-08-31. The four warnings this workflow launched
-      # with are fixed: buildSeries is now a useCallback with real
-      # dependencies, and the font rule is disabled inline with the reason
-      # it is a false positive under the App Router.
-      #
-      # Do NOT raise this to let a new warning through. If a warning is a
-      # genuine false positive, disable that rule at the line with a comment
-      # explaining why -- the way layout.tsx does.
-      - run: npx eslint . --max-warnings 0
+      - name: Types
+        run: npx tsc --noEmit
+      # Zero warnings, as of 2026-08-31. The four this workflow launched
+      # with are fixed. Do NOT raise this to let a new warning through: if
+      # one is a genuine false positive, disable that rule at the line with
+      # the reason, the way layout.tsx does.
+      - name: Lint
+        run: npx eslint . --max-warnings 0
 
   scoring:
     name: Scoring correctness
     runs-on: ubuntu-latest
-    # 20, not 10. This job grew: it installs Chromium, builds the site and
-    # runs five browser checks over eleven pages on top of ~25 offline
-    # ones. On 16 September it crossed ten minutes and GitHub cancelled it
-    # mid-layout-check -- which reads as a red build caused by nothing.
-    timeout-minutes: 20
+    # 25, not 10. This job builds the site and runs eight browser checks
+    # over thirteen pages on top of ~30 offline ones. On 16 September it
+    # crossed ten minutes and GitHub cancelled it mid-layout-check -- which
+    # reads as a red build caused by nothing. It must also stay above the
+    # runner's own per-suite limit (12 minutes, scripts/run-browser-checks.ts)
+    # plus the build, so a hung suite is reported by name here rather than
+    # taking the whole job down with it.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -434,10 +438,29 @@ jobs:
       # reading the source: it only exists once a browser has laid it out
       # at a particular width. So this is the one check that needs a real
       # browser, and it is worth the ninety seconds it costs.
-      - name: Every page holds its layout
+      # Chromium is ~130 MB and identical between runs; the cache key is the
+      # runner OS plus the lockfile, so it changes only when Playwright does.
+      - name: Cache the test browser
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install the test browser
+        run: npx playwright install ${{ steps.browser-cache.outputs.cache-hit == 'true' && 'chromium' || '--with-deps chromium' }}
+
+      # BUILT ONCE. There was a separate "Build" job doing exactly this
+      # again on its own runner -- three minutes a run to prove twice that
+      # the site compiles. It lives here, where the browser checks need the
+      # built site anyway, and keeps its own name in the run.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+      - name: Every page holds its layout, runs clean, and reads correctly
         run: |
-          npx playwright install --with-deps chromium
-          npm run build
           npx next start -p 3123 &
           # Plain retry rather than another dependency just to wait for a port.
           for i in $(seq 1 60); do
@@ -445,62 +468,23 @@ jobs:
             sleep 1
           done
           curl -sf -o /dev/null http://localhost:3123/ || { echo "server never came up"; exit 1; }
-          npx tsx scripts/check-layout.ts
-          # Same server, second question. check-layout asks whether the
-          # pages LOOK right; this asks whether they RUN right -- a
-          # component that throws after hydration, a request that 404s, a
-          # resource the CSP blocks. None of those move a pixel, so the
-          # layout check walks straight past them, and the build does too.
+          # EIGHT SUITES, TWO AT A TIME, against this one server:
+          #   layout            does every page hold its box, at three widths
+          #   runtime-errors    does anything throw, 404, or hit the CSP
+          #   accessibility     names, heading order, contrast, focus
+          #   nav               the top bar's panels open, close, and fit
+          #   ticker            speed, a finger stopping it, tapping a mover
+          #   text-legibility   nothing too small or too faint to read
+          #   site-functions    back to top, the address remembering a choice,
+          #                     sharing -- behaviour no layout check sees
+          #   seo               canonicals, social cards, structured data:
+          #                     what a crawler gets, which the site never shows
           #
-          # The CSP is the reason it earns its place: hand-written,
-          # enforced only in the browser, and silent when wrong.
-          npx tsx scripts/check-runtime-errors.ts
-          # Third question, same server. An SVG scales its TEXT along with
-          # everything else, so a chart drawn on a 900-wide canvas and
-          # rendered into a 292px card puts its 10px axis labels on screen
-          # at 3.2px. That is what /compare and /gulf-watch were doing on a
-          # phone, measured.
-          #
-          # Nothing else could see it: the chart fitted its container, so
-          # the layout check found no overflow; nothing threw; and the
-          # source says fontSize={10}, which looks fine. check-type-scale
-          # polices the size a component DECLARES -- this polices the size a
-          # reader actually gets.
-          npx tsx scripts/check-text-legibility.ts
-          # Fourth question, same server: can a reader NAME and OPERATE the
-          # page? A sweep found two unnamed year pickers on /compare -- two
-          # identical combo boxes with a bare "to" between them -- and a
-          # card at h3 directly under the only h1, so the outline skipped a
-          # level. Neither breaks a build, overflows a box, or throws.
-          #
-          # Contrast is measured here rather than asserted. The design audit
-          # said it was clean and was right; nothing re-checked it, and a
-          # colour token changes in one commit while a claim goes stale in
-          # the next.
-          npx tsx scripts/check-accessibility.ts
-          # Sixth: does the top bar behave? Its two groups open panels, and a
-          # panel that will not close or hangs off the screen moves nothing
-          # the checks above measure.
-          npx tsx scripts/check-nav.ts
-          # And the strip along the top: how fast it travels, that a finger
-          # stops it, and that a moving market button can be tapped.
-          npx tsx scripts/check-ticker.ts
-          # Seventh: back to top, the address remembering a choice, and
-          # sharing -- behaviour a layout or accessibility check cannot see.
-          npx tsx scripts/check-site-functions.ts
-          # Fifth question, same server: what does a SEARCH ENGINE get,
-          # and what does a person see when the link is pasted into a
-          # chat? Neither is visible on the site itself.
-          #
-          # Three things were live on 14 September: no page emitted a
-          # canonical URL at all, every page shared ONE social card
-          # because ten pages set a title and description and none set
-          # openGraph, and there was no structured data anywhere. The
-          # canonical one matters most right now -- this site is about to
-          # move to a real domain, and without canonicals a crawler
-          # reaching both hosts may treat the new domain as a duplicate
-          # of the old.
-          npx tsx scripts/check-seo.ts
+          # They ran one after another and cost about twelve runner minutes.
+          # scripts/run-browser-checks.ts runs two at a time (a runner has two
+          # cores) and prints each suite's output in its own block, naming any
+          # that fail. Set MMAI_CHECK_JOBS=1 to go back to one at a time.
+          npx tsx scripts/run-browser-checks.ts
 
       # THE ONE THAT WOULD HAVE CAUGHT 4 FEBRUARY.
       # Eurostat retired the euro area HICP dataset that day. It kept
@@ -532,22 +516,9 @@ jobs:
       - name: Refresh fails closed, and public writes are bounded
         run: npx tsx scripts/verify-security.ts
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: npm ci
-      # Placeholders, not secrets. next build only needs these to exist so
-      # module-level client construction does not throw during prerender;
-      # no request is made at build time. Real values live in Vercel.
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      # The browser suites run two at a time now. A suite that hangs must be
+      # killed by the runner and reported with whatever it printed, or the
+      # log shows nothing at all until GitHub ends the job.
+      - name: A hung browser suite is killed, and says so
+        run: npx tsx scripts/test-browser-runner.ts
+

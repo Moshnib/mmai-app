@@ -23,7 +23,8 @@
 
 import { decode } from "@/lib/fetchers/newsFeeds";
 import {
-  VIDEO_CHANNELS, VIDEO_ID, type PressVideo, type VideoChannelId, type VideoKind,
+  VIDEO_CHANNELS, VIDEO_ID, youtubeThumbUrl,
+  type PressVideo, type VideoChannelId, type VideoKind,
 } from "@/lib/pressConferences";
 
 export type { PressVideo };
@@ -193,6 +194,8 @@ export function pickAll(perChannel: PressVideo[][], cap = 60, perChannelCap = 10
 // ------------------------------------------------------------
 
 const PER_TRY_MS = 3000;
+/** Between the two asks that must both fail before a video is hidden. */
+const GONE_GAP_MS = 5000;
 
 export const isFeed = (body: string) => body.includes("<feed");
 
@@ -302,6 +305,34 @@ export function combine(stored: StoredVideo[], live: Map<VideoChannelId, FeedEnt
   const hidden = new Set(stored.filter((r) => r.hidden === true).map((r) => r.video_id));
   const liveShown = new Map([...live].map(([c, list]) => [c, list.filter((e) => !hidden.has(e.videoId))] as const));
   return buildSet(mergeEntries(storedEntries(stored.filter((r) => r.hidden !== true)), liveShown));
+}
+
+/** A video an institution has since made private or deleted. YouTube then
+ *  404s its thumbnail -- the cheapest signal there is, one HEAD request --
+ *  and the video would not play either. The Bank of Japan did this to a
+ *  press conference within a week of publishing it (22 September 2026);
+ *  the tile sat on the Videos page with a broken image until a browser
+ *  check caught it.
+ *
+ *  Only rows the feeds no longer list are worth asking about: anything a
+ *  channel still lists is by definition still there. */
+export async function findGone(ids: string[], gapMs = GONE_GAP_MS): Promise<string[]> {
+  const missing = async (id: string) => {
+    try {
+      const res = await fetch(youtubeThumbUrl(id), { method: "HEAD", signal: AbortSignal.timeout(PER_TRY_MS) });
+      return res.status === 404;
+    } catch {
+      // A timeout or a network wobble is not evidence of removal.
+      return false;
+    }
+  };
+  const first = (await Promise.all(ids.map(async (id) => ((await missing(id)) ? id : null)))).filter((id): id is string => id !== null);
+  if (first.length === 0) return [];
+  // TWICE, SECONDS APART. Hiding is easy to do and, until someone edits the
+  // table by hand, hard to undo: one bad answer from a CDN must not take a
+  // good video off the site. Both asks have to say 404.
+  await new Promise((r) => setTimeout(r, gapMs));
+  return (await Promise.all(first.map(async (id) => ((await missing(id)) ? id : null)))).filter((id): id is string => id !== null);
 }
 
 /** One read of every feed, merged with what is stored, serves both lists

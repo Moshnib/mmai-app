@@ -38,19 +38,27 @@ export default function VideoTiles({ videos, className = "", initial }: {
   initial?: { narrow: number; wide: number };
 }) {
   const [open, setOpen] = useState<string | null>(null);
+  // A video the institution has since made private or deleted: its
+  // thumbnail 404s and it would not play either. The Bank of Japan did
+  // exactly that to a 18 September press conference, and the tile sat
+  // there broken until a browser check caught it. The tile goes; the rest
+  // of the row is untouched. /api/refresh-videos marks it hidden on its
+  // next run, so this is the stopgap between the two.
+  const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
   const narrow = useNarrow();
   const [expanded, setExpanded] = useState(false);
   const firstRevealed = useRef<number | null>(null);
-  const shownCount = !initial || expanded ? videos.length : Math.min(videos.length, narrow ? initial.narrow : initial.wide);
-  const hiddenCount = videos.length - shownCount;
+  const visible = videos.filter((v) => !gone.has(v.videoId));
+  const shownCount = !initial || expanded ? visible.length : Math.min(visible.length, narrow ? initial.narrow : initial.wide);
+  const hiddenCount = visible.length - shownCount;
 
   // After "Show more", the keyboard goes to the first tile it revealed.
   useEffect(() => {
     if (!expanded || firstRevealed.current == null) return;
-    const v = videos[firstRevealed.current];
+    const v = visible[firstRevealed.current];
     firstRevealed.current = null;
     if (v) document.getElementById(`press-tile-${v.videoId}`)?.focus();
-  }, [expanded, videos]);
+  }, [expanded, visible]);
   const closeRef = useRef<HTMLButtonElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +77,7 @@ export default function VideoTiles({ videos, className = "", initial }: {
     if (id) requestAnimationFrame(() => document.getElementById(`press-tile-${id}`)?.focus());
   };
 
-  const current = videos.find((v) => v.videoId === open);
+  const current = visible.find((v) => v.videoId === open);
 
   return (
     <>
@@ -95,7 +103,7 @@ export default function VideoTiles({ videos, className = "", initial }: {
         </div>
       )}
       <ul className={`press-tiles ${className}`}>
-        {videos.slice(0, shownCount).map((v) => {
+        {visible.slice(0, shownCount).map((v) => {
           const channel = VIDEO_CHANNELS[v.bank];
           const day = formatDay(v.published);
           const language = v.lang === "en" ? "" : `, in ${LANGUAGE_NAME[v.lang]}`;
@@ -112,7 +120,8 @@ export default function VideoTiles({ videos, className = "", initial }: {
                   {/* eslint-disable-next-line @next/next/no-img-element --
                       YouTube's own image server, per its terms; next/image
                       would copy it through this site's optimiser. */}
-                  <img src={youtubeThumbUrl(v.videoId)} alt="" width={320} height={180} loading="lazy" decoding="async" />
+                  <img src={youtubeThumbUrl(v.videoId)} alt="" width={320} height={180} loading="lazy" decoding="async"
+                    onError={() => setGone((prev) => new Set(prev).add(v.videoId))} />
                   <span className="press-thumb-play" aria-hidden="true">▶</span>
                 </span>
                 <span className="press-tile-bank">
