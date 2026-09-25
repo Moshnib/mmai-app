@@ -25,6 +25,7 @@ import {
 import { FALLBACK_MARKETS, scoreMarketV2, type MarketData, MARKET_COUNT_WORD_CAP } from "@/lib/markets";
 import { latestCompleteObservation, fallbackNote, type ObservationPick } from "@/lib/latestComplete";
 import { getPublicSupabaseClient } from "@/lib/supabase";
+import { targetFromRow } from "@/lib/policyTarget";
 import type { RawIndicatorRow } from "@/lib/useLiveHistory";
 import { scoredInstitutionCount } from "@/lib/sources";
 import { useGulfIndicators } from "@/lib/useGulfIndicators";
@@ -196,19 +197,51 @@ export default function OverviewPage() {
       try {
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return; // not configured yet — stay on fallback
         const supabase = getPublicSupabaseClient();
-        const { data, error } = await supabase
-          .from("raw_indicators")
-          .select("market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, debt_pct_gdp, observation_date, fetched_at, inflation_observation_date, gdp_observation_date, unemployment_observation_date, policy_rate_observation_date, debt_observation_period")
-          .order("observation_date", { ascending: false })
-          .order("fetched_at", { ascending: false }) // tiebreak same-day reruns -- deterministic "latest", not arbitrary
-          .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
+        // ASKING FOR A COLUMN THAT DOES NOT EXIST FAILS THE WHOLE QUERY,
+        // and this query is the site's live data: one unknown column name
+        // and every market falls back to the hardcoded demo figures.
+        //
+        // The two target columns are new (25 September 2026), and the
+        // database migration that adds them is run by hand. If a deploy
+        // ever lands before that migration does, the homepage must lose a
+        // small label, not all of its data -- so the second attempt asks
+        // for exactly what the site had before.
+        //
+        // The base list is written ONCE and the two new columns are added
+        // to it, so the fallback cannot drift from it by a typo -- and a
+        // typo here would cost the whole of the live data, silently.
+        const BASE_COLUMNS =
+          "market, inflation, gdp_growth, unemployment, policy_rate, brent_yoy, debt_pct_gdp, observation_date, fetched_at, inflation_observation_date, gdp_observation_date, unemployment_observation_date, policy_rate_observation_date, debt_observation_period";
+        const WITH_TARGET = `${BASE_COLUMNS}, policy_rate_target_low, policy_rate_target_high`;
+        const query = (columns: string) =>
+          supabase
+            .from("raw_indicators")
+            .select(columns)
+            .order("observation_date", { ascending: false })
+            .order("fetched_at", { ascending: false }) // tiebreak same-day reruns -- deterministic "latest", not arbitrary
+            .limit(200); // 7 markets x daily refreshes; see lib/useLiveHistory.ts for the same limit and why
+        let { data, error } = await query(WITH_TARGET);
+        if (error) {
+          // Loud, because the likely cause is a migration nobody ran, and
+          // the symptom -- one small label missing -- is easy to miss.
+          console.warn(
+            "raw_indicators: asking for the policy-rate target columns failed; " +
+              "retrying without them, so the Fed's announced range will not be shown. " +
+              `(${error.message})`
+          );
+          ({ data, error } = await query(BASE_COLUMNS));
+        }
         if (error || !data || data.length === 0) return;
 
         type Row = RawIndicatorRow & { fetched_at: string };
         // Every row per market, newest first — the composite is scored on
         // the most recent COMPLETE observation, so one row is not enough.
         const rowsByMarket = new Map<string, Row[]>();
-        for (const row of data as Row[]) {
+        // Through `unknown` because the column list is now chosen at run
+        // time (see ASKS above) and the client can no longer infer a row
+        // shape from a literal string. Both lists are a subset of Row,
+        // whose target columns are optional for exactly this reason.
+        for (const row of data as unknown as Row[]) {
           const list = rowsByMarket.get(row.market);
           if (list) list.push(row);
           else rowsByMarket.set(row.market, [row]);
@@ -266,6 +299,13 @@ export default function OverviewPage() {
               brentYoY: row.brent_yoy,
               debtPctGdp: row.debt_pct_gdp,
             },
+            // What the central bank ANNOUNCED, where it announces a range
+            // rather than a number. Only the US does, so this is the card
+            // where the published figure and the headline figure differ
+            // and the reader can be shown why. (Japan is also scored on a
+            // market rate -- see lib/policyTarget.ts -- but the BoJ
+            // publishes no range to put beside it.)
+            policyRateTarget: targetFromRow(row.policy_rate_target_low, row.policy_rate_target_high),
             // Audit M-6: show a reader how old each figure actually is.
             observationDates: {
               inflation: row.inflation_observation_date ?? null,
@@ -474,7 +514,7 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <KeyRatesRow raw={market.raw} market={market.code} />
+          <KeyRatesRow raw={market.raw} market={market.code} policyRateTarget={market.policyRateTarget} />
           </div>
 
           {rateNarrative && <p className="score-narrative" style={{ maxWidth: "68ch", marginTop: 18 }}>{rateNarrative}</p>}
