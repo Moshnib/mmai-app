@@ -21,6 +21,13 @@ export interface RawIndicatorRow {
   unemployment_observation_date?: string | null;
   policy_rate_observation_date?: string | null;
   brent_observation_date?: string | null;
+  // The central bank's ANNOUNCED target range, where it publishes one.
+  // Only the US does today: the Fed announces a range rather than a
+  // number, so policy_rate holds the rate banks actually paid (the
+  // scored figure) and these two say what was announced. Optional for
+  // the same reason as the dates above: not every query asks for them.
+  policy_rate_target_low?: number | null;
+  policy_rate_target_high?: number | null;
   // BIS publishes a QUARTER label ("2025-Q4"), not a date -- stored and
   // typed as text so nothing downstream can mistake it for a day.
   debt_observation_period?: string | null;

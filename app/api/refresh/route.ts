@@ -261,6 +261,55 @@ interface ObservationDates {
 interface FetchedIndicators {
   raw: RawIndicators;
   dates: ObservationDates;
+  /** THE ANNOUNCED TARGET RANGE, WHERE A CENTRAL BANK SETS ONE.
+   *
+   *  Only the US publishes a range today. The score uses the Effective
+   *  Federal Funds Rate, what banks actually paid, while the FOMC
+   *  announces a range and the press quotes its top. On 25 September
+   *  2026 that was 3.88% against "4%", with nothing on the card to
+   *  explain the gap.
+   *
+   *  Left undefined by every other market, and written as NULL either
+   *  way, so a range can never outlive the decision that set it. */
+  rateTarget?: { low: number | null; high: number | null };
+}
+
+/** THE DAILY WRITE MUST NOT DEPEND ON A MIGRATION HAVING BEEN RUN.
+ *
+ *  policy_rate_target_low/high were added by hand in the Supabase editor on
+ *  25 September 2026. If the deploy lands first, PostgREST rejects the
+ *  whole insert with PGRST204 ("column not found"), every market's write
+ *  fails, and the route still answers 200 -- so the refresh workflow goes
+ *  GREEN while nothing at all is saved, and the site only shows it days
+ *  later when the rows age out. That is the shape of the 16-19 September
+ *  outage, and it is the worst failure available here: silent.
+ *
+ *  So the insert retries without the two new columns, and says so loudly in
+ *  the log. Narrow on purpose -- only PGRST204, and only when the message
+ *  names one of these two columns. Any other write failure still throws,
+ *  because any other write failure is real.
+ *
+ *  A single-row PostgREST insert is atomic: the rejected attempt wrote
+ *  nothing, so the retry cannot double-insert. */
+async function insertRawIndicators(
+  supabase: ReturnType<typeof getServiceSupabaseClient>,
+  row: Record<string, unknown>
+) {
+  const first = await supabase.from("raw_indicators").insert(row);
+  const missingColumn =
+    first.error?.code === "PGRST204" && /policy_rate_target/.test(first.error.message);
+  if (!missingColumn) return first;
+
+  console.warn(
+    `${row.market}: raw_indicators has no policy_rate_target_low/high yet -- ` +
+      `writing the row without the Fed's announced range. Run ` +
+      `supabase/migrations/2026-09-25-policy-rate-target.sql to fix this. ` +
+      `(${first.error?.message})`
+  );
+  const withoutTarget = { ...row };
+  delete withoutTarget.policy_rate_target_low;
+  delete withoutTarget.policy_rate_target_high;
+  return supabase.from("raw_indicators").insert(withoutTarget);
 }
 
 async function fetchRawIndicators(
@@ -325,6 +374,10 @@ async function fetchRawIndicators(
         policyRate: rate?.observationDate ?? null,
         brent: brentDate,
       },
+      // Both bounds or neither: readTargetRange() returns nulls rather
+      // than half a range, and a failed fetch leaves `rate` undefined,
+      // which also stores nulls. Yesterday's range is never carried over.
+      rateTarget: { low: rate?.targetLow ?? null, high: rate?.targetHigh ?? null },
     };
   }
 
@@ -998,7 +1051,7 @@ export async function GET(request: Request) {
 
   for (const market of pending) {
     try {
-      const { raw, dates } = await fetchRawIndicators(market, brentResult, relayedJp, relayedKr);
+      const { raw, dates, rateTarget } = await fetchRawIndicators(market, brentResult, relayedJp, relayedKr);
 
       // Set here rather than inside each of fetchRawIndicators()'s
       // seven per-market branches: the value is looked up from one
@@ -1215,12 +1268,17 @@ export async function GET(request: Request) {
       // insert also failing, and so a bad write is never silently
       // reported as "status: ok" with nothing actually saved.
       const [rawInsert, scoreInsert] = await Promise.all([
-        supabase.from("raw_indicators").insert({
+        insertRawIndicators(supabase, {
           market,
           inflation: raw.inflation,
           gdp_growth: raw.gdpGrowth,
           unemployment: raw.unemployment,
           policy_rate: raw.policyRate,
+          // The announced range beside the rate that was actually paid.
+          // Written every run, null included, so a range cannot survive
+          // the decision that set it -- see rateTarget above.
+          policy_rate_target_low: rateTarget?.low ?? null,
+          policy_rate_target_high: rateTarget?.high ?? null,
           brent_yoy: raw.brentYoY,
           debt_pct_gdp: raw.debtPctGdp,
           observation_date: observationDate,

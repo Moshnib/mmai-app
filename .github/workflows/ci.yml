@@ -349,6 +349,16 @@ jobs:
       - name: The Learn-page statistics check raises real alarms only
         run: npx tsx scripts/test-published-drift.ts
 
+      # The US card carries two numbers about the same day: the rate banks
+      # actually paid, which is scored, and the range the Fed announced,
+      # which is what the news quotes. The reason to show both is to remove
+      # a discrepancy, so a WRONG range would be the same fault in a form
+      # that is harder to spot -- in particular a range left over from the
+      # previous decision. This pins that a range which disagrees with the
+      # rate beside it is refused rather than printed.
+      - name: The announced rate range is right, or it is not shown
+        run: npx tsx scripts/test-policy-target.ts
+
       # The navigation and the site map build themselves from lib/routes.ts;
       # a page added there without a name, description or group would be an
       # empty box on the map and a blank line in a menu.

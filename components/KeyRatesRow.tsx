@@ -3,6 +3,7 @@ import {
   type DimensionKey, type IndicatorKey,
 } from "@/lib/composite";
 import { type PillarKey, type RawIndicators, inflationTargetFor } from "@/lib/indicators";
+import { formatTarget, targetPrefix, spokenTarget, type TargetRange } from "@/lib/policyTarget";
 
 // Per-field decimals. Exported so every place that prints a raw indicator
 // uses ONE definition of this rule. Printing a policy rate at 1 decimal is
@@ -87,7 +88,24 @@ function descriptorFor(key: IndicatorKey, value: number, market: string): string
  * distance from target rather than on the rate. A second copy of that
  * rule here would be a second thing to keep in step with the engine.
  */
-export default function KeyRatesRow({ raw, market }: { raw: RawIndicators; market: string }) {
+export default function KeyRatesRow({
+  raw,
+  market,
+  policyRateTarget = null,
+}: {
+  raw: RawIndicators;
+  market: string;
+  /** THE ANNOUNCED RANGE, WHERE THE BANK PUBLISHES ONE. Only the US
+   *  today: the score uses the Effective Federal Funds Rate -- what banks
+   *  actually paid -- while the FOMC announces 3.75-4.00% and the news
+   *  says "the Fed rate is 4%". Both numbers are right, and a card
+   *  showing only one of them reads as wrong to anybody who follows the
+   *  news.
+   *
+   *  Null for every other market and whenever the source did not carry a
+   *  sane range, in which case the card is exactly what it was before. */
+  policyRateTarget?: TargetRange | null;
+}) {
   return (
     <div className="ind-groups">
       {ORDER.map((dim) => {
@@ -125,6 +143,28 @@ export default function KeyRatesRow({ raw, market }: { raw: RawIndicators; marke
                         <span className="ind-card-unit">{p.unit.replace(/^%\s*/, "")}</span>
                       )}
                     </div>
+
+                    {/* THE ANNOUNCED RANGE, under the rate that was paid.
+                        Only ever rendered when a range was stored for
+                        this reading, so no other market and no older row
+                        gains a line.
+
+                        THE WHOLE VISIBLE LINE IS HIDDEN FROM SCREEN
+                        READERS and replaced by one sentence. Its middot
+                        and its en dash are both announced as nothing (or
+                        as "dot" and "dash"), which would hand a listener
+                        four unconnected numbers -- exactly the confusion
+                        this line exists to remove. */}
+                    {p.key === "rate" && p.raw != null && policyRateTarget && (
+                      <div className="ind-card-target">
+                        <span aria-hidden="true">
+                          {targetPrefix(market)} <b>{formatTarget(policyRateTarget).shown}</b>
+                        </span>
+                        <span className="sr-only">
+                          {`${spokenTarget(market, policyRateTarget)}.`}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Same diverging track as the dimension cards, at a
                         smaller scale: centre is the historical average,

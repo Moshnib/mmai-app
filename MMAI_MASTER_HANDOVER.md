@@ -1812,6 +1812,11 @@ disagree with an older paragraph here, they are the later word.
   `lib/composite.ts` (Conditions, Direction, Capacity), published as a
   percentile against **148 market-years from six economies, 2000–2025** —
   a frozen reference set that stays six however many markets are scored.
+  - **The US rate is the odd one out** (§52, 25 September): every other
+    central bank announces one rate, the Fed announces a range. The score
+    uses the Effective Federal Funds Rate — what banks actually paid —
+    and the card now shows the announced range beside it, because the
+    news quotes the top of the range and the two differ.
 - **Gulf Watch:** six Gulf countries, raw indicators, deliberately no
   score (labour-market figures are not comparable). Saudi and Kuwait carry
   a BIS policy rate. Since 19 September the workflow relays IMF inflation for
@@ -3495,3 +3500,90 @@ that would play nothing.
   npx running tsx running a browser).
 - `check-runtime-errors` tolerates a 404 from a YouTube thumbnail URL and
   nothing else, so a withdrawal between saves cannot turn CI red.
+
+## 52. The Fed announces a range; the card showed a point (2026-09-25)
+
+**What the owner saw.** The US card read **3.88%** while the news said the
+Fed rate was **4%**. Both were right. The Federal Reserve does not announce
+a single number: the FOMC announces a **target range**, 3.75-4.00% since 16
+September 2026, and the press quotes its top. MMAI scores the **Effective
+Federal Funds Rate** -- what banks actually paid overnight, calculated daily
+by the New York Fed -- which settles inside that range, usually a little
+below the top.
+
+The site had no way to say that, so the only conclusion available to a
+reader was that MMAI was wrong. The owner's instruction: *"it is very
+important that the reader of MMAI will not find the discrepancy with real
+life."*
+
+**Why the US is the exception.** Most scored central banks announce one
+number and that is what is stored. The US is the clear exception: there is
+no announced point to score, so a market rate is used. **Japan is a milder
+version of the same thing** -- the BoJ steers the uncollateralised
+overnight call rate to "around" a figure and `lib/fetchers/boj.ts` reads
+where the market settled (0.977 against "around 1%"). No range is published
+for Japan, so none is shown; the reviewer flagged an earlier draft of this
+section, and of the Learn page, for claiming the US was the only market not
+scored on an announced rate. It is not. See the to-do list.
+
+**What changed.**
+- `lib/fetchers/nyfed.ts` now reads `targetRateFrom` / `targetRateTo`, which
+  **the same NY Fed row already carried** -- no new source, no new licence.
+  `readTargetRange()` refuses anything that is not a sane range *for the
+  rate beside it*: half a pair, an inverted pair, a non-number, an absurd
+  bound, or a rate more than **ten basis points** outside the range.
+  - **What actually keeps the pair honest is structural**, not that check:
+    both numbers are fields of ONE NY Fed row for one effective date, they
+    are stored on one database row, read back together, and rewritten
+    (null included) every run. There is no path by which today's rate meets
+    last month's range.
+  - The tolerance started at 0.5 points, which the reviewer showed was
+    decorative: a range a full 25bp decision out of date (3.88 against
+    4.00-4.25) passed it. Ten basis points refuses that, while still
+    accepting the September 2019 repo squeeze, when EFFR really did print
+    5bp above its ceiling. It is a sanity bound, **not** a staleness
+    detector, and cannot be one: a rate near the top of its range is within
+    ten basis points of a range one cut stale.
+- Two new columns, `policy_rate_target_low` / `policy_rate_target_high`
+  (`supabase/migrations/2026-09-25-policy-rate-target.sql`, run by hand in
+  the Supabase SQL editor). **Written on every run, null included**, so a
+  range can never outlive the decision that set it.
+- The homepage card shows `3.88%` with
+  **`effective rate · Fed target 3.75-4.00%`** underneath. Saying *which*
+  figure is scored is half the fix: showing two numbers without labelling
+  them trades one confusion for another. **The whole visible line is
+  hidden from screen readers** and replaced by one sentence -- "The figure
+  above is the effective rate; the Fed's target range is 3.75 to 4.00
+  percent" -- because the middot and the en dash holding that line together
+  are announced as nothing, which would hand a listener four numbers and no
+  grammar. `scripts/test-policy-target.ts` fails if either character ever
+  reappears in the spoken form.
+- One paragraph on **/learn** (in the limitations list) and one line on
+  **/sources** against the NY Fed row explain it in full.
+- `lib/policyTarget.ts` holds the two display rules, apart from the fetcher
+  and the component so both can be tested with no network and no browser.
+  `scripts/test-policy-target.ts` (27 checks, in CI) pins them, including
+  the one-decision-stale case and where the tolerance actually falls. Six
+  mutations tried, six caught.
+
+**THE MIGRATION IS RUN BY HAND, SO NOTHING MAY DEPEND ON IT.** Asking
+PostgREST for a column that does not exist fails the WHOLE statement, and
+both halves of the site touch these two columns.
+- **Reading (the homepage).** The query asks for the new columns and, on
+  any error, warns to the console and asks again for exactly the old list,
+  which is built from one string so the two cannot drift apart. Verified
+  against the live database *before* the migration was run: all nine
+  markets loaded from the second attempt.
+- **Writing (the daily refresh).** The reviewer caught this one, and it was
+  the serious one: an unguarded insert would have been rejected for every
+  market, the route would still have answered **HTTP 200**, and
+  `refresh.yml` only fails on a non-200 -- so the run would have gone
+  **green while saving nothing**, exactly the shape of the 16-19 September
+  outage. `insertRawIndicators()` now retries without the two columns on
+  PGRST204, and only when the message names one of them; every other write
+  failure still throws. A single-row PostgREST insert is atomic, so the
+  retry cannot double-write.
+
+**What it looks like when there is no range.** Every market except the US,
+and the US on any day the NY Fed row does not carry a sane one: the card is
+exactly what it was before, the rate alone. Nothing invents a range.

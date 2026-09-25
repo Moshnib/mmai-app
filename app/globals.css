@@ -1574,6 +1574,19 @@ a.dim-axis-row:hover { background: var(--hover); }
   color: var(--slate); margin-left: 5px; letter-spacing: 0;
 }
 
+/* The announced target range, under the rate that was actually paid.
+   Quieter than the value and louder than the note: it is a second
+   fact about the same reading, not a caption about it. The bounds
+   themselves are bolded because they are the number a reader arrived
+   with -- "4%" from the news -- and the line has to let them find it
+   at a glance. */
+.ind-card-target {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-micro); color: var(--slate);
+  margin-top: 4px; letter-spacing: 0.01em;
+}
+.ind-card-target b { color: var(--ink-soft); font-weight: 600; font-variant-numeric: tabular-nums; }
+
 /* The same device as .dim-track, scaled down. Centre is the
    historical average; right is better, whichever direction the
    raw figure happens to run. */

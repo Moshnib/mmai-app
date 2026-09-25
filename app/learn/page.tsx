@@ -355,6 +355,12 @@ const TOPICS = [
           "Inside Capacity a higher policy rate scores better, which is the opposite of how a rate is usually read. That is deliberate, and it only makes sense alongside the question Capacity asks: how much room is there to respond to trouble. A central bank at 4% can cut; one at 0.5% cannot. Read without that framing the sign looks simply wrong, which is why the question appears beside the number everywhere it is shown.",
       },
       {
+        kind: "read",
+        head: "The US rate scored here is not the one in the headlines",
+        body:
+          "MMAI scores the short-term interest rate each central bank steers, and for most of them that is a single number the bank announces. The United States is the clear exception: the Federal Reserve announces a target RANGE rather than a number, so the US is scored on the effective federal funds rate — what banks actually paid overnight, published daily by the New York Fed. It sits inside the range, usually a little below the top, and the top is what the news quotes: 3.88% here against “the Fed rate is 4%” in the headlines. Both are correct. The homepage card shows the rate that was paid with the announced range beside it, labelled, so the two can be told apart rather than looking like a mistake. Japan is a milder version of the same thing — the Bank of Japan steers the overnight call rate to “around” a figure, and MMAI shows where the market actually settled.",
+      },
+      {
         kind: "measured",
         head: "The score carries a measured margin of error",
         body:

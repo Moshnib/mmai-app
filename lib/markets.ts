@@ -14,6 +14,22 @@ export interface MarketData {
     unemployment: string | null;
     policyRate: string | null;
   };
+  /** THE ANNOUNCED TARGET RANGE, WHERE THE CENTRAL BANK SETS ONE.
+   *
+   *  Deliberately NOT part of RawIndicators: that is the shape the
+   *  composite scores, and this is not scored. It is shown beside the
+   *  rate because the US figure MMAI scores -- the Effective Federal
+   *  Funds Rate, what banks actually paid -- is not the figure the news
+   *  quotes. 3.88% against "4%" is the same fact twice, and a reader
+   *  who cannot see both reasonably concludes the site is wrong.
+   *
+   *  Only the US publishes a range today. See lib/policyTarget.ts for
+   *  why Japan, whose rate is also a market rate, is not the same case.
+   *
+   *  Both bounds or neither. Undefined for every other market and for
+   *  the hardcoded fallbacks, which have no dated announcement behind
+   *  them. */
+  policyRateTarget?: { low: number; high: number } | null;
 }
 
 // Verified fallback values, checked against the reference set.

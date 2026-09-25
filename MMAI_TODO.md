@@ -1,10 +1,34 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-24 (Actions minutes: CI costs less than half)*
+*Last updated: 2026-09-25 (the US card shows the Fed's announced range)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 25 September — the US card matches the news (handover §52)
+- [x] The card read 3.88% while the news said 4%. Both were right: the Fed
+      announces a RANGE (3.75–4.00%) and MMAI scores the rate banks actually
+      paid. The card now shows both and says which is which.
+- [ ] **Owner, run once:** paste
+      `supabase/migrations/2026-09-25-policy-rate-target.sql` into the
+      Supabase SQL editor (a copy is on the Desktop as
+      `policy-rate-target.sql`). Until then the card simply shows the rate
+      alone. Nothing breaks if it is late: the homepage asks again without
+      the new columns, and the daily refresh saves the row without them
+      and says so in its log. Both were added after the reviewer found
+      that an unguarded save would have gone green while writing nothing.
+- [ ] The range appears after the first refresh that runs once those two
+      columns exist. Nothing to do; just do not expect it the same minute.
+- [ ] **Optional (reviewer):** if the daily save ever has to drop those two
+      columns it only says so in a Vercel log, and nobody reads those. A
+      flag in the refresh's own JSON reply would let the workflow say it out
+      loud. Low priority — the missing label is visible on the card.
+- [ ] **Follow-up (reviewer): Japan is the same shape, smaller.** The Bank
+      of Japan steers the overnight call rate to "around" a figure and the
+      site shows where the market settled — 0.977 against "around 1%". No
+      range is published to show beside it, so this needs a decision about
+      wording rather than data.
 
 ## ⚠️ 22-24 September — the data stopped for two days (handover §51)
 - [x] Cause: GitHub Actions spending limit reached; owner raised it to $10
