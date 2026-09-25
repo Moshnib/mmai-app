@@ -19,7 +19,7 @@
 import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getServiceSupabaseClient } from "@/lib/supabase";
-import { fetchFeeds, rowsToSave } from "@/lib/fetchers/pressVideos";
+import { fetchFeeds, rowsToSave, findGone } from "@/lib/fetchers/pressVideos";
 import { VIDEO_CHANNELS } from "@/lib/pressConferences";
 
 export const dynamic = "force-dynamic";
@@ -46,10 +46,33 @@ export async function GET(request: Request) {
   if (error) {
     return NextResponse.json({ answered, channels, saved: 0, error: error.message }, { status: 500 });
   }
+  // A video an institution has taken down: its thumbnail 404s, and the
+  // tile would be a broken image that plays nothing. Only rows the feeds
+  // no longer list are checked -- anything still listed is still there --
+  // and only the ones that answer 404 are hidden. Nothing is deleted, so
+  // a video restored later comes back with one SQL line.
+  let hid: string[] = [];
+  const listed = new Set(rows.map((r) => r.video_id));
+  const { data: stored } = await getServiceSupabaseClient()
+    .from("press_videos")
+    .select("video_id")
+    .eq("hidden", false)
+    .order("published", { ascending: false })
+    .limit(400);
+  const unlisted = (stored ?? []).map((r) => r.video_id as string).filter((id) => !listed.has(id));
+  if (unlisted.length > 0) {
+    hid = await findGone(unlisted);
+    if (hid.length > 0) {
+      await getServiceSupabaseClient().from("press_videos").update({ hidden: true }).in("video_id", hid);
+    }
+  }
+
   return NextResponse.json({
     answered,
     channels,
     saved: rows.length,
+    checked: unlisted.length,
+    hidden: hid,
     missing: Object.keys(VIDEO_CHANNELS).filter((id) => !entries.has(id as keyof typeof VIDEO_CHANNELS)),
   });
 }

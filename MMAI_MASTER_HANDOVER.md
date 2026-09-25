@@ -3440,3 +3440,58 @@ off the menu, and the scored tools run Dashboard → Compare → Trends. Two
 mutations were caught. `check-routes.ts` still pins page files ↔ routes.
 Locally, check-layout, runtime-errors, accessibility and nav all pass,
 including the new page.
+
+## 51. The month's Actions minutes ran out, and what it cost (2026-09-22 → 24)
+
+**What happened.** On 22 September the private repo hit its Actions
+spending limit. Every job was then refused in 3-6 seconds with no steps at
+all -- the data refresh included -- and nothing wrote to the database from
+22 September 11:13 UTC until the owner raised the budget on the 24th. The
+site stayed up and showed its "update delayed" warning, honestly, for two
+days. **Nobody was told**, because OWNER_ALERT_EMAIL is still unset, so the
+watchdog could not email.
+
+**Why the minutes went.** 155 CI runs in September. Each run was four jobs
+-- Types, Lint, Build, Scoring -- and each job paid its own runner start and
+`npm ci`. About 24 billable minutes per run against 2,000 free a month.
+
+**What changed (this PR).**
+- **One "Static checks" job** for types and lint (was two jobs), each still
+  a named step.
+- **The site is built once.** The separate Build job did `npm run build` on
+  its own runner while the Scoring job built it again; Build is now a named
+  step inside the job that needs the built site.
+- **The test browser is cached** (`~/.cache/ms-playwright`, keyed by runner
+  OS + lockfile); `--with-deps` only on a miss.
+- **The eight browser suites run two at a time**
+  (`scripts/run-browser-checks.ts`, `MMAI_CHECK_JOBS`, default 2 because a
+  runner has two cores and these suites measure real layout). Each suite's
+  output is printed in its own block and failures are named.
+  - Measured locally: 929s sequential → 533s at two at a time, 43% off.
+  - `check-layout` alone is 532s, so it is now the floor. Splitting it by
+    viewport is the next saving if one is needed.
+- **A notes-only change runs nothing** (`paths-ignore: **.md, .claude/**`).
+  Safe because no check reads a .md file and branch protection is not
+  available on this plan, so nothing waits on a run that never starts.
+- Expected: about 24 billable minutes a run → about 9.
+
+**A real bug the audit found on the way.** The Bank of Japan withdrew a
+press conference days after publishing it. Its row stayed in
+`press_videos`, so the Videos page showed a broken thumbnail and a tile
+that would play nothing.
+- `VideoTiles` now drops a tile whose thumbnail fails to load.
+- `/api/refresh-videos` asks YouTube (a HEAD per stored row the feeds no
+  longer list) and sets `hidden = true` when the thumbnail 404s TWICE, five
+  seconds apart -- `findGone` in `lib/fetchers/pressVideos.ts`. One bad
+  answer from a CDN must not take a good video off the site. Verified
+  against the real ids: it reports the withdrawn one and neither live one.
+- **To bring a hidden video back:**
+  `update press_videos set hidden = false where video_id = '...';`
+- A suite that hangs is killed at twelve minutes by the runner (eight was
+  tried first and killed check-layout, which takes 8.5 minutes: a false
+  alarm is the worst kind of check) and reported
+  with whatever it printed (`scripts/test-browser-runner.ts` pins it with a
+  deliberately hanging child; killing the tree matters, because the child is
+  npx running tsx running a browser).
+- `check-runtime-errors` tolerates a 404 from a YouTube thumbnail URL and
+  nothing else, so a withdrawal between saves cannot turn CI red.

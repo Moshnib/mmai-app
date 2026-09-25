@@ -1,10 +1,22 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-22 (site map page)*
+*Last updated: 2026-09-24 (Actions minutes: CI costs less than half)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ⚠️ 22-24 September — the data stopped for two days (handover §51)
+- [x] Cause: GitHub Actions spending limit reached; owner raised it to $10
+      and the 24 September refresh ran.
+- [x] CI now costs about 9 minutes a run instead of 24 (one static job, the
+      site built once, the test browser cached, browser suites two at a
+      time, notes-only changes run nothing).
+- [x] A withdrawn Bank of Japan video no longer leaves a broken tile.
+- [ ] **Set OWNER_ALERT_EMAIL in Vercel.** Two days of frozen data went
+      unnoticed because the watchdog still cannot email.
+- [ ] Optional next saving: check-layout alone is 9 minutes; it could be
+      split by screen width.
 
 ## ✅ 22 September — a site map page (handover §50)
 - [x] **Site map** (footer link): every page as a tree, each with a one-line
