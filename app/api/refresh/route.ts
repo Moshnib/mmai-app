@@ -968,7 +968,7 @@ export async function GET(request: Request) {
   const results: Array<{ market: string; status: string; composite: number | null }> = [];
 
   // ---------- Freshness guard ----------
-  // The scheduled trigger runs THREE times a day, not once, because a
+  // The scheduled trigger runs SIX times a day, not once, because a
   // single daily attempt has no way to recover from a missed run -- and
   // Vercel's Hobby-tier crons skipped a day entirely, leaving the site
   // showing a stale "last updated" date to every visitor.

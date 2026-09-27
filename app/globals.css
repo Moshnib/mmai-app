@@ -1585,7 +1585,15 @@ a.dim-axis-row:hover { background: var(--hover); }
   font-size: var(--t-micro); color: var(--slate);
   margin-top: 4px; letter-spacing: 0.01em;
 }
-.ind-card-target b { color: var(--ink-soft); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* THE RANGE NEVER BREAKS ACROSS TWO LINES. On the live site at 640px
+   it wrapped after the en dash -- "3.75-" ending one line and "4.00%"
+   starting the next -- which reads as two separate numbers, the exact
+   confusion this line was added to remove. The label before it still
+   wraps; only the figure is held together. */
+.ind-card-target b {
+  color: var(--ink-soft); font-weight: 600;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
 
 /* The same device as .dim-track, scaled down. Centre is the
    historical average; right is better, whichever direction the

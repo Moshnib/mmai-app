@@ -32,10 +32,14 @@
  *  the first run that lands each day writes rows (the freshness guard
  *  makes the rest no-ops). At 15:30 a day whose morning run was dropped
  *  would read as ~28 hours stale and send a false alarm; at 23:30 the day's
- *  four runs (10:43–18:43 UTC, refresh.yml) have all had their chance, even
- *  five hours late. On a healthy day the newest reading is under ~13 hours
- *  old at 23:30. Past 20 hours, nothing has landed since about 03:30 UTC: a
- *  whole day's runs have failed, and it is reported the same night.
+ *  six runs (07:43–18:43 UTC, refresh.yml) have all had their chance, even
+ *  five hours late. On a healthy day the newest reading is under ~14 hours
+ *  old at 23:30 -- the publishing window opens at 10:00 (refresh.yml's
+ *  "Too early, or too late, to publish?" step), so the earliest a day's
+ *  first write can land is 10:00 sharp, 13h30m before this runs. The
+ *  20-hour threshold below is untouched and still has 6.5 hours of room.
+ *  Past 20 hours, nothing has landed since about 03:30 UTC: a whole day's
+ *  runs have failed, and it is reported the same night.
  *
  *  Vercel Hobby crons are accurate only to the hour, so "30 23" fires
  *  somewhere between 23:00 and 23:59 -- harmless with that schedule. The
@@ -91,7 +95,7 @@ export function message(verdict: Verdict, now: number): { subject: string; text:
     text:
       `The MMAI watchdog checked at ${when}.\n\n` +
       `These have had no new reading for more than ${WATCHDOG_OVERDUE_MS / 3_600_000} hours. ` +
-      `The refresh runs four times a day, so none of today's runs has landed:\n\n` +
+      `The refresh runs several times a day, so none of today's runs has landed:\n\n` +
       `${lines.join("\n")}\n\n` +
       `The site is still up and showing the last figures it has.\n\n` +
       `Where to look first: the refresh runs on GitHub, here:\n${ACTIONS_URL}\n` +

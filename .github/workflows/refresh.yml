@@ -14,7 +14,7 @@
 # and are re-runnable by hand from the Actions tab when something does
 # go wrong.
 #
-# FOUR RUNS A DAY, NOT ONE. The later ones are safety nets: if the first
+# SIX RUNS A DAY, NOT ONE. The later ones are safety nets: if the first
 # run fails or GitHub delays it, the next attempt fills the gap on its
 # own. This is only safe because the routes skip markets that already
 # have a reading for today -- see the freshness guard in
@@ -27,7 +27,7 @@
 # before it writes, let both through: four markets got two rows each.
 # Harmless that day. On a day a band moved, every watching subscriber
 # would have been emailed twice. Two schedulers that cannot see each
-# other are not redundancy, they are a race. This job already runs three
+# other are not redundancy, they are a race. This job already runs six
 # times a day under a concurrency lock, so it is the only scheduler now.
 #
 # vercel.json CAME BACK on 2026-09-19, with ONE cron: /api/watchdog, which
@@ -39,26 +39,39 @@ name: Refresh MMAI data
 
 on:
   schedule:
-    # UTC. FOUR RUNS, AT :43, from 10:43 to 18:43, since 21 September.
+    # UTC. SIX RUNS, AT :43, from 07:43 to 18:43. Two were added on 27
+    # September; the four from 21 September are unchanged.
     #
-    # GitHub starts scheduled jobs late under load, worst near the top of
-    # the hour: from 16 to 20 September the 06:10 run started at
-    # 10:54–11:18, the 12:00 at 15:45–15:53, the 18:00 at 20:26–20:38, and
-    # on the 19th the morning run never started. :43 follows GitHub's own
-    # advice to avoid the congested minutes; four runs make a dropped one
-    # up within three hours.
+    # GITHUB DOES NOT START THESE ON TIME, and the lateness is the whole
+    # reason for the shape of this block. Measured 24-26 September: never
+    # under 2h39 late, as much as 4h51, punctual not once, and worst in
+    # the morning -- 10:43 started at 14:43, 13:43 at 17:22, 16:43 at
+    # 19:22, 18:43 at 21:31. On the 19th a run was dropped outright. The
+    # site's "last refresh" line was reading 15-23 hours old as a result,
+    # and the owner noticed twice in two days. :43 follows GitHub's own
+    # advice to avoid the congested minutes.
     #
-    # WHY THESE HOURS. The first run that LANDS each day writes the day's
-    # row (the freshness guard, by UTC date) and the rest are no-ops, so
-    # the first landing defines what the day shows:
-    #   not before ~10:00  -- European releases land 09:00–10:00 UTC; an
+    # THE FIRST RUN THAT LANDS EACH DAY IS THE ONE THAT COUNTS: it writes
+    # the day's row (the freshness guard, by UTC date) and the rest are
+    # no-ops, so the first landing defines what the day shows. Two early
+    # crons were therefore ADDED rather than the later ones moved -- moving
+    # them would have made a punctual day worse (first write 11:43 instead
+    # of 10:43) to make a late day better. Added, the schedule is never
+    # worse than before and usually about three hours better.
+    #
+    # THE HOURS THAT MUST NOT PUBLISH ARE ENFORCED IN THE JOB, NOT HERE
+    # (the "Too early, or too late, to publish?" step below). A schedule
+    # cannot express "not before 10:00" when the runner may start four
+    # hours after the time written on it -- which is exactly how 07:43 and
+    # 08:43 became safe to add:
+    #   not before 10:00  -- European releases land 09:00-10:00 UTC; an
     #                        earlier first write would publish them a day
-    #                        late (the old 06:10 got them same-day only
-    #                        because GitHub started it at ~11:00)
-    #   none after 18:43   -- a 5-hour delay must still land before UTC
-    #                        midnight, or a late run writes TOMORROW's row
+    #                        late
+    #   not at 23:00      -- a very late run would write TOMORROW's row
     #                        before tomorrow's releases, and the watchdog
-    #                        (23:30, 20 h) sees a healthy day as ~20 h stale
+    #                        (23:30, 20 h) would see a healthy day as stale
+    - cron: "43 07 * * *"
+    - cron: "43 08 * * *"
     - cron: "43 10 * * *"
     - cron: "43 13 * * *"
     - cron: "43 16 * * *"
@@ -101,6 +114,50 @@ jobs:
     timeout-minutes: 10
     steps:
       # ---------------------------------------------------------------
+      # IS IT AN HOUR AT WHICH THIS RUN MAY PUBLISH?
+      #
+      # The schedule used to carry this rule by simply not running before
+      # 10:43 -- which works only if GitHub starts jobs when it says it
+      # will, and it does not (see the comment on the crons above). With
+      # two early crons added, the rule has to live where a delay cannot
+      # defeat it: here, against the clock as it actually is.
+      #
+      #   before 10:00  the European releases of that morning may not have
+      #                 landed, and the first write of the day is the one
+      #                 the site shows all day. Stop.
+      #   at 23:00      a very late run would stamp TOMORROW's row before
+      #                 tomorrow's releases exist. Stop.
+      #   otherwise     go.
+      #
+      # A MANUAL RUN IS NEVER GATED. workflow_dispatch means a person
+      # decided, and the button exists precisely to fix a day that went
+      # wrong.
+      #
+      # NO ARITHMETIC ON THE HOUR. `date -u +%H` gives "08" and "09", and
+      # bash arithmetic -- `(( H < 10 ))` or `[[ "$H" -lt 10 ]]` -- reads a
+      # leading zero as octal, fails on exactly those two values, and takes
+      # the ELSE branch without tripping `set -e`. The two hours the gate
+      # exists for are the two it would have failed open on, silently,
+      # publishing a morning's European figures a day late. `case` compares
+      # the text and cannot have that fault.
+      - name: Too early, or too late, to publish?
+        id: gate
+        run: |
+          hour=$(date -u +%H)
+          go=true
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            case "$hour" in
+              0[0-9]|23) go=false ;;
+            esac
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+          if [ "$go" = "false" ]; then
+            echo "::notice::${hour}:$(date -u +%M) UTC — outside the publishing window (10:00–22:59), so this run stops here. The next one writes the day's row."
+          else
+            echo "${hour}:$(date -u +%M) UTC — inside the publishing window."
+          fi
+
+      # ---------------------------------------------------------------
       # Japan's unemployment, fetched HERE rather than by the Vercel
       # function that does every other indicator.
       #
@@ -120,6 +177,7 @@ jobs:
       # route falls back exactly as it does today.
       - name: Fetch Japan unemployment from OECD
         id: jp
+        if: steps.gate.outputs.go == 'true'
         continue-on-error: true
         run: |
           URL='https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0/JPN.UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M?lastNObservations=1&format=csvfile'
@@ -156,6 +214,7 @@ jobs:
       # reads as "OECD has no data for Korea" and is wrong.
       - name: Fetch Korea inflation, unemployment and GDP from OECD
         id: kr
+        if: steps.gate.outputs.go == 'true'
         continue-on-error: true
         run: |
           BASE='https://sdmx.oecd.org/public/rest/data'
@@ -206,10 +265,11 @@ jobs:
           fi
 
       - name: Refresh scored markets
+        if: steps.gate.outputs.go == 'true'
         run: |
           echo "Calling /api/refresh (force=${{ inputs.force }}) …"
           # The freshness guard skips any market already stamped today, which
-          # is what makes four runs a day safe. That same guard blocks a
+          # is what makes six runs a day safe. That same guard blocks a
           # deliberate re-run after a SOURCE CHANGE -- the readings exist, they
           # were just produced by the old source. force=1 overrides it, and is
           # only ever set by hand from the Actions tab, never on a schedule.
@@ -326,6 +386,7 @@ jobs:
       # fails or fails a guard is simply not passed, and the route stores
       # null, which carry-forward covers for fourteen days.
       - name: Check out the relay script
+        if: steps.gate.outputs.go == 'true'
         uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/relay-gulf.mjs
@@ -333,6 +394,7 @@ jobs:
 
       - name: Fetch Gulf figures (Bahrain; IMF for Oman, Kuwait, UAE, Qatar)
         id: gulf
+        if: steps.gate.outputs.go == 'true'
         continue-on-error: true
         run: node scripts/relay-gulf.mjs
 
@@ -343,6 +405,7 @@ jobs:
       # was unreachable from the Actions tab. Recovering from a wrongly
       # stored Gulf value meant hand-rolling a curl with CRON_SECRET.
       - name: Refresh Gulf Watch
+        if: steps.gate.outputs.go == 'true'
         env:
           RELAY: >-
             bh_cpi=${{ steps.gulf.outputs.bh_cpi }}&bh_cpi_date=${{ steps.gulf.outputs.bh_cpi_date }}&om_cpi=${{ steps.gulf.outputs.om_cpi }}&om_cpi_date=${{ steps.gulf.outputs.om_cpi_date }}&kw_cpi=${{ steps.gulf.outputs.kw_cpi }}&kw_cpi_date=${{ steps.gulf.outputs.kw_cpi_date }}&ae_cpi=${{ steps.gulf.outputs.ae_cpi }}&ae_cpi_date=${{ steps.gulf.outputs.ae_cpi_date }}&qa_rate=${{ steps.gulf.outputs.qa_rate }}&qa_rate_date=${{ steps.gulf.outputs.qa_rate_date }}
@@ -364,6 +427,11 @@ jobs:
       # YouTube does later. Runs even if a step above failed, and never
       # fails the run itself: a bad minute at YouTube is not a data outage,
       # and the next run four hours later reads the feeds again.
+      #
+      # DELIBERATELY NOT GATED by the publishing window. /api/refresh-videos
+      # has no once-a-day guard, so it takes nothing from the run that
+      # publishes; an early run simply puts new videos on the site three
+      # hours sooner.
       - name: Save central bank videos
         if: always()
         continue-on-error: true
@@ -421,7 +489,14 @@ jobs:
         # and HOW it disagrees -- would never have run. A Gulf-side outage
         # (data.gov.bh answers four days in ten) would likewise have cancelled
         # a scored-market audit that has nothing to do with it.
-        if: always()
+        #
+        # BUT NOT ON A GATED RUN. This compares the STORED figures against
+        # the live sources, and on a run that published nothing the stored
+        # figures are yesterday's -- so any source that released overnight
+        # reads as a disagreement, the step exits 1, and the run goes red
+        # with an email on a morning when nothing is wrong. That is the
+        # daily false alarm this file has been burned by before.
+        if: always() && steps.gate.outputs.go == 'true'
         run: |
           echo "Calling /api/source-audit …"
           # Korea's three OECD figures go with it, for the same reason the
@@ -503,6 +578,13 @@ jobs:
       # is set this step says so and does nothing, rather than failing a
       # run that did its job. It pings even after an earlier step failed
       # (`if: always()`), so the monitor hears "failed" rather than silence.
+      #
+      # DELIBERATELY NOT GATED by the publishing window either, for two
+      # reasons. A run that stopped at the gate still proves GitHub ran the
+      # job, which is the single thing this monitor exists to detect. And
+      # `always() && steps.gate.outputs.go` would SKIP this step if the gate
+      # step itself ever failed -- taking the alarm down with the thing it
+      # is meant to report.
       - name: Heartbeat
         if: always()
         env:

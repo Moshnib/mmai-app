@@ -366,10 +366,19 @@ export default function OverviewPage() {
               the market count, and a refresh time that ticks over while
               the reader is on the page. The old line said "LIVE DATA" in
               the eyebrow, in the same grey as everything else, which is a
-              claim rather than a sign of life. */}
+              claim rather than a sign of life.
+
+              "RECHECKED THROUGH THE DAY", NOT A COUNT. It said "four times
+              a day", which is a promise the schedule no longer keeps in a
+              form a reader could check: from 27 September there are six
+              runs, and the two earliest stop without fetching anything if
+              they start before 10:00 UTC (the publishing window in
+              refresh.yml). The honest count is therefore four to six
+              depending on how late GitHub is that morning. What is true
+              every day is that it is rechecked more than once. */}
           <LiveBar
             live={dataSource === "live"}
-            facts={[`${MARKET_COUNT_WORD_CAP.toLowerCase()} markets · rechecked four times a day`]}
+            facts={[`${MARKET_COUNT_WORD_CAP.toLowerCase()} markets · rechecked through the day`]}
             stamp={lastUpdated}
             staleLabel="LAST KNOWN FIGURES — LIVE DATA UNREACHABLE"
           />

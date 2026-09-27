@@ -3587,3 +3587,127 @@ both halves of the site touch these two columns.
 **What it looks like when there is no range.** Every market except the US,
 and the US on any day the NY Fed row does not carry a sane one: the card is
 exactly what it was before, the rate alone. Nothing invents a range.
+
+## 53. The data landed late every day, and it was the schedule's fault (2026-09-27)
+
+**What the owner saw.** Two mornings running, the site's "last refresh"
+line read 15 to 23 hours old. Nothing had failed: every run succeeded.
+GitHub simply had not started them.
+
+**Measured, 24-26 September.** Never under 2h39 late, as much as 4h51,
+punctual not once, and worst in the morning:
+
+| scheduled | actually started |
+|-----------|------------------|
+| 10:43     | 14:43            |
+| 13:43     | 17:22            |
+| 16:43     | 19:22            |
+| 18:43     | 21:31            |
+
+On 19 September a run was dropped outright. This is ordinary behaviour for
+scheduled jobs on a free runner and there is no setting that fixes it.
+
+**Why lateness mattered so much.** The FIRST run that lands each UTC day
+writes the row; the rest are no-ops. So the first landing decides what the
+site shows for the whole day, and a four-hour delay on the first cron is a
+four-hour-old site until tomorrow.
+
+**The fix: the 10:00 rule moved out of the schedule and into the job.**
+The schedule used to carry "never publish before 10:00 UTC" by simply not
+running before 10:43 -- which only works if the runner starts on time.
+
+- Two early crons **added**: 07:43 and 08:43. The four existing ones are
+  untouched, deliberately. Moving them would have made a punctual day worse
+  (first write 11:43 instead of 10:43) to make a late day better; adding is
+  never worse than before and usually about three hours better.
+- A first step, **"Too early, or too late, to publish?"**, compares the
+  real clock: a scheduled run publishes only from 10:00 to 22:59 UTC. Before
+  10:00 the morning's European releases may not have landed; at 23:00 a very
+  late run would stamp tomorrow's row before tomorrow's releases exist.
+  **A manual run is never gated** -- the button exists to fix a bad day.
+- Gated: both OECD relays, the scored-market refresh, the Gulf checkout,
+  fetch and refresh, and the source audit. **Not gated: saving videos**
+  (no once-a-day guard, so an early run costs nothing and puts them up
+  sooner) and **the heartbeat** (a gated run still proves GitHub ran the
+  job, which is all that monitor detects -- and `always() && gate` would
+  take the alarm down whenever the gate step itself failed).
+
+**THE BUG THE REVIEWER FOUND IN THE FIRST DRAFT.** The obvious hour check,
+`[[ "$h" -lt 10 ]]` or `(( h < 10 ))`, is wrong at exactly 08 and 09:
+`date -u +%H` returns "08", bash arithmetic reads a leading zero as octal,
+errors, and takes the ELSE branch -- and because it fails inside an `if`
+condition, `set -e` does not trip and the step stays green. The two hours
+the gate was added for are the two it would have waved through, silently,
+publishing a morning's European figures a day late. It is a `case` on the
+text now, which cannot have that fault.
+- `scripts/test-publish-window.sh` (in CI) asserts all 24 hours, both
+  manual and scheduled, and names 08 and 09 separately so a regression
+  reads as itself. Rewriting the gate as the arithmetic version fails four
+  checks.
+- `scripts/test-refresh-schedule.ts` (in CI) asserts WHICH steps the gate
+  is wired to -- including that the heartbeat is not one of them -- and
+  that the early crons were added rather than swapped in. Four mutations
+  tried, four caught.
+
+**What this does not fix.** GitHub is still late; this only stops lateness
+mattering as much. Data should now land between 10:00 and about 12:45
+instead of 14:43-17:22. Making it land in a fixed hour needs a punctual
+trigger outside GitHub -- a Vercel cron calling a route that dispatches this
+workflow through the GitHub API, which needs a fine-grained PAT stored in
+Vercel. Offered to the owner as a second step if the simpler fix
+disappoints; not built.
+
+**A VERCEL CRON CANNOT REPLACE THIS WORKFLOW.** Recorded because it looks
+like the obvious answer and is not: Japan's unemployment and Korea's three
+series are fetched ON THE RUNNER because OECD refuses Vercel's egress
+(§25). A Vercel cron calling `/api/refresh` directly would run without
+those relays, and -- worse than a gap -- it would consume the day's write
+slot, so the later GitHub run would be a no-op and Japan and Korea would be
+stuck a day behind every day. Korea's composite would be withheld entirely,
+because v2 withholds rather than reweights. Vercel Hobby also allows one
+cron a day, fired anywhere inside its hour.
+
+## 54. A globe where the logo should be, in Google's results (2026-09-27)
+
+**What the owner saw.** Searching Google on a phone, every result had its
+owner's mark beside it -- Binance's yellow diamond -- and mmai.markets had
+a generic grey globe.
+
+**It was not missing.** The icon existed, was served at `/icon`, was
+declared in the homepage `<link>`, and was crawlable (robots.txt blocks
+only `/api/`). It was **32x32**, and Google's own guidance asks for a
+square favicon **larger than 48x48** so it holds up on phones and
+high-density screens. Under that, Google may ignore it and draw the globe.
+
+**What changed.**
+- `app/icon.tsx` renders at **96x96** (two multiples of 48, the size
+  Google's documentation uses as its example). Same mark, same two brand
+  hexes, proportions unchanged -- the gold square is still half the width.
+- **`app/favicon.ico` now exists**, 96x96, at the classic address that was
+  returning 404. Google does not need it (the `<link>` is enough), but
+  browsers, Slack and WhatsApp reach for `/favicon.ico` first.
+- It is generated FROM the rendered PNG by `scripts/make-favicon.mjs`
+  rather than drawn a second time -- an .ico may contain a PNG verbatim, so
+  one drawing serves both addresses and they cannot drift apart. **Re-run
+  that script whenever `app/icon.tsx` changes**; the header of both files
+  says so.
+
+**Do not tidy `app/icon.tsx`.** Next serves it at `/icon?<hash of the
+file>`, and Google asks that a favicon's address not change often. An
+edit moves the address and restarts whatever clock Google keeps on it.
+
+**When it will show.** Unknown, and not ours to control: Google fetches
+favicons on its own schedule, separately from pages, and this site was
+first indexed on 22 September. Weeks is normal. Nothing else was wrong, so
+there is nothing else to do but wait.
+
+**On ranking, asked at the same time.** Recorded because it will be asked
+again. The site already ranks first for its own name, five days after
+being indexed. It will not beat Binance for the bare letters "MMAI" -- a
+crypto token shares them and sits on a far stronger domain; that is not a
+winnable fight and not worth effort. The winnable searches are the
+questions the site answers in words -- "UAE inflation rate", "Fed target
+range today" -- and the site is almost all numbers and charts. In order of
+effect: monthly written commentary, an FAQ page, then links from real
+publications. All three are already on the to-do list. Everything else
+(keywords, re-submitting the sitemap, tags) is either done or does nothing.

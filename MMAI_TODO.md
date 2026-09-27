@@ -1,10 +1,47 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-25 (the US card shows the Fed's announced range)*
+*Last updated: 2026-09-27 (the refresh stops landing late in the day)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 27 September — the grey globe in Google's results (handover §54)
+- [x] The icon was there and correct, just **32 pixels** — Google asks for
+      bigger than 48 before it will use one. It is 96 now, same mark.
+- [x] `favicon.ico` existed nowhere and returned "not found"; it does now,
+      built from the same picture so the two cannot differ.
+- [ ] **Nothing to do but wait.** Google fetches icons on its own schedule,
+      often weeks behind the pages. If it is still a globe in a month, say
+      so and it can be looked at again.
+- [ ] **To be found for more searches** (the same conversation): the three
+      things that would actually work are monthly written commentary, an
+      FAQ page, and links from real publications — all already on the
+      best-practice list further down. Chasing the bare term "MMAI" against
+      a crypto token on Binance is not winnable and not worth the effort.
+
+## ✅ 27 September — the data stops landing late in the day (handover §53)
+- [x] GitHub was starting the refresh 2h39 to 4h51 late, every day, so the
+      site's "last refresh" line read 15–23 hours old and the owner noticed
+      two mornings running. Nothing had failed — the runs simply had not
+      started.
+- [x] Two earlier runs added (07:43, 08:43 UTC) and the "never publish
+      before 10:00" rule moved out of the schedule and into the job, where
+      a delay cannot defeat it. Expect data by about midday instead of
+      mid-afternoon.
+- [ ] **Live with it for a week.** If it still feels late, the next step is
+      a punctual trigger outside GitHub. It needs a GitHub access token
+      stored in Vercel, which is a secret to look after, so it is not worth
+      doing unless the simpler fix disappoints.
+- [ ] **A real bug the reviewer found on the way (not fixed).** Both OECD
+      steps are allowed to fail without stopping the run. If one fails on
+      the run that happens to land first, Japan and Korea are frozen in a
+      degraded state for the whole UTC day — Korea's score withheld
+      entirely — and the three later runs cannot repair it, because any row
+      stamped today marks a market done. The Observatory already has the
+      per-figure retry that would fix this
+      (`needsObservatoryFetch`, `lib/observatory.ts`); the scored markets do
+      not. Independent of scheduling.
 
 ## ✅ 25 September — the US card matches the news (handover §52)
 - [x] The card read 3.88% while the news said 4%. Both were right: the Fed

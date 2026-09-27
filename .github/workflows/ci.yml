@@ -70,6 +70,22 @@ jobs:
       - name: Lint
         run: npx eslint . --max-warnings 0
 
+      # THE REFRESH DOES NOT PUBLISH OUTSIDE ITS WINDOW.
+      #
+      # GitHub starts the refresh two to five hours after the time on its
+      # schedule, so the rule "never publish before 10:00 UTC" cannot live
+      # in the schedule any more -- it is a clock check inside the job, and
+      # these two pin it. The first tried version failed at exactly 08 and
+      # 09, because bash arithmetic reads a leading zero as octal and takes
+      # the else branch without failing: the two hours the check exists for
+      # were the two it waved through. Nothing else in this file would have
+      # noticed, and the symptom would have been a morning's European
+      # figures published a day late.
+      - name: The refresh publishes only inside its window
+        run: bash scripts/test-publish-window.sh
+      - name: The window is wired to the right steps
+        run: npx tsx scripts/test-refresh-schedule.ts
+
   scoring:
     name: Scoring correctness
     runs-on: ubuntu-latest
