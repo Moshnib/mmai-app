@@ -15,7 +15,7 @@ export const STALE_THRESHOLD_MS = 72 * 60 * 60 * 1000; // 72 hours
 // STALE_THRESHOLD_MS above decides what gets blanked to N/A, and must stay
 // generous: it is measured against the last COMPLETE reading, which is
 // already a day old whenever one source fails for a day. This one only
-// WARNS. The refresh runs four times a day, so nothing written for 30
+// WARNS. The refresh runs up to six times a day, so nothing written for 30
 // hours means a whole day of runs failed. From 16 to 19 September nothing
 // was written at all, and the site, reading only the 72-hour value, kept
 // saying LIVE for three days. Used by the homepage LIVE bar, the footer,
