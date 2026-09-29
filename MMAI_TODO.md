@@ -1,10 +1,26 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-27 (the refresh stops landing late in the day)*
+*Last updated: 2026-09-28 (times show in the reader's own clock)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 28 September — the refresh time shows in your own clock (handover §55)
+- [x] Every "last refreshed" time on the site now reads in the reader's own
+      timezone and says which one — "Sep 28, 07:58 PM GMT+4" instead of
+      "Sep 28, 03:58 PM UTC". Four places said it; one function now.
+- [x] **The schedule was deliberately NOT moved earlier.** Publishing at
+      7am Gulf time would carry a fresh-looking stamp on a row missing that
+      day's European and American releases. Owner was shown the trade-off
+      and chose to leave it.
+- [ ] **If it is ever revisited, the direction is LATER, not earlier** — a
+      write in the UTC evening would give a 7am Gulf reader a row eight
+      hours old containing the complete previous day, instead of fifteen
+      hours old and missing the US releases. **It is not a one-line change:
+      read handover §55 first.** Moving the write later means moving the
+      job's publishing window and the watchdog's alarm with it, or some
+      days nothing gets written at all.
 
 ## ✅ 27 September — the grey globe in Google's results (handover §54)
 - [x] The icon was there and correct, just **32 pixels** — Google asks for

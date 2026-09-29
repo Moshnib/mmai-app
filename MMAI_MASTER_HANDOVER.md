@@ -3711,3 +3711,99 @@ range today" -- and the site is almost all numbers and charts. In order of
 effect: monthly written commentary, an FAQ page, then links from real
 publications. All three are already on the to-do list. Everything else
 (keywords, re-submitting the sitemap, tags) is either done or does nothing.
+
+## 55. The refresh stamp reads in the reader's own clock (2026-09-28)
+
+**What was reported.** "There is a problem in the time of refreshing the
+data -- I need it as early as possible, so someone in the east opening the
+website early morning finds the update."
+
+**The scheduling half of that was declined, on the evidence.** Publishing
+earlier would have made the site WORSE for exactly that reader. The day's
+figures are written once, and the releases that fill them land through the
+UTC day: European figures 09:00-10:00 (the UK's ONS earlier still, 06:00 or
+07:00), American ones 12:30-14:30, and the NY Fed's rate with them. **Those
+US times shift by an hour with American daylight saving** -- they are
+08:30-09:30 New York, which is an hour later in UTC through the northern
+winter, so do not read the figures above as fixed. An earlier draft of this
+section gave the summer time for one and the winter time for the other.
+A write at 03:00 UTC -- 07:00 in the Gulf -- would
+carry a fresh-looking stamp on a row missing a full day of releases.
+
+The owner was shown the trade-off and chose to leave the schedule alone.
+Recorded so nobody re-opens it as an oversight. **If it is ever revisited,
+the direction is LATER, not earlier**: a write at 17:00-19:00 UTC would
+give a 7am Gulf reader a row eight hours old containing the complete
+previous day, against fifteen hours old and missing the US releases today.
+It would also improve European mornings, and cost only the American
+morning's stamp -- the same figures, an older label.
+
+**BUT IT IS NOT A ONE-LINE CHANGE, and a future pass must not read it as
+one.** refresh.yml's publishing window closes at 22:59 UTC, because a run
+landing at 23:00 would stamp TOMORROW's row before tomorrow's releases
+exist -- and GitHub starts these jobs 2h39 to 4h51 late, never punctual.
+A cron written for 17:00-19:00 would therefore routinely start between
+21:00 and 23:51, and the ones past 23:00 would be gated out entirely:
+some days nothing would be written at all. Moving the write later means
+moving the window's close later too, and the watchdog with it (23:30, a
+20-hour threshold, lib/watchdog.ts). Three things, not one.
+
+**What was actually wrong was the clock, not the schedule.** The stamp said
+"Sep 27, 12:44 PM UTC". A reader in the Gulf had to add four hours in their
+head before they could tell whether that was this morning or yesterday, and
+the site was reported as not updating on a day it had updated. Most of the
+figures are monthly anyway: that reader was looking at current data and a
+confusing label.
+
+**What changed.** Every "last refreshed" time on the site now reads in the
+reader's own timezone, and always names it -- "Sep 28, 07:58 PM GMT+4".
+- `formatWhen(iso, local, { withYear })` in `lib/liveTime.ts` is the one
+  implementation. THERE WERE FOUR COPIES: the live bar, the Sources table,
+  the homepage's "Verified …" strip, and the footer's "Data last updated".
+  Three would have been converted and the footer missed, so the bottom of
+  the page would have said 03:58 PM UTC while the top said 07:58 PM GMT+4.
+  All four now call the same function.
+- **`local` comes from the client tick**, never a constant. The server
+  cannot know the reader's zone, so the UTC branch is what it would render
+  and the browser switches once `useNow()` is non-null -- the same
+  mechanism the "ago" line already used.
+  - Being precise, because the comments used to overstate it: **no stamp
+    is server-rendered at all today.** Every one of the four is filled by
+    an effect, so the first HTML carries no time and there is nothing for
+    hydration to disagree about. The UTC branch is correct defensive
+    design for the day one of these becomes a server-fed prop; it is not
+    what is protecting the page right now.
+- **THE DATE-ONLY FORMATTERS STAY IN UTC**, and converting them would be
+  the same bug in reverse: the homepage's observation note,
+  `StablecoinMacroLink`, and `scripts/test-latest-complete.ts` all format
+  a `YYYY-MM-DD` string, which in a reader's own zone shifts a day
+  backwards for everyone west of UTC. A wrong DATE on an economic figure
+  is a wrong fact. `lib/liveTime.ts` says so at the function.
+- `scripts/test-live-time.ts` (in CI, run under UTC, Asia/Dubai and
+  America/New_York) asserts the reader's form shows the reader's own hour,
+  the zone is always named, the two differ outside UTC, and the footer's
+  form carries the year while no other caller does. **Five mutations
+  tried, five caught** -- including deleting the year option, which the
+  first version of this test would have passed, and the footer is that
+  option's only caller.
+
+**One more thing the review caught, and it was the serious one.**
+`useNow()` passed an inline arrow as its subscriber, so React re-subscribed
+on every render: `clearInterval` then a fresh 30-second `setInterval`,
+countdown restarting each time. A component re-rendering more often than
+every 30 seconds would never tick at all -- the "ago" line frozen, the
+stamp stuck on the server's clock. Harmless while the callers were small,
+settled components; this change was about to add the homepage and the
+footer, which both re-render as their data lands. The subscriber and both
+snapshots now live at module scope.
+
+Related, and why the homepage does not hold the clock: `MarketSnapshotStrip`
+takes the raw ISO stamp and formats it itself. Formatting it on the
+homepage meant the homepage held the tick, and nothing on this site is
+memoised, so every 30 seconds the whole tree -- charts and world map
+included -- re-rendered to keep one line of text current.
+
+**A local test run only covers one zone.** Node on Windows ignores `TZ` and
+reads the system zone -- verified on the owner's machine, where
+`TZ=Asia/Tokyo` still reported Asia/Dubai. That is why CI runs the file
+three times rather than trusting one pass.

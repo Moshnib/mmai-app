@@ -47,7 +47,7 @@ export default function LiveBar({
       {stamp && (
         <span>
           <span className="live-sep" aria-hidden="true">·</span>
-          last refresh <b className="live-when">{formatWhen(stamp)}</b>
+          last refresh <b className="live-when">{formatWhen(stamp, now !== null)}</b>
           {now !== null && <span className="live-ago"> ({formatAgo(stamp, now)})</span>}
         </span>
       )}

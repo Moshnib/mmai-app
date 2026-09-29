@@ -81,6 +81,23 @@ jobs:
       # were the two it waved through. Nothing else in this file would have
       # noticed, and the symptom would have been a morning's European
       # figures published a day late.
+      # THE REFRESH STAMP READS IN THE READER'S OWN CLOCK.
+      #
+      # It was UTC, and a reader in the Gulf had to add four hours before
+      # they could tell whether "Sep 27, 12:44 PM UTC" was this morning or
+      # yesterday -- the site was reported as not updating on a day it had
+      # updated. The catch is that the SERVER must still render UTC, or the
+      # browser hydrates a different string over it and React throws the
+      # markup away. Run under three zones, because the bug this guards
+      # against only appears away from UTC. (TZ is ignored on Windows, so a
+      # developer's local run covers one zone; this covers three.)
+      - name: The refresh stamp reads in the reader's own clock
+        run: |
+          for zone in UTC Asia/Dubai America/New_York; do
+            echo "── $zone"
+            TZ=$zone npx tsx scripts/test-live-time.ts
+          done
+
       - name: The refresh publishes only inside its window
         run: bash scripts/test-publish-window.sh
       - name: The window is wired to the right steps

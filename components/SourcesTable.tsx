@@ -247,7 +247,7 @@ export default function SourcesTable({
                     if (!stamp) return "—";
                     return (
                       <>
-                        <span className="src-when">{formatWhen(stamp)}</span>
+                        <span className="src-when">{formatWhen(stamp, now !== null)}</span>
                         {now !== null && <span className="src-ago">{formatAgo(stamp, now)}</span>}
                       </>
                     );
