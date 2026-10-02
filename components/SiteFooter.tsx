@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getPublicSupabaseClient } from "@/lib/supabase";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { REFRESH_OVERDUE_MS } from "@/lib/constants";
+import { formatWhen, useNow } from "@/lib/liveTime";
 
 // The one footer for the whole site (rendered from app/layout.tsx), carrying a
 // live "last updated" stamp.
@@ -21,19 +22,18 @@ import { REFRESH_OVERDUE_MS } from "@/lib/constants";
 // intraday, swapping this for Supabase Realtime is the right move.
 const RECHECK_MS = 10 * 60 * 1000; // 10 minutes
 
-function formatStamp(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-    timeZoneName: "short",
-  });
-}
+// The footer's own copy of the stamp formatter is gone -- it was the
+// fourth, and the one that would have been missed: when the refresh stamp
+// moved to the reader's own clock, this line would have gone on saying
+// "03:58 PM UTC" at the bottom of a page whose header said "07:58 PM
+// GMT+4". Two clocks for one moment is worse than either alone.
+// lib/liveTime.ts's formatWhen carries the year for this caller.
 
 export default function SiteFooter() {
+  // Non-null once the browser has its own clock; until then the stamp
+  // renders in UTC, which is what the server rendered, so hydration has
+  // nothing to disagree about.
+  const now = useNow();
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [staleCount, setStaleCount] = useState(0);
 
@@ -113,7 +113,7 @@ export default function SiteFooter() {
         <span>© 2026 MMAI — Moshnib Macro Analysis Index. Measuring the Pulse of the Economy. An analytical communication tool, not investment advice.</span>
         {lastUpdated && (
           <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11 }}>
-            Data last updated {formatStamp(lastUpdated)}
+            Data last updated {formatWhen(lastUpdated, now !== null, { withYear: true })}
             {staleCount > 0 && ` · ${staleCount} market${staleCount === 1 ? "" : "s"} not currently refreshing`}
           </span>
         )}

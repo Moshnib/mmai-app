@@ -1,6 +1,7 @@
 "use client";
 
 import { type RawIndicators } from "@/lib/indicators";
+import { formatWhen, useNow } from "@/lib/liveTime";
 
 // ============================================================
 // "Featured Market Snapshot" context bar (design brief §2): a compact
@@ -69,8 +70,18 @@ export default function MarketSnapshotStrip({
 }: {
   marketName: string;
   raw: RawIndicators;
+  /** THE RAW ISO STAMP, not a formatted string.
+   *
+   *  It used to arrive pre-formatted from the homepage, which meant the
+   *  homepage had to hold the clock -- and useNow() ticks every thirty
+   *  seconds, so the whole page re-rendered on a schedule to keep one line
+   *  of text current. Nothing here is memoised, so that tick reached the
+   *  charts and the map too. The subscription belongs at the leaf that
+   *  shows the time, which is this. */
   verifiedAt: string | null;
 }) {
+  // Null until the browser has its own clock; the stamp is UTC until then.
+  const now = useNow();
   const chips = buildChips(raw);
   return (
     <div className="snapshot-strip">
@@ -82,7 +93,7 @@ export default function MarketSnapshotStrip({
         {verifiedAt && (
           <>
             {" · "}
-            <span style={{ fontFamily: "IBM Plex Mono, monospace" }}>Verified {verifiedAt}</span>
+            <span style={{ fontFamily: "IBM Plex Mono, monospace" }}>Verified {formatWhen(verifiedAt, now !== null)}</span>
           </>
         )}
       </span>

@@ -34,11 +34,16 @@ import { useQuery, setQuery } from "@/lib/urlState";
 import ShareButton from "@/components/ShareButton";
 import Term from "@/components/Term";
 
-function formatUpdatedAt(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
-  });
-}
+// THE "Verified …" STAMP IS FORMATTED BY THE STRIP, NOT HERE. This page
+// held a second, identical copy of lib/liveTime.ts's formatWhen(), which
+// would have gone on printing UTC when the rest of the site moved to the
+// reader's own clock -- one page, one moment, two times.
+//
+// It is not merely shared now, it has MOVED DOWN: the strip takes the raw
+// ISO stamp and formats it itself. Formatting here meant this page had to
+// hold the clock, and that clock ticks every thirty seconds -- so the
+// whole homepage, charts and map included, re-rendered on a timer to keep
+// one line of text current.
 
 function narrativeFor(market: MarketData): string {
   const { percentile, dimensionPercentiles, missing } = scoreMarketV2(market);
@@ -441,7 +446,7 @@ export default function OverviewPage() {
           <MarketSnapshotStrip
             marketName={market.name}
             raw={market.raw}
-            verifiedAt={lastUpdated ? formatUpdatedAt(lastUpdated) : null}
+            verifiedAt={lastUpdated}
           />
 
           <div className="score-panel">
