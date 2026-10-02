@@ -91,9 +91,14 @@ function OilChart({ points }: { points: PricePoint[] }) {
   const W = 640, H = 120, PAD = 6;
   const prices = points.map((p) => p.price);
   const lo = Math.min(...prices), hi = Math.max(...prices);
+  const flat = hi === lo;
   const span = hi - lo || 1;
   const x = (i: number) => PAD + (i / (points.length - 1)) * (W - PAD * 2);
-  const y = (v: number) => PAD + (1 - (v - lo) / span) * (H - PAD * 2);
+  // A WINDOW THAT NEVER MOVED IS DRAWN DOWN THE MIDDLE, not along the
+  // floor. With hi === lo every point scores 0 against the range, which
+  // puts the line on the bottom edge -- a shape that reads as "at its
+  // lowest" when the fact is "unchanged".
+  const y = (v: number) => (flat ? H / 2 : PAD + (1 - (v - lo) / span) * (H - PAD * 2));
   const d = points.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.price).toFixed(1)}`).join(" ");
   const falling = points[points.length - 1].price < points[0].price;
 

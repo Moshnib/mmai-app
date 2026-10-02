@@ -47,26 +47,47 @@ export default function OilLine() {
   }, []);
 
   const reading = points ? latestWithChange(points) : null;
-  // The row holds its space whatever happens -- before the query lands,
-  // and for ever if the table is empty or the migration has not been run.
-  if (!reading) return <div className="oil-line" aria-hidden="true" />;
+
+  // THREE STATES, NOT TWO, and the difference between the last two is
+  // the one worth having.
+  //
+  //  still asking   hold the space the row is about to need, so nothing
+  //                 below it jumps when the price lands a moment later
+  //  nothing to show  take no space at all. The table is created by a
+  //                 hand-run migration, so "no price" is the state this
+  //                 ships in until that SQL is pasted -- and a permanent
+  //                 blank gap under the market picker is exactly the
+  //                 homepage furniture this site's owner keeps asking to
+  //                 be rid of. Better a one-off collapse on a page that
+  //                 has no price than a hole on every page for ever.
+  //  a price        the row, with its rules.
+  if (points === null) return <div className="oil-line-slot" aria-hidden="true" />;
+  if (!reading) return null;
 
   const change = describeChange(reading);
-  const falling = (reading.absChange ?? 0) < 0;
+  const direction = reading.absChange == null || reading.absChange === 0 ? "" : reading.absChange < 0 ? " is-down" : " is-up";
 
   return (
-    <div className="oil-line">
-      <span>Brent crude</span>
-      <span aria-hidden="true">·</span>
-      {/* THE DATE IS PART OF THE FIGURE, not a caption under it. The EIA
-          publishes two to four days late, so a price shown without its
-          day will be read as today's and be wrong by three. */}
-      <span>{formatPriceDay(reading.date)}</span>
-      <span aria-hidden="true">·</span>
-      <b>{formatPrice(reading.price)}</b>
-      {change && <span className={falling ? "is-down" : "is-up"}>{change}</span>}
-      {reading.stale && <span>· no newer price published</span>}
-      <Link href="/trends#oil-heading">the month →</Link>
+    <div className="oil-line-slot">
+      <div className="oil-line">
+        <span>Brent crude</span>
+        <span aria-hidden="true">·</span>
+        {/* THE DATE IS PART OF THE FIGURE, not a caption under it. The EIA
+            publishes two to four days late, so a price shown without its
+            day will be read as today's and be wrong by three. */}
+        <span>{formatPriceDay(reading.date)}</span>
+        <span aria-hidden="true">·</span>
+        <b>{formatPrice(reading.price)}</b>
+        {change && <span className={direction.trim()}>{change}</span>}
+        {reading.stale && <span>· no newer price published</span>}
+        {/* THE CREDIT TRAVELS WITH THE FIGURE. The EIA's terms are public
+            domain with citation requested, and this project's own
+            migration comment says attribution belongs wherever the price
+            is shown -- a rule it would otherwise assert and then break on
+            the most-read page of the site. */}
+        <span className="oil-line-src">EIA</span>
+        <Link href="/trends#oil-heading">the month →</Link>
+      </div>
     </div>
   );
 }

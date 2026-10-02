@@ -2347,18 +2347,34 @@ a.dim-axis-row:hover { background: var(--hover); }
   font-family: "IBM Plex Mono", monospace; margin-top: 6px;
 }
 
-/* THE HOMEPAGE LINE. One row, and a RESERVED HEIGHT: it is filled by a
-   query that lands after paint, and without a fixed height the headline
-   below it would jump down the moment the price arrives. */
+/* THE HOMEPAGE LINE.
+
+   TWO ELEMENTS, NOT ONE, and that is the whole trick. The price arrives
+   from a query that lands after first paint, so the space has to be
+   reserved before there is anything to put in it -- but a bordered strip
+   reserved and never filled is an empty ruled box under the market
+   picker, which is what ships for as long as the table is missing. So
+   the WRAPPER holds the height and has no appearance of its own, and the
+   rules and the text belong to the row inside it.
+
+   78px, not 34, and MEASURED rather than guessed: at 375px the filled
+   row wraps to three lines and stands 77px tall with its padding and
+   rules. A reservation that does not cover the case it was reserved for
+   is decoration. On a wider screen the row is a single line, so the slot
+   shrinks to match rather than leaving a hole. */
+.oil-line-slot { min-height: 78px; margin: 18px 0 0; }
+@media (min-width: 700px) { .oil-line-slot { min-height: 36px; } }
+
 .oil-line {
-  min-height: 34px;
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   font-family: "IBM Plex Mono", monospace;
   font-size: var(--t-caption); color: var(--slate);
   border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
-  margin: 18px 0 0; padding: 7px 0;
+  padding: 7px 0;
 }
 .oil-line b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 .oil-line .is-up { color: var(--status-live); }
 .oil-line .is-down { color: #CF6660; }
 .oil-line a { color: var(--accent-2); }
+/* The attribution the EIA asks for, kept quiet but present. */
+.oil-line-src { color: var(--mid); }

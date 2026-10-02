@@ -97,7 +97,7 @@ check("unsorted input still finds the newest two",
   latestWithChange([...REAL].reverse(), WRITTEN)!.date, "2026-09-29");
 // The upsert can replace a price when the EIA revises it; a read that
 // kept both would compare a day against itself.
-check("a repeated date collapses, newest row winning",
+check("a repeated date collapses, the last occurrence winning",
   latestWithChange([...REAL, { date: "2026-09-29", price: 114.5 }], WRITTEN)!.price, 114.5);
 check("a repeated date does not become its own baseline",
   latestWithChange([...REAL, { date: "2026-09-29", price: 114.5 }], WRITTEN)!.prevDate, "2026-09-28");
@@ -116,10 +116,18 @@ check("a non-number is dropped",
 // Three weeks later and still nothing new: that is no longer a lag.
 check("a fortnight with no new price is stale",
   latestWithChange(REAL, Date.parse("2026-10-20T00:00:00Z"))!.stale, true);
-check("the boundary: six days is not stale",
-  latestWithChange(REAL, Date.parse("2026-10-05T00:00:00Z"))!.stale, false);
-check("the boundary: seven days is",
-  latestWithChange(REAL, Date.parse("2026-10-06T12:00:00Z"))!.stale, true);
+// NINE DAYS, NOT SIX. Six sat at the edge of a normal week once the
+// EIA's two-to-four-day lag meets a weekend, and a market holiday pushes
+// it over -- an alarm that fires every Christmas teaches the reader to
+// ignore it. These two pin where the line actually is.
+check("the boundary: a holiday-length gap of nine days is not stale",
+  latestWithChange(REAL, Date.parse("2026-10-08T00:00:00Z"))!.stale, false);
+check("the boundary: ten days is",
+  latestWithChange(REAL, Date.parse("2026-10-09T12:00:00Z"))!.stale, true);
+// The case that drove the change: Christmas closes two sessions on top
+// of the lag, and nothing is wrong.
+check("a week behind over a holiday is still the source's normal rhythm",
+  latestWithChange(REAL, Date.parse("2026-10-06T12:00:00Z"))!.stale, false);
 
 // ---- how it reads ----------------------------------------------------
 
@@ -131,6 +139,12 @@ check("with the year where one is needed", formatPriceDay("2026-09-29", true), "
 // that would print the 28th. See formatWhen in lib/liveTime.ts.
 check("the day does not drift with the machine's zone", formatPriceDay("2026-01-01"), "1 January");
 check("the fall, in words", describeChange(r), "−$6.01 (−5.0%) since 28 September");
+// A FLAT DAY IS NOT A RISE. The first version printed "+$0.00 (+0.0%)"
+// for a price that had not moved, and coloured it as a gain -- the one
+// thing a reader takes on trust here, exactly backwards.
+check("a day that did not move says so",
+  describeChange(latestWithChange([{ date: "2026-09-28", price: 113.96 }, { date: "2026-09-29", price: 113.96 }], WRITTEN)!),
+  "unchanged since 28 September");
 
 console.log(failures === 0 ? "\nThe daily price carries its date and its baseline." : `\n${failures} check(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

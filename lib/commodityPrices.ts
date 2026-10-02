@@ -47,10 +47,16 @@ export interface PriceReading {
 }
 
 /** How many days without a new observation before the price is reported
- *  as stale rather than current. The EIA's lag is two to four days and
- *  weekends stretch that, so six is the first number that cannot fire on
- *  a healthy week. */
-export const PRICE_STALE_AFTER_DAYS = 6;
+ *  as stale rather than current.
+ *
+ *  The EIA's lag is two to four days and a weekend stretches it, which
+ *  would put six days at the edge of a normal week. NINE, because a
+ *  market holiday is the case six gets wrong: Christmas or New Year can
+ *  close trading for two sessions on top of the lag, and an alarm that
+ *  cries wolf every January is worse than one that waits an extra day.
+ *  The copy it switches to is honest either way -- "no new price has been
+ *  published since ..." is true on day seven as much as day ten. */
+export const PRICE_STALE_AFTER_DAYS = 9;
 
 const DAY_MS = 86_400_000;
 
@@ -58,9 +64,13 @@ const DAY_MS = 86_400_000;
  *  quiet. Null when there is nothing to show -- the caller renders
  *  nothing rather than a zero.
  *
- *  Input may arrive in any order and with repeats (a revised price for a
- *  day it already holds); the newest row for a date wins, which matches
- *  the upsert that writes them. */
+ *  Input may arrive in any order. If a date repeats, THE LAST OCCURRENCE
+ *  IN THE INPUT WINS -- stated precisely because it is tempting to write
+ *  "the newest row wins", which this does not know how to do: the rows
+ *  carry no ordering but their date. In practice duplicates cannot
+ *  reach here at all, because commodity_prices is unique on
+ *  (series, observation_date) and the write upserts; this rule only
+ *  decides what happens if that ever stops being true. */
 export function latestWithChange(
   points: PricePoint[],
   now: number = Date.now(),
@@ -111,8 +121,14 @@ export function formatPrice(price: number): string {
  *  "on the day", nothing a weekend can falsify. */
 export function describeChange(reading: PriceReading): string | null {
   if (reading.absChange == null || reading.pctChange == null || reading.prevDate == null) return null;
+  const since = `since ${formatPriceDay(reading.prevDate)}`;
+  // A FLAT DAY IS NOT A RISE. `absChange < 0 ? "−" : "+"` printed
+  // "+$0.00 (+0.0%)" for a price that did not move, and coloured it as a
+  // gain. Rare for Brent and certain to look like a bug the day it
+  // happens -- the sign is the one thing a reader takes on trust here.
+  if (reading.absChange === 0) return `unchanged ${since}`;
   const sign = reading.absChange < 0 ? "−" : "+";
   const abs = Math.abs(reading.absChange).toFixed(2);
   const pct = Math.abs(reading.pctChange).toFixed(1);
-  return `${sign}$${abs} (${sign}${pct}%) since ${formatPriceDay(reading.prevDate)}`;
+  return `${sign}$${abs} (${sign}${pct}%) ${since}`;
 }

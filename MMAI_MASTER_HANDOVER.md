@@ -3895,7 +3895,7 @@ the daily gold price is licensed by essentially everyone who publishes it.
 Establishing what gold would cost, and whether any free source permits
 republication, is the next task and is not yet done.
 
-**`scripts/test-commodity-prices.ts`** (27 checks, in CI under UTC and
+**`scripts/test-commodity-prices.ts`** (29 checks, in CI under UTC and
 America/New_York) pins the Friday-to-Monday baseline against the real
 published series, a zero price as a real price, one point as "no change"
 rather than "unchanged", the staleness boundary, and the date not drifting
@@ -3903,3 +3903,32 @@ with the reader's timezone -- which fails only west of UTC, hence the
 second zone. Seven mutations tried, six caught by assertion and the
 seventh (dropping the UTC option) only reachable in the American zone,
 which is why CI runs it there.
+
+**What the implementation review caught, after all eleven design points
+were in.** Two of these would have shipped:
+
+- **The watchdog could have been blinded by its own new check.** The
+  commodity lookup went into the same `Promise.all` as the markets, the
+  Gulf and the Observatory, and `newestBy` throws on any PostgREST error.
+  A missing `commodity_prices` -- the state this ships in until the SQL
+  is pasted -- would have rejected the group, collapsed every watched
+  entry into one "the database is unreachable" row, and emailed an
+  outage every night while nothing was wrong. It has its own try/catch
+  now, and a series that has never been written is left out rather than
+  reported late, because `assess()` treats a null as the worst case.
+- **The homepage slot reserved 34px for a row that is 77px on a phone**,
+  so the shift it existed to prevent still happened on the screens where
+  it shows most. Measured and set to 78px, shrinking to 36px above 700px
+  where the row is one line. The empty state also shipped as a bordered
+  strip -- a permanent ruled box under the market picker until the
+  migration runs -- so the slot now holds the height with no appearance
+  of its own, and collapses entirely once the query comes back empty.
+- Smaller: the homepage line carries the EIA credit (the migration
+  comment asserts attribution "wherever it is shown", and the line did
+  not); a flat window no longer draws along the floor of the chart as
+  though it were at its lowest; an unchanged day reads "unchanged since
+  28 September" rather than "+$0.00 (+0.0%)" in the colour of a rise;
+  the staleness threshold moved from 6 days to 9, because 6 fires over a
+  Christmas close; and the dedupe comment now says what the code does
+  (the last occurrence in the input wins) rather than "the newest row",
+  which the rows carry no way to know.

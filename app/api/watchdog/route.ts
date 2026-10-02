@@ -61,24 +61,46 @@ export async function GET(request: Request) {
 
   let watched: Watched[];
   try {
-    const [scored, gulf, obs, commodities] = await Promise.all([
+    const [scored, gulf, obs] = await Promise.all([
       newestBy("raw_indicators", "market", FALLBACK_MARKETS.map((m) => m.code)),
       newestBy("gulf_indicators", "country_code", GULF_COUNTRIES.map((c) => c.code)),
       newestBy("observatory_indicators", "country_code", OBSERVATORY.map((c) => c.code)),
-      // WATCHED ON fetched_at, NOT ON ITS OBSERVATION DATE, and that is
-      // the whole reason it is here. The EIA publishes Brent two to four
-      // days in arrears, so "the newest price is from three days ago" is
-      // a healthy Thursday and a dead series in a fortnight -- the
-      // observation date cannot tell those apart, and when MMAI last
-      // wrote the row can.
-      newestBy("commodity_prices", "series", [BRENT_SPOT_DAILY]),
     ]);
     watched = [
       ...FALLBACK_MARKETS.map((m) => ({ name: m.name, group: "scored", newest: scored.get(m.code) ?? null })),
       ...GULF_COUNTRIES.map((c) => ({ name: c.name, group: "Gulf Watch", newest: gulf.get(c.code) ?? null })),
       ...OBSERVATORY.map((c) => ({ name: c.name, group: "Observatory", newest: obs.get(c.code) ?? null })),
-      { name: "Brent crude (daily)", group: "commodities", newest: commodities.get(BRENT_SPOT_DAILY) ?? null },
     ];
+
+    // THE COMMODITY SERIES IS WATCHED SEPARATELY, AND MUST NEVER TAKE THE
+    // REST DOWN WITH IT.
+    //
+    // It was in the Promise.all above, and a reviewer caught what that
+    // meant: commodity_prices is created by a HAND-RUN migration, so
+    // between a deploy and the owner pasting the SQL every query in that
+    // group rejects, the catch below collapses all twenty-odd markets
+    // into one "the database is unreachable" row, and the watchdog emails
+    // an outage every night while nothing is wrong. A new check that can
+    // blind the alarm to everything else is a bad trade for a figure
+    // shown beside the score rather than inside it.
+    //
+    // WATCHED ON fetched_at, NOT ON THE OBSERVATION DATE. The EIA
+    // publishes Brent two to four days in arrears, so "the newest price
+    // is three days old" is a healthy Thursday and a dead fetcher three
+    // weeks later; only when MMAI last wrote the row separates them.
+    //
+    // A series that has NEVER been written is left out entirely rather
+    // than reported late: assess() treats a null as the worst case, so
+    // including it would raise a nightly alarm for a table that is simply
+    // waiting for its first run.
+    try {
+      const commodities = await newestBy("commodity_prices", "series", [BRENT_SPOT_DAILY]);
+      const newest = commodities.get(BRENT_SPOT_DAILY);
+      if (newest) watched.push({ name: "Brent crude (daily)", group: "commodities", newest });
+    } catch {
+      // The table does not exist yet, or is unreadable. Everything above
+      // still gets reported, which is the point.
+    }
   } catch (e) {
     // Could not even look. That is worth a message too: the database
     // being unreachable is an outage from a reader's side as well.
