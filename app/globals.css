@@ -1910,7 +1910,7 @@ a.dim-axis-row:hover { background: var(--hover); }
 .live-bar.is-stale .live-word { color: var(--slate); }
 .live-bar.is-stale .live-dot { background: var(--slate); box-shadow: none; animation: none; }
 .live-bar.is-stale .live-dot::after { display: none; }
-.live-sep { color: var(--hair-strong); padding-right: 8px; }
+.live-sep { color: var(--hair-strong); padding-right: 8px; } /* decorative: a middot between facts, aria-hidden, carries no information */
 
 /* The dot that says a feed is live. It breathes rather than blinks: a
    blink pulls the eye off the table, a slow fade reads as a heartbeat.
@@ -2101,7 +2101,7 @@ a.dim-axis-row:hover { background: var(--hover); }
   padding: 9px 16px; border-right: 1px solid var(--hair);
   font-family: var(--font-mono); font-size: var(--t-caption); color: var(--slate);
 }
-.ticker-event::before { content: "▸"; color: var(--hair-strong); }
+.ticker-event::before { content: "▸"; color: var(--hair-strong); } /* decorative: a bullet, not text */
 .ticker-event.is-band { color: var(--ink); }
 .ticker-event.is-band::before { content: "◆"; color: var(--accent); }
 
@@ -2376,5 +2376,10 @@ a.dim-axis-row:hover { background: var(--hover); }
 .oil-line .is-up { color: var(--status-live); }
 .oil-line .is-down { color: #CF6660; }
 .oil-line a { color: var(--accent-2); }
-/* The attribution the EIA asks for, kept quiet but present. */
-.oil-line-src { color: var(--mid); }
+/* The attribution the EIA asks for. THE SAME COLOUR AS THE REST OF THE
+   ROW: it was var(--mid) for one review cycle, which is the token for
+   centre lines on axes -- 2.49:1 against the page, invisible at 12px,
+   and attribution nobody can read is not attribution. It is already the
+   quieter half of the line, because the price beside it is --ink and
+   bold. */
+.oil-line-src { color: var(--slate); }

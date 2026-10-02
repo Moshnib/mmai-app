@@ -79,7 +79,11 @@ export default function OilLine() {
         <span aria-hidden="true">·</span>
         <b>{formatPrice(reading.price)}</b>
         {change && <span className={direction.trim()}>{change}</span>}
-        {reading.stale && <span>· no newer price published</span>}
+        {/* SHORT ON PURPOSE: the stale line has to fit the same reserved
+            slot as the normal one, and "no newer price published" pushed
+            it to a fourth line on a phone -- a shift in the degraded
+            state, which is where an unexplained jump is least welcome. */}
+        {reading.stale && <span>· none newer</span>}
         {/* THE CREDIT TRAVELS WITH THE FIGURE. The EIA's terms are public
             domain with citation requested, and this project's own
             migration comment says attribution belongs wherever the price

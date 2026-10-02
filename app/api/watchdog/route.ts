@@ -93,9 +93,25 @@ export async function GET(request: Request) {
     // than reported late: assess() treats a null as the worst case, so
     // including it would raise a nightly alarm for a table that is simply
     // waiting for its first run.
+    //
+    // ASKED WITHOUT A TIME WINDOW, unlike newestBy above, and that is
+    // deliberate. newestBy only looks back ten days, so a series written
+    // once and then dead would alarm for ten nights and then fall out of
+    // the window and go quiet -- the markets never do that, because a
+    // missing one yields null and assess() calls null the worst case.
+    // Here the question is only "has this ever been written": if it has,
+    // the row goes in with whatever date it has and assess() judges it;
+    // if it never has, it is left out, because a table waiting on a
+    // hand-run migration must not email an outage every night.
     try {
-      const commodities = await newestBy("commodity_prices", "series", [BRENT_SPOT_DAILY]);
-      const newest = commodities.get(BRENT_SPOT_DAILY);
+      const { data, error } = await getPublicSupabaseClient()
+        .from("commodity_prices")
+        .select("fetched_at")
+        .eq("series", BRENT_SPOT_DAILY)
+        .order("fetched_at", { ascending: false })
+        .limit(1);
+      if (error) throw new Error(error.message);
+      const newest = (data ?? [])[0]?.fetched_at as string | undefined;
       if (newest) watched.push({ name: "Brent crude (daily)", group: "commodities", newest });
     } catch {
       // The table does not exist yet, or is unreadable. Everything above

@@ -89,6 +89,49 @@ group("text tokens", () => {
   for (const t of ["ink", "ink-soft", "slate", "accent", "accent-2", "status-live"]) check(`--${t}`, token(t));
 });
 
+// THE TOKENS THAT ARE NOT FOR TEXT, ASSERTED AS SUCH.
+//
+// This list used to be only the six above, which meant the check passed
+// by not looking: on 2 October 2026 a new credit line on the homepage was
+// coloured with --mid, the token for centre lines on axes and tracks. It
+// renders at 2.49:1 -- below even the large-text floor -- and this script
+// reported "every text colour reads at 4.5:1 or better", because --mid
+// was outside the set it treats as text.
+//
+// So the structural rules are checked instead of the colours: these
+// tokens must not appear in a `color:` declaration anywhere, and if one
+// ever legitimately needs to, it has to clear 4.5:1 first and move into
+// the list above.
+const NOT_FOR_TEXT = ["mid", "hair", "hair-strong", "track"];
+group(`${NOT_FOR_TEXT.length} tokens that may not be used as text`, () => {
+  for (const t of NOT_FOR_TEXT) {
+    // THE `color` PROPERTY ITSELF, not anything ending in it. A bare
+    // `color:` match also catches `border-color:`, `scrollbar-color:`
+    // and `caret-color:`, which are exactly where these tokens belong --
+    // the first version of this check reported three honest borders as
+    // failures. So the character before must be the start of the
+    // declaration: a brace, a semicolon, or the start of the file.
+    //
+    // A LINE MAY OPT OUT BY SAYING `decorative` IN A COMMENT ON IT, and
+    // two do: the middot between facts in the live bar and the ticker's
+    // "▸" bullet. Those are glyphs carrying no information -- the rule
+    // is about text a reader has to read, and a separator is furniture
+    // that happens to be drawn with a character. Writing the exemption
+    // down beats dropping the token from the list, which would let the
+    // next real misuse through silently.
+    const lines = css.split("\n").filter((l) =>
+      new RegExp(`(^|[{;\\s])color:\\s*var\\(--${t}\\)`).test(l) && !/decorative/.test(l)
+    );
+    if (lines.length === 0) continue;
+    const r = ratio(token(t), token("paper"));
+    console.error(
+      `  FAIL  --${t} is used as a text colour and reads ${r.toFixed(2)}:1 on the page ground. ` +
+        `It is a rule-and-axis colour, not a text one -- use --slate.`
+    );
+    failed++;
+  }
+});
+
 const onRatio = ratio(token("on-ink"), token("on-bg"));
 if (onRatio < AA) { console.error(`  FAIL  selected control text: ${onRatio.toFixed(2)}:1`); failed++; }
 else console.log(`  ok    selected control text ${onRatio.toFixed(2)}:1`);
