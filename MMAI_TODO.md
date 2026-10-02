@@ -1,5 +1,28 @@
 # MMAI — To-Do List
-*Last updated: 2026-10-02 (the oil price updates daily)*
+*Last updated: 2026-10-22 (GitHub stopped running; a temporary writer took over)*
+
+## 🔴 22 October — GitHub is refusing to run anything (handover §57)
+- [x] Diagnosed: every run since **18 October** refused in two seconds with
+      no steps. Data was five days stale.
+- [x] Repository made public — Actions is free on public repos. **It did not
+      fix it**, which proves the block is on the ACCOUNT, not the repo.
+- [ ] **OWNER: check github.com/settings/billing.** If an amount is owed,
+      that is the only thing that lifts this. Nothing in the code can
+      route around an unpaid balance.
+- [x] Temporary writer: a Vercel cron calls `/api/refresh` daily at 11:00
+      UTC, so the nine scored markets, the bond yields, the Observatory and
+      the oil price keep updating.
+- [ ] **REMOVE THAT CRON THE DAY GITHUB WORKS AGAIN.** Whichever writer
+      lands first takes the day's only write slot. Leave both and the
+      Vercel run wins every morning, the GitHub run does nothing, and
+      **Japan and Korea stay degraded for ever** while every check still
+      reports success.
+- [ ] While it lasts: **Japan and Korea degrade** (their OECD figures are
+      relayed through a GitHub runner), and **Gulf Watch and the videos
+      stop updating** — separate endpoints, and Vercel's free plan allows
+      only the two cron jobs now in use.
+- [ ] Decide whether the repository stays public. There is no technical
+      reason now; the only argument is that it is worth showing an employer.
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
