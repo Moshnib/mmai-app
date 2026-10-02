@@ -3932,3 +3932,60 @@ were in.** Two of these would have shipped:
   Christmas close; and the dedupe comment now says what the code does
   (the last occurrence in the input wins) rather than "the newest row",
   which the rows carry no way to know.
+
+## 57. GitHub stopped running anything, and a temporary writer took over (2026-10-22)
+
+**What happened.** Every workflow run from 18 October failed in about two
+seconds with no steps at all. The last successful refresh was **18 October
+12:12 UTC**, so the site served five-day-old figures under its own "update
+delayed" warning. Same signature as the September outages: GitHub creating
+the job and refusing to allocate a runner.
+
+**The repository was made public** on 22 October, because Actions is free
+and unlimited on public repositories and that would have removed the
+minutes problem permanently. It did not work: runs were still refused in
+two seconds with zero steps. **That is the diagnostic result worth keeping**
+-- a public repo consumes no minutes, so a public repo still being refused
+means the block is on the ACCOUNT, not the repository. In practice that
+means an unpaid balance, which the owner has to settle; nothing in this
+repository can route around it.
+
+The repository is still public. There is no longer a technical reason for
+it; it stays only if the owner wants it as something to show an employer.
+
+**THE TEMPORARY WRITER.** `vercel.json` now carries a second cron:
+
+    { "path": "/api/refresh", "schedule": "0 11 * * *" }
+
+Vercel sends `Authorization: Bearer $CRON_SECRET` on a cron request, which
+is the same check `/api/watchdog` already passes, so no new secret and no
+third-party service holds a key. 11:00 UTC because European releases land
+09:00-10:00 and the first write of the day is the one the site shows.
+
+**WHAT IT DOES NOT COVER, and this must be said plainly:**
+
+- **Japan and Korea degrade.** Their figures come from the OECD, which
+  refuses Vercel's egress (§25) and is therefore fetched on a GitHub runner
+  and relayed in. Without the runner, Japan falls back to a World Bank
+  annual figure and Korea may be withheld entirely.
+- **Gulf Watch and the videos stop updating.** Both are separate endpoints
+  that GitHub calls with relayed data (`scripts/relay-gulf.mjs`), and
+  Vercel Hobby allows only two cron jobs, which are now both spoken for.
+- Vercel Hobby fires a cron anywhere inside its scheduled hour, and only
+  once a day. A missed day is a missed day.
+
+**REMOVE THIS CRON WHEN GITHUB COMES BACK.** Not optional housekeeping: the
+refresh route writes once per UTC day, so whichever writer lands first
+takes the slot. If both exist, the Vercel run at 11:00 wins every day, the
+GitHub run becomes a no-op, and **Japan and Korea stay degraded for ever**
+while every check reports success. It is in MMAI_TODO.md as an open item.
+
+**RESOLVED 30 October.** The run page's annotation gave the real reason:
+*"The job was not started because your account is locked due to a billing
+issue"* -- even though the billing Overview showed nothing owed and the
+plan is GitHub Free. The owner paid and scheduled runs resumed at 18:49
+UTC. The Vercel cron above was **never deployed** (it only ever existed as
+an uncommitted change) and was dropped rather than shipped, so there is
+nothing to remove. **Lesson: when runs die in two seconds with no steps,
+read the Annotations box on the run page first** -- it names the cause,
+where the billing page did not.
