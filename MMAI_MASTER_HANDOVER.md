@@ -3807,3 +3807,128 @@ included -- re-rendered to keep one line of text current.
 reads the system zone -- verified on the owner's machine, where
 `TZ=Asia/Tokyo` still reported Asia/Dubai. That is why CI runs the file
 three times rather than trusting one pass.
+
+## 56. A price that moves, on a site of monthly figures (2026-10-02)
+
+**What the owner said.** *"Today world economy changed, including gulf, oil
+price went insane, it will reflect on a lot of things, including here in
+the UAE; gold price dropped, everyone watching, nothing in this website is
+helpful."* Before that, in the same hour: *"I feel all the numbers are not
+realistic and really the website is not helpful at all."*
+
+**The numbers were right; the complaint was still correct.** US inflation
+on the site read 3.42% and the BLS CPI pulled live the same minute read
+3.4%. That morning's source audit: "Every figure that could be reached
+agrees with its live source." So nothing was wrong with the data.
+
+What was wrong is structural, and worth stating plainly because it shapes
+every future decision here: **every figure on this site is published
+monthly or quarterly by a statistics office.** Inflation is a monthly
+release. So is unemployment. GDP is quarterly. On a day the world moves,
+the site has nothing to say, and a reader who comes looking finds
+yesterday's rank against a 26-year history.
+
+**Including the oil, which was the embarrassing part.** `lib/fetchers/eia.ts`
+asked the EIA for `frequency=monthly` and published a year-over-year
+percentage in the weekly feed. Brent fell from $130.80 on 15 September to
+$113.96 on the 29th -- the fall the owner was watching -- and the site held
+the key to the daily series the whole time.
+
+**What changed.** The same EIA series (RBRTE), same endpoint, same
+public-domain terms, same key, at `frequency=daily`:
+- `fetchBrentDailySeries()` in `lib/fetchers/eia.ts`. `fetchBrentYoY()` is
+  untouched: it feeds `raw_indicators.brent_yoy` and the change feed, and
+  that path was deliberately left alone.
+- A `commodity_prices` table
+  (`supabase/migrations/2026-10-02-commodity-prices.sql`, run by hand),
+  **keyed on the SERIES and not the commodity** -- `brent_spot_daily`.
+  "Brent, monthly average" and "Brent, daily spot" are different series of
+  one commodity and they disagree on purpose.
+- `lib/commodityPrices.ts` holds the arithmetic, pure and tested;
+  `lib/commodityPricesRead.ts` reads with the PUBLIC key, because the
+  table carries a public read policy and the service key is not available
+  everywhere the site renders (that is how the bond panel vanished once).
+- **One line on the homepage**, under the market picker and above the gate
+  where the page starts depending on a chosen market -- oil is global, not
+  a fact about whichever country was clicked. **The full panel is on
+  /trends**, where the bond yields already live under "unlike every other
+  figure on this page, it moves every trading day".
+
+**THE THREE RULES THIS BROUGHT, all of them things the project has already
+been burned by:**
+
+1. **The date is part of the figure.** The EIA publishes spot two to four
+   days in arrears -- on 2 October the newest was 29 September. So the
+   heading is "Brent crude, 29 September", not a price with a date in grey
+   underneath. The Fed's target range and the UTC timestamp were both
+   "correct but reads as wrong"; this is the same class and was designed
+   against from the start.
+2. **The baseline names itself**: "since 28 September", never "today" or
+   "on the day". Monday's move is measured against Friday.
+   `components/BondYieldPanel.tsx` has the arithmetic right and the label
+   wrong -- it says "vs prev. day", which is false every Monday. The
+   mechanism was copied; the label was not.
+3. **The weekly feed's Brent line now says "monthly average".** It was
+   unlabelled, and once a daily spot sits on the same site the two can
+   legitimately disagree -- in a month that spikes and falls back the
+   average rises while the latest price drops. Two correct numbers from
+   one institution with nothing to tell them apart is how a reader decides
+   the site is broken.
+
+**Written on EVERY run, not just the day's first.** The reviewer caught
+this: the obvious place, beside the bond-yield insert, sits *after* the
+route's once-a-day early return -- the exact mistake already fixed in that
+block for the Observatory. The EIA publishes during the US afternoon and
+the first run to land is mid-morning UTC, so a once-a-day write would have
+left the price permanently an extra day behind with nothing to show why.
+`refreshBrentDaily()` is called on both paths, upserts the whole window
+(a revision can land, and a hole heals), and never throws.
+
+**The watchdog reads `fetched_at`, not the observation date**, and that
+distinction is the only thing that can tell a dead series from this one's
+normal lag: "newest price is three days old" is a healthy Thursday and a
+dead fetcher three weeks later.
+
+**What this is not.** It is not a live price. Anything same-day is a
+commercial market-data feed, and that is the same wall gold is behind --
+the daily gold price is licensed by essentially everyone who publishes it.
+Establishing what gold would cost, and whether any free source permits
+republication, is the next task and is not yet done.
+
+**`scripts/test-commodity-prices.ts`** (29 checks, in CI under UTC and
+America/New_York) pins the Friday-to-Monday baseline against the real
+published series, a zero price as a real price, one point as "no change"
+rather than "unchanged", the staleness boundary, and the date not drifting
+with the reader's timezone -- which fails only west of UTC, hence the
+second zone. Seven mutations tried, six caught by assertion and the
+seventh (dropping the UTC option) only reachable in the American zone,
+which is why CI runs it there.
+
+**What the implementation review caught, after all eleven design points
+were in.** Two of these would have shipped:
+
+- **The watchdog could have been blinded by its own new check.** The
+  commodity lookup went into the same `Promise.all` as the markets, the
+  Gulf and the Observatory, and `newestBy` throws on any PostgREST error.
+  A missing `commodity_prices` -- the state this ships in until the SQL
+  is pasted -- would have rejected the group, collapsed every watched
+  entry into one "the database is unreachable" row, and emailed an
+  outage every night while nothing was wrong. It has its own try/catch
+  now, and a series that has never been written is left out rather than
+  reported late, because `assess()` treats a null as the worst case.
+- **The homepage slot reserved 34px for a row that is 77px on a phone**,
+  so the shift it existed to prevent still happened on the screens where
+  it shows most. Measured and set to 78px, shrinking to 36px above 700px
+  where the row is one line. The empty state also shipped as a bordered
+  strip -- a permanent ruled box under the market picker until the
+  migration runs -- so the slot now holds the height with no appearance
+  of its own, and collapses entirely once the query comes back empty.
+- Smaller: the homepage line carries the EIA credit (the migration
+  comment asserts attribution "wherever it is shown", and the line did
+  not); a flat window no longer draws along the floor of the chart as
+  though it were at its lowest; an unchanged day reads "unchanged since
+  28 September" rather than "+$0.00 (+0.0%)" in the colour of a rise;
+  the staleness threshold moved from 6 days to 9, because 6 fires over a
+  Christmas close; and the dedupe comment now says what the code does
+  (the last occurrence in the input wins) rather than "the newest row",
+  which the rows carry no way to know.

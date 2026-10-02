@@ -1910,7 +1910,7 @@ a.dim-axis-row:hover { background: var(--hover); }
 .live-bar.is-stale .live-word { color: var(--slate); }
 .live-bar.is-stale .live-dot { background: var(--slate); box-shadow: none; animation: none; }
 .live-bar.is-stale .live-dot::after { display: none; }
-.live-sep { color: var(--hair-strong); padding-right: 8px; }
+.live-sep { color: var(--hair-strong); padding-right: 8px; } /* decorative: a middot between facts, aria-hidden, carries no information */
 
 /* The dot that says a feed is live. It breathes rather than blinks: a
    blink pulls the eye off the table, a slow fade reads as a heartbeat.
@@ -2101,7 +2101,7 @@ a.dim-axis-row:hover { background: var(--hover); }
   padding: 9px 16px; border-right: 1px solid var(--hair);
   font-family: var(--font-mono); font-size: var(--t-caption); color: var(--slate);
 }
-.ticker-event::before { content: "▸"; color: var(--hair-strong); }
+.ticker-event::before { content: "▸"; color: var(--hair-strong); } /* decorative: a bullet, not text */
 .ticker-event.is-band { color: var(--ink); }
 .ticker-event.is-band::before { content: "◆"; color: var(--accent); }
 
@@ -2307,3 +2307,79 @@ a.dim-axis-row:hover { background: var(--hover); }
   .sm-root::after { display: none; }
   .sm-root { padding-bottom: 0; }
 }
+
+/* ============================================================
+   THE DAILY OIL PRICE (components/OilPricePanel.tsx, components/OilLine.tsx)
+
+   The only price on the site that moves every trading day, so it is
+   the only figure whose DATE has to be read as part of it. Its heading
+   carries the date; nothing here is styled to suggest "now".
+
+   Direction uses the two colours the ticker already uses for a rise and
+   a fall, so the site has one vocabulary for up and down rather than a
+   second palette invented for commodities.
+   ============================================================ */
+.oil-figure {
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: 10px; margin: 14px 0 10px;
+}
+.oil-price {
+  font-family: var(--font-num);
+  font-size: var(--t-display); font-weight: 500; line-height: 1;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.oil-unit { font-size: var(--t-small); color: var(--slate); }
+.oil-change {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-small); font-variant-numeric: tabular-nums;
+}
+.oil-change.is-up, .oil-chart.is-up { color: var(--status-live); }
+.oil-change.is-down, .oil-chart.is-down { color: #CF6660; }
+
+.oil-note { font-size: var(--t-small); color: var(--ink-soft); max-width: 68ch; line-height: 1.7; margin: 0 0 16px; }
+.oil-source { font-size: var(--t-micro); color: var(--slate); margin: 12px 0 0; }
+
+.oil-chart { margin: 4px 0 0; }
+.oil-chart svg { width: 100%; height: 120px; display: block; }
+.oil-chart-ends {
+  display: flex; justify-content: space-between;
+  font-size: var(--t-micro); color: var(--slate);
+  font-family: "IBM Plex Mono", monospace; margin-top: 6px;
+}
+
+/* THE HOMEPAGE LINE.
+
+   TWO ELEMENTS, NOT ONE, and that is the whole trick. The price arrives
+   from a query that lands after first paint, so the space has to be
+   reserved before there is anything to put in it -- but a bordered strip
+   reserved and never filled is an empty ruled box under the market
+   picker, which is what ships for as long as the table is missing. So
+   the WRAPPER holds the height and has no appearance of its own, and the
+   rules and the text belong to the row inside it.
+
+   78px, not 34, and MEASURED rather than guessed: at 375px the filled
+   row wraps to three lines and stands 77px tall with its padding and
+   rules. A reservation that does not cover the case it was reserved for
+   is decoration. On a wider screen the row is a single line, so the slot
+   shrinks to match rather than leaving a hole. */
+.oil-line-slot { min-height: 78px; margin: 18px 0 0; }
+@media (min-width: 700px) { .oil-line-slot { min-height: 36px; } }
+
+.oil-line {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-caption); color: var(--slate);
+  border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+  padding: 7px 0;
+}
+.oil-line b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.oil-line .is-up { color: var(--status-live); }
+.oil-line .is-down { color: #CF6660; }
+.oil-line a { color: var(--accent-2); }
+/* The attribution the EIA asks for. THE SAME COLOUR AS THE REST OF THE
+   ROW: it was var(--mid) for one review cycle, which is the token for
+   centre lines on axes -- 2.49:1 against the page, invisible at 12px,
+   and attribution nobody can read is not attribution. It is already the
+   quieter half of the line, because the price beside it is --ink and
+   bold. */
+.oil-line-src { color: var(--slate); }

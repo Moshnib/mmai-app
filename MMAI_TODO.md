@@ -1,10 +1,30 @@
 # MMAI — To-Do List
-*Last updated: 2026-09-28 (times show in the reader's own clock)*
+*Last updated: 2026-10-02 (the oil price updates daily)*
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
 > new chat in this folder and say: *"Read §28 of MMAI_MASTER_HANDOVER.md
 > and MMAI_TODO.md, then tell me where we are before changing anything."*
+
+## ✅ 2 October — the first figure that moves every day (handover §56)
+- [x] **Daily oil.** The site was asking the US Energy Department for the
+      MONTHLY average and showing a year-on-year percentage, so the fall
+      from $130 to $114 was invisible. Same source, same key, same licence,
+      daily: one line on the homepage, the full chart on Trends.
+- [ ] **Owner, run once:** paste `commodity-prices.sql` (on your Desktop)
+      into the Supabase SQL editor. Until then the line stays empty and
+      the refresh says in its log that it cannot store the price.
+- [ ] **Next: what gold would cost.** The daily gold price is commercially
+      licensed by almost everyone who publishes it, and the same wall
+      stands in front of a genuinely same-day oil price. Nobody has
+      established the price or the terms yet — that is the next job, and
+      the answer may be "not worth it".
+- [ ] **The deeper point, kept here on purpose.** Everything else on this
+      site is published monthly or quarterly by a statistics office. The
+      owner's complaint — "nothing in this website is helpful" on a day
+      the world moved — is the direct consequence, and one daily price
+      only partly answers it. If the site is to be about what happened
+      today, more of it has to be daily.
 
 ## ✅ 28 September — the refresh time shows in your own clock (handover §55)
 - [x] Every "last refreshed" time on the site now reads in the reader's own

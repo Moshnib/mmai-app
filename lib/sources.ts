@@ -217,6 +217,17 @@ export const SOURCES: SourceEntry[] = [
   // ---------- Shared across all markets ----------
   { market: "All markets", indicator: "Brent Crude (context only — not scored)", cadence: "monthly", institution: "U.S. Energy Information Administration", shortName: "EIA", license: "Public domain — citation requested", status: "live", lastVerified: "2026-08-22", note: "NO LONGER SCORED as of 1 September 2026. This is a single global oil price: the identical figure applied to all six markets, so as a pillar it moved every score together and could not affect the ranking of one country against another. It is still shown in the weekly feed, where a global price is exactly what it claims to be." , url: "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm" },
 
+  // A SECOND ROW FOR THE SAME COMMODITY, deliberately. The row above is
+  // the MONTHLY AVERAGE, which is what the weekly feed's year-on-year
+  // figure is built from; this is the DAILY SPOT, a price on a named
+  // trading day. They are different series and they disagree on purpose:
+  // in a month oil spikes and falls back, the average can rise while the
+  // latest price has dropped. Folding them into one row would make the
+  // page describe two cadences and two endpoints as though they were one
+  // figure -- which is how a reader ends up thinking a correct number is
+  // an error.
+  { market: "All markets", indicator: "Brent Crude, daily spot (context only — not scored)", cadence: "daily", institution: "U.S. Energy Information Administration", shortName: "EIA", license: "Public domain — citation requested", status: "live", lastVerified: "2026-10-02", note: "Added 2 October 2026: the one figure on this site that moves every trading day. Same series (RBRTE, Europe Brent Spot Price FOB), same endpoint and same key as the monthly row above — only the frequency differs. THE EIA PUBLISHES IT TWO TO FOUR DAYS IN ARREARS, so the newest price shown is never today's, and every place it appears carries the date it refers to. Anything genuinely same-day is a commercial market-data feed." , url: "https://www.eia.gov/dnav/pet/hist/RBRTED.htm" },
+
   // ---------- Announcements, not figures ----------
   // These seven feed the homepage news band and the ticker, not a score.
   // Listed here anyway: the page promises every source on the site, with

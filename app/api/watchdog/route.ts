@@ -18,6 +18,7 @@
 import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getPublicSupabaseClient } from "@/lib/supabase";
+import { BRENT_SPOT_DAILY } from "@/lib/commodityPricesRead";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import { OBSERVATORY } from "@/lib/observatory";
@@ -70,6 +71,52 @@ export async function GET(request: Request) {
       ...GULF_COUNTRIES.map((c) => ({ name: c.name, group: "Gulf Watch", newest: gulf.get(c.code) ?? null })),
       ...OBSERVATORY.map((c) => ({ name: c.name, group: "Observatory", newest: obs.get(c.code) ?? null })),
     ];
+
+    // THE COMMODITY SERIES IS WATCHED SEPARATELY, AND MUST NEVER TAKE THE
+    // REST DOWN WITH IT.
+    //
+    // It was in the Promise.all above, and a reviewer caught what that
+    // meant: commodity_prices is created by a HAND-RUN migration, so
+    // between a deploy and the owner pasting the SQL every query in that
+    // group rejects, the catch below collapses all twenty-odd markets
+    // into one "the database is unreachable" row, and the watchdog emails
+    // an outage every night while nothing is wrong. A new check that can
+    // blind the alarm to everything else is a bad trade for a figure
+    // shown beside the score rather than inside it.
+    //
+    // WATCHED ON fetched_at, NOT ON THE OBSERVATION DATE. The EIA
+    // publishes Brent two to four days in arrears, so "the newest price
+    // is three days old" is a healthy Thursday and a dead fetcher three
+    // weeks later; only when MMAI last wrote the row separates them.
+    //
+    // A series that has NEVER been written is left out entirely rather
+    // than reported late: assess() treats a null as the worst case, so
+    // including it would raise a nightly alarm for a table that is simply
+    // waiting for its first run.
+    //
+    // ASKED WITHOUT A TIME WINDOW, unlike newestBy above, and that is
+    // deliberate. newestBy only looks back ten days, so a series written
+    // once and then dead would alarm for ten nights and then fall out of
+    // the window and go quiet -- the markets never do that, because a
+    // missing one yields null and assess() calls null the worst case.
+    // Here the question is only "has this ever been written": if it has,
+    // the row goes in with whatever date it has and assess() judges it;
+    // if it never has, it is left out, because a table waiting on a
+    // hand-run migration must not email an outage every night.
+    try {
+      const { data, error } = await getPublicSupabaseClient()
+        .from("commodity_prices")
+        .select("fetched_at")
+        .eq("series", BRENT_SPOT_DAILY)
+        .order("fetched_at", { ascending: false })
+        .limit(1);
+      if (error) throw new Error(error.message);
+      const newest = (data ?? [])[0]?.fetched_at as string | undefined;
+      if (newest) watched.push({ name: "Brent crude (daily)", group: "commodities", newest });
+    } catch {
+      // The table does not exist yet, or is unreadable. Everything above
+      // still gets reported, which is the point.
+    }
   } catch (e) {
     // Could not even look. That is worth a message too: the database
     // being unreachable is an outage from a reader's side as well.

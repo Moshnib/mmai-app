@@ -109,7 +109,15 @@ export default function WeeklyFeed() {
     <div style={{ background: "var(--card-bg)", border: "1px solid var(--hair)", borderRadius: 8, padding: "20px 24px" }}>
       {brentNow != null && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, paddingBottom: 14, borderBottom: "1px dashed var(--hair)", fontFamily: "IBM Plex Mono, monospace" }}>
-          <span style={{ fontSize: 11, color: "var(--slate)", textTransform: "uppercase", letterSpacing: 0.5 }}>Brent crude, YoY (shared across all markets)</span>
+          {/* "MONTHLY AVERAGE" IS NOT A PEDANTIC ADDITION. Since 2 October
+              2026 the homepage also carries the daily SPOT price, and the
+              two legitimately disagree: in a month where oil spikes and
+              falls back, the average can be up while the latest price is
+              sharply down. Two correct numbers from one institution on one
+              screen, with nothing to tell them apart, is precisely how a
+              reader concludes the site is broken -- the same trap as the
+              Fed's target range against the effective rate. */}
+          <span style={{ fontSize: 11, color: "var(--slate)", textTransform: "uppercase", letterSpacing: 0.5 }}>Brent crude, monthly average, YoY (shared across all markets)</span>
           <span style={{ fontSize: 13, color: "var(--ink)" }}>
             {brentNow.toFixed(1)}% <span style={{ color: "var(--slate)", marginLeft: 6 }}>{brentDeltaText}</span>
           </span>
