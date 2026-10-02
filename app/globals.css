@@ -2307,3 +2307,58 @@ a.dim-axis-row:hover { background: var(--hover); }
   .sm-root::after { display: none; }
   .sm-root { padding-bottom: 0; }
 }
+
+/* ============================================================
+   THE DAILY OIL PRICE (components/OilPricePanel.tsx, components/OilLine.tsx)
+
+   The only price on the site that moves every trading day, so it is
+   the only figure whose DATE has to be read as part of it. Its heading
+   carries the date; nothing here is styled to suggest "now".
+
+   Direction uses the two colours the ticker already uses for a rise and
+   a fall, so the site has one vocabulary for up and down rather than a
+   second palette invented for commodities.
+   ============================================================ */
+.oil-figure {
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: 10px; margin: 14px 0 10px;
+}
+.oil-price {
+  font-family: var(--font-num);
+  font-size: var(--t-display); font-weight: 500; line-height: 1;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.oil-unit { font-size: var(--t-small); color: var(--slate); }
+.oil-change {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-small); font-variant-numeric: tabular-nums;
+}
+.oil-change.is-up, .oil-chart.is-up { color: var(--status-live); }
+.oil-change.is-down, .oil-chart.is-down { color: #CF6660; }
+
+.oil-note { font-size: var(--t-small); color: var(--ink-soft); max-width: 68ch; line-height: 1.7; margin: 0 0 16px; }
+.oil-source { font-size: var(--t-micro); color: var(--slate); margin: 12px 0 0; }
+
+.oil-chart { margin: 4px 0 0; }
+.oil-chart svg { width: 100%; height: 120px; display: block; }
+.oil-chart-ends {
+  display: flex; justify-content: space-between;
+  font-size: var(--t-micro); color: var(--slate);
+  font-family: "IBM Plex Mono", monospace; margin-top: 6px;
+}
+
+/* THE HOMEPAGE LINE. One row, and a RESERVED HEIGHT: it is filled by a
+   query that lands after paint, and without a fixed height the headline
+   below it would jump down the moment the price arrives. */
+.oil-line {
+  min-height: 34px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--t-caption); color: var(--slate);
+  border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+  margin: 18px 0 0; padding: 7px 0;
+}
+.oil-line b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.oil-line .is-up { color: var(--status-live); }
+.oil-line .is-down { color: #CF6660; }
+.oil-line a { color: var(--accent-2); }

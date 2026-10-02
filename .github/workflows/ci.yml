@@ -98,6 +98,22 @@ jobs:
             TZ=$zone npx tsx scripts/test-live-time.ts
           done
 
+      # THE FIRST FIGURE ON THIS SITE THAT MOVES EVERY TRADING DAY.
+      #
+      # Daily data brings two mistakes monthly data cannot make: taking
+      # "yesterday" by calendar (wrong every Monday, because the baseline
+      # is Friday) and presenting a price that is three days old -- the
+      # EIA's normal lag -- as today's. Run under America/New_York as
+      # well, because a date-only string formatted in the reader's zone
+      # moves backwards west of UTC and nowhere else: that bug is
+      # invisible on a UTC runner and wrong for every American reader.
+      - name: The daily price carries its date and its baseline
+        run: |
+          for zone in UTC America/New_York; do
+            echo "── $zone"
+            TZ=$zone npx tsx scripts/test-commodity-prices.ts
+          done
+
       - name: The refresh publishes only inside its window
         run: bash scripts/test-publish-window.sh
       - name: The window is wired to the right steps

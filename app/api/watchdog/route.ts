@@ -18,6 +18,7 @@
 import { NextResponse } from "next/server";
 import { checkCronAuth } from "@/lib/cronAuth";
 import { getPublicSupabaseClient } from "@/lib/supabase";
+import { BRENT_SPOT_DAILY } from "@/lib/commodityPricesRead";
 import { FALLBACK_MARKETS } from "@/lib/markets";
 import { GULF_COUNTRIES } from "@/lib/gulfMarkets";
 import { OBSERVATORY } from "@/lib/observatory";
@@ -60,15 +61,23 @@ export async function GET(request: Request) {
 
   let watched: Watched[];
   try {
-    const [scored, gulf, obs] = await Promise.all([
+    const [scored, gulf, obs, commodities] = await Promise.all([
       newestBy("raw_indicators", "market", FALLBACK_MARKETS.map((m) => m.code)),
       newestBy("gulf_indicators", "country_code", GULF_COUNTRIES.map((c) => c.code)),
       newestBy("observatory_indicators", "country_code", OBSERVATORY.map((c) => c.code)),
+      // WATCHED ON fetched_at, NOT ON ITS OBSERVATION DATE, and that is
+      // the whole reason it is here. The EIA publishes Brent two to four
+      // days in arrears, so "the newest price is from three days ago" is
+      // a healthy Thursday and a dead series in a fortnight -- the
+      // observation date cannot tell those apart, and when MMAI last
+      // wrote the row can.
+      newestBy("commodity_prices", "series", [BRENT_SPOT_DAILY]),
     ]);
     watched = [
       ...FALLBACK_MARKETS.map((m) => ({ name: m.name, group: "scored", newest: scored.get(m.code) ?? null })),
       ...GULF_COUNTRIES.map((c) => ({ name: c.name, group: "Gulf Watch", newest: gulf.get(c.code) ?? null })),
       ...OBSERVATORY.map((c) => ({ name: c.name, group: "Observatory", newest: obs.get(c.code) ?? null })),
+      { name: "Brent crude (daily)", group: "commodities", newest: commodities.get(BRENT_SPOT_DAILY) ?? null },
     ];
   } catch (e) {
     // Could not even look. That is worth a message too: the database

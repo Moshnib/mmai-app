@@ -17,6 +17,7 @@ import LiveBar from "@/components/LiveBar";
 import MarketTicker from "@/components/MarketTicker";
 import NewsBand from "@/components/NewsBand";
 import LivePressCard from "@/components/LivePressCard";
+import OilLine from "@/components/OilLine";
 import CountryGlyph from "@/components/CountryGlyph";
 import { type RawIndicators, inflationTargetFor, colorForScore } from "@/lib/indicators";
 import {
@@ -432,6 +433,17 @@ export default function OverviewPage() {
             ))}
           </div>
           </div>
+
+          {/* WHAT MOVED TODAY, ABOVE THE GATE BELOW ON PURPOSE.
+              Oil is global -- it is not a fact about whichever country a
+              reader picked -- so it cannot live inside a section that
+              only exists once one is chosen. It is also the only figure
+              on this site that changes between visits, which is the
+              whole reason it is here: everything else is published
+              monthly, and on a day the market moves the rest of this
+              page has nothing to say. The chart is on /trends with the
+              bond yields, where the daily series already live. */}
+          <OilLine />
 
           {/* NOTHING BELOW EXISTS UNTIL A MARKET IS CHOSEN.
               The chooser -- the compare strip and the map -- sits further

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import TrendsPageInner from "./TrendsPageInner";
 import BondYieldPanel from "@/components/BondYieldPanel";
+import OilPricePanel from "@/components/OilPricePanel";
 import { readBondYields } from "@/lib/bondYieldsRead";
+import { readCommoditySeries, BRENT_SPOT_DAILY } from "@/lib/commodityPricesRead";
 import type { DimensionKey } from "@/lib/composite";
 import { pageMetadata } from "@/lib/pageMetadata";
 
@@ -40,10 +42,14 @@ export default async function TrendsPage({
   // rather than calling six government sites at render time is the
   // reason it was stored in the first place.
   const bondPoints = await readBondYields(365);
+  // The daily oil price, read here for the same reason as the yields:
+  // stored once by the refresh, not fetched from the EIA on every visit.
+  const oilPoints = await readCommoditySeries(BRENT_SPOT_DAILY, 120);
 
   return (
     <>
       <TrendsPageInner initialDimension={validDimension} serverQuery={serverQuery} />
+      <OilPricePanel points={oilPoints} />
       <BondYieldPanel points={bondPoints} />
     </>
   );

@@ -50,7 +50,7 @@ import {
 } from "@/lib/fetchers/observatory";
 import { OBSERVATORY, setsOwnRate as observatorySetsOwnRate, needsObservatoryFetch, fillFromEarlier, type ObservatoryCountry, type ObservatoryRow } from "@/lib/observatory";
 import { fetchUsGdpGrowthQuarterly, fetchUsPceInflation } from "@/lib/fetchers/bea";
-import { fetchBrentYoY } from "@/lib/fetchers/eia";
+import { fetchBrentYoY, fetchBrentDailySeries } from "@/lib/fetchers/eia";
 import { fetchGovernmentDebt } from "@/lib/fetchers/bis";
 import { sendBandCrossingEmail } from "@/lib/notify";
 import { IS_VERCEL_DOMAIN, ALERT_FROM } from "@/lib/siteUrl";
@@ -310,6 +310,63 @@ async function insertRawIndicators(
   delete withoutTarget.policy_rate_target_low;
   delete withoutTarget.policy_rate_target_high;
   return supabase.from("raw_indicators").insert(withoutTarget);
+}
+
+/** THE ONE FIGURE ON THIS SITE THAT MOVES EVERY TRADING DAY.
+ *
+ *  Written on EVERY run, not just the day's first: the EIA publishes
+ *  Brent during the US afternoon and the first run to land is mid-morning
+ *  UTC, so a once-a-day write would sit permanently a day further behind
+ *  than the source already is.
+ *
+ *  THE WHOLE WINDOW EVERY TIME, not just the newest day. It costs one
+ *  request, it heals any hole a failed run left, and it lets a revision
+ *  land -- an EIA spot price is not frozen the way a published yield
+ *  curve is, which is why this upserts rather than ignoring conflicts
+ *  the way the bond-yield block does.
+ *
+ *  Never throws: a commodity price is shown beside the score, not inside
+ *  it, and no part of the index depends on it. */
+async function refreshBrentDaily(
+  supabase: ReturnType<typeof getServiceSupabaseClient>
+): Promise<{ written: number; newest: string | null; error?: string }> {
+  try {
+    const points = await fetchBrentDailySeries();
+    const rows = points.map((p) => ({
+      series: "brent_spot_daily",
+      observation_date: p.date,
+      price: p.price,
+      unit: "$/bbl",
+      source: "U.S. Energy Information Administration",
+      fetched_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase
+      .from("commodity_prices")
+      .upsert(rows, { onConflict: "series,observation_date" });
+    if (error) {
+      // The table is created by a hand-run migration, so a deploy can
+      // land before it exists. PostgREST answers PGRST205 for an unknown
+      // TABLE (PGRST204 is an unknown COLUMN, which is the policy-rate
+      // case), and older versions pass through Postgres's own 42P01.
+      // Narrow to this table by name so no other write failure is hidden.
+      const missingTable =
+        (error.code === "PGRST205" || error.code === "42P01") && /commodity_prices/.test(error.message);
+      if (missingTable) {
+        console.warn(
+          "commodity_prices does not exist yet -- the daily oil price is not being stored. " +
+            "Run supabase/migrations/2026-10-02-commodity-prices.sql. " +
+            `(${error.message})`
+        );
+        return { written: 0, newest: null, error: "table missing" };
+      }
+      throw new Error(error.message);
+    }
+    return { written: rows.length, newest: points[points.length - 1]?.date ?? null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Daily Brent failed:", message);
+    return { written: 0, newest: null, error: message };
+  }
 }
 
 async function fetchRawIndicators(
@@ -1001,12 +1058,20 @@ export async function GET(request: Request) {
     } catch (err) {
       observatory = [{ country: "all", status: `error: ${err instanceof Error ? err.message : String(err)}` }];
     }
+    // AND THE DAILY PRICE, for the same reason, only more so. The scored
+    // figures are monthly and genuinely finished for the day; Brent is a
+    // daily series the EIA publishes during the US afternoon, while the
+    // first run to LAND each day is mid-morning UTC. Writing it only on
+    // that run would leave the price an extra day behind for ever, and
+    // nothing on the page would show why.
+    const brent = await refreshBrentDaily(supabase);
     return NextResponse.json({
       refreshedAt: new Date().toISOString(),
       skipped: true,
       reason: `All ${MARKETS.length} markets already have a reading for ${today}. Pass ?force=1 to refresh anyway.`,
       results: [],
       observatory,
+      brent,
     });
   }
 
@@ -1497,6 +1562,12 @@ export async function GET(request: Request) {
     bondResult = { inserted: 0, markets: 0, error: message };
   }
 
+  // ---------- The daily oil price ----------
+  // Beside the bond yields, which is the other series here that moves
+  // every trading day rather than once a month. The same call runs on the
+  // early-return path above, so it happens on every run of the day.
+  const brentDaily = await refreshBrentDaily(supabase);
+
   // ---------- THE OBSERVATORY ----------
   //
   // Tracked countries, written to their own table with no score. Runs
@@ -1563,6 +1634,7 @@ export async function GET(request: Request) {
     publishedDrift,
     results,
     bondYields: bondResult,
+    brent: brentDaily,
     observatory,
   });
 }
