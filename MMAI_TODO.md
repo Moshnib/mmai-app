@@ -1,5 +1,25 @@
 # MMAI — To-Do List
-*Last updated: 2026-10-02 (the oil price updates daily)*
+*Last updated: 2026-10-31 (GitHub runs again; the temporary writer was never shipped)*
+
+## ✅ 18–30 October — GitHub refused to run anything (handover §57)
+- [x] Every run from **18 October** was refused in two seconds with no
+      steps. The run page said why: *"The job was not started because your
+      account is locked due to a billing issue."*
+- [x] Making the repository public did not help — the lock was on the
+      ACCOUNT. The billing Overview showed nothing owed, yet the lock held.
+- [x] **Owner paid; runs resumed on 30 October 18:49 UTC.** The 31 October
+      run refreshed all nine markets, Japan and Korea included, and the
+      source audit matched all 35 figures.
+- [x] The stand-in Vercel cron on `/api/refresh` was written but never
+      deployed, and has been dropped — with GitHub back it would only take
+      the day's write slot and degrade Japan and Korea.
+- [ ] **Learn page drift:** the 31 October run reports "D: Learn page
+      publishes 25.7, live is 24.1". Re-sync FALLBACK_MARKETS in
+      lib/markets.ts to the database, run
+      `npx tsx scripts/measure-pillar-influence.ts`, and update
+      PILLAR_CROSS_MARKET_SD / PILLAR_EFFECTIVE_INFLUENCE in lib/scoring.ts.
+- [ ] Decide whether the repository stays public. There is no technical
+      reason now; the only argument is that it is worth showing an employer.
 
 > **If a chat breaks, nothing is lost.** The code is on GitHub, the site
 > runs from there, and these notes are committed beside the code. Open a
